@@ -36,11 +36,13 @@ class User(UserBase):
 
 #pydantic model for conference
 class Conference(BaseModel):
+    id: int
     name: str
     location: str
     start_date: str
     end_date: str
     description: str | None = None
+    owner_id: int
 
 #pydantic model for conference create
 class ConferenceCreate(Conference):

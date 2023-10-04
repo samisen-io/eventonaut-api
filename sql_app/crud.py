@@ -64,6 +64,10 @@ def get_conference_by_end_date(db: Session, end_date: str):
 def get_conference_by_description(db: Session, description: str):
     return db.query(models.Conference).filter(models.Conference.description == description).first()
 
+#get conferences by owner_id
+def get_conferences_by_owner_id(db: Session, owner_id: int):
+    return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
+
 #delete conference
 def delete_conference(db: Session, conference_id: int):
     db.query(models.Conference).filter(models.Conference.id == conference_id).delete()
@@ -75,4 +79,3 @@ def update_conference(db: Session, conference_id: int, conference: schemas.Confe
     db.query(models.Conference).filter(models.Conference.id == conference_id).update(conference.model_dump())
     db.commit()
     return True
-

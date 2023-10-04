@@ -78,6 +78,14 @@ def read_conference_by_name(name: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conference
 
+#get all conferences by owner_id
+@app.get("/conferences/owner/{owner_id}", response_model=list[schemas.Conference])
+def read_conferences_by_owner_id(owner_id: int, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_owner_id(db, owner_id=owner_id)
+    if db_conferences is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conferences
+
 #update conference
 @app.put("/conferences/{conference_id}", response_model=schemas.Conference)
 def update_conference(conference_id: int, conference: schemas.ConferenceCreate, db: Session = Depends(get_db)):
@@ -93,3 +101,13 @@ def delete_conference(conference_id: int, db: Session = Depends(get_db)):
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     return crud.delete_conference(db=db, conference_id=conference_id)
+
+# delete all conferences by owner id
+@app.delete("/conferences/owner/{owner_id}")
+def delete_conferences_by_owner(owner_id: int, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_owner_id(db, owner_id=owner_id)
+    if not db_conferences:
+        raise HTTPException(status_code=404, detail="No conferences found for owner")
+    for conference in db_conferences:
+        crud.delete_conference(db=db, conference_id=conference.id)
+    return {"message": "Conferences deleted successfully"}

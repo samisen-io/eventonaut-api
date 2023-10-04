@@ -13,6 +13,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
 
     items = relationship("Item", back_populates="owner")
+    conferences = relationship("Conference", back_populates="owner")
 
 
 class Item(Base):
