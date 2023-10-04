@@ -1,5 +1,9 @@
-from fastapi import Depends, FastAPI, HTTPException
+import shutil
+import tempfile
+from fastapi import Depends, FastAPI, File, HTTPException, Path, UploadFile
 from sqlalchemy.orm import Session
+
+from data_ingester import ingest_file
 
 from . import crud, models, schemas
 from .database import SessionLocal, engine
@@ -13,6 +17,16 @@ def get_db():
         yield db
     finally:
         db.close()
+
+#function to upload file that needs to saved in a folder called "uploads" with a random suffix
+@app.post("/uploadfile/")
+async def create_upload_file(file: UploadFile = File(...)):
+    suffix = Path(file.filename).suffix
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_file = tempfile.NamedTemporaryFile(suffix=suffix, dir=temp_dir)
+        shutil.copyfileobj(file.file, temp_file)
+        ingest_file(temp_file.name)
+        return {"filename": file.filename}
 
 #function to get user
 @app.get("/users/{user_id}", response_model=schemas.User)
