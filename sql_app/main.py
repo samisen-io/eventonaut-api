@@ -51,3 +51,45 @@ def create_item_for_user(
 def read_items(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     items = crud.get_items(db, skip=skip, limit=limit)
     return items
+
+#conference crud
+@app.post("/conferences/", response_model=schemas.Conference)
+def create_conference_for_user(
+    user_id: int, conference: schemas.ConferenceCreate, db: Session = Depends(get_db)
+):
+    return crud.create_user_conference(db=db, conference=conference, user_id=user_id)
+
+@app.get("/conferences/", response_model=list[schemas.Conference])
+def read_conferences(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    conferences = crud.get_conferences(db, skip=skip, limit=limit)
+    return conferences
+
+@app.get("/conferences/{conference_id}", response_model=schemas.Conference)
+def read_conference(conference_id: int, db: Session = Depends(get_db)):
+    db_conference = crud.get_conference(db, conference_id=conference_id)
+    if db_conference is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conference
+
+@app.get("/conferences/name/{name}", response_model=schemas.Conference)
+def read_conference_by_name(name: str, db: Session = Depends(get_db)):
+    db_conference = crud.get_conference_by_name(db, name=name)
+    if db_conference is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conference
+
+#update conference
+@app.put("/conferences/{conference_id}", response_model=schemas.Conference)
+def update_conference(conference_id: int, conference: schemas.ConferenceCreate, db: Session = Depends(get_db)):
+    db_conference = crud.get_conference(db, conference_id=conference_id)
+    if db_conference is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return crud.update_conference(db=db, conference=conference, conference_id=conference_id)
+
+#delete conference
+@app.delete("/conferences/{conference_id}")
+def delete_conference(conference_id: int, db: Session = Depends(get_db)):
+    db_conference = crud.get_conference(db, conference_id=conference_id)
+    if db_conference is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return crud.delete_conference(db=db, conference_id=conference_id)

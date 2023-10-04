@@ -24,3 +24,18 @@ class Item(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="items")
+
+
+#class to define Conference table
+class Conference(Base):
+    __tablename__ = "conferences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    location = Column(String, index=True)
+    start_date = Column(String, index=True)
+    end_date = Column(String, index=True)
+    description = Column(String, index=True)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+
+    owner = relationship("User", back_populates="conferences")
