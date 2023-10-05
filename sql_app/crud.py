@@ -60,7 +60,13 @@ def delete_conference(db: Session, conference_id: int):
     return True
 
 #update conference
-def update_conference(db: Session, conference_id: int, conference: schemas.ConferenceCreate):
-    db.query(models.Conference).filter(models.Conference.id == conference_id).update(conference.model_dump())
+def update_conference(db: Session, conference: schemas.ConferenceCreate, conference_id: int):
+    db_conference = db.query(models.Conference).filter(models.Conference.id == conference_id).first()
+    db_conference.name = conference.name
+    db_conference.location = conference.location
+    db_conference.start_date = conference.start_date
+    db_conference.end_date = conference.end_date
+    db_conference.description = conference.description
     db.commit()
-    return True
+    db.refresh(db_conference)
+    return db_conference

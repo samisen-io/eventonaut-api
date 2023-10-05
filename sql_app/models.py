@@ -14,7 +14,6 @@ class User(Base):
 
     conferences = relationship("Conference", back_populates="owner")
 
-
 #class to define Conference table
 class Conference(Base):
     __tablename__ = "conferences"
