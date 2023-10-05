@@ -1,6 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy.orm import Session
-
 from . import crud, models, schemas
 from .database import SessionLocal, engine
 
@@ -25,12 +24,10 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     return crud.create_user(db=db, user=user)
 
-
 @app.get("/users/", response_model=list[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = crud.get_users(db, skip=skip, limit=limit)
     return users
-
 
 @app.get("/users/{user_id}", response_model=schemas.User)
 def read_user(user_id: int, db: Session = Depends(get_db)):
@@ -61,6 +58,38 @@ def read_conference(conference_id: int, db: Session = Depends(get_db)):
 @app.get("/conferences/name/{name}", response_model=schemas.Conference)
 def read_conference_by_name(name: str, db: Session = Depends(get_db)):
     db_conference = crud.get_conference_by_name(db, name=name)
+    if db_conference is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conference
+
+#get conference by location
+@app.get("/conferences/location/{location}", response_model=schemas.Conference)
+def read_conference_by_location(location: str, db: Session = Depends(get_db)):
+    db_conference = crud.get_conference_by_location(db, location=location)
+    if db_conference is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conference
+
+#get conference by start_date
+@app.get("/conferences/start_date/{start_date}", response_model=schemas.Conference)
+def read_conference_by_start_date(start_date: str, db: Session = Depends(get_db)):
+    db_conference = crud.get_conference_by_start_date(db, start_date=start_date)
+    if db_conference is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conference
+
+#get conference by end_date
+@app.get("/conferences/end_date/{end_date}", response_model=schemas.Conference)
+def read_conference_by_end_date(end_date: str, db: Session = Depends(get_db)):
+    db_conference = crud.get_conference_by_end_date(db, end_date=end_date)
+    if db_conference is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conference
+
+#get conference by description
+@app.get("/conferences/description/{description}", response_model=schemas.Conference)
+def read_conference_by_description(description: str, db: Session = Depends(get_db)):
+    db_conference = crud.get_conference_by_description(db, description=description)
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conference

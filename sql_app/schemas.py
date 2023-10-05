@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 #pydantic model for conference create
 class ConferenceCreate(BaseModel):
     name: str
@@ -16,14 +17,11 @@ class Conference(ConferenceCreate):
     class Config:
         orm_mode = True
 
-
 class UserBase(BaseModel):
     email: str
 
-
 class UserCreate(UserBase):
     password: str
-
 
 class User(UserBase):
     id: int
