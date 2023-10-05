@@ -1,5 +1,19 @@
 from pydantic import BaseModel
 
+#pydantic model for session create
+class SessionCreate(BaseModel):
+    name: str
+    start_time: str
+    end_time: str
+    description: str | None = None
+
+#pydantic model for session
+class Session(SessionCreate):
+    id: int
+    conference_id: int
+
+    class Config:
+        orm_mode = True
 
 #pydantic model for conference create
 class ConferenceCreate(BaseModel):
@@ -13,7 +27,7 @@ class ConferenceCreate(BaseModel):
 class Conference(ConferenceCreate):
     id: int
     owner_id: int
-
+    sessions: list[Session] = []
     class Config:
         orm_mode = True
 

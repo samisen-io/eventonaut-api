@@ -70,3 +70,50 @@ def update_conference(db: Session, conference: schemas.ConferenceCreate, confere
     db.commit()
     db.refresh(db_conference)
     return db_conference
+
+#crud for session
+def get_sessions(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Session).offset(skip).limit(limit).all()
+
+def create_conference_session(db: Session, session: schemas.SessionCreate, conference_id: int):
+    db_session = models.Session(**session.model_dump(), conference_id=conference_id)
+    db.add(db_session)
+    db.commit()
+    db.refresh(db_session)
+    return db_session
+
+def get_session(db: Session, session_id: int):
+    return db.query(models.Session).filter(models.Session.id == session_id).first()
+
+def get_session_by_name(db: Session, name: str):
+    return db.query(models.Session).filter(models.Session.name == name).first()
+
+def get_session_by_start_time(db: Session, start_time: str):
+    return db.query(models.Session).filter(models.Session.start_time == start_time).first()
+
+def get_session_by_end_time(db: Session, end_time: str):
+    return db.query(models.Session).filter(models.Session.end_time == end_time).first()
+
+def get_session_by_description(db: Session, description: str):
+    return db.query(models.Session).filter(models.Session.description == description).first()
+
+#get sessions by conference_id
+def get_sessions_by_conference_id(db: Session, conference_id: int):
+    return db.query(models.Session).filter(models.Session.conference_id == conference_id).all()
+
+#delete session
+def delete_session(db: Session, session_id: int):
+    db.query(models.Session).filter(models.Session.id == session_id).delete()
+    db.commit()
+    return True
+
+#update session
+def update_session(db: Session, session: schemas.SessionCreate, session_id: int):
+    db_session = db.query(models.Session).filter(models.Session.id == session_id).first()
+    db_session.name = session.name
+    db_session.start_time = session.start_time
+    db_session.end_time = session.end_time
+    db_session.description = session.description
+    db.commit()
+    db.refresh(db_session)
+    return db_session

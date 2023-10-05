@@ -127,3 +127,55 @@ def delete_conferences_by_owner(owner_id: int, db: Session = Depends(get_db)):
     for conference in db_conferences:
         crud.delete_conference(db=db, conference_id=conference.id)
     return {"message": "Conferences deleted successfully"}
+
+#session crud
+@app.post("/sessions/", response_model=schemas.Session)
+def create_session_for_conference(
+    conference_id: int, session: schemas.SessionCreate, db: Session = Depends(get_db)
+):
+    return crud.create_conference_session(db=db, session=session, conference_id=conference_id)
+
+@app.get("/sessions/", response_model=list[schemas.Session])
+def read_sessions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    sessions = crud.get_sessions(db, skip=skip, limit=limit)
+    return sessions
+
+@app.get("/sessions/{session_id}", response_model=schemas.Session)
+def read_session(session_id: int, db: Session = Depends(get_db)):
+    db_session = crud.get_session(db, session_id=session_id)
+    if db_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return db_session
+
+@app.get("/sessions/name/{name}", response_model=schemas.Session)
+def read_session_by_name(name: str, db: Session = Depends(get_db)):
+    db_session = crud.get_session_by_name(db, name=name)
+    if db_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return db_session
+
+#update session
+@app.put("/sessions/{session_id}", response_model=schemas.Session)
+def update_session(session_id: int, session: schemas.SessionCreate, db: Session = Depends(get_db)):
+    db_session = crud.get_session(db, session_id=session_id)
+    if db_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return crud.update_session(db=db, session=session, session_id=session_id)
+
+#delete session
+@app.delete("/sessions/{session_id}")
+def delete_session(session_id: int, db: Session = Depends(get_db)):
+    db_session = crud.get_session(db, session_id=session_id)
+    if db_session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return crud.delete_session(db=db, session_id=session_id)
+
+#delete all sessions by conference id
+@app.delete("/sessions/conference/{conference_id}")
+def delete_sessions_by_conference(conference_id: int, db: Session = Depends(get_db)):
+    db_sessions = crud.get_sessions_by_conference_id(db, conference_id=conference_id)
+    if not db_sessions:
+        raise HTTPException(status_code=404, detail="No sessions found for conference")
+    for session in db_sessions:
+        crud.delete_session(db=db, session_id=session.id)
+    return {"message": "Sessions deleted successfully"}
