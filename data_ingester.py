@@ -1,7 +1,5 @@
 #class that provides methods to ingest data from a file
 
-
-
 #function that takes filename and retrieves the fole to process it
 def ingest_file(filename):
     #open file
@@ -9,7 +7,6 @@ def ingest_file(filename):
     #read file
     file.read()
     validate_file(file)
-    
     #close file
     file.close()
     #return file
