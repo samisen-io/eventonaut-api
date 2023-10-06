@@ -1,17 +1,11 @@
-from fastapi import APIRouter, UploadFile, FastAPI
+from fastapi import APIRouter, UploadFile
 from pathlib import Path
 from ..data_ingestion import createVectorDb
 from ..data_query import query_document
 import os
 import logging
 
-router = FastAPI()
-# router = APIRouter()
-
-
-
-# upload_folder = "../files"
-# Path(upload_folder).mkdir(parents=True, exist_ok=True)
+router = APIRouter()
 
 app_folder = 'app'
 
@@ -40,11 +34,11 @@ async def upload_csv_file(file: UploadFile):
         with open(file_path, "wb") as f:
             f.write(file.file.read())
         
-        #logging.info("Creating vector database")
+        logging.info("Creating vector database")
 
         createVectorDb()
         
-        #logging.info("Vector database created")
+        logging.info("Vector database created")
         return {"filename": file.filename}
     else:
         return {"error": "Only CSV files are allowed."}

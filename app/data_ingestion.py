@@ -22,6 +22,8 @@ def createVectorDb():
         
     file_path = os.path.join(files_folder, 'sessions.csv')
     
+    data = None
+    flag = 0
     delimiters = [',', ';', '|', '\t', ':']
     for i in delimiters:
         try:
@@ -29,23 +31,30 @@ def createVectorDb():
                 'delimiter': i,
             })
             data = loader.load()
-            embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-
-            # Define the path to the vector_db folder within the app folder
-            vector_db_folder = os.path.join(app_folder, 'vector_db')
-            if not os.path.exists(vector_db_folder):
-                os.makedirs(vector_db_folder)
-            
-            # save vectors to chromadb
-            conference_id = '12345' # this has to resolved later
-            persist_directory = os.path.join(vector_db_folder, 'db_'+conference_id)
-            if not os.path.exists(persist_directory):
-                os.makedirs(persist_directory)
-                
-            Chroma.from_documents(documents=data, embedding=embedding_function, persist_directory=persist_directory)
+            flag = 1
             break
+        
         except:
-            #print("something went wrong")
             continue
+    
+    if flag == 0:
+        print("No delimiter found")
+        exit()
+    
+    embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+
+    # Define the path to the vector_db folder within the app folder
+    vector_db_folder = os.path.join(app_folder, 'vector_db')
+    if not os.path.exists(vector_db_folder):
+        os.makedirs(vector_db_folder)
+    
+    # save vectors to chromadb
+    conference_id = '12345' # this has to resolved later
+    persist_directory = os.path.join(vector_db_folder, 'db_'+conference_id)
+    if not os.path.exists(persist_directory):
+        os.makedirs(persist_directory)
+            
+    Chroma.from_documents(documents=data, embedding=embedding_function, persist_directory=persist_directory)
+
         
         
