@@ -3,8 +3,8 @@ import shutil
 from fastapi import FastAPI, File, UploadFile,Form
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
-from Chatbot_Data_Ingestion import createVectorDb
-from Chatbot_Data_Retrival import query_document
+from chatbot_app.Chatbot_Data_Ingestion import createVectorDb
+from chatbot_app.Chatbot_Data_Retrival import query_document
 from pathlib import Path
 
 app = FastAPI()
@@ -18,7 +18,7 @@ async def query_document_endpoint(question: str):
     answer = query_document(question)
     return {"answer": answer}
 
-upload_folder = "files"
+upload_folder = "chatbot_app/files"
 Path(upload_folder).mkdir(parents=True, exist_ok=True)
 
 @app.post("/upload_csv_file/")

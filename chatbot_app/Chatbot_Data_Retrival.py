@@ -14,7 +14,7 @@ def query_document(question):
         exit()
     
     conference_id = '12345' # this has to be resolved later
-    vectordb = 'vector_db'
+    vectordb = 'chatbot_app/vector_db'
     os.makedirs(vectordb, exist_ok=True)
     persist_directory = vectordb+'/db_'+conference_id
     embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -24,3 +24,5 @@ def query_document(question):
     history = []
     
     return chain({"question": question, "chat_history": history})["answer"]
+    
+# query_document("hello")
