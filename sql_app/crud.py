@@ -40,11 +40,11 @@ def get_conference_by_name(db: Session, name: str):
 def get_conference_by_location(db: Session, location: str):
     return db.query(models.Conference).filter(models.Conference.location == location).first()
 
-def get_conference_by_start_date(db: Session, start_date: str):
-    return db.query(models.Conference).filter(models.Conference.start_date == start_date).first()
+def get_conferences_by_start_date(db: Session, start_date: str):
+    return db.query(models.Conference).filter(models.Conference.start_date == start_date).all()
 
-def get_conference_by_end_date(db: Session, end_date: str):
-    return db.query(models.Conference).filter(models.Conference.end_date == end_date).first()
+def get_conferences_by_end_date(db: Session, end_date: str):
+    return db.query(models.Conference).filter(models.Conference.end_date == end_date).all()
 
 def get_conference_by_description(db: Session, description: str):
     return db.query(models.Conference).filter(models.Conference.description == description).first()
@@ -88,11 +88,17 @@ def get_session(db: Session, session_id: int):
 def get_session_by_name(db: Session, name: str):
     return db.query(models.Session).filter(models.Session.name == name).first()
 
+def get_session_by_date(db: Session, date: str):
+    return db.query(models.Session).filter(models.Session.date == date).first()
+
 def get_session_by_start_time(db: Session, start_time: str):
     return db.query(models.Session).filter(models.Session.start_time == start_time).first()
 
 def get_session_by_end_time(db: Session, end_time: str):
     return db.query(models.Session).filter(models.Session.end_time == end_time).first()
+
+def get_session_by_location(db: Session, location: str):
+    return db.query(models.Session).filter(models.Session.location == location).first()
 
 def get_session_by_description(db: Session, description: str):
     return db.query(models.Session).filter(models.Session.description == description).first()
@@ -111,8 +117,10 @@ def delete_session(db: Session, session_id: int):
 def update_session(db: Session, session: schemas.SessionCreate, session_id: int):
     db_session = db.query(models.Session).filter(models.Session.id == session_id).first()
     db_session.name = session.name
+    db_session.date = session.date
     db_session.start_time = session.start_time
     db_session.end_time = session.end_time
+    db_session.location = session.location
     db_session.description = session.description
     db.commit()
     db.refresh(db_session)

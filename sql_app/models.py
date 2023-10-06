@@ -38,6 +38,8 @@ class Session(Base):
     start_time = Column(String, index=True)
     end_time = Column(String, index=True)
     description = Column(String, index=True)
+    date = Column(String, index=True) 
+    location = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
 
     conference = relationship("Conference", back_populates="sessions")

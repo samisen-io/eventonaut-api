@@ -6,12 +6,13 @@ class SessionCreate(BaseModel):
     start_time: str
     end_time: str
     description: str | None = None
+    date: str | None = None
+    location: str | None = None
 
 #pydantic model for session
 class Session(SessionCreate):
     id: int
     conference_id: int
-
     class Config:
         orm_mode = True
 

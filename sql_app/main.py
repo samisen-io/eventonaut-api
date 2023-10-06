@@ -70,21 +70,21 @@ def read_conference_by_location(location: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conference
 
-#get conference by start_date
-@app.get("/conferences/start_date/{start_date}", response_model=schemas.Conference)
-def read_conference_by_start_date(start_date: str, db: Session = Depends(get_db)):
-    db_conference = crud.get_conference_by_start_date(db, start_date=start_date)
-    if db_conference is None:
+#get conferences by start_date
+@app.get("/conferences/start_date/{start_date}", response_model=list[schemas.Conference])
+def read_conferences_by_start_date(start_date: str, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_start_date(db, start_date=start_date)
+    if db_conferences is None:
         raise HTTPException(status_code=404, detail="Conference not found")
-    return db_conference
+    return db_conferences
 
-#get conference by end_date
-@app.get("/conferences/end_date/{end_date}", response_model=schemas.Conference)
-def read_conference_by_end_date(end_date: str, db: Session = Depends(get_db)):
-    db_conference = crud.get_conference_by_end_date(db, end_date=end_date)
-    if db_conference is None:
+#get conferences by end_date
+@app.get("/conferences/end_date/{end_date}", response_model=list[schemas.Conference])
+def read_conferences_by_end_date(end_date: str, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_end_date(db, end_date=end_date)
+    if db_conferences is None:
         raise HTTPException(status_code=404, detail="Conference not found")
-    return db_conference
+    return db_conferences
 
 #get conference by description
 @app.get("/conferences/description/{description}", response_model=schemas.Conference)
