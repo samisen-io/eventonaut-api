@@ -12,13 +12,39 @@ def get_user_by_email(db: Session, email: str):
 def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
+#create user
 def create_user(db: Session, user: schemas.UserCreate):
-    fake_hashed_password = user.password + "notreallyhashed"
-    db_user = models.User(email=user.email, hashed_password=fake_hashed_password)
+    db_user = models.User(**user.model_dump())
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
+#update user
+def update_user(db: Session, user: schemas.UserCreate, user_id: int):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    db_user.email = user.email
+    db_user.first_name = user.first_name
+    db_user.last_name = user.last_name
+    db_user.account_type = user.account_type
+    db_user.bussiness_type = user.bussiness_type
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+#delete user
+def delete_user(db: Session, user_id: int):
+    db.query(models.User).filter(models.User.id == user_id).delete()
+    db.commit()
+    return True
+
+#get user by account_type
+def get_users_by_account_type(db: Session, account_type: str):
+    return db.query(models.User).filter(models.User.account_type == account_type).all()
+
+#get user by bussiness_type
+def get_users_by_bussiness_type(db: Session, bussiness_type: str):
+    return db.query(models.User).filter(models.User.bussiness_type == bussiness_type).all()
 
 #crud for conference
 def get_conferences(db: Session, skip: int = 0, limit: int = 100):

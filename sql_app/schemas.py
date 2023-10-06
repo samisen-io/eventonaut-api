@@ -34,9 +34,14 @@ class Conference(ConferenceCreate):
 
 class UserBase(BaseModel):
     email: str
+    first_name: str
+    last_name: str
+    account_type: str
+    bussiness_type: str
 
+#pydantic model for user create
 class UserCreate(UserBase):
-    password: str
+    hashed_password: str
 
 class User(UserBase):
     id: int
