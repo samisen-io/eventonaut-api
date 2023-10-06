@@ -28,7 +28,7 @@ def createVectorDb():
             embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
 
             # save vectors to chromadb
-            conference_id = '12345' # this has to resolved later
+            conference_id = '12345' # this has to be resolved later
             persist_directory = 'vector_db/db_'+conference_id
             vectordb = Chroma.from_documents(documents=data, embedding=embedding_function, persist_directory=persist_directory)
             break

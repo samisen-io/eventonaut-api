@@ -13,7 +13,7 @@ def query_document(question):
         print('OpenAI API key not found in environment variables.')
         exit()
     
-    conference_id = '12345' # this has to resolved later
+    conference_id = '12345' # this has to be resolved later
     vectordb = 'vector_db'
     os.makedirs(vectordb, exist_ok=True)
     persist_directory = vectordb+'/db_'+conference_id
