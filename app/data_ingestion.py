@@ -12,21 +12,40 @@ def createVectorDb():
     if not api_key:
         print('OpenAI API key not found in environment variables.')
         exit()
+    
+    app_folder = 'app'
+
+    # Define the path to the vector_db folder within the app folder
+    files_folder = os.path.join(app_folder, 'files')
+    if not os.path.exists(files_folder):
+        os.makedirs(files_folder)
         
-    data = []
+    file_path = os.path.join(files_folder, 'sessions.csv')
+    
     delimiters = [',', ';', '|', '\t', ':']
     for i in delimiters:
         try:
-            loader = CSVLoader(file_path='files/sessions.csv', encoding='utf-8', source_column='id', csv_args={
+            loader = CSVLoader(file_path=file_path, encoding='utf-8', source_column='id', csv_args={
                 'delimiter': i,
             })
             data = loader.load()
             embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
 
+            # Define the path to the vector_db folder within the app folder
+            vector_db_folder = os.path.join(app_folder, 'vector_db')
+            if not os.path.exists(vector_db_folder):
+                os.makedirs(vector_db_folder)
+            
             # save vectors to chromadb
             conference_id = '12345' # this has to resolved later
-            persist_directory = 'vector_db/db_'+conference_id
-            vectordb = Chroma.from_documents(documents=data, embedding=embedding_function, persist_directory=persist_directory)
+            persist_directory = os.path.join(vector_db_folder, 'db_'+conference_id)
+            if not os.path.exists(persist_directory):
+                os.makedirs(persist_directory)
+                
+            Chroma.from_documents(documents=data, embedding=embedding_function, persist_directory=persist_directory)
             break
         except:
+            #print("something went wrong")
             continue
+        
+        
