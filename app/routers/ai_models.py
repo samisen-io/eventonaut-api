@@ -26,18 +26,13 @@ async def upload_csv_file(file: UploadFile):
     # Check if the uploaded file is a CSV file
     if file.filename.endswith(".csv"):
         # Generate a unique file path within the upload folder
-        file_path = os.path.join(files_folder, file.filename)
+        file_path = os.path.join(files_folder, 'sessions.csv')
 
         logging.info("Uploading file to %s" % file_path)
         
         # Save the uploaded CSV file to disk
         with open(file_path, "wb") as f:
-            f.write(file.file.read())
-            
-        new_file_path = os.path.join(files_folder, 'sessions.csv')
-        if os.path.exists(file_path):
-            os.rename(file_path, new_file_path)
-            
+            f.write(file.file.read())            
         
         logging.info("Creating vector database")
 
