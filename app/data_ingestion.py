@@ -15,7 +15,7 @@ def createVectorDb():
     
     app_folder = 'app'
 
-    # Define the path to the vector_db folder within the app folder
+    # # Define the path to the vector_db folder within the app folder
     files_folder = os.path.join(app_folder, 'files')
     if not os.path.exists(files_folder):
         os.makedirs(files_folder)

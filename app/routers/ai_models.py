@@ -33,6 +33,11 @@ async def upload_csv_file(file: UploadFile):
         # Save the uploaded CSV file to disk
         with open(file_path, "wb") as f:
             f.write(file.file.read())
+            
+        new_file_path = os.path.join(files_folder, 'sessions.csv')
+        if os.path.exists(file_path):
+            os.rename(file_path, new_file_path)
+            
         
         logging.info("Creating vector database")
 
