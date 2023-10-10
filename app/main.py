@@ -186,6 +186,14 @@ def read_session_by_name(name: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Session not found")
     return db_session
 
+#get sessions by conference id
+@app.get("/sessions/conference/{conference_id}", response_model=list[schemas.Session])
+def get_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_db)):
+    db_sessions = crud.get_sessions_by_conference_id(db, conference_id=conference_id)
+    if db_sessions is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return db_sessions
+
 #update session
 @app.put("/sessions/{session_id}", response_model=schemas.Session)
 def update_session(session_id: int, session: schemas.SessionCreate, db: Session = Depends(get_db)):
