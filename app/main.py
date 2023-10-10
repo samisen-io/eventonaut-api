@@ -186,6 +186,46 @@ def read_session_by_name(name: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Session not found")
     return db_session
 
+#get sessions by start_time
+@app.get("/sessions/start_time/{start_time}", response_model=list[schemas.Session])
+def read_sessions_by_start_time(start_time: str, db: Session = Depends(get_db)):
+    db_sessions = crud.get_sessions_by_start_time(db, start_time=start_time)
+    if db_sessions is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return db_sessions
+
+#get sessions by end_time
+@app.get("/sessions/end_time/{end_time}", response_model=list[schemas.Session])
+def read_sessions_by_end_time(end_time: str, db: Session = Depends(get_db)):
+    db_sessions = crud.get_sessions_by_end_time(db, end_time=end_time)
+    if db_sessions is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return db_sessions
+
+#get sessions by date
+@app.get("/sessions/date/{date}", response_model=list[schemas.Session])
+def read_sessions_by_date(date: str, db: Session = Depends(get_db)):
+    db_sessions = crud.get_sessions_by_date(db, date=date)
+    if db_sessions is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return db_sessions
+
+#get sessions by description
+@app.get("/sessions/description/{description}", response_model=list[schemas.Session])
+def read_sessions_by_description(description: str, db: Session = Depends(get_db)):
+    db_sessions = crud.get_sessions_by_description(db, description=description)
+    if db_sessions is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return db_sessions
+
+#get sessions by location
+@app.get("/sessions/location/{location}", response_model=list[schemas.Session])
+def read_sessions_by_location(location: str, db: Session = Depends(get_db)):
+    db_sessions = crud.get_sessions_by_location(db, location=location)
+    if db_sessions is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return db_sessions
+
 #get sessions by conference id
 @app.get("/sessions/conference/{conference_id}", response_model=list[schemas.Session])
 def get_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_db)):
