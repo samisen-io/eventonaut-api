@@ -111,23 +111,23 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, confe
 def get_session(db: Session, session_id: int):
     return db.query(models.Session).filter(models.Session.id == session_id).first()
 
-def get_session_by_name(db: Session, name: str):
-    return db.query(models.Session).filter(models.Session.name == name).first()
+def get_sessions_by_name(db: Session, name: str):
+    return db.query(models.Session).filter(models.Session.name == name).all()
 
-def get_session_by_date(db: Session, date: str):
-    return db.query(models.Session).filter(models.Session.date == date).first()
+def get_sessions_by_date(db: Session, date: str):
+    return db.query(models.Session).filter(models.Session.date == date).all()
 
-def get_session_by_start_time(db: Session, start_time: str):
-    return db.query(models.Session).filter(models.Session.start_time == start_time).first()
+def get_sessions_by_start_time(db: Session, start_time: str):
+    return db.query(models.Session).filter(models.Session.start_time == start_time).all()
 
-def get_session_by_end_time(db: Session, end_time: str):
-    return db.query(models.Session).filter(models.Session.end_time == end_time).first()
+def get_sessions_by_end_time(db: Session, end_time: str):
+    return db.query(models.Session).filter(models.Session.end_time == end_time).all()
 
-def get_session_by_location(db: Session, location: str):
-    return db.query(models.Session).filter(models.Session.location == location).first()
+def get_sessions_by_location(db: Session, location: str):
+    return db.query(models.Session).filter(models.Session.location == location).all()
 
-def get_session_by_description(db: Session, description: str):
-    return db.query(models.Session).filter(models.Session.description == description).first()
+def get_sessions_by_description(db: Session, description: str):
+    return db.query(models.Session).filter(models.Session.description == description).all()
 
 #get sessions by conference_id
 def get_sessions_by_conference_id(db: Session, conference_id: int):
