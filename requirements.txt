@@ -1,3 +1,6 @@
 uvicorn
 fastapi
 sqlalchemy
+langchain
+python-multipart
+sentence-transformers
