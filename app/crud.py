@@ -75,6 +75,26 @@ def get_conferences_by_end_date(db: Session, end_date: str):
 def get_conference_by_description(db: Session, description: str):
     return db.query(models.Conference).filter(models.Conference.description == description).first()
 
+#get conferences by name by owner_id
+def get_conferences_by_name_owner_id(db: Session, name: str, owner_id: int):
+    return db.query(models.Conference).filter(models.Conference.name == name, models.Conference.owner_id == owner_id).first()
+
+#get conferences by location by owner_id
+def get_conferences_by_location_owner_id(db: Session, location: str, owner_id: int):
+    return db.query(models.Conference).filter(models.Conference.location == location, models.Conference.owner_id == owner_id).first()
+
+#get conferences by start_date by owner_id
+def get_conferences_by_start_date_owner_id(db: Session, start_date: str, owner_id: int):
+    return db.query(models.Conference).filter(models.Conference.start_date == start_date, models.Conference.owner_id == owner_id).all()
+
+#get conferences by end_date by owner_id
+def get_conferences_by_end_date_owner_id(db: Session, end_date: str, owner_id: int):
+    return db.query(models.Conference).filter(models.Conference.end_date == end_date, models.Conference.owner_id == owner_id).all()
+
+#get conferences by description by owner_id
+def get_conferences_by_description_owner_id(db: Session, description: str, owner_id: int):
+    return db.query(models.Conference).filter(models.Conference.description == description, models.Conference.owner_id == owner_id).first()
+
 #get conferences by owner_id
 def get_conferences_by_owner_id(db: Session, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
@@ -111,8 +131,8 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, confe
 def get_session(db: Session, session_id: int):
     return db.query(models.Session).filter(models.Session.id == session_id).first()
 
-def get_sessions_by_name(db: Session, name: str):
-    return db.query(models.Session).filter(models.Session.name == name).all()
+def get_session_by_name(db: Session, name: str):
+    return db.query(models.Session).filter(models.Session.name == name).first()
 
 def get_sessions_by_date(db: Session, date: str):
     return db.query(models.Session).filter(models.Session.date == date).all()
@@ -128,6 +148,26 @@ def get_sessions_by_location(db: Session, location: str):
 
 def get_sessions_by_description(db: Session, description: str):
     return db.query(models.Session).filter(models.Session.description == description).all()
+
+#get sessions from date by conference_id
+def get_sessions_by_date_conference_id(db: Session, date: str, conference_id: int):
+    return db.query(models.Session).filter(models.Session.date == date, models.Session.conference_id == conference_id).all()
+
+#get sessions by start_time by conference_id
+def get_sessions_by_start_time_conference_id(db: Session, start_time: str, conference_id: int):
+    return db.query(models.Session).filter(models.Session.start_time == start_time, models.Session.conference_id == conference_id).all()
+
+#get sessions by end_time by conference_id
+def get_sessions_by_end_time_conference_id(db: Session, end_time: str, conference_id: int):
+    return db.query(models.Session).filter(models.Session.end_time == end_time, models.Session.conference_id == conference_id).all()
+
+#get sessions by location by conference_id
+def get_sessions_by_location_conference_id(db: Session, location: str, conference_id: int):
+    return db.query(models.Session).filter(models.Session.location == location, models.Session.conference_id == conference_id).all()
+
+#get sessions by description by conference_id
+def get_sessions_by_description_conference_id(db: Session, description: str, conference_id: int):
+    return db.query(models.Session).filter(models.Session.description == description, models.Session.conference_id == conference_id).all()
 
 #get sessions by conference_id
 def get_sessions_by_conference_id(db: Session, conference_id: int):
