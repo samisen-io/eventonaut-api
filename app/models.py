@@ -9,12 +9,16 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
+    first_name = Column(String, index=True)
+    last_name = Column(String, index=True)
+    account_type = Column(String, index=True)
+    bussiness_type = Column(String, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
 
     conferences = relationship("Conference", back_populates="owner")
 
-#class to define Conference table
+#class to create conference table and add relationship to session table
 class Conference(Base):
     __tablename__ = "conferences"
 
@@ -27,3 +31,19 @@ class Conference(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="conferences")
+    sessions = relationship("Session", back_populates="conference")
+
+# class to define session table
+class Session(Base):
+    __tablename__ = "sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    start_time = Column(String, index=True)
+    end_time = Column(String, index=True)
+    description = Column(String, index=True)
+    date = Column(String, index=True) 
+    location = Column(String, index=True)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+
+    conference = relationship("Conference", back_populates="sessions")
