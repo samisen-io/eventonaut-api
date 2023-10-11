@@ -1,4 +1,3 @@
-
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from .. import crud, schemas
@@ -40,21 +39,21 @@ def read_conference_by_location(location: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conference
 
-#get conference by start_date
-@router.get("/conferences/start_date/{start_date}", response_model=schemas.Conference)
-def read_conference_by_start_date(start_date: str, db: Session = Depends(get_db)):
-    db_conference = crud.get_conference_by_start_date(db, start_date=start_date)
-    if db_conference is None:
+#get conferences by start_date
+@router.get("/conferences/start_date/{start_date}", response_model=list[schemas.Conference])
+def read_conferences_by_start_date(start_date: str, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_start_date(db, start_date=start_date)
+    if db_conferences is None:
         raise HTTPException(status_code=404, detail="Conference not found")
-    return db_conference
+    return db_conferences
 
-#get conference by end_date
-@router.get("/conferences/end_date/{end_date}", response_model=schemas.Conference)
-def read_conference_by_end_date(end_date: str, db: Session = Depends(get_db)):
-    db_conference = crud.get_conference_by_end_date(db, end_date=end_date)
-    if db_conference is None:
+#get conferences by end_date
+@router.get("/conferences/end_date/{end_date}", response_model=list[schemas.Conference])
+def read_conferences_by_end_date(end_date: str, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_end_date(db, end_date=end_date)
+    if db_conferences is None:
         raise HTTPException(status_code=404, detail="Conference not found")
-    return db_conference
+    return db_conferences
 
 #get conference by description
 @router.get("/conferences/description/{description}", response_model=schemas.Conference)
@@ -63,6 +62,46 @@ def read_conference_by_description(description: str, db: Session = Depends(get_d
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conference
+
+#get conferences by name by owner_id
+@router.get("/conferences/name/{name}/owner/{owner_id}", response_model=schemas.Conference)
+def read_conferences_by_name_owner_id(name: str, owner_id: int, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_name_owner_id(db, name=name, owner_id=owner_id)
+    if db_conferences is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conferences
+
+#get conferences by location by owner_id
+@router.get("/conferences/location/{location}/owner/{owner_id}", response_model=schemas.Conference)
+def read_conferences_by_location_owner_id(location: str, owner_id: int, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_location_owner_id(db, location=location, owner_id=owner_id)
+    if db_conferences is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conferences
+
+#get conferences by start_date by owner_id
+@router.get("/conferences/start_date/{start_date}/owner/{owner_id}", response_model=list[schemas.Conference])
+def read_conferences_by_start_date_owner_id(start_date: str, owner_id: int, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_start_date_owner_id(db, start_date=start_date, owner_id=owner_id)
+    if db_conferences is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conferences
+
+#get conferences by end_date by owner_id
+@router.get("/conferences/end_date/{end_date}/owner/{owner_id}", response_model=list[schemas.Conference])
+def read_conferences_by_end_date_owner_id(end_date: str, owner_id: int, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_end_date_owner_id(db, end_date=end_date, owner_id=owner_id)
+    if db_conferences is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conferences
+
+#get conferences by description by owner_id
+@router.get("/conferences/description/{description}/owner/{owner_id}", response_model=schemas.Conference)
+def read_conferences_by_description_owner_id(description: str, owner_id: int, db: Session = Depends(get_db)):
+    db_conferences = crud.get_conferences_by_description_owner_id(db, description=description, owner_id=owner_id)
+    if db_conferences is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conferences
 
 #get all conferences by owner_id
 @router.get("/conferences/owner/{owner_id}", response_model=list[schemas.Conference])

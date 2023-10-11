@@ -3,4 +3,7 @@ fastapi
 sqlalchemy
 langchain
 python-multipart
-sentence-transformers
+python-dotenv
+openai
+chromadb
+tiktoken
