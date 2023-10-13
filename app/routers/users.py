@@ -15,6 +15,8 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
 @router.get("/users/", response_model=list[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = crud.get_users(db, skip=skip, limit=limit)
+    if users is None or len(users) == 0:
+        raise HTTPException(status_code=404, detail="User not found")
     return users
 
 @router.get("/users/{user_id}", response_model=schemas.User)
@@ -44,7 +46,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
 @router.get("/users/account_type/{account_type}", response_model=list[schemas.User])
 def read_user_by_account_type(account_type: str, db: Session = Depends(get_db)):
     db_user = crud.get_users_by_account_type(db, account_type=account_type)
-    if db_user is None:
+    if db_user is None or len(db_user) == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
 
@@ -52,6 +54,6 @@ def read_user_by_account_type(account_type: str, db: Session = Depends(get_db)):
 @router.get("/users/bussiness_type/{bussiness_type}", response_model=list[schemas.User])
 def read_user_by_bussiness_type(bussiness_type: str, db: Session = Depends(get_db)):
     db_user = crud.get_users_by_bussiness_type(db, bussiness_type=bussiness_type)
-    if db_user is None:
+    if db_user is None or len(db_user) == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
