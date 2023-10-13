@@ -4,9 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+origins = ["http://127.0.0.1:8000/","https://conference-assitant-09086b978eb6.herokuapp.com/"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], #TODO: Change this to the frontend URL
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
