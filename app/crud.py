@@ -60,11 +60,11 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
 def get_conference(db: Session, conference_id: int):
     return db.query(models.Conference).filter(models.Conference.id == conference_id).first()
 
-def get_conference_by_name(db: Session, name: str):
-    return db.query(models.Conference).filter(models.Conference.name == name).first()
+def get_conferences_by_name(db: Session, name: str):
+    return db.query(models.Conference).filter(models.Conference.name == name).all()
 
-def get_conference_by_location(db: Session, location: str):
-    return db.query(models.Conference).filter(models.Conference.location == location).first()
+def get_conferences_by_location(db: Session, location: str):
+    return db.query(models.Conference).filter(models.Conference.location == location).all()
 
 def get_conferences_by_start_date(db: Session, start_date: str):
     return db.query(models.Conference).filter(models.Conference.start_date == start_date).all()
@@ -72,8 +72,8 @@ def get_conferences_by_start_date(db: Session, start_date: str):
 def get_conferences_by_end_date(db: Session, end_date: str):
     return db.query(models.Conference).filter(models.Conference.end_date == end_date).all()
 
-def get_conference_by_description(db: Session, description: str):
-    return db.query(models.Conference).filter(models.Conference.description == description).first()
+def get_conferences_by_description(db: Session, description: str):
+    return db.query(models.Conference).filter(models.Conference.description == description).all()
 
 #get conferences by name by owner_id
 def get_conferences_by_name_owner_id(db: Session, name: str, owner_id: int):
@@ -131,8 +131,8 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, confe
 def get_session(db: Session, session_id: int):
     return db.query(models.Session).filter(models.Session.id == session_id).first()
 
-def get_session_by_name(db: Session, name: str):
-    return db.query(models.Session).filter(models.Session.name == name).first()
+def get_sessions_by_name(db: Session, name: str):
+    return db.query(models.Session).filter(models.Session.name == name).all()
 
 def get_sessions_by_date(db: Session, date: str):
     return db.query(models.Session).filter(models.Session.date == date).all()
