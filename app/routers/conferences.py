@@ -26,15 +26,15 @@ def read_conference(conference_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conference
 
-@router.get("/conferences/name/{name}", response_model=schemas.Conference)
+@router.get("/conferences/name/{name}", response_model=list[schemas.Conference])
 def read_conferences_by_name(name: str, db: Session = Depends(get_db)):
     db_conference = crud.get_conferences_by_name(db, name=name)
-    if db_conference is None or len(db_conference) == 0:
+    if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conference
 
 #get conference by location
-@router.get("/conferences/location/{location}", response_model=schemas.Conference)
+@router.get("/conferences/location/{location}", response_model=list[schemas.Conference])
 def read_conferences_by_location(location: str, db: Session = Depends(get_db)):
     db_conference = crud.get_conferences_by_location(db, location=location)
     if db_conference is None or len(db_conference) == 0:
@@ -58,7 +58,7 @@ def read_conferences_by_end_date(end_date: str, db: Session = Depends(get_db)):
     return db_conferences
 
 #get conference by description
-@router.get("/conferences/description/{description}", response_model=schemas.Conference)
+@router.get("/conferences/description/{description}", response_model=list[schemas.Conference])
 def read_conferences_by_description(description: str, db: Session = Depends(get_db)):
     db_conference = crud.get_conferences_by_description(db, description=description)
     if db_conference is None or len(db_conference) == 0:
@@ -66,7 +66,7 @@ def read_conferences_by_description(description: str, db: Session = Depends(get_
     return db_conference
 
 #get conferences by name by owner_id
-@router.get("/conferences/name/{name}/owner/{owner_id}", response_model=schemas.Conference)
+@router.get("/conferences/name/{name}/owner/{owner_id}", response_model=list[schemas.Conference])
 def read_conferences_by_name_owner_id(name: str, owner_id: int, db: Session = Depends(get_db)):
     db_conferences = crud.get_conferences_by_name_owner_id(db, name=name, owner_id=owner_id)
     if db_conferences is None or len(db_conferences) == 0:
@@ -74,7 +74,7 @@ def read_conferences_by_name_owner_id(name: str, owner_id: int, db: Session = De
     return db_conferences
 
 #get conferences by location by owner_id
-@router.get("/conferences/location/{location}/owner/{owner_id}", response_model=schemas.Conference)
+@router.get("/conferences/location/{location}/owner/{owner_id}", response_model=list[schemas.Conference])
 def read_conferences_by_location_owner_id(location: str, owner_id: int, db: Session = Depends(get_db)):
     db_conferences = crud.get_conferences_by_location_owner_id(db, location=location, owner_id=owner_id)
     if db_conferences is None or len(db_conferences) == 0:
@@ -98,7 +98,7 @@ def read_conferences_by_end_date_owner_id(end_date: str, owner_id: int, db: Sess
     return db_conferences
 
 #get conferences by description by owner_id
-@router.get("/conferences/description/{description}/owner/{owner_id}", response_model=schemas.Conference)
+@router.get("/conferences/description/{description}/owner/{owner_id}", response_model=list[schemas.Conference])
 def read_conferences_by_description_owner_id(description: str, owner_id: int, db: Session = Depends(get_db)):
     db_conferences = crud.get_conferences_by_description_owner_id(db, description=description, owner_id=owner_id)
     if db_conferences is None or len(db_conferences) == 0:

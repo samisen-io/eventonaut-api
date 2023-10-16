@@ -26,7 +26,7 @@ def read_session(session_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Session not found")
     return db_session
 
-@router.get("/sessions/name/{name}", response_model=schemas.Session)
+@router.get("/sessions/name/{name}", response_model=list[schemas.Session])
 def read_sessions_by_name(name: str, db: Session = Depends(get_db)):
     db_session = crud.get_sessions_by_name(db, name=name)
     if db_session is None or len(db_session) == 0:
