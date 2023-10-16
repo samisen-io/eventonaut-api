@@ -1,14 +1,18 @@
 from fastapi import Depends, FastAPI, HTTPException
 from .routers import ai_models, users, conferences, ai_models,sessions
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
 
 app = FastAPI()
 
-origins = ["*"]
+load_dotenv()
+
+CONFERENCE_PORTAL_LINKS = os.environ.get("CONFERENCE_PORTAL_LINKS").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=CONFERENCE_PORTAL_LINKS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
