@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import datetime
 
 #pydantic model for session create
 class SessionCreate(BaseModel):
@@ -47,5 +48,18 @@ class User(UserBase):
     id: int
     is_active: bool
     conferences: list[Conference] = []
+    class Config:
+        orm_mode = True
+
+#pydantic model for settings create
+class SettingsCreate(BaseModel):
+    body: str
+
+#pydantic model for settings
+class Settings(SettingsCreate):
+    id: int
+    conference_id: int
+    created_on: datetime
+    updated_on: datetime
     class Config:
         orm_mode = True

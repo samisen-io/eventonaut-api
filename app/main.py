@@ -1,5 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException
-from .routers import ai_models, users, conferences, ai_models,sessions
+from .routers import ai_models, users, conferences, ai_models, sessions, settings
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
@@ -22,6 +22,7 @@ app.add_middleware(
 app.include_router(users.router)
 app.include_router(conferences.router)
 app.include_router(sessions.router)
+app.include_router(settings.router)
 app.include_router(ai_models.router)
 
 @app.get("/")

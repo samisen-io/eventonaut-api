@@ -5,7 +5,7 @@ from ..data_query import query_document
 import os
 import logging
 
-router = APIRouter()
+router = APIRouter(tags=["ai_models"])
 
 app_folder = 'app'
 
