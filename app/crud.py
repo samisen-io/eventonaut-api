@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-
+from datetime import datetime
 from . import models, schemas
 
 
@@ -222,6 +222,14 @@ def get_settings_by_updated_on(db: Session, updated_on: str):
 
 def get_settings_by_body(db: Session, body: str):
     return db.query(models.Settings).filter(models.Settings.body == body).all()
+
+#get settings by created_on by conference_id and compares only date
+def get_settings_by_created_on_conference_id_date(db: Session, created_on: str, conference_id: int):
+    return db.query(models.Settings).filter(models.Settings.created_on.like(created_on+'%'), models.Settings.conference_id == conference_id).all()
+
+#get settings by updated_on by conference_id and compares only date
+def get_settings_by_updated_on_conference_id_date(db: Session, updated_on: str, conference_id: int):
+    return db.query(models.Settings).filter(models.Settings.updated_on.like(updated_on+'%'), models.Settings.conference_id == conference_id).all()
 
 #get settings by created_on by conference_id
 def get_settings_by_created_on_conference_id(db: Session, created_on: str, conference_id: int):

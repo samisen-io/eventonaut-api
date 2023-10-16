@@ -57,6 +57,42 @@ def delete_settings(conference_id: int, settings_id: int, db: Session = Depends(
         raise HTTPException(status_code=404, detail="Settings not found")
     return crud.delete_settings(db=db, settings_id=settings_id, conference_id=conference_id)
 
+# get all settings by conference id and created on
+@router.get("/settings/conference/{conference_id}/{created_on}", response_model=list[schemas.Settings])
+def read_settings_by_conference_id_created_on(conference_id: int, created_on: str, db: Session = Depends(get_db)):
+    if len(created_on) == 8:
+        try:
+            date_str = str(datetime.strptime(created_on, '%d-%m-%y').date())
+        except:
+            raise HTTPException(status_code=400, detail="Invalid Date Format")
+    elif len(created_on) == 10:
+        try:
+            date_str = str(datetime.strptime(created_on, '%d-%m-%Y').date())
+        except:
+            raise HTTPException(status_code=400, detail="Invalid Date Format")
+    else:
+        raise HTTPException(status_code=400, detail="Invalid Date Format")
+    settings = crud.get_settings_by_created_on_conference_id_date(db, conference_id=conference_id, created_on=date_str)
+    if settings is None or len(settings) == 0:
+        raise HTTPException(status_code=404, detail="Settings not found")
+    return settings
 
-
-
+# get all settings by conference id and updated on
+@router.get("/settings/conference/{conference_id}/{updated_on}", response_model=list[schemas.Settings])
+def read_settings_by_conference_id_updated_on(conference_id: int, updated_on: str, db: Session = Depends(get_db)):
+    if len(updated_on) == 8:
+        try:
+            date_str = str(datetime.strptime(updated_on, '%d-%m-%y').date())
+        except:
+            raise HTTPException(status_code=400, detail="Invalid Date Format")
+    elif len(updated_on) == 10:
+        try:
+            date_str = str(datetime.strptime(updated_on, '%d-%m-%Y').date())
+        except:
+            raise HTTPException(status_code=400, detail="Invalid Date Format")
+    else:
+        raise HTTPException(status_code=400, detail="Invalid Date Format")
+    settings = crud.get_settings_by_updated_on_conference_id_date(db, conference_id=conference_id, updated_on=date_str)
+    if settings is None or len(settings) == 0:
+        raise HTTPException(status_code=404, detail="Settings not found")
+    return len(date_str)
