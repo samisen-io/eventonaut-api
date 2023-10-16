@@ -78,11 +78,11 @@ def get_conferences_by_description(db: Session, description: str):
 
 #get conferences by name by owner_id
 def get_conferences_by_name_owner_id(db: Session, name: str, owner_id: int):
-    return db.query(models.Conference).filter(models.Conference.name == name, models.Conference.owner_id == owner_id).first()
+    return db.query(models.Conference).filter(models.Conference.name == name, models.Conference.owner_id == owner_id).all()
 
 #get conferences by location by owner_id
 def get_conferences_by_location_owner_id(db: Session, location: str, owner_id: int):
-    return db.query(models.Conference).filter(models.Conference.location == location, models.Conference.owner_id == owner_id).first()
+    return db.query(models.Conference).filter(models.Conference.location == location, models.Conference.owner_id == owner_id).all()
 
 #get conferences by start_date by owner_id
 def get_conferences_by_start_date_owner_id(db: Session, start_date: str, owner_id: int):
@@ -94,7 +94,7 @@ def get_conferences_by_end_date_owner_id(db: Session, end_date: str, owner_id: i
 
 #get conferences by description by owner_id
 def get_conferences_by_description_owner_id(db: Session, description: str, owner_id: int):
-    return db.query(models.Conference).filter(models.Conference.description == description, models.Conference.owner_id == owner_id).first()
+    return db.query(models.Conference).filter(models.Conference.description == description, models.Conference.owner_id == owner_id).all()
 
 #get conferences by owner_id
 def get_conferences_by_owner_id(db: Session, owner_id: int):
