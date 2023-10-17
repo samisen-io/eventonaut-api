@@ -1,6 +1,9 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 from . import models, schemas
+import json
+import pytz
 
 
 def get_user(db: Session, user_id: int):
@@ -201,58 +204,36 @@ def get_settings(db: Session, skip: int = 0, limit: int = 100):
 def get_settings_by_id(db: Session, settings_id: int):
     return db.query(models.Settings).filter(models.Settings.id == settings_id).first()
 
-def create_settings(db: Session, settings: schemas.SettingsCreate, conference_id: int):
-    db_settings = models.Settings(**settings.model_dump(), conference_id=conference_id)
+#create settings
+def create_settings(db: Session, body: dict, conference_id: int):
+    tz = pytz.timezone('Asia/Kolkata')
+    db_settings = models.Settings(body=body, conference_id=conference_id, created_on=datetime.now(tz), updated_on=datetime.now(tz))
     db.add(db_settings)
     db.commit()
     db.refresh(db_settings)
     return db_settings
 
-def get_settings_by_conference_id_settings_id(db: Session, conference_id: int, settings_id: int):
-    return db.query(models.Settings).filter(models.Settings.id == settings_id,models.Settings.conference_id==conference_id).first()
-
 def get_settings_by_conference_id(db: Session, conference_id: int):
     return db.query(models.Settings).filter(models.Settings.conference_id == conference_id).first()
 
-def get_settings_by_created_on(db: Session, created_on: str):
-    return db.query(models.Settings).filter(models.Settings.created_on == created_on).all()
-
-def get_settings_by_updated_on(db: Session, updated_on: str):
-    return db.query(models.Settings).filter(models.Settings.updated_on == updated_on).all()
-
 def get_settings_by_body(db: Session, body: str):
     return db.query(models.Settings).filter(models.Settings.body == body).all()
-
-#get settings by created_on by conference_id and compares only date
-def get_settings_by_created_on_conference_id_date(db: Session, created_on: str, conference_id: int):
-    return db.query(models.Settings).filter(models.Settings.created_on.like(created_on+'%'), models.Settings.conference_id == conference_id).all()
-
-#get settings by updated_on by conference_id and compares only date
-def get_settings_by_updated_on_conference_id_date(db: Session, updated_on: str, conference_id: int):
-    return db.query(models.Settings).filter(models.Settings.updated_on.like(updated_on+'%'), models.Settings.conference_id == conference_id).all()
-
-#get settings by created_on by conference_id
-def get_settings_by_created_on_conference_id(db: Session, created_on: str, conference_id: int):
-    return db.query(models.Settings).filter(models.Settings.created_on == created_on, models.Settings.conference_id == conference_id).all()
-
-#get settings by updated_on by conference_id
-def get_settings_by_updated_on_conference_id(db: Session, updated_on: str, conference_id: int):
-    return db.query(models.Settings).filter(models.Settings.updated_on == updated_on, models.Settings.conference_id == conference_id).all()
 
 #get settings by body by conference_id
 def get_settings_by_body_conference_id(db: Session, body: str, conference_id: int):
     return db.query(models.Settings).filter(models.Settings.body == body, models.Settings.conference_id == conference_id).all()
 
 #delete settings with conference id and settings id
-def delete_settings(db: Session, conference_id: int, settings_id: int):
-    db.query(models.Settings).filter(models.Settings.conference_id == conference_id, models.Settings.id == settings_id).delete()
+def delete_settings(db: Session, conference_id: int):
+    db.query(models.Settings).filter(models.Settings.conference_id == conference_id).delete()
     db.commit()
     return True
 
 #update settings
-def update_settings(db: Session, settings: schemas.SettingsCreate, conference_id: int, settings_id: int):
-    db_settings = db.query(models.Settings).filter(models.Settings.conference_id == conference_id, models.Settings.id == settings_id).first()
-    db_settings.body = settings.body
+def update_settings(db: Session, body: str, conference_id: int):
+    db_settings = db.query(models.Settings).filter(models.Settings.conference_id == conference_id).first()
+    db_settings.body = body
+    db_settings.updated_on = datetime.now(pytz.timezone('Asia/Kolkata'))
     db.commit()
     db.refresh(db_settings)
     return db_settings
