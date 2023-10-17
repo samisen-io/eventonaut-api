@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON,DATE
 from sqlalchemy.orm import relationship
 from pytz import timezone
 
@@ -26,8 +26,8 @@ class Conference(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     location = Column(String, index=True)
-    start_date = Column(String, index=True)
-    end_date = Column(String, index=True)
+    start_date = Column(DATE, index=True)
+    end_date = Column(DATE, index=True)
     description = Column(String, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
 
