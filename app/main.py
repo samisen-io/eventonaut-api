@@ -1,7 +1,6 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI
 from .routers import ai_models, users, conferences, ai_models, sessions, settings
 from fastapi.middleware.cors import CORSMiddleware
-from dotenv import load_dotenv
 
 app = FastAPI()
 

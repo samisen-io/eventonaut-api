@@ -1,7 +1,5 @@
 from pydantic import BaseModel
 from datetime import datetime
-from sqlalchemy.sql import func
-import json
 
 #pydantic model for session create
 class SessionCreate(BaseModel):

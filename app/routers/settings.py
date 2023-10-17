@@ -2,9 +2,6 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from .. import crud, schemas
 from ..dependencies import get_db
-from datetime import datetime, date
-import json
-import pytz
 
 router = APIRouter(tags=["settings"])
 
