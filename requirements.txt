@@ -1,6 +1,7 @@
 uvicorn
 fastapi
 sqlalchemy
+pytz
 langchain
 python-multipart
 python-dotenv
