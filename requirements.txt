@@ -9,3 +9,4 @@ chromadb
 tiktoken
 pandas
 openpyxl
+beautifulsoup4

@@ -7,6 +7,8 @@ import logging
 import csv
 import json
 import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
 router = APIRouter()
 
@@ -89,9 +91,49 @@ async def upload_session_file(file: UploadFile):
             df.to_csv(csv_file_path, index=False, sep=';', encoding='utf-8')
             
             createVectorDb()
+
             return {"filename": file.filename}
         except Exception as e:
             return {"error": "Failed to process the Excel file: " + str(e)}
 
     else:
-        return {"error": "Only CSV, xlsx and JSON files are allowed."}
+        return {"error": "Only CSV, JSON and Excel are allowed."}
+    
+@router.get("/web_url/")
+async def scrape_web_page(web_url: str):
+    try:
+        app_folder = 'app'
+        files_folder = os.path.join(app_folder, 'files')
+
+        if not os.path.exists(files_folder):
+            os.makedirs(files_folder)
+
+        file_path = os.path.join(files_folder, 'sessions.csv')
+
+        response = requests.get(web_url)
+
+        if response.status_code == 200:
+            html_content = response.text
+
+            # Parse the HTML content using BeautifulSoup
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            # Extract all text content from the page
+            all_text = soup.get_text()
+
+            # Split the text into passages based on double line breaks
+            passages = all_text.split('\n\n')
+
+            # Create a CSV file to store passages
+            with open(file_path, 'w', newline='', encoding='utf-8') as csv_file:
+                csv_writer = csv.writer(csv_file, delimiter=';')
+
+                # Write passages as separate rows in the CSV
+                for passage in passages:
+                    csv_writer.writerow([passage])
+
+            return {"message": "Web data extracted, categorized into passages, and saved to a CSV file.", "csv_file_path": file_path}
+        else:
+            return {"error": f"Failed to retrieve the web page. Status code: {response.status_code}"}
+    except Exception as e:
+        return {"error": "Failed to perform web scraping: " + str(e)}
