@@ -6,6 +6,7 @@ import os
 import logging
 import csv
 import json
+import pandas as pd
 
 router = APIRouter()
 
@@ -72,5 +73,25 @@ async def upload_session_file(file: UploadFile):
         createVectorDb()
             
         return {"filename": file.filename}
+    
+    elif file.filename.endswith(".xlsx"):
+        # Handle Excel files
+        file_path = os.path.join(files_folder, 'sessions.xlsx')
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
+        
+        # Read the Excel file into a DataFrame using pandas
+        try:
+            df = pd.read_excel(file_path)
+            
+            # Convert the DataFrame to CSV format
+            csv_file_path = os.path.join(files_folder, 'sessions.csv')
+            df.to_csv(csv_file_path, index=False, sep=';', encoding='utf-8')
+            
+            createVectorDb()
+            return {"filename": file.filename}
+        except Exception as e:
+            return {"error": "Failed to process the Excel file: " + str(e)}
+
     else:
-        return {"error": "Only CSV an JSON files are allowed."}
+        return {"error": "Only CSV, xlsx and JSON files are allowed."}
