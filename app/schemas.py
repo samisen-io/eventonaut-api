@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
+from sqlalchemy.sql import func
+import json
 
 #pydantic model for session create
 class SessionCreate(BaseModel):
@@ -51,13 +53,10 @@ class User(UserBase):
     class Config:
         orm_mode = True
 
-#pydantic model for settings create
-class SettingsCreate(BaseModel):
-    body: str
-
 #pydantic model for settings
-class Settings(SettingsCreate):
+class Settings(BaseModel):
     id: int
+    body: dict
     conference_id: int
     created_on: datetime
     updated_on: datetime

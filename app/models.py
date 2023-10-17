@@ -1,7 +1,8 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON
 from sqlalchemy.orm import relationship
 from datetime import datetime
-import pytz
+from sqlalchemy.sql import func
+from pytz import timezone
 
 from .database import Base
 
@@ -57,8 +58,9 @@ class Settings(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
-    created_on = Column(DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')))
-    updated_on = Column(DateTime, default=datetime.now(pytz.timezone('Asia/Kolkata')), onupdate=datetime.now(pytz.timezone('Asia/Kolkata')))
-    body = Column(String, index=True)
+    tz = timezone('Asia/Kolkata')
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    body = Column(JSON, index=True)
 
     conference = relationship("Conference", back_populates="settings")
