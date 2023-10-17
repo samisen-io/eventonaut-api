@@ -1,5 +1,6 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON
 from sqlalchemy.orm import relationship
+from pytz import timezone
 
 from .database import Base
 
@@ -32,6 +33,7 @@ class Conference(Base):
 
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")
+    settings = relationship("Settings", back_populates="conference")
 
 # class to define session table
 class Session(Base):
@@ -47,3 +49,16 @@ class Session(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
 
     conference = relationship("Conference", back_populates="sessions")
+
+#class to define settings table with id, conference id as foreign key, created on and updated on as datetime and body as a string
+class Settings(Base):
+    __tablename__ = "settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    tz = timezone('Asia/Kolkata')
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    body = Column(JSON, index=True)
+
+    conference = relationship("Conference", back_populates="settings")

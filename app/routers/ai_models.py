@@ -10,7 +10,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-router = APIRouter()
+router = APIRouter(tags=["ai_models"])
 
 @router.post("/query_document")
 async def query_document_endpoint(question: str):

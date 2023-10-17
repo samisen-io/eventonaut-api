@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from .. import crud, schemas
 from ..dependencies import get_db
 
-router = APIRouter()
+router = APIRouter(tags=["sessions"])
 
 #session crud
 @router.post("/sessions/", response_model=schemas.Session)
