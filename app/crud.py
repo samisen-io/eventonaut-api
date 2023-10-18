@@ -113,8 +113,8 @@ def get_conferences_by_owner_id(db: Session, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
 
 # get all conferences by owner_id and conference_id and between start_date and end_date order by start_date
-def get_conferences_by_owner_id_between_start_date_and_end_date(db: Session, owner_id: int, start_date: date, end_date: date):
-    return db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.start_date >= start_date, models.Conference.end_date <= end_date).order_by(models.Conference.start_date).all()
+def get_conferences_by_owner_id_between_start_date_and_end_date(db: Session, owner_id: int, filter_start_date: date, filter_end_date: date):
+    return db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.start_date >= filter_start_date, models.Conference.start_date <= filter_end_date).order_by(models.Conference.start_date).all()
 
 # delete conference by conference id
 def delete_conference(db: Session,owner_id: int, conference_id: int):

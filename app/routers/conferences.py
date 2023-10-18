@@ -156,15 +156,15 @@ def get_all_conferences_by_owner_id(owner_id: int, db: Session = Depends(get_db)
     return db_conferences
 
 # get all conferences by owner_id and conference id and between start_date and end_date
-@router.get("/conferences/owner_id/{owner_id}/start_date/{start_date}/end_date/{end_date}", response_model=list[schemas.Conference])
-def get_all_conferences_by_owner_id_between_start_date_and_end_date(owner_id: int, start_date: date, end_date: date, db: Session = Depends(get_db)):
+@router.get("/conferences/owner_id/{owner_id}/start_date/{filter_start_date}/end_date/{filter_end_date}", response_model=list[schemas.Conference])
+def get_all_conferences_by_owner_id_between_start_date_and_end_date(owner_id: int, filter_start_date: date, filter_end_date: date, db: Session = Depends(get_db)):
     if owner_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid id")
     if crud.get_user(db, user_id=owner_id) is None:
         raise HTTPException(status_code=404, detail="User not found")
-    if start_date > end_date:
+    if filter_start_date > filter_end_date:
         raise HTTPException(status_code=400, detail="Invalid date range")
-    db_conferences = crud.get_conferences_by_owner_id_between_start_date_and_end_date(db, owner_id=owner_id, start_date=start_date, end_date=end_date)
+    db_conferences = crud.get_conferences_by_owner_id_between_start_date_and_end_date(db, owner_id=owner_id, filter_start_date=filter_start_date, filter_end_date=filter_end_date)
     if db_conferences is None or len(db_conferences) == 0:
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conferences
