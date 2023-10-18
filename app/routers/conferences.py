@@ -83,6 +83,18 @@ def get_all_conferences_by_description(description: str, db: Session = Depends(g
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conference
 
+# get conference by owner id and conference id
+@router.get("/conferences/owner_id/{owner_id}/conference/{conference_id}", response_model=schemas.Conference)
+def get_conference_by_owner_id_conference_id(owner_id: int, conference_id: int, db: Session = Depends(get_db)):
+    if owner_id <= 0 or conference_id <= 0:
+        raise HTTPException(status_code=400, detail="Invalid id or conference id")
+    if crud.get_user(db, user_id=owner_id) is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    db_conference = crud.get_conference_by_owner_id(db, owner_id=owner_id, conference_id=conference_id)
+    if db_conference is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return db_conference
+
 # get all conferences by owner_id by name
 @router.get("/conferences/owner/{owner_id}/name/{name}", response_model=list[schemas.Conference])
 def get_all_conferences_owner_id_by_name(owner_id: int, name: str, db: Session = Depends(get_db)):
