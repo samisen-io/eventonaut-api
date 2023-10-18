@@ -1,14 +1,14 @@
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, date, time
 
 #pydantic model for session create
 class SessionCreate(BaseModel):
     name: str
-    start_time: str
-    end_time: str
-    description: str | None = None
-    date: str | None = None
-    location: str | None = None
+    start_time: time
+    end_time: time
+    description: str 
+    date: date
+    location: str 
 
 #pydantic model for session
 class Session(SessionCreate):
@@ -21,8 +21,8 @@ class Session(SessionCreate):
 class ConferenceCreate(BaseModel):
     name: str
     location: str
-    start_date: str
-    end_date: str
+    start_date: date
+    end_date: date
     description: str | None = None
 
 #pydantic model for conference

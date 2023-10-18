@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from datetime import datetime
-from . import models, schemas
+from datetime import datetime, date, time
+from . import models, schemas, hashing
 import pytz
 
 
@@ -11,12 +11,22 @@ def get_user(db: Session, user_id: int):
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email.ilike(email)).first()
 
+# get email and password
+def get_user_by_email_and_password(db: Session, email: str, password: str):
+    user = db.query(models.User).filter(models.User.email.ilike(email)).first()
+    if user is None:
+        return False
+    if hashing.verify_password(password, user.hashed_password):
+        return user
+    return False
+
 def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
 #create user
 def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(**user.model_dump())
+    db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -48,10 +58,11 @@ def get_users_by_account_type(db: Session, account_type: str):
 def get_users_by_bussiness_type(db: Session, bussiness_type: str):
     return db.query(models.User).filter(models.User.bussiness_type == bussiness_type).all()
 
-#crud for conference
+# get all conferences
 def get_conferences(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Conference).offset(skip).limit(limit).all()
 
+# create conference
 def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
     db_conference = models.Conference(**conference.model_dump(), owner_id=user_id)
     db.add(db_conference)
@@ -59,57 +70,77 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db.refresh(db_conference)
     return db_conference
 
+# get conference by conference id
 def get_conference(db: Session, conference_id: int):
     return db.query(models.Conference).filter(models.Conference.id == conference_id).first()
 
+#get conference by owner id and conference id
+def get_conference_by_owner_id(db: Session, owner_id: int, conference_id: int):
+    return db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.id == conference_id).first()
+
+# get conference by name
 def get_conferences_by_name(db: Session, name: str):
     return db.query(models.Conference).filter(models.Conference.name == name).all()
 
+# get conference by location
 def get_conferences_by_location(db: Session, location: str):
     return db.query(models.Conference).filter(models.Conference.location == location).all()
 
-def get_conferences_by_start_date(db: Session, start_date: str):
+# get conference by start_date
+def get_conferences_by_start_date(db: Session, start_date: date):
     return db.query(models.Conference).filter(models.Conference.start_date == start_date).all()
 
+# get conference by end_date
 def get_conferences_by_end_date(db: Session, end_date: str):
     return db.query(models.Conference).filter(models.Conference.end_date == end_date).all()
 
+# get conference by description
 def get_conferences_by_description(db: Session, description: str):
     return db.query(models.Conference).filter(models.Conference.description == description).all()
 
-#get conferences by name by owner_id
-def get_conferences_by_name_owner_id(db: Session, name: str, owner_id: int):
+# get conferences by owner_id by name
+def get_conferences_owner_id_by_name(db: Session, name: str, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.name == name, models.Conference.owner_id == owner_id).all()
 
-#get conferences by location by owner_id
-def get_conferences_by_location_owner_id(db: Session, location: str, owner_id: int):
+# get conferences by owner_id by location
+def get_conferences_owner_id_by_location(db: Session, location: str, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.location == location, models.Conference.owner_id == owner_id).all()
 
-#get conferences by start_date by owner_id
-def get_conferences_by_start_date_owner_id(db: Session, start_date: str, owner_id: int):
+# get conferences by owner_id by start_date
+def get_conferences_owner_id_by_start_date(db: Session, start_date: str, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.start_date == start_date, models.Conference.owner_id == owner_id).all()
 
-#get conferences by end_date by owner_id
-def get_conferences_by_end_date_owner_id(db: Session, end_date: str, owner_id: int):
+# get conferences by owner_id by end_date
+def get_conferences_owner_id_by_end_date(db: Session, end_date: str, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.end_date == end_date, models.Conference.owner_id == owner_id).all()
 
-#get conferences by description by owner_id
-def get_conferences_by_description_owner_id(db: Session, description: str, owner_id: int):
+# get conferences by owner_id by description
+def get_conferences_owner_id_by_description(db: Session, description: str, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.description == description, models.Conference.owner_id == owner_id).all()
 
-#get conferences by owner_id
+# get conferences by owner_id
 def get_conferences_by_owner_id(db: Session, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
 
-#delete conference
-def delete_conference(db: Session, conference_id: int):
-    db.query(models.Conference).filter(models.Conference.id == conference_id).delete()
+# get all conferences by owner_id and conference_id and between start_date and end_date order by start_date
+def get_conferences_by_owner_id_between_start_date_and_end_date(db: Session, owner_id: int, filter_start_date: date, filter_end_date: date):
+    return db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.start_date >= filter_start_date, models.Conference.start_date <= filter_end_date).order_by(models.Conference.start_date).all()
+
+# delete conference by conference id
+def delete_conference(db: Session,owner_id: int, conference_id: int):
+    db.query(models.Conference).filter(models.Conference.id == conference_id, models.Conference.owner_id==owner_id).delete()
     db.commit()
     return True
 
-#update conference
-def update_conference(db: Session, conference: schemas.ConferenceCreate, conference_id: int):
-    db_conference = db.query(models.Conference).filter(models.Conference.id == conference_id).first()
+# delete all conferences by owner id
+def delete_all_conferences_of_owner_id(db: Session, owner_id: int):
+    db.query(models.Conference).filter(models.Conference.owner_id == owner_id).delete()
+    db.commit()
+    return True
+
+# update conference by owner id and conference id
+def update_conference(db: Session, conference: schemas.ConferenceCreate, owner_id: int, conference_id: int):
+    db_conference = db.query(models.Conference).filter(models.Conference.id == conference_id, models.Conference.owner_id == owner_id).first()
     db_conference.name = conference.name
     db_conference.location = conference.location
     db_conference.start_date = conference.start_date
@@ -133,47 +164,32 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, confe
 def get_session(db: Session, session_id: int):
     return db.query(models.Session).filter(models.Session.id == session_id).first()
 
-def get_sessions_by_name(db: Session, name: str):
-    return db.query(models.Session).filter(models.Session.name == name).all()
+def get_sessions_by_name(db: Session, conference_id:int, name: str):
+    return db.query(models.Session).filter(models.Session.conference_id == conference_id, models.Session.name == name).all()
 
-def get_sessions_by_date(db: Session, date: str):
-    return db.query(models.Session).filter(models.Session.date == date).all()
+def get_sessions_by_date(db: Session, conference_id:int, date: date):
+    return db.query(models.Session).filter(models.Session.conference_id==conference_id, models.Session.date==date, models.Session.date == date).all()
 
-def get_sessions_by_start_time(db: Session, start_time: str):
-    return db.query(models.Session).filter(models.Session.start_time == start_time).all()
+# get all sessions by conference_id and start time and compare only hours and minutes
+def get_sessions_by_start_time(db: Session, conference_id:int, start_time: time):
+    return db.query(models.Session).filter(models.Session.conference_id==conference_id, models.Session.start_time == start_time).all()
 
-def get_sessions_by_end_time(db: Session, end_time: str):
-    return db.query(models.Session).filter(models.Session.end_time == end_time).all()
+def get_sessions_by_end_time(db: Session, conference_id:int, end_time: time):
+    return db.query(models.Session).filter(models.Session.conference_id==conference_id, models.Session.end_time == end_time).all()
 
-def get_sessions_by_location(db: Session, location: str):
-    return db.query(models.Session).filter(models.Session.location == location).all()
+def get_sessions_by_location(db: Session, conference_id:int, location: str):
+    return db.query(models.Session).filter(models.Session.conference_id==conference_id, models.Session.location == location).all()
 
-def get_sessions_by_description(db: Session, description: str):
-    return db.query(models.Session).filter(models.Session.description == description).all()
-
-#get sessions from date by conference_id
-def get_sessions_by_date_conference_id(db: Session, date: str, conference_id: int):
-    return db.query(models.Session).filter(models.Session.date == date, models.Session.conference_id == conference_id).all()
-
-#get sessions by start_time by conference_id
-def get_sessions_by_start_time_conference_id(db: Session, start_time: str, conference_id: int):
-    return db.query(models.Session).filter(models.Session.start_time == start_time, models.Session.conference_id == conference_id).all()
-
-#get sessions by end_time by conference_id
-def get_sessions_by_end_time_conference_id(db: Session, end_time: str, conference_id: int):
-    return db.query(models.Session).filter(models.Session.end_time == end_time, models.Session.conference_id == conference_id).all()
-
-#get sessions by location by conference_id
-def get_sessions_by_location_conference_id(db: Session, location: str, conference_id: int):
-    return db.query(models.Session).filter(models.Session.location == location, models.Session.conference_id == conference_id).all()
-
-#get sessions by description by conference_id
-def get_sessions_by_description_conference_id(db: Session, description: str, conference_id: int):
-    return db.query(models.Session).filter(models.Session.description == description, models.Session.conference_id == conference_id).all()
+def get_sessions_by_description(db: Session, conference_id: int, description: str):
+    return db.query(models.Session).filter(models.Session.conference_id==conference_id, models.Session.description == description).all()
 
 #get sessions by conference_id
-def get_sessions_by_conference_id(db: Session, conference_id: int):
+def get_all_sessions_by_conference_id(db: Session, conference_id: int):
     return db.query(models.Session).filter(models.Session.conference_id == conference_id).all()
+
+# get sessions by conference_id and range of date
+def get_all_sessions_by_conference_id_between_date(db: Session, conference_id: int, filter_start_date: date, filter_end_date: date):
+    return db.query(models.Session).filter(models.Session.conference_id == conference_id, models.Session.date >= filter_start_date, models.Session.date <= filter_end_date).all()
 
 #delete session
 def delete_session(db: Session, session_id: int):
@@ -193,6 +209,48 @@ def update_session(db: Session, session: schemas.SessionCreate, session_id: int)
     db.commit()
     db.refresh(db_session)
     return db_session
+
+#crud for settings
+def get_settings(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Settings).offset(skip).limit(limit).all()
+
+#get settings by id
+def get_settings_by_id(db: Session, settings_id: int):
+    return db.query(models.Settings).filter(models.Settings.id == settings_id).first()
+
+#create settings
+def create_settings(db: Session, body: dict, conference_id: int):
+    tz = pytz.timezone('Asia/Kolkata')
+    db_settings = models.Settings(body=body, conference_id=conference_id, created_on=datetime.now(tz), updated_on=datetime.now(tz))
+    db.add(db_settings)
+    db.commit()
+    db.refresh(db_settings)
+    return db_settings
+
+def get_settings_by_conference_id(db: Session, conference_id: int):
+    return db.query(models.Settings).filter(models.Settings.conference_id == conference_id).first()
+
+def get_settings_by_body(db: Session, body: str):
+    return db.query(models.Settings).filter(models.Settings.body == body).all()
+
+#get settings by body by conference_id
+def get_settings_by_body_conference_id(db: Session, body: str, conference_id: int):
+    return db.query(models.Settings).filter(models.Settings.body == body, models.Settings.conference_id == conference_id).all()
+
+#delete settings with conference id and settings id
+def delete_settings(db: Session, conference_id: int):
+    db.query(models.Settings).filter(models.Settings.conference_id == conference_id).delete()
+    db.commit()
+    return True
+
+#update settings
+def update_settings(db: Session, body: str, conference_id: int):
+    db_settings = db.query(models.Settings).filter(models.Settings.conference_id == conference_id).first()
+    db_settings.body = body
+    db_settings.updated_on = datetime.now(pytz.timezone('Asia/Kolkata'))
+    db.commit()
+    db.refresh(db_settings)
+    return db_settings
 
 #crud for settings
 def get_settings(db: Session, skip: int = 0, limit: int = 100):

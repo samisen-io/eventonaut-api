@@ -6,7 +6,7 @@ from ..dependencies import get_db
 router = APIRouter(tags=["settings"])
 
 # create settings by conference id and take body as any valid JSON and convert it to string
-@router.post("/conference/{conference_id}", response_model=schemas.Settings)
+@router.post("/settings/{conference_id}", response_model=schemas.Settings)
 def create_settings(conference_id: int, body: dict, db: Session = Depends(get_db)):
     db_settings = crud.get_settings_by_conference_id(db, conference_id=conference_id)
     if db_settings:
@@ -16,7 +16,7 @@ def create_settings(conference_id: int, body: dict, db: Session = Depends(get_db
     return crud.create_settings(db=db, body=body, conference_id=conference_id)
 
 # get all settings
-@router.get("/settings", response_model=list[schemas.Settings])
+@router.get("/settings/", response_model=list[schemas.Settings])
 def read_settings(db: Session = Depends(get_db), skip: int = 0, limit: int = 100):
     settings = crud.get_settings(db, skip=skip, limit=limit)
     if settings is None or len(settings) == 0:
@@ -24,7 +24,7 @@ def read_settings(db: Session = Depends(get_db), skip: int = 0, limit: int = 100
     return settings
 
 # get settings by id
-@router.get("/settings/{settings_id}")
+@router.get("/settings/conference/{settings_id}")
 def read_settings_by_id(settings_id: int, db: Session = Depends(get_db)):
     if settings_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid settings id")
@@ -44,7 +44,7 @@ def read_settings_by_conference_id(conference_id: int, db: Session = Depends(get
     return settings
 
 # update settings by conference id and settings id
-@router.put("/conference/{conference_id}", response_model=schemas.Settings)
+@router.put("/settings/conference/{conference_id}", response_model=schemas.Settings)
 def update_settings(conference_id: int, body: dict, db: Session = Depends(get_db)):
     db_settings = crud.get_settings_by_conference_id(db, conference_id=conference_id)
     if db_settings is None:
@@ -54,7 +54,7 @@ def update_settings(conference_id: int, body: dict, db: Session = Depends(get_db
     return crud.update_settings(db=db, body=body, conference_id=conference_id)
 
 # delete settings by conference id and settings id
-@router.delete("/conference/{conference_id}")
+@router.delete("/settings/conference/{conference_id}")
 def delete_settings(conference_id: int, db: Session = Depends(get_db)):
     db_settings = crud.get_settings_by_conference_id(db, conference_id=conference_id)
     if db_settings is None:
