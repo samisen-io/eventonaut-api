@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON,DATE
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON, DATE, TIME
 from sqlalchemy.orm import relationship
 from pytz import timezone
 
@@ -41,10 +41,10 @@ class Session(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
-    start_time = Column(String, index=True)
-    end_time = Column(String, index=True)
+    start_time = Column(TIME, index=True)
+    end_time = Column(TIME, index=True)
     description = Column(String, index=True)
-    date = Column(String, index=True) 
+    date = Column(DATE, index=True) 
     location = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
 
