@@ -1,5 +1,8 @@
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, UploadFile
 from pathlib import Path
+
+from app.models import User
+from app.oauth2 import get_current_active_user
 from ..data_ingestion import createVectorDb
 from ..data_query import query_document
 import os
@@ -17,12 +20,12 @@ if not os.path.exists(files_folder):
     os.makedirs(files_folder)
 
 @router.post("/query_document")
-async def query_document_endpoint(question: str):
+async def query_document_endpoint(question: str, current_user: User = Depends(get_current_active_user)):
     answer = query_document(question)
     return {"answer": answer}
 
 @router.post("/upload_csv_file/")
-async def upload_csv_file(file: UploadFile):
+async def upload_csv_file(file: UploadFile, current_user: User = Depends(get_current_active_user)):
     # Check if the uploaded file is a CSV file
     if file.filename.endswith(".csv"):
         # Generate a unique file path within the upload folder
