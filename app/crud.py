@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from datetime import datetime,date
+from datetime import datetime, date, time
 from . import models, schemas
 import pytz
 
@@ -154,47 +154,32 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, confe
 def get_session(db: Session, session_id: int):
     return db.query(models.Session).filter(models.Session.id == session_id).first()
 
-def get_sessions_by_name(db: Session, name: str):
-    return db.query(models.Session).filter(models.Session.name == name).all()
+def get_sessions_by_name(db: Session, conference_id:int, name: str):
+    return db.query(models.Session).filter(models.Session.conference_id == conference_id, models.Session.name == name).all()
 
-def get_sessions_by_date(db: Session, date: str):
-    return db.query(models.Session).filter(models.Session.date == date).all()
+def get_sessions_by_date(db: Session, conference_id:int, date: date):
+    return db.query(models.Session).filter(models.Session.conference_id==conference_id, models.Session.date==date, models.Session.date == date).all()
 
-def get_sessions_by_start_time(db: Session, start_time: str):
-    return db.query(models.Session).filter(models.Session.start_time == start_time).all()
+# get all sessions by conference_id and start time and compare only hours and minutes
+def get_sessions_by_start_time(db: Session, conference_id:int, start_time: time):
+    return db.query(models.Session).filter(models.Session.conference_id==conference_id, models.Session.start_time == start_time).all()
 
-def get_sessions_by_end_time(db: Session, end_time: str):
-    return db.query(models.Session).filter(models.Session.end_time == end_time).all()
+def get_sessions_by_end_time(db: Session, conference_id:int, end_time: time):
+    return db.query(models.Session).filter(models.Session.conference_id==conference_id, models.Session.end_time == end_time).all()
 
-def get_sessions_by_location(db: Session, location: str):
-    return db.query(models.Session).filter(models.Session.location == location).all()
+def get_sessions_by_location(db: Session, conference_id:int, location: str):
+    return db.query(models.Session).filter(models.Session.conference_id==conference_id, models.Session.location == location).all()
 
-def get_sessions_by_description(db: Session, description: str):
-    return db.query(models.Session).filter(models.Session.description == description).all()
-
-#get sessions from date by conference_id
-def get_sessions_by_date_conference_id(db: Session, date: str, conference_id: int):
-    return db.query(models.Session).filter(models.Session.date == date, models.Session.conference_id == conference_id).all()
-
-#get sessions by start_time by conference_id
-def get_sessions_by_start_time_conference_id(db: Session, start_time: str, conference_id: int):
-    return db.query(models.Session).filter(models.Session.start_time == start_time, models.Session.conference_id == conference_id).all()
-
-#get sessions by end_time by conference_id
-def get_sessions_by_end_time_conference_id(db: Session, end_time: str, conference_id: int):
-    return db.query(models.Session).filter(models.Session.end_time == end_time, models.Session.conference_id == conference_id).all()
-
-#get sessions by location by conference_id
-def get_sessions_by_location_conference_id(db: Session, location: str, conference_id: int):
-    return db.query(models.Session).filter(models.Session.location == location, models.Session.conference_id == conference_id).all()
-
-#get sessions by description by conference_id
-def get_sessions_by_description_conference_id(db: Session, description: str, conference_id: int):
-    return db.query(models.Session).filter(models.Session.description == description, models.Session.conference_id == conference_id).all()
+def get_sessions_by_description(db: Session, conference_id: int, description: str):
+    return db.query(models.Session).filter(models.Session.conference_id==conference_id, models.Session.description == description).all()
 
 #get sessions by conference_id
-def get_sessions_by_conference_id(db: Session, conference_id: int):
+def get_all_sessions_by_conference_id(db: Session, conference_id: int):
     return db.query(models.Session).filter(models.Session.conference_id == conference_id).all()
+
+# get sessions by conference_id and range of date
+def get_all_sessions_by_conference_id_between_date(db: Session, conference_id: int, filter_start_date: date, filter_end_date: date):
+    return db.query(models.Session).filter(models.Session.conference_id == conference_id, models.Session.date >= filter_start_date, models.Session.date <= filter_end_date).all()
 
 #delete session
 def delete_session(db: Session, session_id: int):
