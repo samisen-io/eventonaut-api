@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from datetime import datetime, date, time
-from . import models, schemas
+from . import models, schemas, hashing
 import pytz
 
 
@@ -11,12 +11,22 @@ def get_user(db: Session, user_id: int):
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email.ilike(email)).first()
 
+# get email and password
+def get_user_by_email_and_password(db: Session, email: str, password: str):
+    user = db.query(models.User).filter(models.User.email.ilike(email)).first()
+    if user is None:
+        return False
+    if hashing.verify_password(password, user.hashed_password):
+        return user
+    return False
+
 def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
 #create user
 def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(**user.model_dump())
+    db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
