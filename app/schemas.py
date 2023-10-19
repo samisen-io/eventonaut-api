@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from datetime import datetime, date, time
+from datetime import date, time
 
 #pydantic model for settings
 class SettingsCreate(BaseModel):

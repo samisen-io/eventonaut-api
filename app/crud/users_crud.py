@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from .. import models, schemas, hashing
-from . import conferences_crud
 from datetime import datetime
 from pytz import timezone
 
