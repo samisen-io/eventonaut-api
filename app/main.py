@@ -16,7 +16,7 @@ app.add_middleware(
 )
 
 # Add the routers to the application with authentication middleware
-app.include_router(users.router, dependencies=[Depends(get_current_active_user)])
+app.include_router(users.router)
 app.include_router(conferences.router, dependencies=[Depends(get_current_active_user)])
 app.include_router(sessions.router, dependencies=[Depends(get_current_active_user)])
 app.include_router(settings.router, dependencies=[Depends(get_current_active_user)])

@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordBearer
 from app import token
 from .dependencies import get_db
-from app.crud import get_user_by_email
+from .crud import users_crud
 from app.routers.authentication import User
 from sqlalchemy.orm import Session
 
@@ -15,7 +15,7 @@ def get_current_user(db: Session = Depends(get_db),data: str = Depends(oauth_2_s
     
     token_data = token.verify_token(data, credentials_exception) 
     
-    user = get_user_by_email(db, email=token_data.username)
+    user = users_crud.get_user_by_email(db, email=token_data.username)
     if user is None:
         raise credentials_exception
     

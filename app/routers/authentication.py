@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from app.crud import get_user_by_email_and_password
+from ..crud import users_crud
 from ..dependencies import get_db
 from app.token import Token, create_access_token
 from sqlalchemy.orm import Session
@@ -22,7 +22,7 @@ class User(BaseModel):
     is_active: bool
 
 def authenticate_user(db: Session, username: str, password: str):
-    user =  get_user_by_email_and_password(db=db,email=username, password=password)
+    user =  users_crud.get_user_by_email_and_password(db=db,email=username, password=password)
     return user
 
 class LoginRequestModeL(BaseModel):
