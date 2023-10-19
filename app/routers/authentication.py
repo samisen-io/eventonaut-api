@@ -24,12 +24,13 @@ def authenticate_user(db: Session, username: str, password: str):
     user =  get_user_by_email_and_password(db=db,email=username, password=password)
     return user
 
-# class LoginRequestModeL(BaseModel):
-#     username: str
-#     password: str
+class LoginRequestModeL(BaseModel):
+    username: str
+    password: str
 
 @router.post("/login", response_model=Token)
-async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(db: Session = Depends(get_db), form_data: LoginRequestModeL= Depends()):
+# async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends()):
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password)
    
     if not user:
