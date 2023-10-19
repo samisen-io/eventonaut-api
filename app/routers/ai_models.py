@@ -1,4 +1,7 @@
-from fastapi import APIRouter, UploadFile
+from fastapi import APIRouter, Depends, UploadFile
+from app.oauth2 import get_current_active_user
+
+from app.routers.authentication import User
 from ..data_ingestion import createVectorDb
 from ..data_query import query_document
 import os
@@ -16,7 +19,7 @@ if not os.path.exists(files_folder):
     os.makedirs(files_folder)
 
 @router.get("/printsomething")
-async def print_something():#current_user: User = Depends(get_current_active_user)):
+async def print_something(current_user: User = Depends(get_current_active_user)):
     return {"message": "Hello World"}
 
 @router.post("/query_document")
