@@ -4,51 +4,34 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
-
-from app.hashing import verify_password
+from app.crud import get_user_by_email_and_password
+from ..dependencies import get_db
 from app.token import Token, create_access_token
+from sqlalchemy.orm import Session
 
 
 router = APIRouter(tags=["authentication"])
 
-db = {
-    "john": {
-        "username": "john",
-        "full_name": "John Doe",
-        "email": "john@example.com",
-        "hashed_password": "$2b$12$zqc9e3NL5XyFcTMTuHtn4.u4lrryywhjFq6wJ1hutTq8IwQ..jkrm",
-        "disabled": False
-    }
-}
-
-# oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 class User(BaseModel):
-    username: str
-    email: str or None = None
-    full_name: str or None = None
-    disabled: bool or None = None
+    email: str
+    first_name: str
+    last_name: str
+    account_type: str
+    bussiness_type: str
+    is_active: bool
 
-class UserInDB(User):
-    hashed_password: str
-
-def get_user(db, username: str):
-    if username in db:
-        user_dict = db[username]
-        return UserInDB(**user_dict)
-
-def authenticate_user(fake_db, username: str, password: str):
-    user = get_user(fake_db, username)
-    if not user:
-        return False
-    if not verify_password(password, user.hashed_password):
-        return False
+def authenticate_user(db: Session, username: str, password: str):
+    user =  get_user_by_email_and_password(db=db,email=username, password=password)
     return user
 
+# class LoginRequestModeL(BaseModel):
+#     username: str
+#     password: str
+
 @router.post("/login", response_model=Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = authenticate_user(db, form_data.username, form_data.password)
-    
+async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+    user = authenticate_user(db=db, username=form_data.username, password=form_data.password)
+   
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
@@ -59,6 +42,6 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     ACCESS_TOKEN_EXPIRE_MINUTES=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
+    access_token = create_access_token(data={"sub": user.email, "id":user.id}, expires_delta=access_token_expires)
     
     return {"access_token": access_token, "token_type": "bearer"}
