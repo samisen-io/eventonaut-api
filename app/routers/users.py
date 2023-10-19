@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from .. import schemas
+from schemas import user_schemas as schemas
 from ..crud import users_crud as crud
 from ..dependencies import get_db
 from email_validator import validate_email, EmailNotValidError
