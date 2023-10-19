@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from .. import crud, schemas
+from .. import schemas
+from ..crud import sessions_crud as crud, conferences_crud
 from ..dependencies import get_db
 from datetime import date, time
 
@@ -13,7 +14,7 @@ def create_session_for_conference(
 ):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid conference id")
-    if crud.get_conference(db, conference_id=conference_id) is None:
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     return crud.create_conference_session(db=db, session=session, conference_id=conference_id)
 
@@ -40,7 +41,7 @@ def get_session_by_session_id(session_id: int, db: Session = Depends(get_db)):
 def get_all_sessions_by_name(conference_id:int, name: str, db: Session = Depends(get_db)):
     if name.isnumeric() or conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid name or session id")
-    if crud.get_conference(db, conference_id=conference_id) is None:
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_session = crud.get_sessions_by_name(db,conference_id=conference_id, name=name)
     if db_session is None or len(db_session) == 0:
@@ -52,7 +53,7 @@ def get_all_sessions_by_name(conference_id:int, name: str, db: Session = Depends
 def get_all_sessions_by_start_time(conference_id: int, start_time: time, db: Session = Depends(get_db)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid session id")
-    if crud.get_conference(db, conference_id=conference_id) is None:
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_sessions = crud.get_sessions_by_start_time(db,conference_id=conference_id, start_time=start_time)
     if db_sessions is None or len(db_sessions) == 0:
@@ -64,7 +65,7 @@ def get_all_sessions_by_start_time(conference_id: int, start_time: time, db: Ses
 def get_all_sessions_by_end_time(conference_id: int, end_time: time, db: Session = Depends(get_db)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid session id")
-    if crud.get_conference(db, conference_id=conference_id) is None:
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_sessions = crud.get_sessions_by_end_time(db,conference_id=conference_id, end_time=end_time)
     if db_sessions is None or len(db_sessions) == 0:
@@ -76,7 +77,7 @@ def get_all_sessions_by_end_time(conference_id: int, end_time: time, db: Session
 def get_sessions_by_date(conference_id: int, date: date, db: Session = Depends(get_db)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid session id")
-    if crud.get_conference(db, conference_id=conference_id) is None:
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_sessions = crud.get_sessions_by_date(db, conference_id=conference_id, date=date)
     if db_sessions is None or len(db_sessions) == 0:
@@ -88,7 +89,7 @@ def get_sessions_by_date(conference_id: int, date: date, db: Session = Depends(g
 def get_sessions_by_description(conference_id: int, description: str, db: Session = Depends(get_db)):
     if conference_id <= 0 or description.isnumeric():
         raise HTTPException(status_code=400, detail="Invalid session id or description")
-    if crud.get_conference(db, conference_id=conference_id) is None:
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_sessions = crud.get_sessions_by_description(db,conference_id=conference_id, description=description)
     if db_sessions is None or len(db_sessions) == 0:
@@ -100,7 +101,7 @@ def get_sessions_by_description(conference_id: int, description: str, db: Sessio
 def get_sessions_by_location(conference_id:int, location: str, db: Session = Depends(get_db)):
     if conference_id <= 0 or location.isnumeric():
         raise HTTPException(status_code=400, detail="Invalid session id or location")
-    if crud.get_conference(db, conference_id=conference_id) is None:
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_sessions = crud.get_sessions_by_location(db,conference_id=conference_id, location=location)
     if db_sessions is None or len(db_sessions) == 0:
@@ -112,7 +113,7 @@ def get_sessions_by_location(conference_id:int, location: str, db: Session = Dep
 def get_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_db)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid session id")
-    if crud.get_conference(db, conference_id=conference_id) is None:
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_sessions = crud.get_all_sessions_by_conference_id(db, conference_id=conference_id)
     if db_sessions is None or len(db_sessions) == 0:
@@ -124,7 +125,7 @@ def get_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_
 def get_all_sessions_by_conference_id_and_between_dates(conference_id: int, filter_start_date: date, filter_end_date: date, db: Session = Depends(get_db)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid session id")
-    if crud.get_conference(db, conference_id=conference_id) is None:
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     if filter_start_date > filter_end_date:
         raise HTTPException(status_code=400, detail="Invalid date range")
@@ -158,11 +159,10 @@ def delete_session(session_id: int, db: Session = Depends(get_db)):
 def delete_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_db)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid conference")
-    if crud.get_conference(db, conference_id=conference_id) is None:
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_sessions = crud.get_all_sessions_by_conference_id(db, conference_id=conference_id)
     if not db_sessions or len(db_sessions) == 0:
         raise HTTPException(status_code=404, detail="No sessions found for conference")
-    for session in db_sessions:
-        crud.delete_session(db=db, session_id=session.id)
+    crud.delete_all_sessions_by_conference_id(db=db, conference_id=conference_id)
     return {"message": "Sessions deleted successfully"}

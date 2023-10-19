@@ -9,6 +9,8 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
     email = Column(String, unique=True, index=True)
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
@@ -18,12 +20,16 @@ class User(Base):
     is_active = Column(Boolean, default=True)
 
     conferences = relationship("Conference", back_populates="owner")
+    sessions = relationship("Session", back_populates="owner")
+    settings = relationship("Settings", back_populates="owner")
 
 #class to create conference table and add relationship to session table
 class Conference(Base):
     __tablename__ = "conferences"
 
     id = Column(Integer, primary_key=True, index=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
     name = Column(String, index=True)
     location = Column(String, index=True)
     start_date = Column(DATE, index=True)
@@ -40,6 +46,8 @@ class Session(Base):
     __tablename__ = "sessions"
 
     id = Column(Integer, primary_key=True, index=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
     name = Column(String, index=True)
     start_time = Column(TIME, index=True)
     end_time = Column(TIME, index=True)
@@ -47,18 +55,21 @@ class Session(Base):
     date = Column(DATE, index=True) 
     location = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
 
     conference = relationship("Conference", back_populates="sessions")
+    owner = relationship("User", back_populates="sessions")
 
 #class to define settings table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class Settings(Base):
     __tablename__ = "settings"
 
     id = Column(Integer, primary_key=True, index=True)
-    conference_id = Column(Integer, ForeignKey("conferences.id"))
-    tz = timezone('Asia/Kolkata')
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
     body = Column(JSON, index=True)
 
     conference = relationship("Conference", back_populates="settings")
+    owner = relationship("User", back_populates="settings")
