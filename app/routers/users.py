@@ -3,11 +3,18 @@ from sqlalchemy.orm import Session
 from .. import schemas
 from ..crud import users_crud as crud
 from ..dependencies import get_db
+from email_validator import validate_email, EmailNotValidError
 
 router = APIRouter(tags=["users"])
 
 @router.post("/users/", response_model=schemas.User)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    # validate email
+    try:
+        valid = validate_email(user.email)
+        user.email = valid.email
+    except EmailNotValidError as e:
+        raise HTTPException(status_code=400, detail="Invalid email")
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
