@@ -10,3 +10,4 @@ chromadb
 tiktoken
 python-jose
 passlib
+validate-email-address

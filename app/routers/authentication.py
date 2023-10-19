@@ -8,6 +8,7 @@ from app.crud import get_user_by_email_and_password
 from ..dependencies import get_db
 from app.token import Token, create_access_token
 from sqlalchemy.orm import Session
+from validate_email_address import validate_email
 
 
 router = APIRouter(tags=["authentication"])
@@ -29,10 +30,14 @@ class LoginRequestModeL(BaseModel):
     password: str
 
 @router.post("/login", response_model=Token)
-async def login_for_access_token(db: Session = Depends(get_db), form_data: LoginRequestModeL= Depends()):
-# async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends()):
+# async def login_for_access_token(db: Session = Depends(get_db), form_data: LoginRequestModeL= Depends()):
+async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends()):
+    
+    # validation = validate_email(form_data.username)
+    # if validation==False:
+    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email ID format")
+    
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password)
-   
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
