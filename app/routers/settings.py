@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from .. import crud, schemas
+from .. import schemas
+from ..crud import settings_crud as crud, conferences_crud
 from ..dependencies import get_db
 
 router = APIRouter(tags=["settings"])
@@ -8,6 +9,10 @@ router = APIRouter(tags=["settings"])
 # create settings by conference id and take body as any valid JSON and convert it to string
 @router.post("/settings/{conference_id}", response_model=schemas.Settings)
 def create_settings(conference_id: int, body: dict, db: Session = Depends(get_db)):
+    if conference_id <= 0:
+        raise HTTPException(status_code=400, detail="Invalid conference id")
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
     db_settings = crud.get_settings_by_conference_id(db, conference_id=conference_id)
     if db_settings:
         raise HTTPException(status_code=400, detail="Settings already exists")
@@ -24,7 +29,7 @@ def read_settings(db: Session = Depends(get_db), skip: int = 0, limit: int = 100
     return settings
 
 # get settings by id
-@router.get("/settings/conference/{settings_id}")
+@router.get("/settings/conference/{settings_id}", response_model=schemas.Settings)
 def read_settings_by_id(settings_id: int, db: Session = Depends(get_db)):
     if settings_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid settings id")
@@ -56,6 +61,8 @@ def update_settings(conference_id: int, body: dict, db: Session = Depends(get_db
 # delete settings by conference id and settings id
 @router.delete("/settings/conference/{conference_id}")
 def delete_settings(conference_id: int, db: Session = Depends(get_db)):
+    if conference_id <= 0:
+        raise HTTPException(status_code=400, detail="Invalid conference id")
     db_settings = crud.get_settings_by_conference_id(db, conference_id=conference_id)
     if db_settings is None:
         raise HTTPException(status_code=404, detail="Settings not found")

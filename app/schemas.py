@@ -1,6 +1,18 @@
 from pydantic import BaseModel
 from datetime import datetime, date, time
 
+#pydantic model for settings
+class SettingsCreate(BaseModel):
+    body: dict
+
+#pydantic model for settings
+class Settings(SettingsCreate):
+    id: int
+    conference_id: int
+    owner_id: int
+    class Config:
+        orm_mode = True
+
 #pydantic model for session create
 class SessionCreate(BaseModel):
     name: str
@@ -13,6 +25,7 @@ class SessionCreate(BaseModel):
 #pydantic model for session
 class Session(SessionCreate):
     id: int
+    owner_id: int
     conference_id: int
     class Config:
         orm_mode = True
@@ -30,6 +43,7 @@ class Conference(ConferenceCreate):
     id: int
     owner_id: int
     sessions: list[Session] = []
+    settings: list[Settings] = []
     class Config:
         orm_mode = True
 
@@ -44,19 +58,13 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     hashed_password: str
 
+#pydantic model for user password
+class UserPassword(BaseModel):
+    hashed_password: str
+
 class User(UserBase):
     id: int
     is_active: bool
     conferences: list[Conference] = []
-    class Config:
-        orm_mode = True
-
-#pydantic model for settings
-class Settings(BaseModel):
-    id: int
-    body: dict
-    conference_id: int
-    created_on: datetime
-    updated_on: datetime
     class Config:
         orm_mode = True
