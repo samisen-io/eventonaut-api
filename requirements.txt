@@ -10,5 +10,5 @@ chromadb
 tiktoken
 python-jose
 passlib
-validate-email-address
 cachetools
+email-validator
