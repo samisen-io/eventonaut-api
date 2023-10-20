@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 from .. import models
+from ..schemas import settings_schemas as schemas
 import pytz
 
 #crud for settings
@@ -38,7 +39,7 @@ def delete_settings(db: Session, conference_id: int):
     return True
 
 #update settings
-def update_settings(db: Session, body: str, conference_id: int):
+def update_settings(db: Session, body: dict, conference_id: int):
     db_settings = db.query(models.Settings).filter(models.Settings.conference_id == conference_id).first()
     db_settings.body = body
     db_settings.updated_on = datetime.now(pytz.timezone('Asia/Kolkata'))

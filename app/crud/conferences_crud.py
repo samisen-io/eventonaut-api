@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 from .. import models
-from schemas import conference_schemas as schemas
+from ..schemas import conference_schemas as schemas
 from pytz import timezone
 
 # get all conferences

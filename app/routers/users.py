@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from schemas import user_schemas as schemas
+from ..schemas import user_schemas as schemas
 from ..crud import users_crud as crud
 from ..dependencies import get_db
 from email_validator import validate_email, EmailNotValidError
@@ -44,6 +44,12 @@ def update_user(user_id: int, user: schemas.UserBase, db: Session = Depends(get_
     db_user = crud.get_user(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
+    # validate email
+    try:
+        valid = validate_email(user.email)
+        user.email = valid.email
+    except EmailNotValidError as e:
+        raise HTTPException(status_code=400, detail="Invalid email")
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user and db_user.id != user_id:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -52,6 +58,8 @@ def update_user(user_id: int, user: schemas.UserBase, db: Session = Depends(get_
 # upddate password by user id
 @router.put("/users/password/{user_id}", response_model=schemas.User)
 def update_user_password(user_id: int, user: schemas.UserPassword, db: Session = Depends(get_db)):
+    if user_id <= 0:
+        raise HTTPException(status_code=400, detail="Invalid user id")
     db_user = crud.get_user(db, user_id=user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
