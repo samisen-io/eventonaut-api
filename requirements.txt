@@ -9,3 +9,4 @@ openai
 chromadb
 tiktoken
 passlib
+email-validator
