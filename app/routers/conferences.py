@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from .. import schemas
+from ..schemas import conference_schemas as schemas
 from ..crud import conferences_crud as crud, users_crud
 from ..dependencies import get_db
 from datetime import date
