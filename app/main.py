@@ -1,9 +1,7 @@
-
 from fastapi import Depends, FastAPI
-
 from app.oauth2 import get_current_active_user
-from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication
 from fastapi.middleware.cors import CORSMiddleware
+from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication
 
 app = FastAPI()
 

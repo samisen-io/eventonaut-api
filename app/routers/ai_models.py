@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, UploadFile
-from app.oauth2 import get_current_active_user
-
-from app.oauth2 import User
-from ..data_ingestion import createVectorDb
-from ..data_query import query_document
 import os
 import logging
+from fastapi import APIRouter, Depends, UploadFile
+from app.oauth2 import get_current_active_user
+from app.schemas.user_schemas import User
+from ..data_ingestion import createVectorDb
+from ..data_query import query_document
 
 router = APIRouter(tags=["ai_models"])
 
@@ -23,12 +22,12 @@ async def print_something(current_user: User = Depends(get_current_active_user))
     return {"message": "Hello World"}
 
 @router.post("/query_document")
-async def query_document_endpoint(question: str):#, current_user: User = Depends(get_current_active_user)):
+async def query_document_endpoint(question: str):
     answer = query_document(question)
     return {"answer": answer}
 
 @router.post("/upload_csv_file/")
-async def upload_csv_file(file: UploadFile):#, current_user: User = Depends(get_current_active_user)):
+async def upload_csv_file(file: UploadFile):
     # Check if the uploaded file is a CSV file
     if file.filename.endswith(".csv"):
         # Generate a unique file path within the upload folder
