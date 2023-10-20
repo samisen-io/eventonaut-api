@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile
 from app.oauth2 import get_current_active_user
 
-from app.routers.authentication import User
+from app.oauth2 import User
 from ..data_ingestion import createVectorDb
 from ..data_query import query_document
 import os

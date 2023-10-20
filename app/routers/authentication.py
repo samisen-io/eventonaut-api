@@ -3,24 +3,17 @@ import os
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
+
 from ..crud import users_crud
 from ..dependencies import get_db
 from app.token import Token, create_access_token
 from sqlalchemy.orm import Session
-from validate_email_address import validate_email
 from jose import JWTError, jwt
 from ..token import token_cache
 
-router = APIRouter(tags=["authentication"])
+from app.oauth2 import User, get_current_active_user, oauth_2_scheme
 
-class User(BaseModel):
-    email: str
-    first_name: str
-    last_name: str
-    account_type: str
-    bussiness_type: str
-    is_active: bool
+router = APIRouter(tags=["authentication"])
 
 def authenticate_user(db: Session, username: str, password: str, token_jti: str):
     user =  users_crud.get_user_by_email_and_password(db=db,email=username, password=password)
@@ -30,10 +23,6 @@ def authenticate_user(db: Session, username: str, password: str, token_jti: str)
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends()):
-    
-    # validation = validate_email(form_data.username)
-    # if validation==False:
-    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email ID format")
     
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
     if not user:
@@ -51,7 +40,7 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/logout")
-async def logout(jwt_token: str):
+async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Depends(get_current_active_user)):
     SECRET_KEY = os.getenv("SECRET_KEY")
     ALGORITHM = os.getenv("ALGORITHM")
     try:

@@ -1,12 +1,20 @@
 from fastapi import Depends, HTTPException, status, Request, Response
 from fastapi.security import OAuth2PasswordBearer
+from pydantic import BaseModel
 from app import token
 from .dependencies import get_db
 from .crud import users_crud
-from app.routers.authentication import User
 from sqlalchemy.orm import Session
 
 oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+
+class User(BaseModel):
+    email: str
+    first_name: str
+    last_name: str
+    account_type: str
+    bussiness_type: str
+    is_active: bool
 
 def get_current_user(db: Session = Depends(get_db),data: str = Depends(oauth_2_scheme)):
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
