@@ -14,8 +14,13 @@ def create_session_for_conference(
 ):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid conference id")
-    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
+    conference=conferences_crud.get_conference(db, conference_id=conference_id)
+    if conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
+    if session.date < conference.start_date or session.date > conference.end_date:
+        raise HTTPException(status_code=400, detail="Invalid date")
+    if session.start_time > session.end_time:
+        raise HTTPException(status_code=400, detail="Invalid time")
     return crud.create_conference_session(db=db, session=session, conference_id=conference_id)
 
 # get all sessions
@@ -142,6 +147,11 @@ def update_session(session_id: int, session: schemas.SessionCreate, db: Session 
     db_session = crud.get_session(db, session_id=session_id)
     if db_session is None:
         raise HTTPException(status_code=404, detail="Session not found")
+    conference=conferences_crud.get_conference(db, conference_id=db_session.conference_id)
+    if session.date < conference.start_date or session.date > conference.end_date:
+        raise HTTPException(status_code=400, detail="Invalid date")
+    if session.start_time > session.end_time:
+        raise HTTPException(status_code=400, detail="Invalid time")
     return crud.update_session(db=db, session=session, session_id=session_id)
 
 #delete session
