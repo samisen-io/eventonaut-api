@@ -4,25 +4,31 @@ from ..data_ingestion import createVectorDb
 from ..data_query import query_document
 import os
 import logging
+import csv
+import json
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
 
 router = APIRouter(tags=["ai_models"])
-
-app_folder = 'app'
-
-# Define the path to the vector_db folder within the app folder
-files_folder = os.path.join(app_folder, 'files')
-
-# Check if the vector_db folder exists, and create it if it doesn't
-if not os.path.exists(files_folder):
-    os.makedirs(files_folder)
 
 @router.post("/query_document")
 async def query_document_endpoint(question: str):
     answer = query_document(question)
     return {"answer": answer}
 
-@router.post("/upload_csv_file/")
-async def upload_csv_file(file: UploadFile):
+@router.post("/upload_session_file/")
+async def upload_session_file(file: UploadFile):
+    
+    app_folder = 'app'
+
+    # Define the path to the vector_db folder within the app folder
+    files_folder = os.path.join(app_folder, 'files')
+
+    # Check if the vector_db folder exists, and create it if it doesn't
+    if not os.path.exists(files_folder):
+        os.makedirs(files_folder)
+    
     # Check if the uploaded file is a CSV file
     if file.filename.endswith(".csv"):
         # Generate a unique file path within the upload folder
@@ -40,5 +46,94 @@ async def upload_csv_file(file: UploadFile):
         
         logging.info("Vector database created")
         return {"filename": file.filename}
+    
+    elif file.filename.endswith(".json"): # Check if the uploaded file is a JSON file
+        file_path = os.path.join(files_folder, 'sessions.json')
+        
+        # Save the uploaded JSON file to disk
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
+            
+        # Load the JSON file into memory
+        with open(file_path, "r") as f:
+            data = json.load(f)
+            
+        csv_file_path = os.path.join(files_folder, 'sessions.csv')
+        
+        # write the json data to a csv file
+        with open(csv_file_path, 'w', newline='', encoding='utf-8') as csv_file:
+            csv_writer = csv.writer(csv_file, delimiter=';')
+            
+            # write the header (filed names) to the csv file
+            header = data[0].keys()
+            csv_writer.writerow(header)
+            
+            # write the values to the csv file
+            for row in data:
+                csv_writer.writerow(row.values())
+                
+        createVectorDb()
+            
+        return {"filename": file.filename}
+    
+    elif file.filename.endswith(".xlsx"):
+        # Handle Excel files
+        file_path = os.path.join(files_folder, 'sessions.xlsx')
+        with open(file_path, "wb") as f:
+            f.write(file.file.read())
+        
+        # Read the Excel file into a DataFrame using pandas
+        try:
+            df = pd.read_excel(file_path)
+            
+            # Convert the DataFrame to CSV format
+            csv_file_path = os.path.join(files_folder, 'sessions.csv')
+            df.to_csv(csv_file_path, index=False, sep=';', encoding='utf-8')
+            
+            createVectorDb()
+
+            return {"filename": file.filename}
+        except Exception as e:
+            return {"error": "Failed to process the Excel file: " + str(e)}
+
     else:
-        return {"error": "Only CSV files are allowed."}
+        return {"error": "Only CSV, JSON and Excel are allowed."}
+    
+@router.get("/web_url/")
+async def scrape_web_page(web_url: str):
+    try:
+        app_folder = 'app'
+        files_folder = os.path.join(app_folder, 'files')
+
+        if not os.path.exists(files_folder):
+            os.makedirs(files_folder)
+
+        file_path = os.path.join(files_folder, 'sessions.csv')
+
+        response = requests.get(web_url)
+
+        if response.status_code == 200:
+            html_content = response.text
+
+            # Parse the HTML content using BeautifulSoup
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            # Extract all text content from the page
+            all_text = soup.get_text()
+
+            # Split the text into passages based on double line breaks
+            passages = all_text.split('\n\n')
+
+            # Create a CSV file to store passages
+            with open(file_path, 'w', newline='', encoding='utf-8') as csv_file:
+                csv_writer = csv.writer(csv_file, delimiter=';')
+
+                # Write passages as separate rows in the CSV
+                for passage in passages:
+                    csv_writer.writerow([passage])
+
+            return {"message": "Web data extracted, categorized into passages, and saved to a CSV file.", "csv_file_path": file_path}
+        else:
+            return {"error": f"Failed to retrieve the web page. Status code: {response.status_code}"}
+    except Exception as e:
+        return {"error": "Failed to perform web scraping: " + str(e)}
