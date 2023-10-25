@@ -39,6 +39,8 @@ class Conference(Base):
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")
     settings = relationship("Settings", back_populates="conference")
+    attendees = relationship("Attendee", back_populates="conference")
+    agenda = relationship("Agenda", back_populates="conference")
 
 # class to define session table
 class Session(Base):
@@ -58,6 +60,7 @@ class Session(Base):
 
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
+    agenda_session = relationship("AgendaSession", back_populates="session")
 
 #class to define settings table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class Settings(Base):
@@ -72,3 +75,52 @@ class Settings(Base):
 
     conference = relationship("Conference", back_populates="settings")
     owner = relationship("User", back_populates="settings")
+
+# class to define attendee table with id, conference id as foreign key, created on and updated on as datetime and body as a string
+class Attendee(Base):
+    __tablename__ = "attendees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    first_name = Column(String, index=True)
+    last_name = Column(String, index=True)
+    email = Column(String, index=True)
+    password = Column(String, index=True)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    is_active = Column(Boolean, default=True)
+
+    conference = relationship("Conference", back_populates="attendees")
+    agenda = relationship("Agenda", back_populates="attendees")
+    agenda_session = relationship("AgendaSession", back_populates="attendees")
+
+# class to define agenda table with id, conference id as foreign key, created on and updated on as datetime and body as a string
+class Agenda(Base):
+    __tablename__ = "agenda"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    attendee_id = Column(Integer, ForeignKey("attendees.id"))
+
+    conference = relationship("Conference", back_populates="agenda")
+    attendees = relationship("Attendee", back_populates="agenda")
+    agenda_session = relationship("AgendaSession", back_populates="agenda")
+
+# class to define aganda session table with id, conference id as foreign key, created on and updated on as datetime and body as a string
+class AgendaSession(Base):
+    __tablename__ = "agenda_session"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    agenda_id = Column(Integer, ForeignKey("agenda.id"))
+    session_id = Column(Integer, ForeignKey("sessions.id"))
+    attendee_id = Column(Integer, ForeignKey("attendees.id"))
+    start_time = Column(TIME, index=True)
+    end_time = Column(TIME, index=True)
+
+    agenda = relationship("Agenda", back_populates="agenda_session")
+    session = relationship("Session", back_populates="agenda_session")
+    attendees = relationship("Attendee", back_populates="agenda_session")
