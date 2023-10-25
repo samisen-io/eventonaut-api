@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import ai_models, users, conferences, ai_models, sessions, settings
+from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda, agendasessions
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
@@ -16,6 +16,7 @@ app.include_router(users.router)
 app.include_router(conferences.router)
 app.include_router(sessions.router)
 app.include_router(settings.router)
+app.include_router(attendee.router)
 app.include_router(ai_models.router)
 
 @app.get("/")

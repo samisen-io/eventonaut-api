@@ -39,7 +39,6 @@ class Conference(Base):
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")
     settings = relationship("Settings", back_populates="conference")
-    attendees = relationship("Attendee", back_populates="conference")
     agenda = relationship("Agenda", back_populates="conference")
 
 # class to define session table
@@ -87,10 +86,8 @@ class Attendee(Base):
     last_name = Column(String, index=True)
     email = Column(String, index=True)
     hased_password = Column(String, index=True)
-    conference_id = Column(Integer, ForeignKey("conferences.id"))
     is_active = Column(Boolean, default=True)
 
-    conference = relationship("Conference", back_populates="attendees")
     agenda = relationship("Agenda", back_populates="attendees")
     agenda_session = relationship("AgendaSession", back_populates="attendees")
 

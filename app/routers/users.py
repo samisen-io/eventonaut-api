@@ -37,7 +37,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
     return db_user
 
 #update user by user id and check if email is already registered
-@router.put("/users/email/{user_id}", response_model=schemas.User)
+@router.put("/users/{user_id}", response_model=schemas.User)
 def update_user(user_id: int, user: schemas.UserBase, db: Session = Depends(get_db)):
     if user_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user id")
@@ -77,7 +77,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
 
 #get user by account_type
 @router.get("/users/account_type/{account_type}", response_model=list[schemas.User])
-def read_user_by_account_type(account_type: str, db: Session = Depends(get_db)):
+def get_user_by_account_type(account_type: str, db: Session = Depends(get_db)):
     if account_type.isnumeric():
         raise HTTPException(status_code=400, detail="Invalid account type")
     db_user = crud.get_users_by_account_type(db, account_type=account_type)
@@ -87,7 +87,7 @@ def read_user_by_account_type(account_type: str, db: Session = Depends(get_db)):
 
 #get user by bussiness_type
 @router.get("/users/bussiness_type/{bussiness_type}", response_model=list[schemas.User])
-def read_user_by_bussiness_type(bussiness_type: str, db: Session = Depends(get_db)):
+def get_user_by_bussiness_type(bussiness_type: str, db: Session = Depends(get_db)):
     if bussiness_type.isnumeric():
         raise HTTPException(status_code=400, detail="Invalid bussiness type")
     db_user = crud.get_users_by_bussiness_type(db, bussiness_type=bussiness_type)
