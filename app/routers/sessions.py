@@ -125,6 +125,18 @@ def get_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Session not found")
     return db_sessions
 
+# get all conferences based to name or description of the session
+@router.get("/sessions/conference_id/{conference_id}/search/{search}", response_model=list[schemas.Session])
+def get_sessions_by_search(conference_id: int, search: str, db: Session = Depends(get_db)):
+    if conference_id <= 0 or search.isnumeric():
+        raise HTTPException(status_code=400, detail="Invalid session id or search")
+    if conferences_crud.get_conference(db, conference_id=conference_id) is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    db_sessions = crud.get_all_sessions_by_conference_id_and_name_or_description(db,conference_id=conference_id, search_string=search)
+    if db_sessions is None or len(db_sessions) == 0:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return db_sessions
+
 # get all sessions by conference id and between dates range
 @router.get("/sessions/conference_id/{conference_id}/filter_start_date/{filter_start_date}/filter_end_date/{filter_end_date}", response_model=list[schemas.Session])
 def get_all_sessions_by_conference_id_and_between_dates(conference_id: int, filter_start_date: date, filter_end_date: date, db: Session = Depends(get_db)):

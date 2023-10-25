@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from datetime import datetime, date, time
 from .. import models
 from ..schemas import session_schemas as schemas
@@ -49,6 +50,10 @@ def get_all_sessions_by_conference_id(db: Session, conference_id: int):
 # get sessions by conference_id and range of date
 def get_all_sessions_by_conference_id_between_date(db: Session, conference_id: int, filter_start_date: date, filter_end_date: date):
     return db.query(models.Session).filter(models.Session.conference_id == conference_id, models.Session.date >= filter_start_date, models.Session.date <= filter_end_date).all()
+
+# get all conferences based on name or description strings
+def get_all_sessions_by_conference_id_and_name_or_description(db: Session, conference_id: int, search_string: str):
+    return db.query(models.Session).filter(models.Session.conference_id == conference_id, or_(models.Session.name.like('%'+search_string+'%'), models.Session.description.like('%'+search_string+'%'))).all()
 
 #delete session
 def delete_session(db: Session, session_id: int):
