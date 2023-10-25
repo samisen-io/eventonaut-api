@@ -86,7 +86,7 @@ class Attendee(Base):
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
     email = Column(String, index=True)
-    password = Column(String, index=True)
+    hased_password = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     is_active = Column(Boolean, default=True)
 
@@ -101,6 +101,7 @@ class Agenda(Base):
     id = Column(Integer, primary_key=True, index=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
+    name = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     attendee_id = Column(Integer, ForeignKey("attendees.id"))
 
@@ -118,6 +119,7 @@ class AgendaSession(Base):
     agenda_id = Column(Integer, ForeignKey("agenda.id"))
     session_id = Column(Integer, ForeignKey("sessions.id"))
     attendee_id = Column(Integer, ForeignKey("attendees.id"))
+    date = Column(DATE, index=True)
     start_time = Column(TIME, index=True)
     end_time = Column(TIME, index=True)
 
