@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
+from app.oauth2 import get_current_active_user
 from ..schemas import user_schemas as schemas
 from ..crud import users_crud as crud
 from ..dependencies import get_db
@@ -21,14 +23,14 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return crud.create_user(db=db, user=user)
 
 @router.get("/users/", response_model=list[schemas.User])
-def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
     users = crud.get_users(db, skip=skip, limit=limit)
     if users is None or len(users) == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return users
 
 @router.get("/users/{user_id}", response_model=schemas.User)
-def get_user(user_id: int, db: Session = Depends(get_db)):
+def get_user(user_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
     if user_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user id")
     db_user = crud.get_user(db, user_id=user_id)
@@ -38,7 +40,7 @@ def get_user(user_id: int, db: Session = Depends(get_db)):
 
 #update user by user id and check if email is already registered
 @router.put("/users/email/{user_id}", response_model=schemas.User)
-def update_user(user_id: int, user: schemas.UserBase, db: Session = Depends(get_db)):
+def update_user(user_id: int, user: schemas.UserBase, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
     if user_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user id")
     db_user = crud.get_user(db, user_id=user_id)
@@ -57,7 +59,7 @@ def update_user(user_id: int, user: schemas.UserBase, db: Session = Depends(get_
 
 # upddate password by user id
 @router.put("/users/password/{user_id}", response_model=schemas.User)
-def update_user_password(user_id: int, user: schemas.UserPassword, db: Session = Depends(get_db)):
+def update_user_password(user_id: int, user: schemas.UserPassword, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
     if user_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user id")
     db_user = crud.get_user(db, user_id=user_id)
@@ -67,7 +69,7 @@ def update_user_password(user_id: int, user: schemas.UserPassword, db: Session =
 
 #delete user
 @router.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db)):
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
     if user_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user id")
     db_user = crud.get_user(db, user_id=user_id)
@@ -77,7 +79,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
 
 #get user by account_type
 @router.get("/users/account_type/{account_type}", response_model=list[schemas.User])
-def read_user_by_account_type(account_type: str, db: Session = Depends(get_db)):
+def read_user_by_account_type(account_type: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
     if account_type.isnumeric():
         raise HTTPException(status_code=400, detail="Invalid account type")
     db_user = crud.get_users_by_account_type(db, account_type=account_type)
@@ -87,7 +89,7 @@ def read_user_by_account_type(account_type: str, db: Session = Depends(get_db)):
 
 #get user by bussiness_type
 @router.get("/users/bussiness_type/{bussiness_type}", response_model=list[schemas.User])
-def read_user_by_bussiness_type(bussiness_type: str, db: Session = Depends(get_db)):
+def read_user_by_bussiness_type(bussiness_type: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
     if bussiness_type.isnumeric():
         raise HTTPException(status_code=400, detail="Invalid bussiness type")
     db_user = crud.get_users_by_bussiness_type(db, bussiness_type=bussiness_type)
