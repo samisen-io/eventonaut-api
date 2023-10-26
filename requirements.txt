@@ -8,7 +8,10 @@ python-dotenv
 openai
 chromadb
 tiktoken
-python-jose
+pandas
+openpyxl
+beautifulsoup4
 passlib
-cachetools
 email-validator
+cachetools
+python-jose
