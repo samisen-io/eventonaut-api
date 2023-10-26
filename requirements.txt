@@ -8,6 +8,8 @@ python-dotenv
 openai
 chromadb
 tiktoken
+passlib
+email-validator
 pandas
 openpyxl
 beautifulsoup4
