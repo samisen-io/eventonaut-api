@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
+
+from app.oauth2 import get_current_active_user
 from ..schemas import conference_schemas as schemas
+from ..schemas import user_schemas as uschemas
 from ..crud import conferences_crud as crud, users_crud
 from ..dependencies import get_db
 from datetime import date
@@ -9,7 +12,7 @@ router = APIRouter(tags=["conferences"])
 
 # create conference
 @router.post("/conferences/{user_id}", response_model=schemas.Conference)
-def create_conference_for_user(user_id: int, conference: schemas.ConferenceCreate, db: Session = Depends(get_db)):
+def create_conference_for_user(user_id: int, conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if user_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user id")
     if not users_crud.get_user(db, user_id=user_id):
@@ -184,7 +187,7 @@ def get_all_conferences_by_owner_id_between_start_date_and_end_date(owner_id: in
 
 # update conference by conference id
 @router.put("/conferences/{conference_id}", response_model=schemas.Conference)
-def update_conference(conference_id: int, conference: schemas.ConferenceCreate, db: Session = Depends(get_db)):
+def update_conference(conference_id: int, conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid conference id")
     db_conference = crud.get_conference(db, conference_id=conference_id)
@@ -196,7 +199,7 @@ def update_conference(conference_id: int, conference: schemas.ConferenceCreate, 
 
 # update conference by owner id and conference id
 @router.put("/conferences/owner_id/{owner_id}/conference/{conference_id}", response_model=schemas.Conference)
-def update_conference(owner_id: int, conference_id: int, conference: schemas.ConferenceCreate, db: Session = Depends(get_db)):
+def update_conference(owner_id: int, conference_id: int, conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if owner_id <= 0 or conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid id or conference id")
     if not users_crud.get_user(db, user_id=owner_id):
@@ -210,7 +213,7 @@ def update_conference(owner_id: int, conference_id: int, conference: schemas.Con
 
 # delete conference
 @router.delete("/conferences/owner_id/{owner_id}/conference/{conference_id}")
-def delete_conference_owner_id_conference_id(owner_id: int, conference_id: int, db: Session = Depends(get_db)):
+def delete_conference_owner_id_conference_id(owner_id: int, conference_id: int, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if owner_id <= 0 or conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid id or conference id")
     if not users_crud.get_user(db, user_id=owner_id):
@@ -222,7 +225,7 @@ def delete_conference_owner_id_conference_id(owner_id: int, conference_id: int, 
 
 # delete all conferences by owner id
 @router.delete("/conferences/owner/{owner_id}")
-def delete_all_conferences_by_owner_id(owner_id: int, db: Session = Depends(get_db)):
+def delete_all_conferences_by_owner_id(owner_id: int, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if owner_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid owner id")
     if not users_crud.get_user(db, user_id=owner_id):

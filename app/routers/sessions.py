@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
+
+from app.oauth2 import get_current_active_user
 from ..schemas import session_schemas as schemas
+from ..schemas import user_schemas as uschemas
 from ..crud import sessions_crud as crud, conferences_crud
 from ..dependencies import get_db
 from datetime import date, time
@@ -10,7 +13,7 @@ router = APIRouter(tags=["sessions"])
 # create session by owner id and conference id
 @router.post("/sessions/conference_id/{conference_id}", response_model=schemas.Session)
 def create_session_for_conference(
-    conference_id: int, session: schemas.SessionCreate, db: Session = Depends(get_db)
+    conference_id: int, session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)
 ):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid conference id")
@@ -136,7 +139,7 @@ def get_all_sessions_by_conference_id_and_between_dates(conference_id: int, filt
 
 # update session
 @router.put("/sessions/{session_id}", response_model=schemas.Session)
-def update_session(session_id: int, session: schemas.SessionCreate, db: Session = Depends(get_db)):
+def update_session(session_id: int, session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if session_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid session id")
     db_session = crud.get_session(db, session_id=session_id)
@@ -146,7 +149,7 @@ def update_session(session_id: int, session: schemas.SessionCreate, db: Session 
 
 #delete session
 @router.delete("/sessions/{session_id}")
-def delete_session(session_id: int, db: Session = Depends(get_db)):
+def delete_session(session_id: int, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if session_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid session id")
     db_session = crud.get_session(db, session_id=session_id)
@@ -156,7 +159,7 @@ def delete_session(session_id: int, db: Session = Depends(get_db)):
 
 #delete all sessions by conference id
 @router.delete("/sessions/conference_id/{conference_id}")
-def delete_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_db)):
+def delete_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid conference")
     if conferences_crud.get_conference(db, conference_id=conference_id) is None:
