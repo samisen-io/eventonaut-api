@@ -17,6 +17,7 @@ app.include_router(conferences.router)
 app.include_router(sessions.router)
 app.include_router(settings.router)
 app.include_router(attendee.router)
+app.include_router(agenda.router)
 app.include_router(ai_models.router)
 
 @app.get("/")

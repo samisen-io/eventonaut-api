@@ -24,7 +24,7 @@ def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_
 @router.get("/attendee/", response_model=list[schemas.Attendee])
 def get_all_attendees(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     attendees = crud.get_attendees(db, skip=skip, limit=limit)
-    if not attendees:
+    if not attendees or len(attendees) == 0:
         raise HTTPException(status_code=404, detail="No attendees found")
     return attendees
 
@@ -70,5 +70,4 @@ def delete_attendee_by_id(attendee_id: int, db: Session = Depends(get_db)):
     db_attendee = crud.get_attendee_by_id(db, attendee_id=attendee_id)
     if not db_attendee:
         raise HTTPException(status_code=404, detail="Attendee not found")
-    crud.delete_attendee_by_id(db, attendee_id=attendee_id)
-    return {"message": "Attendee deleted successfully"}
+    return crud.delete_attendee_by_id(db, attendee_id=attendee_id)

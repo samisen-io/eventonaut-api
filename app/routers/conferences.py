@@ -170,7 +170,7 @@ def get_all_conferences_by_owner_id(owner_id: int, db: Session = Depends(get_db)
 
 # get all conferences by owner_id and conference id and between start_date and end_date
 @router.get("/conferences/owner_id/{owner_id}/start_date/{filter_start_date}/end_date/{filter_end_date}", response_model=list[schemas.Conference])
-def get_all_conferences_by_owner_id_between_start_date_and_end_date(owner_id: int, filter_start_date: date, filter_end_date: date, db: Session = Depends(get_db)):
+def get_all_conferences_by_owner_id_starting_between_date_range(owner_id: int, filter_start_date: date, filter_end_date: date, db: Session = Depends(get_db)):
     if owner_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid id")
     if users_crud.get_user(db, user_id=owner_id) is None:

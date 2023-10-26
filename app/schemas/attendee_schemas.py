@@ -18,6 +18,6 @@ class AttendePassword(BaseModel):
 #pydantic model for attendee
 class Attendee(AttendeeBase):
     id: int
-    adenga: list[Agenda] = []
+    agenda: list[Agenda] = []
     class Config:
         orm_mode = True
