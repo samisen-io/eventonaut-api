@@ -17,7 +17,7 @@ def create_conference_for_user(user_id: int, conference: schemas.ConferenceCreat
         raise HTTPException(status_code=400, detail="Invalid user id")
     if not users_crud.get_user(db, user_id=user_id):
         raise HTTPException(status_code=404, detail="User not found")
-    if conference.start_date > conference.end_date:
+    if conference.start_date > conference.end_date or conference.start_date < date.today():
         raise HTTPException(status_code=400, detail="Invalid date range")
     return crud.create_user_conference(db=db, conference=conference, user_id=user_id)
 
@@ -193,7 +193,7 @@ def update_conference(conference_id: int, conference: schemas.ConferenceCreate, 
     db_conference = crud.get_conference(db, conference_id=conference_id)
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
-    if conference.start_date > conference.end_date:
+    if conference.start_date > conference.end_date or conference.start_date < date.today():
         raise HTTPException(status_code=400, detail="Invalid date range")
     return crud.update_user_conference(db=db, conference=conference, conference_id=conference_id)
 
@@ -207,7 +207,7 @@ def update_conference(owner_id: int, conference_id: int, conference: schemas.Con
     db_conference = crud.get_conference_by_owner_id(db, owner_id=owner_id, conference_id=conference_id)
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
-    if conference.start_date > conference.end_date:
+    if conference.start_date > conference.end_date or conference.start_date < date.today():
         raise HTTPException(status_code=400, detail="Invalid date range")
     return crud.update_conference(db=db, owner_id=owner_id, conference=conference, conference_id=conference_id)
 
