@@ -11,6 +11,9 @@ class ConferenceCreate(BaseModel):
     end_date: date
     description: str | None = None
 
+class ConferenceUpdate(ConferenceCreate):
+    id: int
+
 #pydantic model for conference
 class Conference(ConferenceCreate):
     id: int

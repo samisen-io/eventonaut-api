@@ -38,22 +38,6 @@ def get_user_by_email_and_password(db: Session, email: str, password: str):
 def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
-# get all users by first_name
-def get_users_by_first_name(db: Session, first_name: str):
-    return db.query(models.User).filter(models.User.first_name == first_name).all()
-
-# get all users by last_name
-def get_users_by_last_name(db: Session, last_name: str):
-    return db.query(models.User).filter(models.User.last_name == last_name).all()
-
-# get user by account_type
-def get_users_by_account_type(db: Session, account_type: str):
-    return db.query(models.User).filter(models.User.account_type == account_type).all()
-
-# get user by bussiness_type
-def get_users_by_bussiness_type(db: Session, bussiness_type: str):
-    return db.query(models.User).filter(models.User.bussiness_type == bussiness_type).all()
-
 # update user
 def update_user(db: Session, user: schemas.UserBase, user_id: int):
     tz = timezone('Asia/Kolkata')
