@@ -50,7 +50,7 @@ def get_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_
 @router.get("/sessions/{conference_id}/search/{search}", response_model=list[schemas.Session])
 def get_sessions_by_search(conference_id: int, search: str, db: Session = Depends(get_db)):
     if conference_id <= 0:
-        raise HTTPException(status_code=400, detail="Invalid conference id or search")
+        raise HTTPException(status_code=400, detail="Invalid conference id")
     if conferences_crud.get_conference(db, conference_id=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_sessions = crud.get_all_sessions_by_search(db,conference_id=conference_id, search_string=search)
