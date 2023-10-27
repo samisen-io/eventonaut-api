@@ -92,8 +92,8 @@ def delete_all_conferences_of_owner_id(db: Session, owner_id: int):
     return True
 
 # update conference by conference id
-def update_user_conference(db: Session, conference: schemas.ConferenceCreate, conference_id: int):
-    db_conference = db.query(models.Conference).filter(models.Conference.id == conference_id).first()
+def update_user_conference(db: Session, conference: schemas.ConferenceCreate, conference_id: int, owner_id:int):
+    db_conference = db.query(models.Conference).filter(models.Conference.id == conference_id,models.Conference.owner_id == owner_id).first()
     tz = timezone('Asia/Kolkata')
     db_conference.name = conference.name
     db_conference.location = conference.location
