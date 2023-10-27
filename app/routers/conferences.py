@@ -50,7 +50,7 @@ def get_all_conferences_by_owner_id_starting_between_date_range(filter_start_dat
         raise HTTPException(status_code=400, detail="Invalid id")
     if users_crud.get_user(db, user_id=current_user.id) is None:
         raise HTTPException(status_code=404, detail="User not found")
-    if filter_start_date > filter_end_date or filter_start_date < date.today():
+    if filter_start_date > filter_end_date:
         raise HTTPException(status_code=400, detail="Invalid date range")
     db_conferences = crud.get_conferences_by_owner_id_between_start_date_and_end_date(db, owner_id=current_user.id, filter_start_date=filter_start_date, filter_end_date=filter_end_date)
     if db_conferences is None or len(db_conferences) == 0:
