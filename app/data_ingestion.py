@@ -1,9 +1,17 @@
 import os
+import csv
 from dotenv import load_dotenv
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.vectorstores import Chroma
 from langchain.embeddings.openai import OpenAIEmbeddings
 
+def find_delimiter(file_path, possible_delimiters):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        first_line = file.readline()
+        for delimiter in possible_delimiters:
+            if delimiter in first_line:
+                return delimiter
+    return ','  # Default to comma if none of the possible delimiters are found
 
 def createVectorDb():
     load_dotenv()
@@ -21,25 +29,30 @@ def createVectorDb():
         os.makedirs(files_folder)
         
     file_path = os.path.join(files_folder, 'sessions.csv')
-    
-    data = None
-    flag = 0
-    delimiters = [',', ';', '|', '\t', ':']
-    for i in delimiters:
-        try:
-            loader = CSVLoader(file_path=file_path, encoding='utf-8', source_column='id', csv_args={
-                'delimiter': i,
-            })
-            data = loader.load()
-            flag = 1
-            break
+
+    # List of possible delimiters
+    possible_delimiters = [',', ';', '\t']  # Add more as needed
+
+    # Find the delimiter
+    delimiter = find_delimiter(file_path, possible_delimiters)
+
+    # Read the CSV file using the determined delimiter
+    with open(file_path, 'r', encoding='utf-8') as file:
+        csv_reader = csv.reader(file, delimiter=delimiter)
+        first_row = next(csv_reader)  # Get the first row
+
+    # Assuming the first_row contains the column headers, you can access the header of the first column
+    if first_row:
+        first_column_header = first_row[0]
+        print(f"Column header of the first column: {first_column_header}")
+    else:
+        print("No data found in the CSV file.")
         
-        except:
-            continue
+    loader = CSVLoader(file_path=file_path, encoding='utf-8', source_column=first_column_header, csv_args={
+                'delimiter': delimiter,
+            })
     
-    if flag == 0:
-        print("No delimiter found")
-        exit()
+    data = loader.load()
         
     embedding_function = OpenAIEmbeddings()
 
