@@ -35,7 +35,7 @@ def get_all_sessions(skip: int = 0, limit: int = 100, db: Session = Depends(get_
     return sessions
 
 # get all sessions by conference id
-@router.get("/sessions/conference_id/{conference_id}", response_model=list[schemas.Session])
+@router.get("/sessions/{conference_id}", response_model=list[schemas.Session])
 def get_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_db)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid session id")
@@ -47,7 +47,7 @@ def get_sessions_by_conference_id(conference_id: int, db: Session = Depends(get_
     return db_sessions
 
 # get all conferences based to name or description of the session
-@router.get("/sessions/conference_id/{conference_id}/search/{search}", response_model=list[schemas.Session])
+@router.get("/sessions/{conference_id}/search/{search}", response_model=list[schemas.Session])
 def get_sessions_by_search(conference_id: int, search: str, db: Session = Depends(get_db)):
     if conference_id <= 0 or search.isnumeric():
         raise HTTPException(status_code=400, detail="Invalid conference id or search")
@@ -59,7 +59,7 @@ def get_sessions_by_search(conference_id: int, search: str, db: Session = Depend
     return db_sessions
 
 # get all sessions by conference id and between dates range
-@router.get("/sessions/conference_id/{conference_id}/filter_start_date/{filter_start_date}/filter_end_date/{filter_end_date}", response_model=list[schemas.Session])
+@router.get("/sessions/{conference_id}/filter_start_date/{filter_start_date}/filter_end_date/{filter_end_date}", response_model=list[schemas.Session])
 def get_all_sessions_by_conference_id_and_between_dates(conference_id: int, filter_start_date: date, filter_end_date: date, db: Session = Depends(get_db)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid session id")
