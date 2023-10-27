@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
+
+from app.oauth2 import get_current_active_user
 from ..schemas import settings_schemas as schemas
+from ..schemas import user_schemas as uschemas
 from ..crud import settings_crud as crud, conferences_crud
 from ..dependencies import get_db
 
@@ -8,7 +11,7 @@ router = APIRouter(tags=["settings"])
 
 # create settings by conference id and take body as any valid JSON and convert it to string
 @router.post("/settings/{conference_id}", response_model=schemas.Settings)
-def create_settings(conference_id: int, body: dict, db: Session = Depends(get_db)):
+def create_settings(conference_id: int, body: dict, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid conference id")
     if conferences_crud.get_conference(db, conference_id=conference_id) is None:
@@ -50,7 +53,7 @@ def read_settings_by_conference_id(conference_id: int, db: Session = Depends(get
 
 # update settings by conference id and settings id
 @router.put("/settings/conference/{conference_id}", response_model=schemas.Settings)
-def update_settings(conference_id: int, body: dict, db: Session = Depends(get_db)):
+def update_settings(conference_id: int, body: dict, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     db_settings = crud.get_settings_by_conference_id(db, conference_id=conference_id)
     if db_settings is None:
         raise HTTPException(status_code=404, detail="No such conference exists")
@@ -60,7 +63,7 @@ def update_settings(conference_id: int, body: dict, db: Session = Depends(get_db
 
 # delete settings by conference id and settings id
 @router.delete("/settings/conference/{conference_id}")
-def delete_settings(conference_id: int, db: Session = Depends(get_db)):
+def delete_settings(conference_id: int, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid conference id")
     db_settings = crud.get_settings_by_conference_id(db, conference_id=conference_id)

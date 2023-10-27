@@ -1,9 +1,11 @@
-from fastapi import APIRouter, UploadFile
-from pathlib import Path
-from ..data_ingestion import createVectorDb
-from ..data_query import query_document
 import os
 import logging
+from fastapi import APIRouter, Depends, UploadFile
+from app.oauth2 import get_current_active_user
+from app.schemas.user_schemas import User
+from ..data_ingestion import createVectorDb
+from ..data_query import query_document
+
 import csv
 import json
 import pandas as pd
