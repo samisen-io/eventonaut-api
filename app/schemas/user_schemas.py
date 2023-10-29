@@ -21,6 +21,5 @@ class UserPassword(BaseModel):
 class User(UserBase):
     id: int
     is_active: bool
-    conferences: list[Conference] = []
     class Config:
         orm_mode = True
