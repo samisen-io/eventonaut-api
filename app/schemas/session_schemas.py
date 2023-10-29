@@ -13,13 +13,13 @@ class SessionCreate(BaseModel):
 
 #pydantic model for session
 class Session(SessionCreate):
-    id: int
-    owner_id: int
+    id: str
+    owner_id: str
     class Config:
         orm_mode = True
 
 #pydantic model for session update
 class SessionUpdate(SessionCreate):
-    id: int
+    id: str
     class Config:
         orm_mode = True

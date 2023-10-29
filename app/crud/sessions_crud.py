@@ -6,7 +6,7 @@ from ..schemas import session_schemas as schemas
 from .. encryption import encrypt_number, decrypt_number
 from pytz import timezone
 
-#crud for session
+#get all sessions
 def get_sessions(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Session).offset(skip).limit(limit).all()
 
