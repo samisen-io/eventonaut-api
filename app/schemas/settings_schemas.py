@@ -7,7 +7,7 @@ class SettingsCreate(BaseModel):
 
 #pydantic model for settings
 class Settings(SettingsCreate):
-    id: int
-    owner_id: int
+    id: str
+    owner_id: str
     class Config:
         orm_mode = True
