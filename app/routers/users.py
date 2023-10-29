@@ -4,6 +4,7 @@ from app.oauth2 import get_current_active_user
 from ..schemas import user_schemas as schemas
 from ..crud import users_crud as crud
 from ..dependencies import get_db
+from ..encryption import encrypt_number
 from email_validator import validate_email, EmailNotValidError
 
 
@@ -21,6 +22,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     user=crud.create_user(db=db, user=user)
+    user.id = encrypt_number(user.id)
     return user
 
 @router.get("/users/all_users", response_model=list[schemas.User])
@@ -28,6 +30,8 @@ def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = crud.get_users(db, skip=skip, limit=limit)
     if users is None or len(users) == 0:
         raise HTTPException(status_code=404, detail="User not found")
+    for user in users:
+        user.id = encrypt_number(user.id)
     return users
 
 @router.get("/users", response_model=schemas.User)
@@ -35,6 +39,7 @@ def get_user(db: Session = Depends(get_db), current_user: schemas.User = Depends
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
+    db_user.id = encrypt_number(db_user.id)
     return db_user
 
 #update user by user id and check if email is already registered
@@ -52,6 +57,7 @@ def update_user(user: schemas.UserBase, db: Session = Depends(get_db), current_u
     if db_user and db_user.id != current_user.id:
         raise HTTPException(status_code=400, detail="Email already registered")
     user=crud.update_user(db=db, user=user, user_id=current_user.id)
+    user.id = encrypt_number(user.id)
     return user
 
 # upddate password by user id
@@ -61,6 +67,7 @@ def update_user_password(user: schemas.UserPassword, db: Session = Depends(get_d
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     user=crud.update_user_password(db=db, user=user, user_id=current_user.id)
+    user.id = encrypt_number(user.id)
     return user
 
 #delete user
