@@ -3,6 +3,7 @@ from sqlalchemy import or_
 from datetime import datetime, date, time
 from .. import models
 from ..schemas import session_schemas as schemas
+from .. encryption import encrypt_number, decrypt_number
 from pytz import timezone
 
 #crud for session
@@ -14,6 +15,7 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     tz = timezone('Asia/Kolkata')
     db_session.created_on = datetime.now(tz)
     db_session.updated_on = datetime.now(tz)
+    db_session.conference_id = decrypt_number(session.conference_id)
     db_session.owner_id = owner_id
     db.add(db_session)
     db.commit()

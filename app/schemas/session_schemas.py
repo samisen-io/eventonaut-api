@@ -9,7 +9,7 @@ class SessionCreate(BaseModel):
     description: str 
     date: date
     location: str 
-    conference_id:int
+    conference_id: str
 
 #pydantic model for session
 class Session(SessionCreate):
