@@ -19,7 +19,7 @@ class UserPassword(BaseModel):
 
 #pydantic model for user
 class User(UserBase):
-    id: str
+    id: int
     is_active: bool
     conferences: list[Conference] = []
     class Config:
