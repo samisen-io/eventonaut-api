@@ -12,7 +12,7 @@ def encrypt_number(original_number):
     return encrypted_number
 
 # Decrypt the unique ID to retrieve the original number
-def decrypt_unique_id(unique_id):
+def decrypt_number(unique_id):
     cipher_suite = Fernet(SECRET_KEY.encode())
     decrypted_number = cipher_suite.decrypt(unique_id).decode()
     return int(decrypted_number)
@@ -24,5 +24,5 @@ if __name__ == "__main__":
     print(f"Unique ID: {unique_id.decode()}")
     
     encrypted_number = input("Enter the unique ID to retrieve the original number: ").encode()
-    original_number_retrieved = decrypt_unique_id(encrypted_number)
+    original_number_retrieved = decrypt_number(encrypted_number)
     print(f"Original Number Retrieved: {original_number_retrieved}")

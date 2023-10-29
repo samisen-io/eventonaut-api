@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from .. import models, hashing
 from ..schemas import user_schemas as schemas
 from datetime import datetime
+from ..encryption import encrypt_number, decrypt_number
 from pytz import timezone
 
 
@@ -55,6 +56,7 @@ def update_user(db: Session, user: schemas.UserBase, user_id: int):
 # update password
 def update_user_password(db: Session, user: schemas.UserPassword, user_id: int):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    db_user.id=decrypt_number(db_user.id)
     tz=timezone('Asia/Kolkata')
     db_user.hashed_password = hashing.get_password_hash(user.hashed_password)
     db_user.updated_on = datetime.now(tz)
@@ -64,9 +66,7 @@ def update_user_password(db: Session, user: schemas.UserPassword, user_id: int):
 
 # delete user
 def delete_user(db: Session, user_id: int):
-    db.query(models.User).filter(models.User.id == user_id).delete()
-    db.query(models.Conference).filter(models.Conference.owner_id == user_id).delete()
-    db.query(models.Session).filter(models.Session.owner_id == user_id).delete()
-    db.query(models.Settings).filter(models.Settings.owner_id == user_id).delete()
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    db.delete(db_user)
     db.commit()
     return True

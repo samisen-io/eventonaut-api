@@ -10,6 +10,7 @@ from app.token import Token, create_access_token
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from ..token import token_cache
+from ..encryption import encrypt_number
 
 from app.oauth2 import get_current_active_user, oauth_2_scheme
 
@@ -33,6 +34,7 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
+    user.id = encrypt_number(user.id).decode()
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(data={"sub": user.email, "id":user.id}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer"}

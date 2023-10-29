@@ -5,6 +5,7 @@ from app.schemas.user_schemas import User
 from .dependencies import get_db
 from .crud import users_crud
 from sqlalchemy.orm import Session
+from .encryption import encrypt_number
 
 oauth_2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -21,4 +22,5 @@ def get_current_user(db: Session = Depends(get_db),data: str = Depends(oauth_2_s
 async def get_current_active_user(current_user: User = Depends(get_current_user)):
     if current_user.is_active is False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+    current_user.id = encrypt_number(current_user.id)
     return current_user
