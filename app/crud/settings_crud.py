@@ -27,6 +27,9 @@ def create_settings(db: Session, settings: schemas.SettingsCreate, owner_id: int
 def get_settings_by_conference_id(db: Session, conference_id: int,owner_id: int):
     return db.query(models.Settings).filter(models.Settings.conference_id == conference_id, models.Settings.owner_id == owner_id).first()
 
+def get_settings_by_conf_id(db: Session, conference_id: int):
+    return db.query(models.Settings).filter(models.Settings.conference_id == conference_id).first()
+
 def get_settings_by_body(db: Session, body: str):
     return db.query(models.Settings).filter(models.Settings.body == body).all()
 
