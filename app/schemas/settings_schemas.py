@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 #pydantic model for settings
 class SettingsCreate(BaseModel):
-    conference_id: int
+    conference_id: str
     body: dict
 
 #pydantic model for settings
