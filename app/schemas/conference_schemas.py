@@ -17,8 +17,6 @@ class ConferenceUpdate(ConferenceCreate):
 #pydantic model for conference
 class Conference(ConferenceCreate):
     id: str
-    owner_id: int
-    sessions: list[Session] = []
-    settings: list[Settings] = []
+    owner_id: str
     class Config:
         orm_mode = True

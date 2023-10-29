@@ -22,6 +22,7 @@ def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session
         raise HTTPException(status_code=400, detail="Invalid date range")
     conference=crud.create_user_conference(db=db, conference=conference, user_id=current_user.id)
     conference.id=encrypt_number(conference.id)
+    conference.owner_id=encrypt_number(conference.owner_id)
     return conference
 
 # get all conferences
@@ -32,6 +33,9 @@ def get_all_conferences(skip: int = 0, limit: int = 100, db: Session = Depends(g
     conferences = crud.get_conferences(db, skip=skip, limit=limit)
     if conferences is None or len(conferences) == 0:
         raise HTTPException(status_code=404, detail="Conference not found")
+    for conference in conferences:
+        conference.id=encrypt_number(conference.id)
+        conference.owner_id=encrypt_number(conference.owner_id)
     return conferences
 
 # get all conferences by owner_id
@@ -46,6 +50,7 @@ def get_all_conferences_by_owner_id(db: Session = Depends(get_db),current_user: 
         raise HTTPException(status_code=404, detail="Conference not found")
     for db_conference in db_conferences:
         db_conference.id=encrypt_number(db_conference.id)
+        db_conference.owner_id=encrypt_number(db_conference.owner_id)
     return db_conferences
 
 # get all conferences by owner_id and conference id and between start_date and end_date
@@ -62,12 +67,16 @@ def get_all_conferences_by_owner_id_between_start_date_and_end_date(filter_start
         raise HTTPException(status_code=404, detail="Conference not found")
     for db_conference in db_conferences:
         db_conference.id=encrypt_number(db_conference.id)
+        db_conference.owner_id=encrypt_number(db_conference.owner_id)
     return db_conferences
 
 # update conference by conference id
 @router.put("/conferences", response_model=schemas.Conference)
 def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
-    conference_id:int=decrypt_number(conference.id)
+    try:
+        conference_id:int=decrypt_number(conference.id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid id")
     db_conference = crud.get_conference_by_owner_id(db, conference_id=conference_id, owner_id=current_user.id)
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
@@ -75,6 +84,7 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
         raise HTTPException(status_code=400, detail="Invalid date range")
     conference=crud.update_user_conference(db=db, conference=conference, conference_id=conference_id, owner_id=current_user.id)
     conference.id=encrypt_number(conference.id)
+    conference.owner_id=encrypt_number(conference.owner_id)
     return conference
 
 # delete conference
@@ -84,7 +94,10 @@ def delete_conference_owner_id_conference_id(conference_id: str, db: Session = D
         raise HTTPException(status_code=400, detail="Invalid id")
     if not users_crud.get_user(db, user_id=current_user.id):
         raise HTTPException(status_code=404, detail="User not found")
-    conference_id:int=decrypt_number(conference_id)
+    try:
+        conference_id:int=decrypt_number(conference_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid id")
     db_conference = crud.get_conference_by_owner_id(db,owner_id=current_user.id, conference_id=conference_id)
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
