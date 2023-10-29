@@ -33,10 +33,10 @@ def get_settings(db: Session = Depends(get_db), skip: int = 0, limit: int = 100)
 
 # get settings by conference id
 @router.get("/settings/{conference_id}", response_model=schemas.Settings)
-def get_settings_by_conference_id(conference_id: int, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
+def get_settings_by_conference_id(conference_id: int, db: Session = Depends(get_db)):
     if conference_id <= 0:
         raise HTTPException(status_code=400, detail="Invalid conference id")
-    settings = crud.get_settings_by_conference_id(db, conference_id=conference_id,owner_id=current_user.id)
+    settings = crud.get_settings_by_conf_id(db, conference_id=conference_id)
     if settings is None:
         raise HTTPException(status_code=404, detail="Settings not found")
     return settings
