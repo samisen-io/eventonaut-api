@@ -17,7 +17,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
         valid = validate_email(user.email)
         user.email = valid.email
     except EmailNotValidError as e:
-        raise HTTPException(status_code=400, detail="Invalid email")
+        raise HTTPException(status_code=400, detail=str(e))
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -52,7 +52,7 @@ def update_user(user: schemas.UserBase, db: Session = Depends(get_db), current_u
         valid = validate_email(user.email)
         user.email = valid.email
     except EmailNotValidError as e:
-        raise HTTPException(status_code=400, detail="Invalid email")
+        raise HTTPException(status_code=400, detail=str(e))
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user and db_user.id != current_user.id:
         raise HTTPException(status_code=400, detail="Email already registered")
