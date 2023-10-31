@@ -3,9 +3,10 @@ from sqlalchemy import or_
 from datetime import datetime, date, time
 from .. import models
 from ..schemas import session_schemas as schemas
+from .. encryption import encrypt_number, decrypt_number
 from pytz import timezone
 
-#crud for session
+#get all sessions
 def get_sessions(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Session).offset(skip).limit(limit).all()
 
@@ -14,6 +15,7 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     tz = timezone('Asia/Kolkata')
     db_session.created_on = datetime.now(tz)
     db_session.updated_on = datetime.now(tz)
+    db_session.conference_id = decrypt_number(session.conference_id)
     db_session.owner_id = owner_id
     db.add(db_session)
     db.commit()
@@ -56,7 +58,7 @@ def get_all_sessions_by_conference_id_between_date(db: Session, conference_id: i
 
 # get all conferences based on name or description strings
 def get_all_sessions_by_search(db: Session,conference_id:int, search_string: str):
-    return db.query(models.Session).filter(models.Session.conference_id == conference_id, or_(models.Session.name.ilike('%'+search_string+'%'), models.Session.description.ilike('%'+search_string+'%'),models.Session.date.ilike('%'+search_string+'%'),models.Session.location.ilike('%'+search_string+'%'))).all()
+    return db.query(models.Session).filter(models.Session.conference_id == conference_id, or_(models.Session.name.ilike('%'+search_string+'%'), models.Session.description.ilike('%'+search_string+'%'), models.Session.date.ilike('%'+search_string+'%'), models.Session.location.ilike('%'+search_string+'%'))).all()
 
 #delete session
 def delete_session(db: Session, session_id: int, owner_id: int):

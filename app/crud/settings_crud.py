@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from .. import models
 from ..schemas import settings_schemas as schemas
+from ..encryption import encrypt_number, decrypt_number
 import pytz
 
 #crud for settings
@@ -19,6 +20,7 @@ def create_settings(db: Session, settings: schemas.SettingsCreate, owner_id: int
     tz = pytz.timezone('Asia/Kolkata')
     db_settings.created_on = datetime.now(tz)
     db_settings.updated_on = datetime.now(tz)
+    db_settings.conference_id = decrypt_number(settings.conference_id)
     db.add(db_settings)
     db.commit()
     db.refresh(db_settings)
@@ -26,6 +28,9 @@ def create_settings(db: Session, settings: schemas.SettingsCreate, owner_id: int
 
 def get_settings_by_conference_id(db: Session, conference_id: int,owner_id: int):
     return db.query(models.Settings).filter(models.Settings.conference_id == conference_id, models.Settings.owner_id == owner_id).first()
+
+def get_settings_by_conf_id(db: Session, conference_id: int):
+    return db.query(models.Settings).filter(models.Settings.conference_id == conference_id).first()
 
 def get_settings_by_body(db: Session, body: str):
     return db.query(models.Settings).filter(models.Settings.body == body).all()
@@ -42,7 +47,8 @@ def delete_settings(db: Session, conference_id: int, owner_id: int):
 
 #update settings
 def update_settings(db: Session, settings:schemas.SettingsCreate, owner_id: int):
-    db_settings = db.query(models.Settings).filter(models.Settings.conference_id == settings.conference_id, models.Settings.owner_id == owner_id).first()
+    conference_id:int = decrypt_number(settings.conference_id)
+    db_settings = db.query(models.Settings).filter(models.Settings.conference_id == conference_id, models.Settings.owner_id == owner_id).first()
     db_settings.body = settings.body
     db_settings.updated_on = datetime.now(pytz.timezone('Asia/Kolkata'))
     db.commit()
