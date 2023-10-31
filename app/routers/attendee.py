@@ -39,11 +39,11 @@ def get_attendee_by_id(attendee_id: int, db: Session = Depends(get_db)):
     return db_attendee
 
 # update attendee by email
-@router.put("/attendee/{attendee_id}", response_model=schemas.Attendee)
-def update_attendee_by_id(attendee_id: int, attendee: schemas.AttendeeBase, db: Session = Depends(get_db)):
-    if attendee_id <= 0:
+@router.put("/attendee", response_model=schemas.Attendee)
+def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db)):
+    if attendee.id <= 0:
         raise HTTPException(status_code=400, detail="Invalid id")
-    if not crud.get_attendee_by_id(db, attendee_id=attendee_id):
+    if not crud.get_attendee_by_id(db, attendee_id=attendee.id):
         raise HTTPException(status_code=400, detail="Attendee not found")
     try:
         valid = validate_email(attendee.email)
@@ -51,18 +51,18 @@ def update_attendee_by_id(attendee_id: int, attendee: schemas.AttendeeBase, db: 
     except EmailNotValidError as e:
         raise HTTPException(status_code=400, detail=str(e))
     db_attendee = crud.get_attendee_by_email(db, email=attendee.email)
-    if db_attendee and db_attendee.id != attendee_id:
+    if db_attendee and db_attendee.id != attendee.id:
         raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.update_attendee_by_id(db=db, attendee_id=attendee_id, attendee=attendee)
+    return crud.update_attendee_by_id(db=db, attendee_id=attendee.id, attendee=attendee)
 
 # update attende password by id
-@router.put("/attendee/password/{attendee_id}", response_model=schemas.Attendee)
-def update_attendee_password_by_id(attendee_id: int, attendee: schemas.AttendePassword, db: Session = Depends(get_db)):
-    if attendee_id <= 0:
+@router.put("/attendee/password", response_model=schemas.Attendee)
+def update_attendee_password_by_id(attendee: schemas.AttendePassword, db: Session = Depends(get_db)):
+    if attendee.id <= 0:
         raise HTTPException(status_code=400, detail="Invalid id")
-    if not crud.get_attendee_by_id(db, attendee_id=attendee_id):
+    if not crud.get_attendee_by_id(db, attendee_id=attendee.id):
         raise HTTPException(status_code=400, detail="Attendee not found")
-    return crud.update_attendee_password_by_id(db=db, attendee_id=attendee_id, attendee=attendee)
+    return crud.update_attendee_password_by_id(db=db, attendee_id=attendee.id, attendee=attendee)
 
 # delete all attendee by id
 @router.delete("/attendee/{attendee_id}")

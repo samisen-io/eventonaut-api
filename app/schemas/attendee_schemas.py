@@ -13,11 +13,14 @@ class AttendeeCreate(AttendeeBase):
 
 #pydantic model for attendee password
 class AttendePassword(BaseModel):
+    id: int
     hased_password: str
+
+class AttendeeUpdate(AttendeeBase):
+    id: int
 
 #pydantic model for attendee
 class Attendee(AttendeeBase):
     id: int
-    agenda: list[Agenda] = []
     class Config:
         orm_mode = True
