@@ -15,12 +15,12 @@ if not api_key:
     print('OpenAI API key not found in environment variables.')
     exit()
 
-vector_db_folder = os.path.join(app_folder, 'vector_db')
 embedding_function = OpenAIEmbeddings()
-chromadb.PersistentClient(path=vector_db_folder)
 
 def query_document(question, conference_id):           
-
+    vector_db_folder = os.path.join(app_folder, 'vector_db')
+    chromadb.PersistentClient(path=vector_db_folder)
+    
     vectordb = Chroma(collection_name = conference_id, embedding_function = embedding_function, persist_directory = vector_db_folder)
         
     chain = ConversationalRetrievalChain.from_llm(llm=ChatOpenAI(temperature=0.0, model_name='gpt-3.5-turbo', openai_api_key=api_key), retriever=vectordb.as_retriever())
