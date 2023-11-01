@@ -42,16 +42,19 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
     tz = timezone('Asia/Kolkata')
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if user.email is not None and user.email.strip() != "" and user.email != "string":
-        db_user.email = user.email
-    if user.first_name is not None and user.first_name.strip() != "" and user.first_name != "string":
-        db_user.first_name = user.first_name
-    if user.last_name is not None and user.last_name.strip() != "" and user.last_name != "string":
-        db_user.last_name = user.last_name
-    if user.account_type is not None and user.account_type.strip() != "" and user.account_type != "string":
-        db_user.account_type = user.account_type
-    if user.bussiness_type is not None and user.bussiness_type.strip() != "" and user.bussiness_type != "string":
-        db_user.bussiness_type = user.bussiness_type
+
+    updates = {
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'account_type': user.account_type,
+        'bussiness_type': user.bussiness_type
+    }
+    
+    for key, value in updates.items():
+        if value is not None:
+            setattr(db_user, key, value)
+
     db_user.updated_on = datetime.now(tz)
     db.commit()
     db.refresh(db_user)
@@ -70,8 +73,8 @@ def update_user_password(db: Session, user: schemas.UserPassword, user_id: int):
 # delete user
 def delete_user(db: Session, user_id: int):
     db.query(models.User).filter(models.User.id == user_id).delete()
-    # db.query(models.Conference).filter(models.Conference.owner_id == user_id).delete()
-    # db.query(models.Session).filter(models.Session.owner_id == user_id).delete()
-    # db.query(models.Settings).filter(models.Settings.owner_id == user_id).delete()
+    db.query(models.Conference).filter(models.Conference.owner_id == user_id).delete()
+    db.query(models.Session).filter(models.Session.owner_id == user_id).delete()
+    db.query(models.Settings).filter(models.Settings.owner_id == user_id).delete()
     db.commit()
     return True

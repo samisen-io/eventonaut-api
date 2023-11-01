@@ -3,6 +3,7 @@ from sqlalchemy import or_
 from datetime import datetime, date, time
 from .. import models
 from ..schemas import session_schemas as schemas
+from fastapi import HTTPException
 from pytz import timezone
 
 #crud for session
@@ -54,10 +55,6 @@ def get_all_sessions_by_conference_id(db: Session, conference_id: int):
 def get_all_sessions_by_conference_id_between_date(db: Session, conference_id: int, filter_start_date: date, filter_end_date: date):
     return db.query(models.Session).filter(models.Session.conference_id == conference_id, models.Session.date >= filter_start_date, models.Session.date <= filter_end_date).all()
 
-# get all conferences based on name or description strings
-def get_all_sessions_by_search(db: Session,conference_id:int, search_string: str):
-    return db.query(models.Session).filter(models.Session.conference_id == conference_id, or_(models.Session.name.ilike('%'+search_string+'%'), models.Session.description.ilike('%'+search_string+'%'), models.Session.date.ilike('%'+search_string+'%'), models.Session.location.ilike('%'+search_string+'%'))).all()
-
 #delete session
 def delete_session(db: Session, session_id: int, owner_id: int):
     db.query(models.Session).filter(models.Session.id == session_id,models.Session.owner_id == owner_id).delete()
@@ -74,12 +71,26 @@ def delete_all_sessions_by_conference_id(db: Session, conference_id: int):
 def update_session(db: Session, session: schemas.SessionUpdate, session_id: int, owner_id: int):
     db_session = db.query(models.Session).filter(models.Session.id == session_id,models.Session.owner_id == owner_id).first()
     tz = timezone('Asia/Kolkata')
-    db_session.name = session.name
-    db_session.date = session.date
-    db_session.start_time = session.start_time
-    db_session.end_time = session.end_time
-    db_session.location = session.location
-    db_session.description = session.description
+    
+    updates = {
+        'name': session.name,
+        'date': session.date,
+        'start_time': session.start_time,
+        'end_time': session.end_time,
+        'location': session.location,
+        'description': session.description
+    }
+    
+    for key, value in updates.items():
+        if value is not None:
+            setattr(db_session, key, value)
+
+    if session.date < db_session.conference.start_date or session.date > db_session.conference.end_date or session.date < date.today():
+        raise HTTPException(status_code=400, detail="Invalid date")
+    
+    if session.start_time > session.end_time:
+        raise HTTPException(status_code=400, detail="Invalid time")
+
     db_session.updated_on = datetime.now(tz)
     db.commit()
     db.refresh(db_session)

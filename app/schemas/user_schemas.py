@@ -44,25 +44,25 @@ class UserBaseUpdate(BaseModel):
     
     @validator('first_name')
     def first_name_is_not_empty(cls, v):
-        if v is not None and v.strip() == "" or v == "string":
+        if v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid first name")
         return v
     
     @validator('last_name')
     def last_name_is_not_empty(cls, v):
-        if v is not None and v.strip() == "" or v == "string":
+        if v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid last name")
         return v
     
     @validator('account_type')
     def account_type_is_not_empty(cls, v):
-        if v is not None and v.strip() == "" or v == "string" or (v.upper() != "INDIVIDUAL" and v.upper() != "COMPANY"):
+        if v.strip() == "" or v == "string" or (v.upper() != "INDIVIDUAL" and v.upper() != "COMPANY"):
             raise HTTPException(status_code=400, detail="Invalid account type")
         return v
     
     @validator('bussiness_type')
     def bussiness_type_is_not_empty(cls, v):
-        if v is not None and v.strip() == "" or v == "string":
+        if v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid bussiness type")
         return v
 

@@ -58,7 +58,8 @@ def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), cur
         db_user = crud.get_user_by_email(db, email=user.email)
         if db_user and db_user.id != current_user.id:
             raise HTTPException(status_code=400, detail="Email already registered")
-    user.account_type = user.account_type.upper()
+    if user.account_type is not None:
+        user.account_type = user.account_type.upper()
     return crud.update_user(db=db, user=user, user_id=current_user.id)
 
 # upddate password by user id
@@ -80,12 +81,3 @@ def delete_user(db: Session = Depends(get_db), current_user: schemas.User = Depe
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return crud.delete_user(db=db, user_id=current_user.id)
-
-#update user by user id and check if email is already registered
-@router.put("/users-temp/", response_model=schemas.User)
-def update_user(user: schemas.UserBaseUpdate,user_id: int, db: Session = Depends(get_db)):
-    return crud.update_user(db=db, user=user, user_id=user_id)
-
-@router.delete("/users-temp/{user_id}")
-def delete_user(user_id:int,db: Session = Depends(get_db)):
-    return crud.delete_user(db=db, user_id=user_id)
