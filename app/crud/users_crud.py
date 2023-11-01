@@ -39,14 +39,19 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
 # update user
-def update_user(db: Session, user: schemas.UserBase, user_id: int):
+def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
     tz = timezone('Asia/Kolkata')
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    db_user.email = user.email
-    db_user.first_name = user.first_name
-    db_user.last_name = user.last_name
-    db_user.account_type = user.account_type
-    db_user.bussiness_type = user.bussiness_type
+    if user.email is not None and user.email.strip() != "" and user.email != "string":
+        db_user.email = user.email
+    if user.first_name is not None and user.first_name.strip() != "" and user.first_name != "string":
+        db_user.first_name = user.first_name
+    if user.last_name is not None and user.last_name.strip() != "" and user.last_name != "string":
+        db_user.last_name = user.last_name
+    if user.account_type is not None and user.account_type.strip() != "" and user.account_type != "string":
+        db_user.account_type = user.account_type
+    if user.bussiness_type is not None and user.bussiness_type.strip() != "" and user.bussiness_type != "string":
+        db_user.bussiness_type = user.bussiness_type
     db_user.updated_on = datetime.now(tz)
     db.commit()
     db.refresh(db_user)

@@ -9,6 +9,13 @@ class UserBase(BaseModel):
     account_type: str
     bussiness_type: str
 
+class UserBaseUpdate(BaseModel):
+    email: str = None
+    first_name: str = None
+    last_name: str = None
+    account_type: str = None
+    bussiness_type: str = None
+
 #pydantic model for user create
 class UserCreate(UserBase):
     hashed_password: str
