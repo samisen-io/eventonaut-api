@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 from .. import models
@@ -11,6 +12,8 @@ def get_conferences(db: Session, skip: int = 0, limit: int = 100):
 # create conference
 def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
     db_conference = models.Conference(**conference.model_dump(), owner_id=user_id)
+    if conference.description is None or conference.description.strip() == "" or conference.description == "string":
+        db_conference.description = "None"
     tz = timezone('Asia/Kolkata')
     db_conference.created_on = datetime.now(tz)
     db_conference.updated_on = datetime.now(tz)
@@ -95,26 +98,61 @@ def delete_all_conferences_of_owner_id(db: Session, owner_id: int):
 def update_user_conference(db: Session, conference: schemas.ConferenceCreate, conference_id: int, owner_id:int):
     db_conference = db.query(models.Conference).filter(models.Conference.id == conference_id,models.Conference.owner_id == owner_id).first()
     tz = timezone('Asia/Kolkata')
-    db_conference.name = conference.name
-    db_conference.location = conference.location
-    db_conference.start_date = conference.start_date
-    db_conference.end_date = conference.end_date
-    db_conference.description = conference.description
+
+    updates = {
+        'name': conference.name,
+        'location': conference.location,
+        'start_date': conference.start_date,
+        'end_date': conference.end_date,
+        'description': conference.description if conference.description is not None else "None"
+    }
+
+    for key, value in updates.items():
+        if value is not None:
+            setattr(db_conference, key, value)
+
+    if conference.start_date is not None and conference.end_date is not None:
+        if conference.start_date > conference.end_date or conference.start_date < date.today():
+            raise HTTPException(status_code=400, detail="Invalid date range")
+
     db_conference.updated_on = datetime.now(tz)
     db.commit()
     db.refresh(db_conference)
     return db_conference
 
-# update conference by owner id and conference id
-def update_conference(db: Session, conference: schemas.ConferenceCreate, owner_id: int, conference_id: int):
-    db_conference = db.query(models.Conference).filter(models.Conference.id == conference_id, models.Conference.owner_id == owner_id).first()
+
+
+
+# update conference by conference id
+def update_conference(db: Session, conference: schemas.ConferenceUpdate, owner_id:int):
+    db_conference = db.query(models.Conference).filter(models.Conference.id == conference.id).first()
     tz = timezone('Asia/Kolkata')
-    db_conference.name = conference.name
-    db_conference.location = conference.location
-    db_conference.start_date = conference.start_date
-    db_conference.end_date = conference.end_date
-    db_conference.description = conference.description
+
+    updates = {
+        'name': conference.name,
+        'location': conference.location,
+        'start_date': conference.start_date,
+        'end_date': conference.end_date,
+        'description': conference.description if conference.description is not None else "None"
+    }
+
+    for key, value in updates.items():
+        if value is not None:
+            setattr(db_conference, key, value)
+
+    if conference.start_date is not None and conference.end_date is not None:
+        if conference.start_date > conference.end_date or conference.start_date < date.today():
+            raise HTTPException(status_code=400, detail="Invalid date range")
+
     db_conference.updated_on = datetime.now(tz)
     db.commit()
     db.refresh(db_conference)
     return db_conference
+
+# delete conference by conference id
+def delete_conference_by_conference_id(db: Session, conference_id: int):
+    db.query(models.Conference).filter(models.Conference.id == conference_id).delete()
+    db.query(models.Session).filter(models.Session.conference_id == conference_id).delete()
+    db.query(models.Settings).filter(models.Settings.conference_id == conference_id).delete()
+    db.commit()
+    return True
