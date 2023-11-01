@@ -6,12 +6,9 @@ from app.schemas.user_schemas import User
 from ..data_ingestion import createVectorDb
 from ..data_query import query_document
 import os
-import logging
 import csv
 import json
 import pandas as pd
-import requests
-from bs4 import BeautifulSoup
 
 router = APIRouter(tags=["ai_models"])
 
@@ -37,17 +34,12 @@ async def upload_session_file(file: UploadFile, conference_id: str):
         # Generate a unique file path within the upload folder
         file_path = os.path.join(files_folder, 'sessions'+conference_id+'.csv')
 
-        logging.info("Uploading file to %s" % file_path)
-        
         # Save the uploaded CSV file to disk
         with open(file_path, "wb") as f:
             f.write(file.file.read())            
         
-        logging.info("Creating vector database")
-
         createVectorDb(conference_id)
         
-        logging.info("Vector database created")
         return {"filename": file.filename}
     
     elif file.filename.endswith(".json"): # Check if the uploaded file is a JSON file
