@@ -9,11 +9,17 @@ class SessionCreate(BaseModel):
     description: str 
     date: date
     location: str 
+    conference_id:int
 
 #pydantic model for session
 class Session(SessionCreate):
     id: int
     owner_id: int
-    conference_id: int
+    class Config:
+        orm_mode = True
+
+#pydantic model for session update
+class SessionUpdate(SessionCreate):
+    id: int
     class Config:
         orm_mode = True

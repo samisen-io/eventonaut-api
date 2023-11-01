@@ -10,3 +10,8 @@ chromadb
 tiktoken
 passlib
 email-validator
+cachetools
+python-jose
+pandas
+openpyxl
+beautifulsoup4
