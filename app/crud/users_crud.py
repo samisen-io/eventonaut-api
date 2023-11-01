@@ -70,8 +70,8 @@ def update_user_password(db: Session, user: schemas.UserPassword, user_id: int):
 # delete user
 def delete_user(db: Session, user_id: int):
     db.query(models.User).filter(models.User.id == user_id).delete()
-    db.query(models.Conference).filter(models.Conference.owner_id == user_id).delete()
-    db.query(models.Session).filter(models.Session.owner_id == user_id).delete()
-    db.query(models.Settings).filter(models.Settings.owner_id == user_id).delete()
+    # db.query(models.Conference).filter(models.Conference.owner_id == user_id).delete()
+    # db.query(models.Session).filter(models.Session.owner_id == user_id).delete()
+    # db.query(models.Settings).filter(models.Settings.owner_id == user_id).delete()
     db.commit()
     return True
