@@ -4,7 +4,6 @@ from datetime import datetime, date
 from .. import models
 from ..schemas import conference_schemas as schemas
 from pytz import timezone
-import uuid
 
 # get all conferences
 def get_conferences(db: Session, skip: int = 0, limit: int = 100):
@@ -21,7 +20,6 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     tz = timezone('Asia/Kolkata')
     db_conference.created_on = datetime.now(tz)
     db_conference.updated_on = datetime.now(tz)
-    db_conference.uuid = str(uuid.uuid4())
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)

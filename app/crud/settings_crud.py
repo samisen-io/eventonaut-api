@@ -3,7 +3,6 @@ from datetime import datetime
 from .. import models
 from ..schemas import settings_schemas as schemas, conference_schemas
 import pytz
-import uuid
 
 #crud for settings
 def get_settings(db: Session, skip: int = 0, limit: int = 100):
@@ -22,7 +21,6 @@ def create_settings(db: Session, settings: schemas.SettingsCreate, owner_id: int
     db_settings.updated_on = datetime.now(tz)
     conference_id = db.query(models.Conference).filter(models.Conference.uuid == settings.conference_uuid, models.Conference.owner_id == owner_id).first().id
     db_settings.conference_id = conference_id
-    db_settings.uuid = str(uuid.uuid4())
     db.add(db_settings)
     db.commit()
     db.refresh(db_settings)

@@ -5,7 +5,6 @@ from .. import models
 from ..schemas import session_schemas as schemas
 from fastapi import HTTPException
 from pytz import timezone
-import uuid
 
 #get all sessions
 def get_sessions(db: Session, skip: int = 0, limit: int = 100):
@@ -17,7 +16,6 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     db_session.created_on = datetime.now(tz)
     db_session.updated_on = datetime.now(tz)
     db_session.owner_id = owner_id
-    db_session.uuid = str(uuid.uuid4())
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
