@@ -17,9 +17,12 @@ class otp_generator:
         return self.__otp
 
     def validate_otp(self, otp:int, validaton_time:datetime):
-        valid: bool = True if self.__otp == otp and (validaton_time - self.__gen_time).seconds <= self.default_time_limit else False
-        self.__otp = None
-        self.__gen_time = None
+        if self.__otp == otp and (validaton_time - self.__gen_time).seconds <= self.default_time_limit:
+            valid = True
+            self.__otp = None
+            self.__gen_time = None
+        else:
+            valid = False
         return valid        
 
 def send_mail(otp: otp_generator,subject: str, receiver_email:str):

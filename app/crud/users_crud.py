@@ -69,6 +69,15 @@ def update_user_password(db: Session, user: schemas.UserPassword, user_id: int):
     db.refresh(db_user)
     return db_user
 
+def update_user_password_by_id(db: Session, user_id: int, password: str):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    tz=timezone('Asia/Kolkata')
+    db_user.hashed_password = hashing.get_password_hash(password)
+    db_user.updated_on = datetime.now(tz)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
 # delete user
 def delete_user(db: Session, user_id: int):
     db.query(models.User).filter(models.User.id == user_id).delete()

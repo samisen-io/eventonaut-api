@@ -26,6 +26,7 @@ async def send_otp(email: str, email_subject: str , db: Session = Depends(get_db
 
 @router.post('/otp/verify')
 async def verify_otp(email: str, otp: int, db: Session = Depends(get_db)):
+    global valid_otp
     try:
         valid = validate_email(email)
         email = valid.email
@@ -41,6 +42,7 @@ async def verify_otp(email: str, otp: int, db: Session = Depends(get_db)):
 
 @router.put('/otp/passwordreset')
 async def password_reset(email: str, password: str, db: Session = Depends(get_db)):
+    global valid_otp
     if valid_otp:
         try:
             valid = validate_email(email)
@@ -50,7 +52,8 @@ async def password_reset(email: str, password: str, db: Session = Depends(get_db
         user = crud.get_user_by_email(db, email)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        crud.update_user_password(db, user.id, password)
+        crud.update_user_password_by_id(db, user_id=user.id, password=password)
+        valid_otp = False
         return {"msg": "Password updated successfully"}
     else:
         raise HTTPException(status_code=400, detail="OTP not verified")
