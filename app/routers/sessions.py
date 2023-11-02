@@ -6,7 +6,6 @@ from ..schemas import session_schemas as schemas
 from ..schemas import user_schemas as uschemas
 from ..crud import sessions_crud as crud, conferences_crud
 from ..dependencies import get_db
-from ..encryption import encrypt_number, decrypt_number
 from datetime import date
 
 router = APIRouter(tags=["sessions"])

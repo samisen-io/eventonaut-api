@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from .. import models
 from ..schemas import settings_schemas as schemas, conference_schemas
-from ..encryption import encrypt_number, decrypt_number
 import pytz
 import uuid
 
