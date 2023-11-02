@@ -1,3 +1,4 @@
+import codecs
 import os
 import csv
 from dotenv import load_dotenv
@@ -11,7 +12,18 @@ def find_delimiter(file_path, possible_delimiters):
         for delimiter in possible_delimiters:
             if delimiter in first_line:
                 return delimiter
-    return ','  # Default to comma if none of the possible delimiters are found
+    return ','  # Default to comma if none of the possible delimiters are found    
+
+def file_path_in_files(conference_id):
+    app_folder = 'app'
+
+    # # Define the path to the vector_db folder within the app folder
+    files_folder = os.path.join(app_folder, 'files')
+    if not os.path.exists(files_folder):
+        os.makedirs(files_folder)
+        
+    file_path = os.path.join(files_folder, 'sessions'+conference_id+'.csv')
+    return file_path
 
 def createVectorDb(conference_id):
     load_dotenv()
@@ -60,12 +72,7 @@ def createVectorDb(conference_id):
     vector_db_folder = os.path.join(app_folder, 'vector_db')
     if not os.path.exists(vector_db_folder):
         os.makedirs(vector_db_folder)
-    
-    # save vectors to chromadb
-    # conference_id = '12345' # this has to be resolved later
-    # persist_directory = os.path.join(vector_db_folder, 'db_'+conference_id)
-    # if not os.path.exists(persist_directory):
-    #     os.makedirs(persist_directory)
+        
     vectordb = Chroma.from_documents(documents=data, embedding=embedding_function, persist_directory=vector_db_folder, collection_name=conference_id)
     vectordb.persist()
 

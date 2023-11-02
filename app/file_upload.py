@@ -24,7 +24,7 @@ def file_upload(file, conference_id):
         
         # createVectorDb(conference_id)
         
-        return {"filename": file.filename}
+        return {"original_filename": file.filename}
     
     elif file.filename.endswith(".json"): # Check if the uploaded file is a JSON file
         file_path = os.path.join(files_folder, 'sessions'+conference_id+'.json')
@@ -53,7 +53,7 @@ def file_upload(file, conference_id):
                 
         # createVectorDb(conference_id)
             
-        return {"filename": file.filename}
+        return {"original_filename": file.filename}
     
     elif file.filename.endswith(".xlsx"):
         # Handle Excel files
@@ -71,7 +71,7 @@ def file_upload(file, conference_id):
             
             # createVectorDb(conference_id)
 
-            return {"filename": file.filename}
+            return {"original_filename": file.filename}
         except Exception as e:
             return {"error": "Failed to process the Excel file: " + str(e)}
 
