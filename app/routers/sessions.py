@@ -45,7 +45,7 @@ def get_sessions_by_conference_id(uuid: str, db: Session = Depends(get_db)):
     return db_sessions
 
 # update session
-@router.put("/sessions", response_model=schemas.Session)
+@router.put("/sessions")
 def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if conferences_crud.get_conference_by_uuid(db, uuid=session.conference_uuid,owner_id=current_user.id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
@@ -57,8 +57,7 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
         raise HTTPException(status_code=400, detail="Invalid date")
     if session.start_time > session.end_time:
         raise HTTPException(status_code=400, detail="Invalid time")
-    session=crud.update_session(db=db, session=session, uuid=session.uuid, owner_id=current_user.id)
-    return session
+    return crud.update_session(db=db, session=session, uuid=session.uuid, owner_id=current_user.id)
 
 #delete session
 @router.delete("/sessions/{uuid}")

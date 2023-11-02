@@ -160,6 +160,6 @@ cython_debug/
 #.idea/
 app/vector_db/
 
-#ignoring the alembic folder
+# ignore alembic
+alembic
 alembic.ini
-alembic/*

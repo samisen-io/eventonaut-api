@@ -40,14 +40,22 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
 # update user
-def update_user(db: Session, user: schemas.UserBase, user_id: int):
+def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
     tz = timezone('Asia/Kolkata')
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    db_user.email = user.email
-    db_user.first_name = user.first_name
-    db_user.last_name = user.last_name
-    db_user.account_type = user.account_type
-    db_user.bussiness_type = user.bussiness_type
+
+    updates = {
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'account_type': user.account_type,
+        'bussiness_type': user.bussiness_type
+    }
+    
+    for key, value in updates.items():
+        if value is not None:
+            setattr(db_user, key, value)
+
     db_user.updated_on = datetime.now(tz)
     db.commit()
     db.refresh(db_user)
