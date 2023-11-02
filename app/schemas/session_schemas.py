@@ -17,6 +17,7 @@ class SessionCreate(SessionBase):
 class Session(SessionBase):
     uuid: str
     owner_id: int
+    conference_id: int
     class Config:
         orm_mode = True
 
