@@ -3,7 +3,7 @@ from .. import models, hashing
 from ..schemas import user_schemas as schemas
 from datetime import datetime
 from pytz import timezone
-
+import uuid
 
 # create user
 def create_user(db: Session, user: schemas.UserCreate):
@@ -12,6 +12,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db_user.created_on = datetime.now(tz)
     db_user.updated_on = datetime.now(tz)
+    db_user.uuid = str(uuid.uuid4())
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

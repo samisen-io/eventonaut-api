@@ -17,6 +17,7 @@ class User(Base):
     bussiness_type = Column(String, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
+    uuid = Column(String, index=True)
 
     conferences = relationship("Conference", back_populates="owner")
     sessions = relationship("Session", back_populates="owner")
@@ -35,6 +36,7 @@ class Conference(Base):
     end_date = Column(DATE, index=True)
     description = Column(String, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
+    uuid = Column(String, index=True)
 
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")
@@ -55,6 +57,7 @@ class Session(Base):
     location = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     owner_id = Column(Integer, ForeignKey("users.id"))
+    uuid = Column(String, index=True)
 
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
@@ -69,6 +72,7 @@ class Settings(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     owner_id = Column(Integer, ForeignKey("users.id"))
     body = Column(JSON, index=True)
+    uuid = Column(String, index=True)
 
     conference = relationship("Conference", back_populates="settings")
     owner = relationship("User", back_populates="settings")

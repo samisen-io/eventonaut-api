@@ -19,7 +19,8 @@ class UserPassword(BaseModel):
 
 #pydantic model for user
 class User(UserBase):
-    id: str
+    uuid: str
+    conferences: list[Conference] = []
     is_active: bool
     class Config:
         orm_mode = True
