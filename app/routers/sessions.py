@@ -16,7 +16,7 @@ router = APIRouter(tags=["sessions"])
 def create_session_for_conference(
     session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)
 ):
-    conference=conferences_crud.get_conference_by_uuid(db, uuid=session.uuid, owner_id=current_user.id)
+    conference=conferences_crud.get_conference_by_uuid(db, uuid=session.conference_uuid, owner_id=current_user.id)
     if conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     if session.date < conference.start_date or session.date > conference.end_date or session.date < date.today():
@@ -48,12 +48,12 @@ def get_sessions_by_conference_id(uuid: str, db: Session = Depends(get_db)):
 # update session
 @router.put("/sessions", response_model=schemas.Session)
 def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
-    if conferences_crud.get_conference_by_uuid(db, uuid=session.uuid,owner_id=current_user.id) is None:
+    if conferences_crud.get_conference_by_uuid(db, uuid=session.conference_uuid,owner_id=current_user.id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_session = crud.get_session_by_uuid_id(db, uuid=session.uuid, owner_id=current_user.id)
     if db_session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    conference=conferences_crud.get_conference_by_uuid_id(db, uuid=session.uuid, owner_id=current_user.id)
+    conference=conferences_crud.get_conference_by_uuid_id(db, uuid=session.conference_uuid, owner_id=current_user.id)
     if session.date < conference.start_date or session.date > conference.end_date or session.date < date.today():
         raise HTTPException(status_code=400, detail="Invalid date")
     if session.start_time > session.end_time:

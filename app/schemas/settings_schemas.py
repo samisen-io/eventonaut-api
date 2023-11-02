@@ -1,13 +1,16 @@
 from pydantic import BaseModel
 
 #pydantic model for settings
-class SettingsCreate(BaseModel):
-    conference_id: str
+class SettingsBase(BaseModel):
     body: dict
 
+class SettingsCreate(SettingsBase):
+    conference_uuid: str
+
 #pydantic model for settings
-class Settings(SettingsCreate):
-    id: str
-    owner_id: str
+class Settings(SettingsBase):
+    uuid: str
+    conference_id: int
+    owner_id: int
     class Config:
         orm_mode = True

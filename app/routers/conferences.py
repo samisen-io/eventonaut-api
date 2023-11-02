@@ -44,20 +44,6 @@ def get_all_conferences_by_owner_id(db: Session = Depends(get_db),current_user: 
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conferences
 
-# get all conferences by owner_id and conference id and between start_date and end_date
-@router.get("/conferences/filter_start_date/{filter_start_date}/filter_end_date/{filter_end_date}", response_model=list[schemas.Conference])
-def get_all_conferences_by_owner_id_between_start_date_and_end_date(filter_start_date: date, filter_end_date: date,db: Session = Depends(get_db),current_user: uschemas.User = Depends(get_current_active_user)):
-    if current_user.id <= 0:
-        raise HTTPException(status_code=400, detail="Invalid id")
-    if users_crud.get_user(db, user_id=current_user.id) is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    if filter_start_date > filter_end_date:
-        raise HTTPException(status_code=400, detail="Invalid date range")
-    db_conferences = crud.get_conferences_by_owner_id_between_start_date_and_end_date(db, owner_id=current_user.id, filter_start_date=filter_start_date, filter_end_date=filter_end_date)
-    if db_conferences is None or len(db_conferences) == 0:
-        raise HTTPException(status_code=404, detail="Conference not found")
-    return db_conferences
-
 # update conference by conference id
 @router.put("/conferences", response_model=schemas.Conference)
 def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):

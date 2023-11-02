@@ -2,18 +2,20 @@ from pydantic import BaseModel
 from datetime import date, time
 
 #pydantic model for session create
-class SessionCreate(BaseModel):
+class SessionBase(BaseModel):
     name: str
     start_time: time
     end_time: time
     description: str 
     date: date
     location: str 
-    uuid: str
 
+class SessionCreate(SessionBase):
+    conference_uuid: str
+    
 #pydantic model for session
-class Session(SessionCreate):
-    id: int
+class Session(SessionBase):
+    uuid: str
     owner_id: int
     class Config:
         orm_mode = True

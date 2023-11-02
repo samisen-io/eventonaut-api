@@ -19,5 +19,6 @@ class Conference(ConferenceCreate):
     uuid: str
     owner_id: int
     sessions: list[Session] = []
+    settings: list[Settings] = []
     class Config:
         orm_mode = True
