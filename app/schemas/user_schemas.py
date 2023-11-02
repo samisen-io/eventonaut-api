@@ -22,7 +22,6 @@ class UserBase(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid last name")
         return v
     
-    
     @validator('account_type')
     def account_type_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string" or (v.upper() != "INDIVIDUAL" and v.upper() != "COMPANY"):

@@ -52,9 +52,9 @@ class ConferenceUpdate(BaseModel):
     end_date: date  | None = None
     description: str | None = None
 
-    @validator('id')
-    def id_is_not_empty(cls, v):
-        if v is None or v <= 0:
+    @validator('uuid')
+    def uuid_is_not_empty(cls, v):
+        if v is None or v == "string" or v.strip() == "":
             raise HTTPException(status_code=400, detail="Invalid id")
         return v
     

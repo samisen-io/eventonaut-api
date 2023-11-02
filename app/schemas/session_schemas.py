@@ -47,15 +47,14 @@ class SessionBase(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid location")
         return v
     
-    @validator('conference_id')
-    def conference_id_must_not_be_empty(cls, v):
-        if v is None and v <= 0:
-            raise HTTPException(status_code=400, detail="Invalid conference id")
-        return v
-
-
 class SessionCreate(SessionBase):
     conference_uuid: str
+    
+    @validator('conference_uuid')
+    def conference_uuid_must_not_be_empty(cls, v):
+        if v is None or v == "" or v == "string":
+            raise HTTPException(status_code=400, detail="Invalid conference id")
+        return v
     
 #pydantic model for session
 class Session(SessionBase):
@@ -68,7 +67,7 @@ class Session(SessionBase):
 #pydantic model for session update
 class SessionUpdate(BaseModel):
     uuid: str
-    conference_id:int
+    conference_uuid: str
     name: str | None = None
     start_time: time | None = None
     end_time: time | None = None
@@ -76,15 +75,15 @@ class SessionUpdate(BaseModel):
     date: Date | None = None
     location: str | None = None
 
-    @validator('id')
-    def id_must_not_be_empty(cls, v):
-        if v is None or v <= 0:
+    @validator('uuid')
+    def uuid_must_not_be_empty(cls, v):
+        if v is None or v == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid id")
         return v
     
-    @validator('conference_id')
-    def conference_id_must_not_be_empty(cls, v):
-        if v is None or v <= 0:
+    @validator('conference_uuid')
+    def conference_uuid_must_not_be_empty(cls, v):
+        if v is None or v == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid conference id")
         return v
     
