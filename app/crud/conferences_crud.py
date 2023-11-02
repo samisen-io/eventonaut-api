@@ -3,6 +3,7 @@ from datetime import datetime, date
 from .. import models
 from ..schemas import conference_schemas as schemas
 from pytz import timezone
+import uuid
 
 # get all conferences
 def get_conferences(db: Session, skip: int = 0, limit: int = 100):
@@ -14,6 +15,7 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     tz = timezone('Asia/Kolkata')
     db_conference.created_on = datetime.now(tz)
     db_conference.updated_on = datetime.now(tz)
+    db_conference.uuid = str(uuid.uuid4())
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
@@ -26,6 +28,10 @@ def get_conference(db: Session, conference_id: int):
 #get conference by owner id and conference id
 def get_conference_by_owner_id(db: Session, owner_id: int, conference_id: int):
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.id == conference_id).first()
+
+# get conference by uuid and owner id
+def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
+    return db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
 
 # get conference by name
 def get_conferences_by_name(db: Session, name: str):
@@ -76,10 +82,10 @@ def get_conferences_by_owner_id_between_start_date_and_end_date(db: Session, own
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.start_date >= filter_start_date, models.Conference.start_date <= filter_end_date).order_by(models.Conference.start_date).all()
 
 # delete conference by conference id
-def delete_conference(db: Session,owner_id: int, conference_id: int):
-    db.query(models.Conference).filter(models.Conference.id == conference_id, models.Conference.owner_id==owner_id).delete()
-    db.query(models.Session).filter(models.Session.conference_id == conference_id, models.Session.owner_id==owner_id).delete()
-    db.query(models.Settings).filter(models.Settings.conference_id == conference_id, models.Settings.owner_id==owner_id).delete()
+def delete_conference(db: Session,owner_id: int, uuid: str):
+    db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id==owner_id).delete()
+    # db.query(models.Session).filter(models.Session.conference_id == conference_id, models.Session.owner_id==owner_id).delete()
+    # db.query(models.Settings).filter(models.Settings.conference_id == conference_id, models.Settings.owner_id==owner_id).delete()
     db.commit()
     return True
 
@@ -92,8 +98,8 @@ def delete_all_conferences_of_owner_id(db: Session, owner_id: int):
     return True
 
 # update conference by conference id
-def update_user_conference(db: Session, conference: schemas.ConferenceCreate, conference_id: int, owner_id:int):
-    db_conference = db.query(models.Conference).filter(models.Conference.id == conference_id,models.Conference.owner_id == owner_id).first()
+def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uuid: str, owner_id:int):
+    db_conference = db.query(models.Conference).filter(models.Conference.uuid == uuid,models.Conference.owner_id == owner_id).first()
     tz = timezone('Asia/Kolkata')
     db_conference.name = conference.name
     db_conference.location = conference.location

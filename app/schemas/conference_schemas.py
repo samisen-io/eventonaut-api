@@ -12,11 +12,12 @@ class ConferenceCreate(BaseModel):
     description: str | None = None
 
 class ConferenceUpdate(ConferenceCreate):
-    id: str
+    uuid: str
 
 #pydantic model for conference
 class Conference(ConferenceCreate):
-    id: str
-    owner_id: str
+    uuid: str
+    owner_id: int
+    sessions: list[Session] = []
     class Config:
         orm_mode = True
