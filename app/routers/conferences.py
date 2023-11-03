@@ -7,6 +7,7 @@ from ..schemas import user_schemas as uschemas
 from ..crud import conferences_crud as crud, users_crud
 from ..dependencies import get_db
 from datetime import date
+import uuid
 
 router = APIRouter(tags=["conferences"])
 
@@ -43,40 +44,25 @@ def get_all_conferences_by_owner_id(db: Session = Depends(get_db),current_user: 
         raise HTTPException(status_code=404, detail="Conference not found")
     return db_conferences
 
-# get all conferences by owner_id and conference id and between start_date and end_date
-@router.get("/conferences/filter_start_date/{filter_start_date}/filter_end_date/{filter_end_date}", response_model=list[schemas.Conference])
-def get_all_conferences_by_owner_id_between_start_date_and_end_date(filter_start_date: date, filter_end_date: date,db: Session = Depends(get_db),current_user: uschemas.User = Depends(get_current_active_user)):
-    if current_user.id <= 0:
-        raise HTTPException(status_code=400, detail="Invalid id")
-    if users_crud.get_user(db, user_id=current_user.id) is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    if filter_start_date > filter_end_date:
-        raise HTTPException(status_code=400, detail="Invalid date range")
-    db_conferences = crud.get_conferences_by_owner_id_between_start_date_and_end_date(db, owner_id=current_user.id, filter_start_date=filter_start_date, filter_end_date=filter_end_date)
-    if db_conferences is None or len(db_conferences) == 0:
-        raise HTTPException(status_code=404, detail="Conference not found")
-    return db_conferences
-
 # update conference by conference id
-@router.put("/conferences", response_model=schemas.Conference)
+@router.put("/conferences")
 def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
-    if conference.id <= 0:
-        raise HTTPException(status_code=400, detail="Invalid conference id")
-    db_conference = crud.get_conference_by_owner_id(db, conference_id=conference.id, owner_id=current_user.id)
+    db_conference = crud.get_conference_by_uuid(db, uuid=conference.id, owner_id=current_user.id)
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
-    if conference.start_date > conference.end_date or conference.start_date < date.today():
-        raise HTTPException(status_code=400, detail="Invalid date range")
-    return crud.update_user_conference(db=db, conference=conference, conference_id=conference.id, owner_id=current_user.id)
+    if conference.start_date is not None and conference.end_date is not None:
+        if conference.start_date > conference.end_date or conference.start_date < date.today():
+            raise HTTPException(status_code=400, detail="Invalid date range")
+    return crud.update_user_conference(db=db, conference=conference, uuid=conference.id, owner_id=current_user.id)
 
 # delete conference
-@router.delete("/conferences/{conference_id}")
-def delete_conference_owner_id_conference_id(conference_id: int, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
-    if current_user.id <= 0 or conference_id <= 0:
-        raise HTTPException(status_code=400, detail="Invalid id or conference id")
+@router.delete("/conferences/{id}")
+def delete_conference_owner_id_conference_id(id: str, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
+    if current_user.id <= 0:
+        raise HTTPException(status_code=400, detail="Invalid id")
     if not users_crud.get_user(db, user_id=current_user.id):
         raise HTTPException(status_code=404, detail="User not found")
-    db_conference = crud.get_conference_by_owner_id(db,owner_id=current_user.id, conference_id=conference_id)
+    db_conference = crud.get_conference_by_uuid(db,owner_id=current_user.id, uuid=id)
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
-    return crud.delete_conference(db=db, owner_id=current_user.id, conference_id=conference_id)
+    return crud.delete_conference(db=db, owner_id=current_user.id, uuid=id)
