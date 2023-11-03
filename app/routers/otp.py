@@ -28,10 +28,12 @@ async def send_otp(email: str, email_subject: str , db: Session = Depends(get_db
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
-async def verify_otp(email: str, otp: int, db: Session = Depends(get_db)):
+async def verify_otp(email: str, otp: str, db: Session = Depends(get_db)):
     global valid_otp, valid_email
     if email != valid_email:
         raise HTTPException(status_code=400, detail="Email not verified")
+    if len(otp) != 6:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
     valid_otp = otp_gen.validate_otp(otp, datetime.now())
     if not valid_otp:
         raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
