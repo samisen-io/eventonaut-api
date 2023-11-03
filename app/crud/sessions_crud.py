@@ -13,12 +13,14 @@ def get_sessions(db: Session, skip: int = 0, limit: int = 100):
 
 def create_conference_session(db: Session, session: schemas.SessionCreate, owner_id: int):
     db_session = models.Session(name=session.name, start_time=session.start_time, end_time=session.end_time, description=session.description, date=session.date, location=session.location, owner_id=owner_id)
-    conference_id = db.query(models.Conference).filter(models.Conference.uuid == session.conference_uuid).first().id
+    conference_id = db.query(models.Conference).filter(models.Conference.uuid == session.conference_id).first().id
     tz = timezone('Asia/Kolkata')
     db_session.created_on = datetime.now(tz)
     db_session.updated_on = datetime.now(tz)
     db_session.owner_id = owner_id
     db_session.conference_id = conference_id
+    db_session.speakers = session.speakers
+    db_session.tags = session.tags
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
@@ -54,13 +56,36 @@ def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner
     db_session = db.query(models.Session).filter(models.Session.uuid == uuid,models.Session.owner_id == owner_id).first()
     tz = timezone('Asia/Kolkata')
     
+    speakers:list[str] = []
+    tags:list[str] = []
+
+    if session.speakers is not None:
+        for speaker in session.speakers:
+            if speaker is None or speaker == "" or speaker == "string":
+                raise HTTPException(status_code=400, detail="Invalid speaker")
+            if speaker not in speakers:
+                speakers.append(speaker)
+    else:
+        speakers = db_session.speakers
+    
+    if session.tags is not None:
+        for tag in session.tags:
+            if tag is None or tag == "" or tag == "string":
+                raise HTTPException(status_code=400, detail="Invalid tag")
+            if tag not in tags:
+                tags.append(tag)
+    else:
+        tags = db_session.tags
+
     updates = {
         'name': session.name,
         'date': session.date,
         'start_time': session.start_time,
         'end_time': session.end_time,
         'location': session.location,
-        'description': session.description
+        'description': session.description,
+        'speakers': speakers,
+        'tags': tags
     }
     
     for key, value in updates.items():

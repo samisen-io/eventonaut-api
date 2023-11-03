@@ -10,7 +10,9 @@ class SessionBase(BaseModel):
     end_time: time
     description: str 
     date: Date
-    location: str 
+    location: str
+    speakers: list[str]
+    tags: list[str]
 
     @validator('name')
     def name_must_not_be_empty(cls, v):
@@ -48,6 +50,24 @@ class SessionBase(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid location")
         return v
     
+    @validator('speakers')
+    def speakers_must_not_be_empty(cls, v):
+        if v is None or v == "" or len(v) == 0:
+            raise HTTPException(status_code=400, detail="Invalid speakers")
+        for speaker in v:
+            if speaker is None or speaker == "" or speaker == "string":
+                raise HTTPException(status_code=400, detail="Invalid speaker")
+        return v
+    
+    @validator('tags')
+    def tags_must_not_be_empty(cls, v):
+        if v is None or v == "" or len(v) == 0:
+            raise HTTPException(status_code=400, detail="Invalid tags")
+        for tag in v:
+            if tag is None or tag == "" or tag == "string":
+                raise HTTPException(status_code=400, detail="Invalid tag")
+        return v
+    
 class SessionCreate(SessionBase):
     conference_id: str
     
@@ -73,6 +93,8 @@ class SessionUpdate(BaseModel):
     description: str | None = None
     date: Date | None = None
     location: str | None = None
+    speakers: list[str] | None = None
+    tags: list[str] | None = None
 
     @validator('id')
     def id_must_not_be_empty(cls, v):
@@ -120,6 +142,24 @@ class SessionUpdate(BaseModel):
     def location_must_not_be_empty(cls, v):
         if v == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid location")
+        return v
+    
+    @validator('speakers')
+    def speakers_must_not_be_empty(cls, v):
+        if v == "":
+            raise HTTPException(status_code=400, detail="Invalid speakers")
+        for speaker in v:
+            if speaker == "" or speaker == "string":
+                raise HTTPException(status_code=400, detail="Invalid speaker")
+        return v
+    
+    @validator('tags')
+    def tags_must_not_be_empty(cls, v):
+        if v == "":
+            raise HTTPException(status_code=400, detail="Invalid tags")
+        for tag in v:
+            if tag == "" or tag == "string":
+                raise HTTPException(status_code=400, detail="Invalid tag")
         return v
     
     class Config:
