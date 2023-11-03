@@ -1,4 +1,5 @@
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON, DATE, TIME
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 import uuid
 
@@ -9,6 +10,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, default=str(uuid.uuid4()))
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     email = Column(String, unique=True, index=True)
@@ -18,7 +20,6 @@ class User(Base):
     bussiness_type = Column(String, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
 
     conferences = relationship("Conference", back_populates="owner")
     sessions = relationship("Session", back_populates="owner")
@@ -29,6 +30,7 @@ class Conference(Base):
     __tablename__ = "conferences"
 
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, default=str(uuid.uuid4()))
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     name = Column(String, index=True)
@@ -37,7 +39,6 @@ class Conference(Base):
     end_date = Column(DATE, index=True)
     description = Column(String, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
 
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")
@@ -49,6 +50,7 @@ class Session(Base):
     __tablename__ = "sessions"
 
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, default=str(uuid.uuid4()))
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     name = Column(String, index=True)
@@ -59,7 +61,6 @@ class Session(Base):
     location = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     owner_id = Column(Integer, ForeignKey("users.id"))
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
 
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
@@ -70,12 +71,12 @@ class Settings(Base):
     __tablename__ = "settings"
 
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, default=str(uuid.uuid4()))
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     owner_id = Column(Integer, ForeignKey("users.id"))
-    body = Column(JSON, index=True)
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
+    body = Column(JSONB, index=True)
 
     conference = relationship("Conference", back_populates="settings")
     owner = relationship("User", back_populates="settings")
@@ -85,6 +86,7 @@ class Attendee(Base):
     __tablename__ = "attendees"
 
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, default=str(uuid.uuid4()))
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     first_name = Column(String, index=True)
@@ -92,7 +94,6 @@ class Attendee(Base):
     email = Column(String, index=True)
     hased_password = Column(String, index=True)
     is_active = Column(Boolean, default=True)
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
 
     agenda = relationship("Agenda", back_populates="attendees")
     agenda_session = relationship("AgendaSession", back_populates="attendees")
@@ -102,12 +103,12 @@ class Agenda(Base):
     __tablename__ = "agenda"
 
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, default=str(uuid.uuid4()))
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     name = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     attendee_id = Column(Integer, ForeignKey("attendees.id"))
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
 
     conference = relationship("Conference", back_populates="agenda")
     attendees = relationship("Attendee", back_populates="agenda")
@@ -118,6 +119,7 @@ class AgendaSession(Base):
     __tablename__ = "agenda_session"
 
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, default=str(uuid.uuid4()))
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     agenda_id = Column(Integer, ForeignKey("agenda.id"))
@@ -126,7 +128,6 @@ class AgendaSession(Base):
     date = Column(DATE, index=True)
     start_time = Column(TIME, index=True)
     end_time = Column(TIME, index=True)
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
 
     agenda = relationship("Agenda", back_populates="agenda_session")
     session = relationship("Session", back_populates="agenda_session")
