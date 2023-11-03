@@ -1,18 +1,21 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, JSON, DATE, TIME
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
+import pytz
+from datetime import datetime
 import uuid
 
 from .database import Base
 
+tz = pytz.timezone('Asia/Kolkata')
 
 class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, default=str(uuid.uuid4()))
-    created_on = Column(DateTime)
-    updated_on = Column(DateTime)
+    created_on = Column(DateTime, default=datetime.now(tz))
+    updated_on = Column(DateTime, default=datetime.now(tz))
     email = Column(String, unique=True, index=True)
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
@@ -31,8 +34,8 @@ class Conference(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, default=str(uuid.uuid4()))
-    created_on = Column(DateTime)
-    updated_on = Column(DateTime)
+    created_on = Column(DateTime, default=datetime.now(tz))
+    updated_on = Column(DateTime, default=datetime.now(tz))
     name = Column(String, index=True)
     location = Column(String, index=True)
     start_date = Column(DATE, index=True)
@@ -51,8 +54,8 @@ class Session(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, default=str(uuid.uuid4()))
-    created_on = Column(DateTime)
-    updated_on = Column(DateTime)
+    created_on = Column(DateTime, default=datetime.now(tz))
+    updated_on = Column(DateTime, default=datetime.now(tz))
     name = Column(String, index=True)
     start_time = Column(TIME, index=True)
     end_time = Column(TIME, index=True)
@@ -60,6 +63,8 @@ class Session(Base):
     date = Column(DATE, index=True) 
     location = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
+    speakers = Column(ARRAY(String), index=True)
+    tags = Column(ARRAY(String), index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
 
     conference = relationship("Conference", back_populates="sessions")
@@ -72,8 +77,8 @@ class Settings(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, default=str(uuid.uuid4()))
-    created_on = Column(DateTime)
-    updated_on = Column(DateTime)
+    created_on = Column(DateTime, default=datetime.now(tz))
+    updated_on = Column(DateTime, default=datetime.now(tz))
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     owner_id = Column(Integer, ForeignKey("users.id"))
     body = Column(JSONB, index=True)
@@ -87,8 +92,8 @@ class Attendee(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, default=str(uuid.uuid4()))
-    created_on = Column(DateTime)
-    updated_on = Column(DateTime)
+    created_on = Column(DateTime, default=datetime.now(tz))
+    updated_on = Column(DateTime, default=datetime.now(tz))
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
     email = Column(String, index=True)
@@ -104,8 +109,8 @@ class Agenda(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, default=str(uuid.uuid4()))
-    created_on = Column(DateTime)
-    updated_on = Column(DateTime)
+    created_on = Column(DateTime, default=datetime.now(tz))
+    updated_on = Column(DateTime, default=datetime.now(tz))
     name = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     attendee_id = Column(Integer, ForeignKey("attendees.id"))
@@ -120,8 +125,8 @@ class AgendaSession(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, default=str(uuid.uuid4()))
-    created_on = Column(DateTime)
-    updated_on = Column(DateTime)
+    created_on = Column(DateTime, default=datetime.now(tz))
+    updated_on = Column(DateTime, default=datetime.now(tz))
     agenda_id = Column(Integer, ForeignKey("agenda.id"))
     session_id = Column(Integer, ForeignKey("sessions.id"))
     attendee_id = Column(Integer, ForeignKey("attendees.id"))
