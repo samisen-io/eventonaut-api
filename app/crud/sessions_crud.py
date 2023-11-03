@@ -4,6 +4,7 @@ from datetime import datetime, date, time
 from .. import models
 from ..schemas import session_schemas as schemas
 from fastapi import HTTPException
+from typing import List
 from pytz import timezone
 
 #get all sessions
@@ -31,10 +32,10 @@ def get_session_by_uuid_id(db: Session, uuid: int, owner_id: int):
     return db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.owner_id == owner_id).first()
 
 #get sessions by conference_id
-def get_all_sessions_by_uuid_id(db: Session, uuid: str):
-    conference_id = db.query(models.Conference).filter(models.Conference.uuid == uuid).first().id
-    return db.query(models.Session).filter(models.Session.conference_id == conference_id).all()
-
+def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str) -> List[schemas.Session]:
+    conference_id = db.query(models.Conference).filter(models.Conference.uuid == conference_uuid).first().id
+    db_sessions=db.query(models.Session).filter(models.Session.conference_id == conference_id).all()
+    return [schemas.Session(**db_session.__dict__) for db_session in db_sessions]
 
 #delete session
 def delete_session(db: Session, uuid: str, owner_id: int):

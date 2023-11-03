@@ -37,6 +37,9 @@ def get_conference_by_uuid_id(db: Session, owner_id: int, uuid: int):
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
 
+def get_conference_by_conference_uuid(db: Session, uuid: str):
+    return db.query(models.Conference).filter(models.Conference.uuid == uuid).first()
+
 # delete conference by conference id
 def delete_conference(db: Session,owner_id: int, uuid: str):
     db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id==owner_id).delete()

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
 from .conference_schemas import Conference
 
@@ -87,7 +87,7 @@ class UserPassword(BaseModel):
 
 #pydantic model for user
 class User(UserBase):
-    uuid: str
+    uuid: str = Field(serialization_alias="id")
     conferences: list[Conference] = []
     is_active: bool
     class Config:

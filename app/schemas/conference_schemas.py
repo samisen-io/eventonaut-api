@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
 from datetime import date
 from .settings_schemas import Settings
@@ -45,15 +45,15 @@ class ConferenceCreate(BaseModel):
         return v
 
 class ConferenceUpdate(BaseModel):
-    uuid: str
+    id: str
     name: str | None = None
     location: str | None = None
     start_date: date | None = None
     end_date: date  | None = None
     description: str | None = None
 
-    @validator('uuid')
-    def uuid_is_not_empty(cls, v):
+    @validator('id')
+    def id_is_not_empty(cls, v):
         if v is None or v == "string" or v.strip() == "":
             raise HTTPException(status_code=400, detail="Invalid id")
         return v
@@ -80,8 +80,7 @@ class ConferenceUpdate(BaseModel):
 
 #pydantic model for conference
 class Conference(ConferenceCreate):
-    uuid: str
-    owner_id: int
+    uuid: str = Field(serialization_alias="id")
     sessions: list[Session] = []
     settings: list[Settings] = []
     class Config:
