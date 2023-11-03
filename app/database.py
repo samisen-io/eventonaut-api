@@ -8,7 +8,7 @@ load_dotenv()
 
 
 # SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL_ADDRESS")
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL
