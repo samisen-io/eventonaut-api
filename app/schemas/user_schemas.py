@@ -71,7 +71,7 @@ class UserCreate(UserBase):
 
     @validator('hashed_password')
     def hashed_password_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" ") or len(v) < 14 or len(v) > 16:
             raise HTTPException(status_code=400, detail="Invalid password")
         return v
 
@@ -81,7 +81,7 @@ class UserPassword(BaseModel):
 
     @validator('hashed_password')
     def hashed_password_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" ") or len(v) < 14 or len(v) > 16:
             raise HTTPException(status_code=400, detail="Invalid password")
         return v
 
