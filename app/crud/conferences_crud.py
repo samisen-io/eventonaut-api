@@ -42,9 +42,10 @@ def get_conference_by_conference_uuid(db: Session, uuid: str):
 
 # delete conference by conference id
 def delete_conference(db: Session,owner_id: int, uuid: str):
-    db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id==owner_id).delete()
-    # db.query(models.Session).filter(models.Session.conference_id == conference_id, models.Session.owner_id==owner_id).delete()
-    # db.query(models.Settings).filter(models.Settings.conference_id == conference_id, models.Settings.owner_id==owner_id).delete()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
+    db.query(models.Session).filter(models.Session.conference_id == conference.id, models.Session.owner_id==owner_id).delete()
+    db.query(models.Settings).filter(models.Settings.conference_id == conference.id, models.Settings.owner_id==owner_id).delete()
+    db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).delete()
     db.commit()
     return True
 

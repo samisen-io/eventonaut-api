@@ -19,7 +19,7 @@ def create_settings(db: Session, settings: schemas.SettingsCreate, owner_id: int
     tz = pytz.timezone('Asia/Kolkata')
     db_settings.created_on = datetime.now(tz)
     db_settings.updated_on = datetime.now(tz)
-    conference_id = db.query(models.Conference).filter(models.Conference.uuid == settings.conference_uuid, models.Conference.owner_id == owner_id).first().id
+    conference_id = db.query(models.Conference).filter(models.Conference.uuid == settings.conference_id, models.Conference.owner_id == owner_id).first().id
     db_settings.conference_id = conference_id
     db.add(db_settings)
     db.commit()
