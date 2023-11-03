@@ -11,7 +11,7 @@ from datetime import date
 router = APIRouter(tags=["sessions"])
 
 # create session by owner id and conference id
-@router.post("/sessions", response_model=schemas.Session)
+@router.post("/sessions")
 def create_session_for_conference(
     session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)
 ):
