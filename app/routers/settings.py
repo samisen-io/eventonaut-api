@@ -5,7 +5,6 @@ from app.oauth2 import get_current_active_user
 from ..schemas import settings_schemas as schemas
 from ..schemas import user_schemas as uschemas
 from ..crud import settings_crud as crud, conferences_crud
-from ..encryption import encrypt_number, decrypt_number
 from ..dependencies import get_db
 
 router = APIRouter(tags=["settings"])
@@ -20,11 +19,7 @@ def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_d
         raise HTTPException(status_code=400, detail="Settings already exists")
     if settings.body is None or len(settings.body) == 0:
         raise HTTPException(status_code=400, detail="Body is empty")
-    settings=crud.create_settings(db=db, settings=settings, owner_id=current_user.id)
-    settings.conference_id=encrypt_number(settings.conference_id)
-    settings.owner_id=encrypt_number(settings.owner_id)
-    settings.id=encrypt_number(settings.id)
-    return settings
+    return crud.create_settings(db=db, settings=settings, owner_id=current_user.id)
 
 # get all settings
 @router.get("/settings/all_settings", response_model=list[schemas.Settings])
@@ -32,10 +27,6 @@ def get_settings(db: Session = Depends(get_db), skip: int = 0, limit: int = 100)
     settings = crud.get_settings(db, skip=skip, limit=limit)
     if settings is None or len(settings) == 0:
         raise HTTPException(status_code=404, detail="Settings not found")
-    for setting in settings:
-        setting.conference_id=encrypt_number(setting.conference_id)
-        setting.owner_id=encrypt_number(setting.owner_id)
-        setting.id=encrypt_number(setting.id)
     return settings
 
 # get settings by conference id
@@ -44,9 +35,6 @@ def get_settings_by_conference_id(conference_id: str, db: Session = Depends(get_
     settings = crud.get_settings_by_conf_uuid(db, conference_uuid=conference_id)
     if settings is None:
         raise HTTPException(status_code=404, detail="Settings not found")
-    settings.conference_id=encrypt_number(settings.conference_id)
-    settings.owner_id=encrypt_number(settings.owner_id)
-    settings.id=encrypt_number(settings.id)
     return settings
 
 # update settings by conference id and settings id
