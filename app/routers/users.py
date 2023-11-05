@@ -4,7 +4,6 @@ from app.oauth2 import get_current_active_user
 from ..schemas import user_schemas as schemas
 from ..crud import users_crud as crud
 from ..dependencies import get_db
-from ..encryption import encrypt_number
 from email_validator import validate_email, EmailNotValidError
 
 
