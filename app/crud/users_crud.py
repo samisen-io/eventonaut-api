@@ -3,7 +3,7 @@ from .. import models, hashing
 from ..schemas import user_schemas as schemas
 from datetime import datetime
 from pytz import timezone
-
+import uuid
 
 # create user
 def create_user(db: Session, user: schemas.UserCreate):
@@ -12,6 +12,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db_user.created_on = datetime.now(tz)
     db_user.updated_on = datetime.now(tz)
+    db_user.uuid = str(uuid.uuid4())
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -39,14 +40,22 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.User).offset(skip).limit(limit).all()
 
 # update user
-def update_user(db: Session, user: schemas.UserBase, user_id: int):
+def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
     tz = timezone('Asia/Kolkata')
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    db_user.email = user.email
-    db_user.first_name = user.first_name
-    db_user.last_name = user.last_name
-    db_user.account_type = user.account_type
-    db_user.bussiness_type = user.bussiness_type
+
+    updates = {
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'account_type': user.account_type,
+        'bussiness_type': user.bussiness_type
+    }
+    
+    for key, value in updates.items():
+        if value is not None:
+            setattr(db_user, key, value)
+
     db_user.updated_on = datetime.now(tz)
     db.commit()
     db.refresh(db_user)
@@ -57,6 +66,15 @@ def update_user_password(db: Session, user: schemas.UserPassword, user_id: int):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     tz=timezone('Asia/Kolkata')
     db_user.hashed_password = hashing.get_password_hash(user.hashed_password)
+    db_user.updated_on = datetime.now(tz)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
+def update_user_password_by_id(db: Session, user_id: int, password: str):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    tz=timezone('Asia/Kolkata')
+    db_user.hashed_password = hashing.get_password_hash(password)
     db_user.updated_on = datetime.now(tz)
     db.commit()
     db.refresh(db_user)

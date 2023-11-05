@@ -7,19 +7,22 @@ from datetime import datetime
 
 class otp_generator:
 
-    __otp: int = None
+    __otp: str = None
     __gen_time: datetime = None
     default_time_limit: int = 300
 
     def generate_otp(self):
-        self.__otp = int(''.join(random.choice(string.digits) for i in range(6)))
+        self.__otp = ''.join(random.choice(string.digits) for _ in range(6))
         self.__gen_time = datetime.now()
         return self.__otp
 
-    def validate_otp(self, otp:int, validaton_time:datetime):
-        valid: bool = True if self.__otp == otp and (validaton_time - self.__gen_time).seconds <= self.default_time_limit else False
-        self.__otp = None
-        self.__gen_time = None
+    def validate_otp(self, otp: str, validaton_time:datetime):
+        if self.__otp == otp and (validaton_time - self.__gen_time).total_seconds() <= self.default_time_limit:
+                valid = True
+                self.__otp = None
+                self.__gen_time = None
+        else:
+            valid = False
         return valid        
 
 def send_mail(otp: otp_generator,subject: str, receiver_email:str):
@@ -55,8 +58,8 @@ def send_mail(otp: otp_generator,subject: str, receiver_email:str):
 if __name__ == "__main__":
     otp = otp_generator()
     send_mail(otp, "OTP Verification","demo34125@gmail.com")
-    one_tme_pass = int(input("Enter otp: "))
+    one_tme_pass = input("Enter otp: ")
     validation_time = datetime.now()
     print("My Otp is: ", one_tme_pass)
-    print("actual otp is: ", otp._otp)  
+    print("actual otp is: ", otp.__otp)  
     print(otp.validate_otp(one_tme_pass, validation_time))
