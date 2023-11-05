@@ -94,7 +94,7 @@ class Attendee(Base):
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
     email = Column(String, index=True)
-    hased_password = Column(String, index=True)
+    hashed_password = Column(String, index=True)
     is_active = Column(Boolean, default=True)
 
     agenda = relationship("Agenda", back_populates="attendees")

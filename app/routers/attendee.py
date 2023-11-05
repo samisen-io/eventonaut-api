@@ -30,10 +30,8 @@ def get_all_attendees(skip: int = 0, limit: int = 100, db: Session = Depends(get
 
 # get attendee by id
 @router.get("/attendee/{attendee_id}", response_model=schemas.Attendee)
-def get_attendee_by_id(attendee_id: int, db: Session = Depends(get_db)):
-    if attendee_id <= 0:
-        raise HTTPException(status_code=400, detail="Invalid id")
-    db_attendee = crud.get_attendee_by_id(db, attendee_id=attendee_id)
+def get_attendee_by_id(attendee_id: str, db: Session = Depends(get_db)):
+    db_attendee = crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
     if not db_attendee:
         raise HTTPException(status_code=404, detail="Attendee not found")
     return db_attendee
@@ -41,33 +39,32 @@ def get_attendee_by_id(attendee_id: int, db: Session = Depends(get_db)):
 # update attendee by email
 @router.put("/attendee", response_model=schemas.Attendee)
 def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db)):
-    if attendee.id <= 0:
-        raise HTTPException(status_code=400, detail="Invalid id")
-    if not crud.get_attendee_by_id(db, attendee_id=attendee.id):
+    if attendee.email is None and attendee.first_name is None and attendee.last_name is None:
+        raise HTTPException(status_code=400, detail="Invalid request body")
+    if not crud.get_attendee_by_uuid(db, attendee_id=attendee.id):
         raise HTTPException(status_code=400, detail="Attendee not found")
-    try:
-        valid = validate_email(attendee.email)
-        attendee.email = valid.email
-    except EmailNotValidError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    db_attendee = crud.get_attendee_by_email(db, email=attendee.email)
-    if db_attendee and db_attendee.id != attendee.id:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.update_attendee_by_id(db=db, attendee_id=attendee.id, attendee=attendee)
+    if attendee.email is not None:
+        try:
+            valid = validate_email(attendee.email)
+            attendee.email = valid.email
+        except EmailNotValidError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        db_attendee = crud.get_attendee_by_email(db, email=attendee.email)
+        if db_attendee and db_attendee.uuid != attendee.id:
+            raise HTTPException(status_code=400, detail="Email already registered")
+    return crud.update_attendee_by_uuid(db=db, attendee_id=attendee.id, attendee=attendee)
 
 # update attende password by id
 @router.put("/attendee/password", response_model=schemas.Attendee)
 def update_attendee_password_by_id(attendee: schemas.AttendePassword, db: Session = Depends(get_db)):
-    if attendee.id <= 0:
-        raise HTTPException(status_code=400, detail="Invalid id")
-    if not crud.get_attendee_by_id(db, attendee_id=attendee.id):
+    if not crud.get_attendee_by_uuid(db, attendee_id=attendee.id):
         raise HTTPException(status_code=400, detail="Attendee not found")
-    return crud.update_attendee_password_by_id(db=db, attendee_id=attendee.id, attendee=attendee)
+    return crud.update_attendee_password_by_uuid(db=db, attendee_id=attendee.id, attendee=attendee)
 
 # delete all attendee by id
 @router.delete("/attendee/{attendee_id}")
-def delete_attendee_by_id(attendee_id: int, db: Session = Depends(get_db)):
-    db_attendee = crud.get_attendee_by_id(db, attendee_id=attendee_id)
+def delete_attendee_by_id(attendee_id: str, db: Session = Depends(get_db)):
+    db_attendee = crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
     if not db_attendee:
         raise HTTPException(status_code=404, detail="Attendee not found")
-    return crud.delete_attendee_by_id(db, attendee_id=attendee_id)
+    return crud.delete_attendee_by_uuid(db, attendee_id=attendee_id)
