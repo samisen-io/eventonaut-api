@@ -6,7 +6,6 @@ from ..schemas import conference_schemas as schemas
 from ..schemas import user_schemas as uschemas
 from ..crud import conferences_crud as crud, users_crud
 from ..dependencies import get_db
-from .. encryption import encrypt_number, decrypt_number
 from datetime import date
 import uuid
 
@@ -21,10 +20,7 @@ def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session
         raise HTTPException(status_code=404, detail="User not found")
     if conference.start_date > conference.end_date or conference.start_date < date.today():
         raise HTTPException(status_code=400, detail="Invalid date range")
-    conference=crud.create_user_conference(db=db, conference=conference, user_id=current_user.id)
-    conference.id=encrypt_number(conference.id)
-    conference.owner_id=encrypt_number(conference.owner_id)
-    return conference
+    return crud.create_user_conference(db=db, conference=conference, user_id=current_user.id)
 
 # get all conferences
 @router.get("/conferences/all_conferences", response_model=list[schemas.Conference])
@@ -34,9 +30,6 @@ def get_all_conferences(skip: int = 0, limit: int = 100, db: Session = Depends(g
     conferences = crud.get_conferences(db, skip=skip, limit=limit)
     if conferences is None or len(conferences) == 0:
         raise HTTPException(status_code=404, detail="Conference not found")
-    for conference in conferences:
-        conference.id=encrypt_number(conference.id)
-        conference.owner_id=encrypt_number(conference.owner_id)
     return conferences
 
 # get all conferences by owner_id
