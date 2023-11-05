@@ -88,7 +88,7 @@ class Attendee(Base):
     __tablename__ = "attendees"
 
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, Unique=True)
+    uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     first_name = Column(String, index=True)
@@ -105,7 +105,7 @@ class Agenda(Base):
     __tablename__ = "agenda"
 
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, Unique=True)
+    uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     name = Column(String, index=True)
@@ -121,7 +121,7 @@ class AgendaSession(Base):
     __tablename__ = "agenda_session"
 
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, Unique=True)
+    uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     agenda_id = Column(Integer, ForeignKey("agenda.id"))
