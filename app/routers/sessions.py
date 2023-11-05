@@ -23,9 +23,6 @@ def create_session_for_conference(
     if session.start_time > session.end_time:
         raise HTTPException(status_code=400, detail="Invalid time")
     session=crud.create_conference_session(db=db, session=session, owner_id=current_user.id)
-    session.conference_id=encrypt_number(session.conference_id).decode()
-    session.owner_id=encrypt_number(session.owner_id).decode()
-    session.id=encrypt_number(session.id).decode()
     return session
 
 # get all sessions
@@ -36,10 +33,6 @@ def get_all_sessions(skip: int = 0, limit: int = 100, db: Session = Depends(get_
     db_sessions = crud.get_sessions(db, skip=skip, limit=limit)
     if db_sessions is None or len(db_sessions) == 0:
         raise HTTPException(status_code=404, detail="Session not found")
-    for session in db_sessions:
-        session.conference_id=encrypt_number(session.conference_id)
-        session.owner_id=encrypt_number(session.owner_id)
-        session.id=encrypt_number(session.id)
     return db_sessions
 
 # get all sessions by conference id
@@ -50,10 +43,6 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
     db_sessions = crud.get_all_sessions_by_uuid_id(db, conference_uuid=conference_id)
     if db_sessions is None or len(db_sessions) == 0:
         raise HTTPException(status_code=404, detail="Session not found")
-    for session in db_sessions:
-        session.conference_id=encrypt_number(session.conference_id)
-        session.owner_id=encrypt_number(session.owner_id)
-        session.id=encrypt_number(session.id)
     return db_sessions
 
 # update session
