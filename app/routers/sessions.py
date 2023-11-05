@@ -48,6 +48,8 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
 # update session
 @router.put("/sessions")
 def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
+    if session.name is None and session.date is None and session.start_time is None and session.end_time is None and session.description is None and session.speakers is None and session.tags is None and session.location is None:
+        raise HTTPException(status_code=400, detail="Invalid request body")
     if conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id,owner_id=current_user.id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_session = crud.get_session_by_uuid_id(db, uuid=session.id, owner_id=current_user.id)

@@ -41,7 +41,7 @@ def get_user(db: Session = Depends(get_db), current_user: schemas.User = Depends
 @router.put("/users", response_model=schemas.User)
 def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
     if user.email is None and user.first_name is None and user.last_name is None and user.account_type is None and user.bussiness_type is None:
-        raise HTTPException(status_code=400, detail="Invalid Data")
+        raise HTTPException(status_code=400, detail="Invalid request body")
     if current_user.id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user id")
     db_user = crud.get_user(db, user_id=current_user.id)
