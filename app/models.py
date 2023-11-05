@@ -10,7 +10,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
+    uuid = Column(String, index=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     email = Column(String, unique=True, index=True)
@@ -30,7 +30,7 @@ class Conference(Base):
     __tablename__ = "conferences"
 
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
+    uuid = Column(String, index=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     name = Column(String, index=True)
@@ -50,7 +50,7 @@ class Session(Base):
     __tablename__ = "sessions"
 
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
+    uuid = Column(String, index=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     name = Column(String, index=True)
@@ -73,7 +73,7 @@ class Settings(Base):
     __tablename__ = "settings"
 
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
+    uuid = Column(String, index=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
@@ -88,7 +88,7 @@ class Attendee(Base):
     __tablename__ = "attendees"
 
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
+    uuid = Column(String, index=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     first_name = Column(String, index=True)
@@ -121,7 +121,7 @@ class AgendaSession(Base):
     __tablename__ = "agenda_session"
 
     id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, default=str(uuid.uuid4()))
+    uuid = Column(String, index=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     agenda_id = Column(Integer, ForeignKey("agenda.id"))
