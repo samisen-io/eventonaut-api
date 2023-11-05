@@ -19,7 +19,7 @@ def create_session_for_conference(
     if conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     if session.date < conference.start_date or session.date > conference.end_date or session.date < date.today():
-        raise HTTPException(status_code=400, detail=f"Invalid date! The valid range for this Conference is: {conference.start_date} - {conference.end_date}")
+        raise HTTPException(status_code=400, detail=f"Invalid date! Conference date is between {conference.start_date} and {conference.end_date} and today is {date.today()}")
     if session.start_time > session.end_time:
         raise HTTPException(status_code=400, detail="Invalid time")
     return crud.create_conference_session(db=db, session=session, owner_id=current_user.id)
