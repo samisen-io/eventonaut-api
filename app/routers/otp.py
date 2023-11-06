@@ -46,6 +46,7 @@ async def password_reset(email: str, password: str, db: Session = Depends(get_db
         user = crud.get_user_by_email(db, email)
         crud.update_user_password_by_id(db, user_id=user.id, password=password)
         valid_otp = False
+        valid_email = ""
         return {"msg": "Password updated successfully"}
     else:
         raise HTTPException(status_code=400, detail="OTP not verified")
