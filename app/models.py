@@ -16,7 +16,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
-    account_type = Column(String, index=True)
+    company = Column(String, index=True)
     bussiness_type = Column(String, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)

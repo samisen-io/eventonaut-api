@@ -14,6 +14,8 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db_user.created_on = datetime.now(tz)
     db_user.updated_on = datetime.now(tz)
+    if user.company is None:
+        db_user.company = "None"
     db_user.uuid = str(uuid.uuid4())
     db.add(db_user)
     db.commit()
