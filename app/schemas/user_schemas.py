@@ -76,13 +76,28 @@ class UserCreate(UserBase):
         return v
 
 #pydantic model for user password
-class UserPassword(BaseModel):
-    hashed_password: str
+class UserPasswordUpdate(BaseModel):
+    old_password: str
+    new_password: str
 
-    @validator('hashed_password')
-    def hashed_password_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" ") or len(v) < 8 or len(v) > 16:
-            raise HTTPException(status_code=400, detail="Invalid password")
+    @validator('old_password')
+    def old_password_validator(cls, v):
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
+            raise HTTPException(status_code=400, detail="Invalid old password")
+        if len(v) < 8:
+            raise HTTPException(status_code=400, detail="Old password too short")
+        elif len(v) > 16:
+            raise HTTPException(status_code=400, detail="Old password too long")
+        return v
+
+    @validator('new_password')
+    def new_password_validator(cls, v):
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
+            raise HTTPException(status_code=400, detail="Invalid new password")
+        if len(v) < 8:
+            raise HTTPException(status_code=400, detail="New password too short")
+        elif len(v) > 16:
+            raise HTTPException(status_code=400, detail="New password too long")
         return v
 
 #pydantic model for user

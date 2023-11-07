@@ -4,6 +4,7 @@ from ..schemas import user_schemas as schemas
 from datetime import datetime
 from pytz import timezone
 from . import agenda_crud
+from fastapi import HTTPException
 import uuid
 
 # create user
@@ -63,10 +64,10 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
     return db_user
 
 # update password
-def update_user_password(db: Session, user: schemas.UserPassword, user_id: int):
+def update_user_password(db: Session, user: schemas.UserPasswordUpdate, user_id: int):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     tz=timezone('Asia/Kolkata')
-    db_user.hashed_password = hashing.get_password_hash(user.hashed_password)
+    db_user.hashed_password = hashing.get_password_hash(user.new_password)
     db_user.updated_on = datetime.now(tz)
     db.commit()
     db.refresh(db_user)
