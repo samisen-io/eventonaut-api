@@ -123,3 +123,11 @@ def delete_agenda(db: Session, conference_id: str, attendee_id: str):
     db.delete(db_agenda)
     db.commit()
     return True
+
+# delete agenda by conference id
+def delete_agenda_by_conference_id(db: Session, conference_id: int):
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference_id).first()
+    db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
+    db.delete(db_agenda)
+    db.commit()
+    return True

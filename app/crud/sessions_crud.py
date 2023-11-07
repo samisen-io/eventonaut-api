@@ -49,13 +49,9 @@ def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str):
 
 #delete session
 def delete_session(db: Session, uuid: str, owner_id: int):
-    db.query(models.Session).filter(models.Session.uuid == uuid,models.Session.owner_id == owner_id).delete()
-    db.commit()
-    return True
-
-# delete all sessions with conference id
-def delete_all_sessions_by_conference_id(db: Session, conference_id: int):
-    db.query(models.Session).filter(models.Session.conference_id == conference_id).delete()
+    session = db.query(models.Session).filter(models.Session.uuid == uuid,models.Session.owner_id == owner_id).first()
+    db.query(models.AgendaSession).filter(models.AgendaSession.session_id == session.id).delete()
+    db.delete(session)
     db.commit()
     return True
 
