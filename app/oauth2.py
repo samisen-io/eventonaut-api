@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from app import token
+from app import my_token
 from app.schemas.user_schemas import User
 from .dependencies import get_db
 from .crud import users_crud
@@ -12,7 +12,7 @@ def get_current_user(db: Session = Depends(get_db),data: str = Depends(oauth_2_s
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                           detail="Could not validate credentials",
                                           headers={"WWW-Authenticate": "Bearer"})
-    token_data = token.verify_token(data, credentials_exception) 
+    token_data = my_token.verify_token(data, credentials_exception) 
     user = users_crud.get_user_by_email(db, email=token_data.username)
     if user is None:
         raise credentials_exception
