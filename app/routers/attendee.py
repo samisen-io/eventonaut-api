@@ -12,7 +12,7 @@ router = APIRouter(tags=["attendee"])
 def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_db)):
     try:
         valid = validate_email(attendee.email)
-        attendee.email = valid.email
+        attendee.email = valid.normalized.lower()
     except EmailNotValidError as e:
         raise HTTPException(status_code=400, detail=str(e))
     db_attendee = crud.get_attendee_by_email(db, email=attendee.email)
@@ -46,7 +46,7 @@ def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depend
     if attendee.email is not None:
         try:
             valid = validate_email(attendee.email)
-            attendee.email = valid.email
+            attendee.email = valid.normalized.lower()
         except EmailNotValidError as e:
             raise HTTPException(status_code=400, detail=str(e))
         db_attendee = crud.get_attendee_by_email(db, email=attendee.email)

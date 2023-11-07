@@ -14,7 +14,7 @@ router = APIRouter(tags=["users"])
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     try:
         valid = validate_email(user.email)
-        user.email = valid.email
+        user.email = valid.normalized.lower()
     except EmailNotValidError as e:
         raise HTTPException(status_code=400, detail=str(e))
     db_user = crud.get_user_by_email(db, email=user.email)
@@ -50,7 +50,7 @@ def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), cur
     if user.email is not None and user.email.strip() != "" and user.email != "string":
         try:
             valid = validate_email(user.email)
-            user.email = valid.email
+            user.email = valid.normalized.lower()
         except EmailNotValidError as e:
             raise HTTPException(status_code=400, detail="Invalid email")
         db_user = crud.get_user_by_email(db, email=user.email)
