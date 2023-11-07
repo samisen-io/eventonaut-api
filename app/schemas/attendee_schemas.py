@@ -4,9 +4,9 @@ from .agenda_schemas import Agenda
 
 #pydantic model for attendeebase
 class AttendeeBase(BaseModel):
+    email: str
     first_name: str
     last_name: str
-    email: str
     
     @validator('first_name')
     def first_name_is_not_empty(cls, v):
@@ -49,9 +49,9 @@ class AttendePassword(BaseModel):
 
 class AttendeeUpdate(BaseModel):
     id: str
+    email: str | None = None
     first_name: str | None = None
     last_name: str | None = None
-    email: str | None = None
 
     @validator('id')
     def id_is_not_empty(cls, v):
@@ -74,7 +74,6 @@ class AttendeeUpdate(BaseModel):
 #pydantic model for attendee
 class Attendee(AttendeeBase):
     uuid: str = Field(serialization_alias="id")
-    agenda: list[Agenda] = []
     is_active: bool
     class Config:
         orm_mode = True

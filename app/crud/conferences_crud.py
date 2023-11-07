@@ -27,14 +27,6 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db.refresh(db_conference)
     return db_conference
 
-# get conference by conference id
-def get_conference(db: Session, conference_id: int):
-    return db.query(models.Conference).filter(models.Conference.id == conference_id).first()
-
-#get conference by owner id and conference id
-def get_conference_by_uuid_id(db: Session, owner_id: int, uuid: int):
-    return db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.uuid == uuid).first()
-
 # get conference by uuid and owner id
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()

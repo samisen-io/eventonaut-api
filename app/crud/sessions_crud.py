@@ -30,18 +30,22 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     db.refresh(db_session)
     return db_session
 
-def get_session(db: Session, session_id: int):
-    return db.query(models.Session).filter(models.Session.id == session_id).first()
+def get_session_by_conference_uuid_session_uuid(db: Session, session_id: str, conference_id: str):
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
+    return db.query(models.Session).filter(models.Session.uuid == session_id, models.Session.conference_id == conference.id).first()
+
+def get_session_by_session_uuid(db: Session, uuid: str):
+    return db.query(models.Session).filter(models.Session.uuid == uuid).first()
 
 # get sessions by owner id and session id
 def get_session_by_uuid_id(db: Session, uuid: int, owner_id: int):
     return db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.owner_id == owner_id).first()
 
 #get sessions by conference_id
-def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str) -> List[schemas.Session]:
+def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str):
     conference_id = db.query(models.Conference).filter(models.Conference.uuid == conference_uuid).first().id
     db_sessions=db.query(models.Session).filter(models.Session.conference_id == conference_id).all()
-    return [schemas.Session(**db_session.__dict__) for db_session in db_sessions]
+    return db_sessions
 
 #delete session
 def delete_session(db: Session, uuid: str, owner_id: int):
