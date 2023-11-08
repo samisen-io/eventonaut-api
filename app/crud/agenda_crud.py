@@ -1,0 +1,133 @@
+from sqlalchemy.orm import Session
+from pytz import timezone
+from .. import models
+from ..schemas import agenda_schemas as schemas, agendasession_schemas
+from . import conferences_crud, attendee_crud, sessions_crud
+from datetime import datetime
+from pytz import timezone
+import uuid
+
+# create agenda
+def create_agenda(db: Session, conference_id: str, attendee_id: str, agenda: schemas.AgendaCreate):
+    conference = conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
+    attendee = attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
+    db_agenda = models.Agenda(conference_id=conference.id, name=agenda.name, attendee_id=attendee.id)
+    tz = timezone('Asia/Kolkata')
+    db_agenda.created_on = datetime.now(tz)
+    db_agenda.updated_on = datetime.now(tz)
+    db_agenda.uuid = str(uuid.uuid4())
+    db.add(db_agenda)
+    db.commit()
+    db.refresh(db_agenda)
+
+    session_ids = []
+    for session_id in agenda.sessions:
+        if session_id not in session_ids:
+            session_ids.append(session_id)
+
+    for session_id in session_ids:
+        session = sessions_crud.get_session_by_session_uuid(db, uuid=session_id)
+        db_agenda_session = models.AgendaSession(agenda_id=db_agenda.id, session_id=session.id, attendee_id=attendee.id, date=session.date, start_time=session.start_time, end_time=session.end_time)
+        db_agenda_session.created_on = datetime.now(tz)
+        db_agenda_session.updated_on = datetime.now(tz)
+        db_agenda_session.uuid = str(uuid.uuid4())
+        db.add(db_agenda_session)
+        db.commit()
+        db.refresh(db_agenda_session)
+    agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
+    for session_id in session_ids:
+        session = sessions_crud.get_session_by_session_uuid(db, uuid=session_id)
+        agenda_session.sessions.append(schemas.Session(uuid=session.uuid, name=session.name, date=session.date, start_time=session.start_time, end_time=session.end_time, description=session.description, location=session.location, speakers=session.speakers, tags=session.tags))
+    return agenda_session
+
+# return all the agendas with the list of sessions
+def get_all_agenda(db: Session, skip: int = 0, limit: int = 100):
+    agenda_sessions = []
+    agenda = db.query(models.Agenda).offset(skip).limit(limit).all()
+    for db_agenda in agenda:
+        agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
+        agenda_sessions.append(agenda_session)
+        agenda_session.sessions = []
+        for db_agenda_session in db_agenda.agenda_session:
+            session = sessions_crud.get_session_by_session_uuid(db, uuid=db_agenda_session.session.uuid)
+            agenda_session.sessions.append(schemas.Session(uuid=session.uuid, name=session.name, date=session.date, start_time=session.start_time, end_time=session.end_time, description=session.description, location=session.location, speakers=session.speakers, tags=session.tags))
+    return agenda_sessions
+
+def get_agenda(db: Session, conference_id: str, attendee_id: str):
+    conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
+    attendee=attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
+    return db_agenda
+
+# get agenda by conference id and attendee id
+def get_agenda_by_conference_uuid_attendee_uuid(db: Session, conference_id: str, attendee_id: str):
+    conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
+    attendee=attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
+
+    agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
+    for db_agenda_session in db_agenda.agenda_session:
+        session = sessions_crud.get_session_by_session_uuid(db, uuid=db_agenda_session.session.uuid)
+        agenda_session.sessions.append(schemas.Session(uuid=session.uuid, name=session.name, date=session.date, start_time=session.start_time, end_time=session.end_time, description=session.description, location=session.location, speakers=session.speakers, tags=session.tags))
+    return agenda_session
+
+# get agenda by attendee id and like name string
+def get_agendas_by_attendee_id_name(db: Session, attendee_id: int, name: str):
+    return db.query(models.Agenda).filter(models.Agenda.attendee_id == attendee_id,models.Agenda.name.ilike('%'+name+'%')).all()
+
+# update agenda by conference id and attendee id
+def update_agenda(db: Session, conference_id: str, attendee_id: str, agenda: schemas.AgendaUpdate):
+    conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
+    attendee=attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
+    tz = timezone('Asia/Kolkata')
+    db_agenda.updated_on=datetime.now(tz)
+
+    if agenda.name is not None:
+        db_agenda.name = agenda.name
+
+    if agenda.sessions is not None:
+        db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
+    
+        session_ids = []
+
+        for session_id in agenda.sessions:
+            if session_id not in session_ids:
+                session_ids.append(session_id)
+
+        for session_id in session_ids:
+            session = sessions_crud.get_session_by_session_uuid(db, uuid=session_id)
+            db_agenda_session = models.AgendaSession(agenda_id=db_agenda.id, session_id=session.id, attendee_id=attendee.id, date=session.date, start_time=session.start_time, end_time=session.end_time)
+            db_agenda_session.created_on = datetime.now(tz)
+            db_agenda_session.updated_on = datetime.now(tz)
+            db_agenda_session.uuid = str(uuid.uuid4())
+            db.add(db_agenda_session)
+            db.commit()
+            db.refresh(db_agenda_session)
+    db.commit()
+    db.refresh(db_agenda)
+
+    agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
+    sessions_from_db = db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).all()
+    for db_agenda_session in sessions_from_db:
+        session = db.query(models.Session).filter(models.Session.id == db_agenda_session.session_id).first()
+        agenda_session.sessions.append(schemas.Session(uuid=session.uuid, name=session.name, date=session.date, start_time=session.start_time, end_time=session.end_time, description=session.description, location=session.location, speakers=session.speakers, tags=session.tags))
+    return agenda_session
+
+# delete agenda by conference id and attendee id
+def delete_agenda(db: Session, conference_id: str, attendee_id: str):
+    conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
+    attendee=attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
+    db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
+    db.delete(db_agenda)
+    db.commit()
+    return True
+
+# delete agenda by conference id
+def delete_agenda_by_conference_id(db: Session, conference_id: int):
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference_id).first()
+    db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
+    db.delete(db_agenda)
+    db.commit()
+    return True
