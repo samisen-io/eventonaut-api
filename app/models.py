@@ -38,6 +38,7 @@ class Conference(Base):
     end_date = Column(DATE, index=True)
     description = Column(String, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
+    conference_logo = Column(String, index=True)
 
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")

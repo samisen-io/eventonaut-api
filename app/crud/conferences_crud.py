@@ -17,8 +17,10 @@ def get_conferences_by_owner_id(db: Session, owner_id: int):
 # create conference
 def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
     db_conference = models.Conference(**conference.model_dump(), owner_id=user_id)
-    if conference.description is None or conference.description.strip() == "" or conference.description == "string":
+    if conference.description is None:
         db_conference.description = "None"
+    if conference.conference_logo is None:
+        db_conference.conference_logo = "None"
     tz = timezone('Asia/Kolkata')
     db_conference.created_on = datetime.now(tz)
     db_conference.updated_on = datetime.now(tz)

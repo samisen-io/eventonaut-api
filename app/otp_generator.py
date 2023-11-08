@@ -5,27 +5,20 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
-class otp_generator:
 
-    __otp: str = None
-    __gen_time: datetime = None
-    default_time_limit: int = 300
+default_time_limit: int = 300
 
-    def generate_otp(self):
-        self.__otp = ''.join(random.choice(string.digits) for _ in range(6))
-        self.__gen_time = datetime.now()
-        return self.__otp
+def generate_otp():
+    otp = ''.join(random.choice(string.digits) for _ in range(6))
+    return otp
 
-    def validate_otp(self, otp: str, validaton_time:datetime):
-        if self.__otp == otp and (validaton_time - self.__gen_time).total_seconds() <= self.default_time_limit:
-                valid = True
-                self.__otp = None
-                self.__gen_time = None
-        else:
-            valid = False
-        return valid        
+def validate_otp(gen_otp:str, rec_otp: str, gen_time:datetime, rec_time:datetime):
+    if gen_otp == rec_otp and (rec_time - gen_time).total_seconds() <= default_time_limit:
+        return True
+    return False
 
-def send_mail(otp: otp_generator,subject: str, receiver_email:str):
+def send_mail(otp: str,subject: str, receiver_email:str):
+    global default_time_limit
     smtp_port = 587
     smtp_server = "smtp.gmail.com"
     sender_email = "demo34125@gmail.com"
@@ -33,7 +26,7 @@ def send_mail(otp: otp_generator,subject: str, receiver_email:str):
 
     body = f""" 
     Hello user,<br>
-        Your <b>One Time Password</b> is - <b>{otp.generate_otp()}</b>, and is valid for only <b>{otp.default_time_limit // 60} minutes</b>
+        Your <b>One Time Password</b> is - <b>{otp}</b>, and is valid for only <b>{default_time_limit // 60} minutes</b>
     """
 
     msg = MIMEMultipart()
@@ -54,12 +47,3 @@ def send_mail(otp: otp_generator,subject: str, receiver_email:str):
     print("Email sent successfully")
 
     server.quit()
-
-if __name__ == "__main__":
-    otp = otp_generator()
-    send_mail(otp, "OTP Verification","demo34125@gmail.com")
-    one_tme_pass = input("Enter otp: ")
-    validation_time = datetime.now()
-    print("My Otp is: ", one_tme_pass)
-    print("actual otp is: ", otp.__otp)  
-    print(otp.validate_otp(one_tme_pass, validation_time))
