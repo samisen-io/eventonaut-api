@@ -38,7 +38,7 @@ def get_agenda_by_conference_id_attendee_id(conference_id: str, attendee_id: str
     return agenda
 
 # update agenda by conference id and attendee id
-@router.put("/agenda/attendee_id")
+@router.put("/agenda/attendee_id", response_model=schemas.Agenda)
 def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db)):
     if agenda.name is None and agenda.sessions is None:
         raise HTTPException(status_code=400, detail="Invalid request body")
