@@ -6,8 +6,13 @@ from ..otp_generator import send_mail, generate_otp, validate_otp
 from sqlalchemy.orm import Session
 from datetime import datetime
 from ..crud import users_crud as crud
+from dotenv import load_dotenv
+import os
 import time
 
+load_dotenv()
+
+default_time_limit = int(os.getenv("OTP_EXPIRE"))
 router = APIRouter(tags=['OTP'])
 otp_db = dict()
 
@@ -20,7 +25,7 @@ def delete_entry(email: str,delay: int,task_timestamp: datetime):
 
 @router.post('/otp')
 async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: Session = Depends(get_db)):
-    global otp_db
+    global otp_db, default_time_limit
     try:
         valid = validate_email(email)
         email = valid.email
@@ -33,7 +38,7 @@ async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: S
     send_mail(otp, email_subject, email)
     sent_time = datetime.now()
     otp_db[email] = [otp, sent_time,False]
-    bgtask.add_task(delete_entry, email, 300, sent_time)
+    bgtask.add_task(delete_entry, email, default_time_limit, sent_time)
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
