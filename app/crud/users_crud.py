@@ -3,6 +3,8 @@ from .. import models, hashing
 from ..schemas import user_schemas as schemas
 from datetime import datetime
 from pytz import timezone
+from . import agenda_crud
+from fastapi import HTTPException
 import uuid
 
 # create user
@@ -12,6 +14,8 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db_user.created_on = datetime.now(tz)
     db_user.updated_on = datetime.now(tz)
+    if user.company is None:
+        db_user.company = "None"
     db_user.uuid = str(uuid.uuid4())
     db.add(db_user)
     db.commit()
@@ -62,10 +66,10 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
     return db_user
 
 # update password
-def update_user_password(db: Session, user: schemas.UserPassword, user_id: int):
+def update_user_password(db: Session, user: schemas.UserPasswordUpdate, user_id: int):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
     tz=timezone('Asia/Kolkata')
-    db_user.hashed_password = hashing.get_password_hash(user.hashed_password)
+    db_user.hashed_password = hashing.get_password_hash(user.new_password)
     db_user.updated_on = datetime.now(tz)
     db.commit()
     db.refresh(db_user)
@@ -82,9 +86,12 @@ def update_user_password_by_id(db: Session, user_id: int, password: str):
 
 # delete user
 def delete_user(db: Session, user_id: int):
-    db.query(models.User).filter(models.User.id == user_id).delete()
-    db.query(models.Conference).filter(models.Conference.owner_id == user_id).delete()
     db.query(models.Session).filter(models.Session.owner_id == user_id).delete()
     db.query(models.Settings).filter(models.Settings.owner_id == user_id).delete()
+    conference = db.query(models.Conference).filter(models.Conference.owner_id == user_id).all()
+    for c in conference:
+        agenda_crud.delete_agenda_by_conference_id(db, conference_id=c.id)
+    db.query(models.Conference).filter(models.Conference.owner_id == user_id).delete()
+    db.query(models.User).filter(models.User.id == user_id).delete()
     db.commit()
     return True

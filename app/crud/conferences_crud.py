@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, date
 from .. import models
 from ..schemas import conference_schemas as schemas
+from . import agenda_crud
 from pytz import timezone
 import uuid
 
@@ -27,14 +28,6 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db.refresh(db_conference)
     return db_conference
 
-# get conference by conference id
-def get_conference(db: Session, conference_id: int):
-    return db.query(models.Conference).filter(models.Conference.id == conference_id).first()
-
-#get conference by owner id and conference id
-def get_conference_by_uuid_id(db: Session, owner_id: int, uuid: int):
-    return db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.uuid == uuid).first()
-
 # get conference by uuid and owner id
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
@@ -43,11 +36,16 @@ def get_conference_by_conference_uuid(db: Session, uuid: str):
     return db.query(models.Conference).filter(models.Conference.uuid == uuid).first()
 
 # delete conference by conference id
-def delete_conference(db: Session,owner_id: int, uuid: str):
+def delete_conference(db: Session, owner_id: int, uuid: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
-    db.query(models.Session).filter(models.Session.conference_id == conference.id, models.Session.owner_id==owner_id).delete()
-    db.query(models.Settings).filter(models.Settings.conference_id == conference.id, models.Settings.owner_id==owner_id).delete()
-    db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).delete()
+    if conference is None:
+        return False
+    sessions = db.query(models.Session).filter(models.Session.conference_id == conference.id, models.Session.owner_id == owner_id)
+    for session in sessions:
+        db.delete(session)
+    db.query(models.Settings).filter(models.Settings.conference_id == conference.id, models.Settings.owner_id == owner_id).delete()
+    agenda_crud.delete_agenda_by_conference_id(db, conference_id=conference.id)
+    db.delete(conference)
     db.commit()
     return True
 
