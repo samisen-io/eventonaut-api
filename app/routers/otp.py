@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from ..dependencies import get_db
 from ..crud import users_crud as crud
 from email_validator import validate_email, EmailNotValidError
@@ -6,12 +6,19 @@ from ..otp_generator import send_mail, generate_otp, validate_otp
 from sqlalchemy.orm import Session
 from datetime import datetime
 from ..crud import users_crud as crud
+import time
 
 router = APIRouter(tags=['OTP'])
 otp_db = dict()
 
+def delete_entry(email: str,delay: int):
+    time.sleep(delay)
+    global otp_db
+    if email in otp_db.keys():
+        del otp_db[email]
+
 @router.post('/otp')
-async def send_otp(email: str, email_subject: str , db: Session = Depends(get_db)):
+async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: Session = Depends(get_db)):
     global otp_db
     try:
         valid = validate_email(email)
@@ -24,6 +31,8 @@ async def send_otp(email: str, email_subject: str , db: Session = Depends(get_db
     otp = generate_otp()
     send_mail(otp, email_subject, email)
     otp_db[email] = [otp, datetime.now(),False]
+    print(f"sending - {otp_db}")
+    bgtask.add_task(delete_entry, email, 300)
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
