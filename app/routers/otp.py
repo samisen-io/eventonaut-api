@@ -1,25 +1,33 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from ..dependencies import get_db
 from ..crud import users_crud as crud
 from email_validator import validate_email, EmailNotValidError
 from ..otp_generator import send_mail, generate_otp, validate_otp
+from ..otp_generator import send_mail, generate_otp, validate_otp
 from sqlalchemy.orm import Session
 from datetime import datetime
 from ..crud import users_crud as crud
+from dotenv import load_dotenv
+import os
 import time
 
+load_dotenv()
+
+default_time_limit = int(os.getenv("OTP_EXPIRE"))
 router = APIRouter(tags=['OTP'])
 otp_db = dict()
 
-def delete_entry(email: str,delay: int):
+def delete_entry(email: str,delay: int,task_timestamp: datetime):
     time.sleep(delay)
     global otp_db
-    if email in otp_db.keys():
+    entry_timestamp: datetime = otp_db[email][1]
+    if email in otp_db.keys() and (entry_timestamp - task_timestamp).total_seconds() == 0:
         del otp_db[email]
 
 @router.post('/otp')
 async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: Session = Depends(get_db)):
-    global otp_db
+    global otp_db, default_time_limit
     try:
         valid = validate_email(email)
         email = valid.email
@@ -30,9 +38,9 @@ async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: S
         raise HTTPException(status_code=404, detail="User not found")
     otp = generate_otp()
     send_mail(otp, email_subject, email)
-    otp_db[email] = [otp, datetime.now(),False]
-    print(f"sending - {otp_db}")
-    bgtask.add_task(delete_entry, email, 300)
+    sent_time = datetime.now()
+    otp_db[email] = [otp, sent_time,False]
+    bgtask.add_task(delete_entry, email, default_time_limit, sent_time)
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
@@ -42,6 +50,8 @@ async def verify_otp(email: str, otp: str):
         raise HTTPException(status_code=400, detail="Email not verified")
     if len(otp) != 6:
         raise HTTPException(status_code=400, detail="Invalid OTP")
+    valid_otp = validate_otp(otp_db[email][0], otp, otp_db[email][1], datetime.now())
+    otp_db[email][2] = valid_otp
     valid_otp = validate_otp(otp_db[email][0], otp, otp_db[email][1], datetime.now())
     otp_db[email][2] = valid_otp
     if not valid_otp:
@@ -54,6 +64,7 @@ async def password_reset(email: str, password: str, db: Session = Depends(get_db
     if email in otp_db.keys() and otp_db[email][2]:
         user = crud.get_user_by_email(db, email)
         crud.update_user_password_by_id(db, user_id=user.id, password=password)
+        del otp_db[email]
         del otp_db[email]
         return {"msg": "Password updated successfully"}
     else:

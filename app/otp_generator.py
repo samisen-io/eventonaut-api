@@ -4,9 +4,18 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
+from dotenv import load_dotenv
+import os
 
 
-default_time_limit: int = 300
+load_dotenv()
+
+email = os.getenv("EMAIL_ADDRESS")
+password = os.getenv("EMAIL_PASSWORD")
+port = int(os.getenv("EMAIL_PORT"))
+server = os.getenv("EMAIL_SERVER")
+
+default_time_limit = int(os.getenv("OTP_EXPIRE"))
 
 def generate_otp():
     otp = ''.join(random.choice(string.digits) for _ in range(6))
@@ -18,11 +27,11 @@ def validate_otp(gen_otp:str, rec_otp: str, gen_time:datetime, rec_time:datetime
     return False
 
 def send_mail(otp: str,subject: str, receiver_email:str):
-    global default_time_limit
-    smtp_port = 587
-    smtp_server = "smtp.gmail.com"
-    sender_email = "demo34125@gmail.com"
-    password = "orse wxwr crjv sxry"
+    global default_time_limit, email, password, port, server
+    smtp_port = port
+    smtp_server = server
+    sender_email = email
+    password = password
 
     body = f""" 
     Hello user,<br>
