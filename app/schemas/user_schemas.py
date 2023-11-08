@@ -29,7 +29,7 @@ class UserBase(BaseModel):
     @validator('company')
     def company_validator(cls, v):
         if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid account type")
+            raise HTTPException(status_code=400, detail="Invalid company name")
         elif v is not None and len(v) > 256:
             raise HTTPException(status_code=400, detail="Company name too long")
         return v
@@ -51,7 +51,7 @@ class UserBaseUpdate(BaseModel):
     
     @validator('first_name')
     def first_name_is_not_empty(cls, v):
-        if v.strip() == "" or v == "string":
+        if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid first name")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="First name too long")
@@ -59,7 +59,7 @@ class UserBaseUpdate(BaseModel):
     
     @validator('last_name')
     def last_name_is_not_empty(cls, v):
-        if v.strip() == "" or v == "string":
+        if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid last name")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Last name too long")
@@ -75,7 +75,7 @@ class UserBaseUpdate(BaseModel):
     
     @validator('bussiness_type')
     def bussiness_type_is_not_empty(cls, v):
-        if v.strip() == "" or v == "string":
+        if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid bussiness type")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Bussiness type too long")
