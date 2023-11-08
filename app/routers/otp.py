@@ -11,10 +11,11 @@ import time
 router = APIRouter(tags=['OTP'])
 otp_db = dict()
 
-def delete_entry(email: str,delay: int):
+def delete_entry(email: str,delay: int,task_timestamp: datetime):
     time.sleep(delay)
     global otp_db
-    if email in otp_db.keys():
+    entry_timestamp: datetime = otp_db[email][1]
+    if email in otp_db.keys() and (entry_timestamp - task_timestamp).total_seconds() == 0:
         del otp_db[email]
 
 @router.post('/otp')
@@ -30,9 +31,9 @@ async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: S
         raise HTTPException(status_code=404, detail="User not found")
     otp = generate_otp()
     send_mail(otp, email_subject, email)
-    otp_db[email] = [otp, datetime.now(),False]
-    print(f"sending - {otp_db}")
-    bgtask.add_task(delete_entry, email, 300)
+    sent_time = datetime.now()
+    otp_db[email] = [otp, sent_time,False]
+    bgtask.add_task(delete_entry, email, 300, sent_time)
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
