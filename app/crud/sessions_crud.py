@@ -1,10 +1,8 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
-from datetime import datetime, date, time
+from datetime import datetime, date
 from .. import models
 from ..schemas import session_schemas as schemas
 from fastapi import HTTPException
-from typing import List
 from pytz import timezone
 import uuid
 

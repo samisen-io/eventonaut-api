@@ -46,7 +46,7 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
     return db_sessions
 
 # update session
-@router.put("/sessions")
+@router.put("/sessions", response_model=schemas.Session)
 def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if session.name is None and session.date is None and session.start_time is None and session.end_time is None and session.description is None and session.speakers is None and session.tags is None and session.location is None:
         raise HTTPException(status_code=400, detail="Invalid request body")

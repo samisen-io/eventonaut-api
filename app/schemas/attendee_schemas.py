@@ -1,6 +1,5 @@
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
-from .agenda_schemas import Agenda
 
 #pydantic model for attendeebase
 class AttendeeBase(BaseModel):
@@ -12,12 +11,16 @@ class AttendeeBase(BaseModel):
     def first_name_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid first name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="First name too long")
         return v
     
     @validator('last_name')
     def last_name_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid last name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Last name too long")
         return v
     
 #pydantic model for attendee create
@@ -63,12 +66,16 @@ class AttendeeUpdate(BaseModel):
     def first_name_is_not_empty(cls, v):
         if v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid first name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="First name too long")
         return v
     
     @validator('last_name')
     def last_name_is_not_empty(cls, v):
         if v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid last name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Last name too long")
         return v
 
 #pydantic model for attendee

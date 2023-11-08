@@ -10,6 +10,8 @@ class AgendaBase(BaseModel):
     def name_must_contain_space(cls, v):
         if v is None or v.strip() == '' or v == 'string':
             raise HTTPException(status_code=400, detail="Invalid name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Name too long")
         return v
 
 class AgendaCreate(AgendaBase):
@@ -57,6 +59,8 @@ class AgendaUpdate(AgendaBase):
     def name_must_contain_space(cls, v):
         if v.strip() == '' or v == 'string':
             raise HTTPException(status_code=400, detail="Invalid name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Name too long")
         return v
     
     @validator('sessions')

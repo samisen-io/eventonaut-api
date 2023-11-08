@@ -16,12 +16,16 @@ class ConferenceCreate(BaseModel):
     def name_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Name too long")
         return v
     
     @validator('location')
     def location_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid location")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Location too long")
         return v
 
     @validator('start_date')
@@ -60,19 +64,23 @@ class ConferenceUpdate(BaseModel):
     
     @validator('name')
     def name_is_not_empty(cls, v):
-        if v == "string" or v.strip() == "":
+        if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid name")
+        if len is not None and len(v) > 256:
+            raise HTTPException(status_code=400, detail="Name too long")
         return v
     
     @validator('location')
     def location_is_not_empty(cls, v):
-        if v == "string" or v.strip() == "":
+        if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid location")
+        if len is not None and len(v) > 256:
+            raise HTTPException(status_code=400, detail="Location too long")
         return v
     
     @validator('description')
     def description_is_not_empty(cls, v):
-        if v == "string" or v.strip() == "":
+        if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid description")
         if len is not None and len(v) > 256:
             raise HTTPException(status_code=400, detail="Description should be less than 256 characters")
