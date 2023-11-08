@@ -4,7 +4,6 @@ from ..schemas import user_schemas as schemas
 from datetime import datetime
 from pytz import timezone
 from . import agenda_crud
-from fastapi import HTTPException
 import uuid
 
 # create user

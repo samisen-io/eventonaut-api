@@ -1,7 +1,6 @@
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
 from datetime import date as Date, time
-from typing import Optional
 
 #pydantic model for session create
 class SessionBase(BaseModel):

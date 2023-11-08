@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 from .. import models
-from ..schemas import settings_schemas as schemas, conference_schemas
+from ..schemas import settings_schemas as schemas
 import pytz
 import uuid
 

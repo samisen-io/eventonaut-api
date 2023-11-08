@@ -1,6 +1,5 @@
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
-from .agenda_schemas import Agenda
 
 #pydantic model for attendeebase
 class AttendeeBase(BaseModel):

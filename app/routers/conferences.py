@@ -7,7 +7,6 @@ from ..schemas import user_schemas as uschemas
 from ..crud import conferences_crud as crud, users_crud
 from ..dependencies import get_db
 from datetime import date
-import uuid
 
 router = APIRouter(tags=["conferences"])
 
