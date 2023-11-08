@@ -167,6 +167,8 @@ class SessionUpdate(BaseModel):
         for speaker in v:
             if speaker == "" or speaker == "string":
                 raise HTTPException(status_code=400, detail="Invalid speaker")
+            elif len(speaker) > 256:
+                raise HTTPException(status_code=400, detail="Speaker name too long")
         return v
     
     @validator('tags')
@@ -176,6 +178,8 @@ class SessionUpdate(BaseModel):
         for tag in v:
             if tag == "" or tag == "string":
                 raise HTTPException(status_code=400, detail="Invalid tag")
+            elif len(tag) > 256:
+                raise HTTPException(status_code=400, detail="Tag name too long")
         return v
     
     class Config:
