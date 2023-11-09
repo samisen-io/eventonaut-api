@@ -26,13 +26,6 @@ class UserBase(BaseModel):
             raise HTTPException(status_code=400, detail="Last name too long")
         return v
     
-    @validator('company')
-    def company_validator(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid company name")
-        elif v is not None and len(v) > 256:
-            raise HTTPException(status_code=400, detail="Company name too long")
-        return v
     
     @validator('bussiness_type')
     def bussiness_type_is_not_empty(cls, v):
@@ -63,14 +56,6 @@ class UserBaseUpdate(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid last name")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Last name too long")
-        return v
-    
-    @validator('company')
-    def company_validator(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid account type")
-        elif v is not None and len(v) > 256:
-            raise HTTPException(status_code=400, detail="Company name too long")
         return v
     
     @validator('bussiness_type')
