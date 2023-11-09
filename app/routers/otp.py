@@ -39,7 +39,7 @@ async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: S
     otp = generate_otp()
     send_mail(otp, email_subject, email)
     sent_time = datetime.now()
-    otp_db[email] = [otp, sent_time,False]
+    otp_db[email] = [otp, sent_time, False]
     bgtask.add_task(delete_entry, email, default_time_limit, sent_time)
     return {"msg": "OTP sent successfully"}
 
