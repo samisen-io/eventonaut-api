@@ -35,7 +35,8 @@ async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: S
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     otp = generate_otp()
-    send_mail(otp, email_subject, email)
+    if not send_mail(otp, email_subject, email):
+        raise HTTPException(status_code=400, detail="Email not sent")
     sent_time = datetime.now()
     otp_db[email] = [otp, sent_time, False]
     bgtask.add_task(delete_entry, email, default_time_limit, sent_time)
