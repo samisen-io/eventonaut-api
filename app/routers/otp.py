@@ -59,8 +59,7 @@ async def verify_otp(email: str, otp: str):
 async def password_reset(email: str, password: str, db: Session = Depends(get_db)):
     global otp_db
     if email in otp_db.keys() and otp_db[email][2]:
-        user = crud.get_user_by_email(db, email)
-        crud.update_user_password_by_id(db, user_id=user.id, password=password)
+        crud.update_user_password_by_email(db=db, email=email, password=password)
         del otp_db[email]
         return {"msg": "Password updated successfully"}
     else:
