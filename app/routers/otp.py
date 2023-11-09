@@ -39,7 +39,7 @@ async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: S
     otp = generate_otp()
     send_mail(otp, email_subject, email)
     sent_time = datetime.now()
-    otp_db[email] = [otp, sent_time,False]
+    otp_db[email] = [otp, sent_time, False]
     bgtask.add_task(delete_entry, email, default_time_limit, sent_time)
     return {"msg": "OTP sent successfully"}
 
@@ -52,8 +52,6 @@ async def verify_otp(email: str, otp: str):
         raise HTTPException(status_code=400, detail="Invalid OTP")
     valid_otp = validate_otp(otp_db[email][0], otp, otp_db[email][1], datetime.now())
     otp_db[email][2] = valid_otp
-    valid_otp = validate_otp(otp_db[email][0], otp, otp_db[email][1], datetime.now())
-    otp_db[email][2] = valid_otp
     if not valid_otp:
         raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
     return {"msg": "OTP verified successfully"}
@@ -64,7 +62,6 @@ async def password_reset(email: str, password: str, db: Session = Depends(get_db
     if email in otp_db.keys() and otp_db[email][2]:
         user = crud.get_user_by_email(db, email)
         crud.update_user_password_by_id(db, user_id=user.id, password=password)
-        del otp_db[email]
         del otp_db[email]
         return {"msg": "Password updated successfully"}
     else:
