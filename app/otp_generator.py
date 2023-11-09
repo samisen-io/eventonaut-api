@@ -47,9 +47,24 @@ def send_mail(otp: str,subject: str, receiver_email:str):
         msg.attach(MIMEText(body, "html"))
 
         print("Connecting to server...")
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()
-        server.login(sender_email, password)
+        try:
+            server = smtplib.SMTP(smtp_server, smtp_port)
+        except Exception as e:
+            print(e)
+            print("Error: unable to connect to server")
+            return False
+        try:
+            server.starttls()
+        except Exception as e:
+            print(e)
+            print("Error: unable to start tls")
+            return False
+        try:
+            server.login(sender_email, password)
+        except Exception as e:
+            print(e)
+            print("Error: unable to login")
+            return False
         print("Connected to server")
 
         text = msg.as_string()
