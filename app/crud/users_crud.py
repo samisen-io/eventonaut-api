@@ -13,7 +13,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db_user.created_on = datetime.now(tz)
     db_user.updated_on = datetime.now(tz)
-    if user.company is None:
+    if user.company is None or user.company == "string" or user.company == "None" or user.company.strip() == "":
         db_user.company = "None"
     db_user.uuid = str(uuid.uuid4())
     db.add(db_user)
@@ -47,17 +47,22 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
     tz = timezone('Asia/Kolkata')
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
 
+
     updates = {
         'email': user.email,
         'first_name': user.first_name,
         'last_name': user.last_name,
-        'account_type': user.account_type,
+        'company': user.company,
         'bussiness_type': user.bussiness_type
     }
     
     for key, value in updates.items():
         if value is not None:
             setattr(db_user, key, value)
+
+    if user.company is None or user.company == "string" or user.company == "None" or user.company.strip() == "":
+        db_user.company = "None"
+
 
     db_user.updated_on = datetime.now(tz)
     db.commit()

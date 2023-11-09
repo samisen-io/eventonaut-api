@@ -40,20 +40,6 @@ class ConferenceCreate(BaseModel):
         if v is None:
             raise HTTPException(status_code=400, detail="Invalid end date")
         return v  
-    
-    @validator('description')
-    def description_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid description")
-        if len is not None and len(v) > 256:
-            raise HTTPException(status_code=400, detail="Description should be less than 256 characters")
-        return v
-    
-    @validator('conference_logo')
-    def conference_logo_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid conference logo")
-        return v
 
 class ConferenceUpdate(BaseModel):
     id: str
@@ -84,20 +70,6 @@ class ConferenceUpdate(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid location")
         if len is not None and len(v) > 256:
             raise HTTPException(status_code=400, detail="Location too long")
-        return v
-    
-    @validator('description')
-    def description_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid description")
-        if len is not None and len(v) > 256:
-            raise HTTPException(status_code=400, detail="Description should be less than 256 characters")
-        return v
-    
-    @validator('conference_logo')
-    def conference_logo_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid conference logo")
         return v
 
 #pydantic model for conference

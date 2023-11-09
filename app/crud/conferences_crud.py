@@ -22,6 +22,10 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     if conference.conference_logo is None:
         db_conference.conference_logo = "None"
     tz = timezone('Asia/Kolkata')
+    if conference.description is None or conference.description.strip() == "" or conference.description == "string" or conference.description == "None":
+        db_conference.description = "None"
+    if conference.conference_logo is None or conference.conference_logo.strip() == "" or conference.conference_logo == "string" or conference.conference_logo == "None":
+        db_conference.conference_logo = "None"
     db_conference.created_on = datetime.now(tz)
     db_conference.updated_on = datetime.now(tz)
     db_conference.uuid = str(uuid.uuid4())
@@ -73,6 +77,12 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
     if conference.start_date is not None and conference.end_date is not None:
         if conference.start_date > conference.end_date or conference.start_date < date.today():
             raise HTTPException(status_code=400, detail="Invalid date range")
+        
+    if conference.description is None or conference.description.strip() == "" or conference.description == "string" or conference.description == "None":
+        db_conference.description = "None"
+        
+    if conference.conference_logo is None or conference.conference_logo.strip() == "" or conference.conference_logo == "string" or conference.conference_logo == "None":
+        db_conference.conference_logo = "None"
 
     db_conference.updated_on = datetime.now(tz)
     db.commit()
