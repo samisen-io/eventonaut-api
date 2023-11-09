@@ -12,8 +12,6 @@ load_dotenv()
 
 email = os.getenv("EMAIL_ADDRESS")
 password = os.getenv("EMAIL_PASSWORD")
-port = int(os.getenv("EMAIL_PORT"))
-server = os.getenv("EMAIL_SERVER")
 
 default_time_limit = int(os.getenv("OTP_EXPIRE"))
 
@@ -27,32 +25,75 @@ def validate_otp(gen_otp:str, rec_otp: str, gen_time:datetime, rec_time:datetime
     return False
 
 def send_mail(otp: str,subject: str, receiver_email:str):
-    global default_time_limit, email, password, port, server
-    smtp_port = port
-    smtp_server = server
-    sender_email = email
-    password = password
+    try:
+        global default_time_limit, email, password, port, server
+        smtp_port = 587
+        smtp_server = "smtp.gmail.com"
+        sender_email = email
+        password = password
 
-    body = f""" 
-    Hello user,<br>
-        Your <b>One Time Password</b> is - <b>{otp}</b>, and is valid for only <b>{default_time_limit // 60} minutes</b>
-    """
+        if not smtp_server or not smtp_port:
+            print("Error: smtp server or port not found")
+            return False
+        
+        if not sender_email or not password:
+            print("Error: sender email or password not found")
+            return False
 
-    msg = MIMEMultipart()
-    msg["From"] = sender_email
-    msg["To"] = receiver_email
-    msg["Subject"] = subject
+        body = f""" 
+        Hello user,<br>
+            Your <b>One Time Password</b> is - <b>{otp}</b>, and is valid for only <b>{default_time_limit // 60} minutes</b>
+        """
 
-    msg.attach(MIMEText(body, "html"))
+        msg = MIMEMultipart()
+        msg["From"] = sender_email
+        msg["To"] = receiver_email
+        msg["Subject"] = subject
 
-    print("Connecting to server...")
-    server = smtplib.SMTP(smtp_server, smtp_port)
-    server.starttls()
-    server.login(sender_email, password)
-    print("Connected to server")
+        msg.attach(MIMEText(body, "html"))
 
-    text = msg.as_string()
-    server.sendmail(sender_email, receiver_email, text)
-    print("Email sent successfully")
+        print("Connecting to server...")
+        try:
+            server = smtplib.SMTP(smtp_server, smtp_port)
+        except Exception as e:
+            print(e)
+            print("Error: unable to connect to server")
+            return False
+        try:
+            server.starttls()
+        except Exception as e:
+            print(e)
+            print("Error: unable to start tls")
+            return False
+        try:
+            server.login(sender_email, password)
+        except Exception as e:
+            print(e)
+            print("Error: unable to login")
+            return False
+        print("Connected to server")
 
-    server.quit()
+        try:
+            text = msg.as_string()
+        except Exception as e:
+            print(e)
+            print("Error: unable to convert message to string")
+            return False
+        try:
+            server.sendmail(sender_email, receiver_email, text)
+        except Exception as e:
+            print(e)
+            print("Error: unable to send email")
+            return False
+        print("Email sent successfully")
+        try:
+            server.quit()
+        except Exception as e:
+            print(e)
+            print("Error: unable to quit server")
+            return False
+        return True
+    except Exception as e:
+        print(e)
+        print("Error: unable to send email")
+        return False
