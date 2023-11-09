@@ -32,7 +32,7 @@ def send_mail(otp: str,subject: str, receiver_email:str):
         sender_email = email
         password = password
 
-        if not smtp_server or smtp_port:
+        if not smtp_server or not smtp_port:
             print("Error: smtp server or port not found")
             return False
         
