@@ -12,8 +12,6 @@ load_dotenv()
 
 email = os.getenv("EMAIL_ADDRESS")
 password = os.getenv("EMAIL_PASSWORD")
-port = int(os.getenv("EMAIL_PORT"))
-server = os.getenv("EMAIL_SERVER")
 
 default_time_limit = int(os.getenv("OTP_EXPIRE"))
 
@@ -29,13 +27,17 @@ def validate_otp(gen_otp:str, rec_otp: str, gen_time:datetime, rec_time:datetime
 def send_mail(otp: str,subject: str, receiver_email:str):
     try:
         global default_time_limit, email, password, port, server
-        smtp_port = port
-        smtp_server = server
+        smtp_port = 587
+        smtp_server = "smtp.gmail.com"
         sender_email = email
         password = password
 
         if not smtp_server or smtp_port:
             print("Error: smtp server or port not found")
+            return False
+        
+        if not sender_email or not password:
+            print("Error: sender email or password not found")
             return False
 
         body = f""" 
