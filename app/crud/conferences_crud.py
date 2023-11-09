@@ -43,6 +43,8 @@ def delete_conference(db: Session, owner_id: int, uuid: str):
     if conference is None:
         return False
     sessions = db.query(models.Session).filter(models.Session.conference_id == conference.id, models.Session.owner_id == owner_id)
+    if sessions is None:
+        return False
     for session in sessions:
         db.delete(session)
     db.query(models.Settings).filter(models.Settings.conference_id == conference.id, models.Settings.owner_id == owner_id).delete()
