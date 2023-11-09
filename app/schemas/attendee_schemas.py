@@ -29,8 +29,12 @@ class AttendeeCreate(AttendeeBase):
 
     @validator('hashed_password')
     def hashed_password_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" ") or len(v) < 8 or len(v) > 16:
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
             raise HTTPException(status_code=400, detail="Invalid password")
+        elif len(v) < 8:
+            raise HTTPException(status_code=400, detail="Password too short")
+        elif len(v) > 16:
+            raise HTTPException(status_code=400, detail="Password too long")
         return v
 
 #pydantic model for attendee password
@@ -46,8 +50,12 @@ class AttendePassword(BaseModel):
     
     @validator('hashed_password')
     def hashed_password_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" ") or len(v) < 8 or len(v) > 16:
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
             raise HTTPException(status_code=400, detail="Invalid password")
+        elif len(v) < 8:
+            raise HTTPException(status_code=400, detail="Password too short")
+        elif len(v) > 16:
+            raise HTTPException(status_code=400, detail="Password too long")
         return v
 
 class AttendeeUpdate(BaseModel):
