@@ -34,6 +34,10 @@ def send_mail(otp: str,subject: str, receiver_email:str):
         sender_email = email
         password = password
 
+        if not smtp_server or smtp_port:
+            print("Error: smtp server or port not found")
+            return False
+
         body = f""" 
         Hello user,<br>
             Your <b>One Time Password</b> is - <b>{otp}</b>, and is valid for only <b>{default_time_limit // 60} minutes</b>
