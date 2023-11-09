@@ -67,11 +67,25 @@ def send_mail(otp: str,subject: str, receiver_email:str):
             return False
         print("Connected to server")
 
-        text = msg.as_string()
-        server.sendmail(sender_email, receiver_email, text)
+        try:
+            text = msg.as_string()
+        except Exception as e:
+            print(e)
+            print("Error: unable to convert message to string")
+            return False
+        try:
+            server.sendmail(sender_email, receiver_email, text)
+        except Exception as e:
+            print(e)
+            print("Error: unable to send email")
+            return False
         print("Email sent successfully")
-
-        server.quit()
+        try:
+            server.quit()
+        except Exception as e:
+            print(e)
+            print("Error: unable to quit server")
+            return False
         return True
     except Exception as e:
         print(e)
