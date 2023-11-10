@@ -50,8 +50,9 @@ async def verify_otp(email: str, otp: str):
     if len(otp) != 6:
         raise HTTPException(status_code=400, detail="Invalid OTP")
     valid_otp = validate_otp(otp_db[email][0], otp, otp_db[email][1], datetime.now())
-    otp_db[email][2] = valid_otp
-    otp_db[email][0] = 0
+    if valid_otp:
+        otp_db[email][2] = valid_otp
+        otp_db[email][0] = 0
     if not valid_otp:
         raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
     return {"msg": "OTP verified successfully"}
