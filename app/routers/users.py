@@ -23,8 +23,8 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return crud.create_user(db=db, user=user)
 
 @router.get("/users/all_users", response_model=list[schemas.User])
-def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    users = crud.get_users(db, skip=skip, limit=limit)
+def get_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    users = crud.get_users(db, offset=offset, limit=limit)
     if users is None or len(users) == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return users

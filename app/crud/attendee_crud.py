@@ -4,6 +4,7 @@ from .. import models
 from ..schemas import attendee_schemas as schemas
 from datetime import datetime
 from .. import hashing
+from .. AI_assitant import create_thread
 import uuid
 
 # create attendee
@@ -14,6 +15,7 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db_attendee.created_on = datetime.now(tz)
     db_attendee.updated_on = datetime.now(tz)
     db_attendee.uuid = str(uuid.uuid4())
+    db_attendee.thread_id = create_thread().id
     db_attendee.is_active = True
     db.add(db_attendee)
     db.commit()

@@ -23,8 +23,8 @@ def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_d
 
 # get all settings
 @router.get("/settings/all_settings", response_model=list[schemas.Settings])
-def get_settings(db: Session = Depends(get_db), skip: int = 0, limit: int = 100):
-    settings = crud.get_settings(db, skip=skip, limit=limit)
+def get_settings(db: Session = Depends(get_db), offset: int = 0, limit: int = 100):
+    settings = crud.get_settings(db, offset=offset, limit=limit)
     if settings is None or len(settings) == 0:
         raise HTTPException(status_code=404, detail="Settings not found")
     return settings

@@ -41,9 +41,9 @@ def create_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
     return agenda_session
 
 # return all the agendas with the list of sessions
-def get_all_agenda(db: Session, skip: int = 0, limit: int = 100):
+def get_all_agenda(db: Session, offset: int = 0, limit: int = 100):
     agenda_sessions = []
-    agenda = db.query(models.Agenda).offset(skip).limit(limit).all()
+    agenda = db.query(models.Agenda).offset(offset).limit(limit).all()
     for db_agenda in agenda:
         agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
         agenda_sessions.append(agenda_session)
