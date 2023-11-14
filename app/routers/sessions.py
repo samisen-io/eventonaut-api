@@ -51,10 +51,10 @@ def create_sessions_for_conference(
 
 # get all sessions
 @router.get("/sessions/all_sessions", response_model=list[schemas.Session])
-def get_all_sessions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    if skip < 0 or limit < 0:
+def get_all_sessions(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    if offset < 0 or limit < 0:
         raise HTTPException(status_code=400, detail="Invalid query parameters")
-    db_sessions = crud.get_sessions(db, skip=skip, limit=limit)
+    db_sessions = crud.get_sessions(db, offset=offset, limit=limit)
     if db_sessions is None or len(db_sessions) == 0:
         raise HTTPException(status_code=404, detail="Session not found")
     return db_sessions
