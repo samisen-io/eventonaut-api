@@ -9,8 +9,8 @@ import uuid
 #get all sessions
 
 #get all sessions
-def get_sessions(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Session).offset(skip).limit(limit).all()
+def get_sessions(db: Session, offset: int = 0, limit: int = 100):
+    return db.query(models.Session).offset(offset).limit(limit).all()
 
 def create_conference_session(db: Session, session: schemas.SessionCreate, owner_id: int):
     db_session = models.Session(name=session.name, start_time=session.start_time, end_time=session.end_time, description=session.description, date=session.date, location=session.location, owner_id=owner_id)
