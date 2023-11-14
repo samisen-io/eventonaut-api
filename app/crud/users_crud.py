@@ -39,8 +39,8 @@ def get_user_by_email_and_password(db: Session, email: str, password: str):
     return False
 
 # get all users
-def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.User).offset(skip).limit(limit).all()
+def get_users(db: Session, offset: int = 0, limit: int = 100):
+    return db.query(models.User).offset(offset).limit(limit).all()
 
 # update user
 def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
