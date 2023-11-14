@@ -4,12 +4,13 @@ from datetime import datetime, date
 from .. import models
 from ..schemas import conference_schemas as schemas
 from . import agenda_crud
+from .. AI_assitant import create_assistant
 from pytz import timezone
 import uuid
 
-# get all conferences
-def get_conferences(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Conference).offset(skip).limit(limit).all()
+# get all conferences ordered by start date in descending order
+def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
+    return db.query(models.Conference).order_by(models.Conference.start_date.desc()).offset(offset).limit(limit).all()
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
@@ -29,6 +30,7 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db_conference.created_on = datetime.now(tz)
     db_conference.updated_on = datetime.now(tz)
     db_conference.uuid = str(uuid.uuid4())
+    db_conference.assistant_id = create_assistant(f"ca_{db_conference.uuid}").id
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
