@@ -40,6 +40,7 @@ class Conference(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     conference_logo = Column(String, index=True, default="None")
     assistant_id = Column(String, index=True, default="None")
+    file_id = Column(String, index=True, default="None")
 
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")
