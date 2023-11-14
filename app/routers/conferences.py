@@ -23,10 +23,10 @@ def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session
 
 # get all conferences
 @router.get("/conferences/all_conferences", response_model=list[schemas.Conference])
-def get_all_conferences(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    if skip < 0 or limit < 0:
+def get_all_conferences(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    if offset < 0 or limit < 0:
         raise HTTPException(status_code=400, detail="Invalid query parameters")
-    conferences = crud.get_conferences(db, skip=skip, limit=limit)
+    conferences = crud.get_all_conferences(db, offset=offset, limit=limit)
     if conferences is None or len(conferences) == 0:
         raise HTTPException(status_code=404, detail="Conference not found")
     return conferences
