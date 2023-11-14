@@ -10,7 +10,10 @@ import uuid
 
 # get all conferences ordered by start date in descending order
 def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(models.Conference).order_by(models.Conference.start_date.desc()).offset(offset).limit(limit).all()
+    return db.query(models.Conference).offset(offset).limit(limit).all()
+
+def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
+    return db.query(models.Conference).filter(models.Conference.start_date >= datetime.now(timezone('Asia/Kolkata')).date()).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()

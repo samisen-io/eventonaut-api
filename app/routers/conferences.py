@@ -31,6 +31,16 @@ def get_all_conferences(offset: int = 0, limit: int = 100, db: Session = Depends
         raise HTTPException(status_code=404, detail="Conference not found")
     return conferences
 
+# get all conferences for attendee
+@router.get("/conferences/for_attendee", response_model=list[schemas.Conference])
+def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    if offset < 0 or limit < 0:
+        raise HTTPException(status_code=400, detail="Invalid query parameters")
+    conferences = crud.get_all_conferences_for_attendee(db, offset=offset, limit=limit)
+    if conferences is None or len(conferences) == 0:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    return conferences
+
 # get all conferences by owner_id
 @router.get("/conferences", response_model=list[schemas.Conference])
 def get_all_conferences_by_owner_id(db: Session = Depends(get_db),current_user: uschemas.User = Depends(get_current_active_user)):
