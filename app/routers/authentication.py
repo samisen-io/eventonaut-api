@@ -9,14 +9,16 @@ from ..dependencies import get_db
 from app.token import Token, create_access_token
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from ..token import token_cache
+from ..token import create_refresh_token, invalidate_refresh_token, token_cache
 
-from app.oauth2 import get_current_active_user, oauth_2_scheme
+from app.oauth2 import get_current_active_user, get_current_active_user_RT, oauth_2_scheme
 
 router = APIRouter(tags=["authentication"])
 
 load_dotenv()
 ACCESS_TOKEN_EXPIRE_MINUTES=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+REFRESH_TOKEN_EXPIRE_MINUTES=int(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES"))
+REFRESH_TOKEN_SECRET_KEY = os.getenv("REFRESH_TOKEN_SECRET_KEY")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
@@ -34,8 +36,44 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.email, "id":user.id}, expires_delta=access_token_expires)
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+    refresh_token = create_refresh_token(data={"sub": user.email}, expires_delta=refresh_token_expires)
+    rt_jwt = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jwt":rt_jwt}, expires_delta=access_token_expires)
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+
+@router.get("/print_something")
+def print_something(current_user: User = Depends(get_current_active_user)):
+    return {"message": "Hello World"}
+    
+@router.post("/refresh_token", response_model = Token)
+async def create_new_access_and_refresh_token(jwt_token:str, current_user: User = Depends(get_current_active_user_RT)):
+    try:
+        print(current_user.email)
+        return {"access_token": jwt_token, "token_type": "bearer", "refresh_token": jwt_token}
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid token")
+# @router.post("/refresh_token", response_model = Token)
+# async def create_new_access_and_refresh_token(jwt_token:str):
+#     try:
+#         current_user: User = get_current_active_user_RT(jwt_token)
+#         print(current_user)
+#         # invalidate_refresh_token(jwt_token)
+#         # access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+#         # refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+#         # refresh_token = create_refresh_token(data={"sub": current_user.email}, expires_delta=refresh_token_expires)
+#         # access_token = create_access_token(data={"sub": current_user.email, "id":current_user.id}, expires_delta=access_token_expires)
+#         # return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+#     except JWTError:
+#         raise HTTPException(status_code=400, detail="Invalid token")
+    
+@router.post("/invalidate_refresh_token")
+async def invalidate_RT(jwt_token: str=Depends(oauth_2_scheme)):#, current_user: User = Depends(get_current_active_user_RT)):
+    try:
+        invalidate_refresh_token(jwt_token)
+        return {"message": "Token invalidated"}
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid token")
 
 @router.post("/logout")
 async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Depends(get_current_active_user)):
