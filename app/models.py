@@ -122,6 +122,8 @@ class Attendee_Conferences(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
     attendee_id = Column(Integer, ForeignKey("attendees.id"))
     conference_id = Column(Integer, ForeignKey("conferences.id"))
 
