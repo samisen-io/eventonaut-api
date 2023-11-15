@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from ..token import create_refresh_token, invalidate_refresh_token, token_cache
 
-from app.oauth2 import get_current_active_user, get_current_active_user_RT, oauth_2_scheme
+from app.oauth2 import get_current_active_user, get_current_active_user_RT, get_current_user_RT, oauth_2_scheme
 
 router = APIRouter(tags=["authentication"])
 
@@ -47,28 +47,23 @@ def print_something(current_user: User = Depends(get_current_active_user)):
     return {"message": "Hello World"}
     
 @router.post("/refresh_token", response_model = Token)
-async def create_new_access_and_refresh_token(jwt_token:str, current_user: User = Depends(get_current_active_user_RT)):
+async def create_new_access_and_refresh_token(jwt_token:str,  db: Session = Depends(get_db)):
     try:
-        print(current_user.email)
-        return {"access_token": jwt_token, "token_type": "bearer", "refresh_token": jwt_token}
+        current_user: User = get_current_user_RT(jwt_token,db)
+        print("hello = "+current_user.email)
+        invalidate_refresh_token(jwt_token)
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+        refresh_token = create_refresh_token(data={"sub": current_user.email}, expires_delta=refresh_token_expires)
+        rt_jwt = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+        access_token = create_access_token(data={"sub": current_user.email, "id":current_user.id, "rt_jwt":rt_jwt}, expires_delta=access_token_expires)
+        return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+        # return {"access_token": jwt_token, "token_type": "bearer", "refresh_token": jwt_token}
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid token")
-# @router.post("/refresh_token", response_model = Token)
-# async def create_new_access_and_refresh_token(jwt_token:str):
-#     try:
-#         current_user: User = get_current_active_user_RT(jwt_token)
-#         print(current_user)
-#         # invalidate_refresh_token(jwt_token)
-#         # access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-#         # refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
-#         # refresh_token = create_refresh_token(data={"sub": current_user.email}, expires_delta=refresh_token_expires)
-#         # access_token = create_access_token(data={"sub": current_user.email, "id":current_user.id}, expires_delta=access_token_expires)
-#         # return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
-#     except JWTError:
-#         raise HTTPException(status_code=400, detail="Invalid token")
     
 @router.post("/invalidate_refresh_token")
-async def invalidate_RT(jwt_token: str=Depends(oauth_2_scheme)):#, current_user: User = Depends(get_current_active_user_RT)):
+async def invalidate_RT(jwt_token: str):#, current_user: User = Depends(get_current_active_user_RT)):
     try:
         invalidate_refresh_token(jwt_token)
         return {"message": "Token invalidated"}
