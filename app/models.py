@@ -45,7 +45,7 @@ class Conference(Base):
     sessions = relationship("Session", back_populates="conference")
     settings = relationship("Settings", back_populates="conference")
     agenda = relationship("Agenda", back_populates="conference")
-    conference_files = relationship("Conference_files", back_populates="conference")
+    conference_files = relationship("Conference_Files", back_populates="conference")
     attendee_conference = relationship("Attendee_Conferences", back_populates="conference")
 
 class Conference_Files(Base):
