@@ -2,9 +2,9 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 from .. import models
-from ..schemas import conference_schemas as schemas
+from ..schemas import conference_schemas as schemas, ai_assistant_schemas as assistant_schemas
 from . import agenda_crud
-from .. AI_assitant import create_assistant
+from .. import AI_assitant
 from pytz import timezone
 import uuid
 
@@ -33,7 +33,8 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db_conference.created_on = datetime.now(tz)
     db_conference.updated_on = datetime.now(tz)
     db_conference.uuid = str(uuid.uuid4())
-    db_conference.assistant_id = create_assistant(f"ca_{db_conference.uuid}").id
+    assistant = assistant_schemas.AssistantCreate(model="gpt-4-1106-preview", name=f"ca_{db_conference.uuid}", description="Conference Assistant", instructions="You are conference assitant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.")
+    db_conference.assistant_id = AI_assitant.create_assistant(schema=assistant).id
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
@@ -58,6 +59,7 @@ def delete_conference(db: Session, owner_id: int, uuid: str):
         db.delete(session)
     db.query(models.Settings).filter(models.Settings.conference_id == conference.id, models.Settings.owner_id == owner_id).delete()
     agenda_crud.delete_agenda_by_conference_id(db, conference_id=conference.id)
+    AI_assitant.delete_assistant(assistant_id=conference.assistant_id)
     db.delete(conference)
     db.commit()
     return True
