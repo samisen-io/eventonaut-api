@@ -40,12 +40,25 @@ class Conference(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     conference_logo = Column(String, index=True, default="None")
     assistant_id = Column(String, index=True, default="None")
-    file_id = Column(String, index=True, default="None")
 
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")
     settings = relationship("Settings", back_populates="conference")
     agenda = relationship("Agenda", back_populates="conference")
+    conference_files = relationship("Conference_files", back_populates="conference")
+    attendee_conference = relationship("Attendee_Conferences", back_populates="conference")
+
+class Conference_Files(Base):
+    __tablename__ = "conference_files"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    file_id = Column(String, index=True, default="None")
+
+    conference = relationship("Conference", back_populates="conference_files")
 
 # class to define session table
 class Session(Base):
@@ -102,6 +115,18 @@ class Attendee(Base):
 
     agenda = relationship("Agenda", back_populates="attendees")
     agenda_session = relationship("AgendaSession", back_populates="attendees")
+    attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
+
+class Attendee_Conferences(Base):
+    __tablename__ = "attendee_conferences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    attendee_id = Column(Integer, ForeignKey("attendees.id"))
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+
+    attendee = relationship("Attendee", back_populates="attendee_conference")
+    conference = relationship("Conference", back_populates="attendee_conference")
 
 # class to define agenda table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class Agenda(Base):
