@@ -33,8 +33,3 @@ def get_current_user_RT(data: str, db):
     if user.is_active is False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return user
-
-async def get_current_active_user_RT(current_user: User = Depends(get_current_user_RT)):
-    if current_user.is_active is False:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
-    return current_user
