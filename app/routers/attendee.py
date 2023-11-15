@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Depends
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
-from ..schemas import attendee_schemas as schemas
-from ..crud import attendee_crud as crud
+from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, conference_schemas
+from ..crud import attendee_crud as crud, conferences_crud
 from email_validator import validate_email, EmailNotValidError
 
 router = APIRouter(tags=["attendee"])
@@ -68,3 +68,33 @@ def delete_attendee_by_id(attendee_id: str, db: Session = Depends(get_db)):
     if not db_attendee:
         raise HTTPException(status_code=404, detail="Attendee not found")
     return crud.delete_attendee_by_uuid(db, attendee_id=attendee_id)
+
+# create attendee conference
+@router.post("/attendee/conference/", response_model=attendee_conference_schemas.AttendeeConference)
+def create_attendee_conference(attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate, db: Session = Depends(get_db)):
+    if not crud.get_attendee_by_uuid(db, attendee_id=attendee_conference.attendee_id):
+        raise HTTPException(status_code=400, detail="Attendee not found")
+    if not conferences_crud.get_conference_by_conference_uuid(db=db, uuid=attendee_conference.conference_id):
+        raise HTTPException(status_code=400, detail="Conference not found")
+    if crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_conference.attendee_id, conference_id=attendee_conference.conference_id):
+        raise HTTPException(status_code=400, detail="Attendee conference already exists")
+    return crud.create_attendee_conference(db=db, attendee_conference=attendee_conference)
+
+# get all attendee conferences
+@router.get("/attendee/conference/{attendee_id}", response_model=list[conference_schemas.Conference])
+def get_all_attendee_conferences(attendee_id: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    attendee_conferences = crud.get_all_attendee_conferences(db, skip=skip, limit=limit, attendee_id=attendee_id)
+    if not attendee_conferences or len(attendee_conferences) == 0:
+        raise HTTPException(status_code=404, detail="No attendee conferences found")
+    return attendee_conferences
+
+# delete attendee conference by attendee id and conference id
+@router.delete("/attendee/conference/{attendee_id}/{conference_id}")
+def delete_attendee_conference_by_attendee_id_and_conference_id(attendee_id: str, conference_id: str, db: Session = Depends(get_db)):
+    if not crud.get_attendee_by_uuid(db, attendee_id=attendee_id):
+        raise HTTPException(status_code=400, detail="Attendee not found")
+    if not conferences_crud.get_conference_by_conference_uuid(db=db, uuid=conference_id):
+        raise HTTPException(status_code=400, detail="Conference not found")
+    if not crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference_id):
+        raise HTTPException(status_code=404, detail="Attendee conference not found")
+    return crud.delete_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference_id)
