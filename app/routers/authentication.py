@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.schemas.user_schemas import User
+from app.schemas.token_schemas import TokenInput
 from ..crud import users_crud
 from ..dependencies import get_db
 from app.token import Token, create_access_token
@@ -47,8 +48,9 @@ def print_something(current_user: User = Depends(get_current_active_user)):
     return {"message": "Hello World"}
     
 @router.post("/refresh_token", response_model = Token)
-async def create_new_access_and_refresh_token(jwt_token:str,  db: Session = Depends(get_db)):
+async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = Depends(get_db)):
     try:
+        jwt_token = token.token
         current_user: User = get_current_user_RT(jwt_token,db)
         invalidate_refresh_token(jwt_token)
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -61,8 +63,9 @@ async def create_new_access_and_refresh_token(jwt_token:str,  db: Session = Depe
         raise HTTPException(status_code=400, detail="Invalid token")
     
 @router.post("/invalidate_refresh_token")
-async def invalidate_RT(jwt_token: str, db: Session = Depends(get_db)):
+async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db)):
     try:
+        jwt_token = token.token
         current_user: User = get_current_user_RT(jwt_token,db)
         invalidate_refresh_token(jwt_token)
         return {"message": "Token invalidated"}

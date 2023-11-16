@@ -7,3 +7,6 @@ class Token(BaseModel):
     
 class TokenData(BaseModel):
     username: str or None = None
+    
+class TokenInput(BaseModel):
+    token: str
