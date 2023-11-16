@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import csv
 import csv
@@ -32,6 +33,14 @@ def file_path_in_files(conference_id):
     file_path = os.path.join(files_folder, 'sessions'+str(conference_id)+'.csv')
     return file_path
 
+def file_path_in_files_json(conference_id):
+    app_folder = 'app'
+    files_folder = os.path.join(app_folder, 'files')
+    if not os.path.exists(files_folder):
+        os.makedirs(files_folder)        
+    file_path = os.path.join(files_folder, 'sessions_'+str(conference_id)+'.json')
+    return file_path
+
 def createVectorDb(conference_id):
     file_path = file_path_in_files(conference_id)
     delimiter = find_delimiter(file_path)
@@ -55,12 +64,26 @@ def createVectorDb(conference_id):
     vectordb = Chroma.from_documents(documents=data, embedding=embedding_function, persist_directory=vector_db_folder, collection_name=conference_id)
     vectordb.persist()
 
-
+def write_data_to_json(conference_id, db):
+    file_path = file_path_in_files_json(conference_id)
+    result = get_sessions_by_conference_id(conference_id, db)    
+    json_result = json.dumps([{
+        key: value.strftime("%Y-%m-%d %H:%M:%S") if isinstance(value, datetime.datetime) 
+             else value.strftime("%H:%M:%S") if isinstance(value, datetime.time)
+             else value.strftime("%Y-%m-%d") if isinstance(value, datetime.date)
+             else value 
+        for key, value in row.__dict__.items() 
+        if key != '_sa_instance_state' and key not in ['id', 'created_on', 'conference_id', 'updated_on', 'owner_id']
+    } for row in result])
+    with open(file_path, 'w') as f:
+        json.dump(json.loads(json_result), f, indent=4)
+    
 def write_data_to_csv(conference_id, db):
-    file_path = file_path_in_files(conference_id)
+    file_path = file_path_in_files_json(conference_id)
     result = get_sessions_by_conference_id(conference_id, db)
     with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['id', 'name', 'end_time', 'date', 'conference_id', 'start_time', 'description', 'location', 'owner_id']
+        fieldnames = ['name', 'description', 'location', 'date', 'start_time', 'end_time', 'tags', 'speakers']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for session in result:
@@ -77,5 +100,3 @@ def write_data_to_csv(conference_id, db):
             session_dict.pop('created_on', None)
             session_dict.pop('updated_on', None)
             writer.writerow(session_dict)  
-    
-
