@@ -1,6 +1,5 @@
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
-from .agenda_schemas import Agenda
 
 #pydantic model for attendeebase
 class AttendeeBase(BaseModel):
@@ -12,12 +11,16 @@ class AttendeeBase(BaseModel):
     def first_name_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid first name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="First name too long")
         return v
     
     @validator('last_name')
     def last_name_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid last name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Last name too long")
         return v
     
 #pydantic model for attendee create
@@ -26,8 +29,12 @@ class AttendeeCreate(AttendeeBase):
 
     @validator('hashed_password')
     def hashed_password_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" ") or len(v) < 8 or len(v) > 16:
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
             raise HTTPException(status_code=400, detail="Invalid password")
+        elif len(v) < 8:
+            raise HTTPException(status_code=400, detail="Password too short")
+        elif len(v) > 16:
+            raise HTTPException(status_code=400, detail="Password too long")
         return v
 
 #pydantic model for attendee password
@@ -43,8 +50,12 @@ class AttendePassword(BaseModel):
     
     @validator('hashed_password')
     def hashed_password_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" ") or len(v) < 8 or len(v) > 16:
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
             raise HTTPException(status_code=400, detail="Invalid password")
+        elif len(v) < 8:
+            raise HTTPException(status_code=400, detail="Password too short")
+        elif len(v) > 16:
+            raise HTTPException(status_code=400, detail="Password too long")
         return v
 
 class AttendeeUpdate(BaseModel):
@@ -63,12 +74,16 @@ class AttendeeUpdate(BaseModel):
     def first_name_is_not_empty(cls, v):
         if v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid first name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="First name too long")
         return v
     
     @validator('last_name')
     def last_name_is_not_empty(cls, v):
         if v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid last name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Last name too long")
         return v
 
 #pydantic model for attendee

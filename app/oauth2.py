@@ -22,3 +22,14 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     if current_user.is_active is False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
+
+def get_current_user_RT(data: str, db):
+    credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                          detail="Could not validate credentials")
+    token_data = token.verify_token_RT(data, credentials_exception)
+    user = users_crud.get_user_by_email(db, email=token_data.username)
+    if user is None:
+        raise credentials_exception
+    if user.is_active is False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
+    return user

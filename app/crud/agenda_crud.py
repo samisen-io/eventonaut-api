@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from pytz import timezone
 from .. import models
-from ..schemas import agenda_schemas as schemas, agendasession_schemas
+from ..schemas import agenda_schemas as schemas
 from . import conferences_crud, attendee_crud, sessions_crud
 from datetime import datetime
 from pytz import timezone
@@ -41,9 +41,9 @@ def create_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
     return agenda_session
 
 # return all the agendas with the list of sessions
-def get_all_agenda(db: Session, skip: int = 0, limit: int = 100):
+def get_all_agenda(db: Session, offset: int = 0, limit: int = 100):
     agenda_sessions = []
-    agenda = db.query(models.Agenda).offset(skip).limit(limit).all()
+    agenda = db.query(models.Agenda).offset(offset).limit(limit).all()
     for db_agenda in agenda:
         agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
         agenda_sessions.append(agenda_session)
@@ -127,7 +127,10 @@ def delete_agenda(db: Session, conference_id: str, attendee_id: str):
 # delete agenda by conference id
 def delete_agenda_by_conference_id(db: Session, conference_id: int):
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference_id).first()
-    db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
-    db.delete(db_agenda)
-    db.commit()
-    return True
+    if db_agenda is not None:
+        db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
+        db.delete(db_agenda)
+        db.commit()
+        return True
+    else:
+        return False

@@ -25,12 +25,36 @@ def create_session_for_conference(
     session=crud.create_conference_session(db=db, session=session, owner_id=current_user.id)
     return session
 
+# create sessions by list of sessions
+@router.post("/sessions/list", response_model=list[schemas.Session])
+def create_sessions_for_conference(
+    sessions: list[schemas.SessionCreate], db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)
+):
+    if sessions is None or len(sessions) == 0:
+        raise HTTPException(status_code=400, detail="Invalid request body")
+    
+    session_list=[]
+
+    for session in sessions:
+        conference=conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id, owner_id=current_user.id)
+        if conference is None:
+            raise HTTPException(status_code=404, detail="Conference not found")
+        if session.date < conference.start_date or session.date > conference.end_date or session.date < date.today():
+            raise HTTPException(status_code=400, detail=f"Invalid date! Conference date is between {conference.start_date} and {conference.end_date} and today is {date.today()}")
+        if session.start_time > session.end_time:
+            raise HTTPException(status_code=400, detail="Invalid time")
+        
+    for session in sessions:
+        session_list.append(crud.create_conference_session(db=db, session=session, owner_id=current_user.id))
+
+    return session_list
+
 # get all sessions
 @router.get("/sessions/all_sessions", response_model=list[schemas.Session])
-def get_all_sessions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    if skip < 0 or limit < 0:
+def get_all_sessions(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    if offset < 0 or limit < 0:
         raise HTTPException(status_code=400, detail="Invalid query parameters")
-    db_sessions = crud.get_sessions(db, skip=skip, limit=limit)
+    db_sessions = crud.get_sessions(db, offset=offset, limit=limit)
     if db_sessions is None or len(db_sessions) == 0:
         raise HTTPException(status_code=404, detail="Session not found")
     return db_sessions
@@ -46,7 +70,7 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
     return db_sessions
 
 # update session
-@router.put("/sessions")
+@router.put("/sessions", response_model=schemas.Session)
 def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
     if session.name is None and session.date is None and session.start_time is None and session.end_time is None and session.description is None and session.speakers is None and session.tags is None and session.location is None:
         raise HTTPException(status_code=400, detail="Invalid request body")

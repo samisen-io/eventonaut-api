@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 from .. import models
-from ..schemas import settings_schemas as schemas, conference_schemas
+from ..schemas import settings_schemas as schemas
 import pytz
 import uuid
 
 #crud for settings
-def get_settings(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Settings).offset(skip).limit(limit).all()
+def get_settings(db: Session, offset: int = 0, limit: int = 100):
+    return db.query(models.Settings).offset(offset).limit(limit).all()
 
 #get settings by id
 def get_settings_by_id(db: Session, settings_id: int):

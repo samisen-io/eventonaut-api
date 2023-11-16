@@ -1,7 +1,6 @@
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
 from datetime import date as Date, time
-from typing import Optional
 
 #pydantic model for session create
 class SessionBase(BaseModel):
@@ -18,6 +17,8 @@ class SessionBase(BaseModel):
     def name_must_not_be_empty(cls, v):
         if v is None or v == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Name too long")
         return v
     
     @validator('start_time')
@@ -36,6 +37,8 @@ class SessionBase(BaseModel):
     def description_must_not_be_empty(cls, v):
         if v is None or v == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid description")
+        elif len(v) > 2048:
+            raise HTTPException(status_code=400, detail="Description too long")
         return v
     
     @validator('date')
@@ -48,6 +51,8 @@ class SessionBase(BaseModel):
     def location_must_not_be_empty(cls, v):
         if v is None or v == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid location")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Location too long")
         return v
     
     @validator('speakers')
@@ -57,6 +62,8 @@ class SessionBase(BaseModel):
         for speaker in v:
             if speaker is None or speaker == "" or speaker == "string":
                 raise HTTPException(status_code=400, detail="Invalid speaker")
+            elif len(speaker) > 256:
+                raise HTTPException(status_code=400, detail="Speaker name too long")
         return v
     
     @validator('tags')
@@ -66,6 +73,8 @@ class SessionBase(BaseModel):
         for tag in v:
             if tag is None or tag == "" or tag == "string":
                 raise HTTPException(status_code=400, detail="Invalid tag")
+            elif len(tag) > 256:
+                raise HTTPException(status_code=400, detail="Tag name too long")
         return v
     
 class SessionCreate(SessionBase):
@@ -112,6 +121,8 @@ class SessionUpdate(BaseModel):
     def name_must_not_be_empty(cls, v):
         if v == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Name too long")
         return v
     
     @validator('start_time')
@@ -130,6 +141,8 @@ class SessionUpdate(BaseModel):
     def description_must_not_be_empty(cls, v):
         if v == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid description")
+        elif len(v) > 2048:
+            raise HTTPException(status_code=400, detail="Description too long")
         return v
     
     @validator('date')
@@ -142,6 +155,8 @@ class SessionUpdate(BaseModel):
     def location_must_not_be_empty(cls, v):
         if v == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid location")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Location too long")
         return v
     
     @validator('speakers')
@@ -151,6 +166,8 @@ class SessionUpdate(BaseModel):
         for speaker in v:
             if speaker == "" or speaker == "string":
                 raise HTTPException(status_code=400, detail="Invalid speaker")
+            elif len(speaker) > 256:
+                raise HTTPException(status_code=400, detail="Speaker name too long")
         return v
     
     @validator('tags')
@@ -160,6 +177,8 @@ class SessionUpdate(BaseModel):
         for tag in v:
             if tag == "" or tag == "string":
                 raise HTTPException(status_code=400, detail="Invalid tag")
+            elif len(tag) > 256:
+                raise HTTPException(status_code=400, detail="Tag name too long")
         return v
     
     class Config:

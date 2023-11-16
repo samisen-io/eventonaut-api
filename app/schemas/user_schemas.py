@@ -14,24 +14,25 @@ class UserBase(BaseModel):
     def first_name_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid first name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="First name too long")
         return v
     
     @validator('last_name')
     def last_name_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid last name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Last name too long")
         return v
     
-    @validator('company')
-    def company_validator(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid account type")
-        return v
     
     @validator('bussiness_type')
     def bussiness_type_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid bussiness type")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Bussiness type too long")
         return v
 
 class UserBaseUpdate(BaseModel):
@@ -43,26 +44,26 @@ class UserBaseUpdate(BaseModel):
     
     @validator('first_name')
     def first_name_is_not_empty(cls, v):
-        if v.strip() == "" or v == "string":
+        if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid first name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="First name too long")
         return v
     
     @validator('last_name')
     def last_name_is_not_empty(cls, v):
-        if v.strip() == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid last name")
-        return v
-    
-    @validator('company')
-    def company_validator(cls, v):
         if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid account type")
+            raise HTTPException(status_code=400, detail="Invalid last name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Last name too long")
         return v
     
     @validator('bussiness_type')
     def bussiness_type_is_not_empty(cls, v):
-        if v.strip() == "" or v == "string":
+        if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid bussiness type")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Bussiness type too long")
         return v
 
 #pydantic model for user create
@@ -71,8 +72,12 @@ class UserCreate(UserBase):
 
     @validator('hashed_password')
     def hashed_password_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" ") or len(v) < 8 or len(v) > 16:
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
             raise HTTPException(status_code=400, detail="Invalid password")
+        elif len(v) < 8:
+            raise HTTPException(status_code=400, detail="Password too short")
+        elif len(v) > 16:
+            raise HTTPException(status_code=400, detail="Password too long")
         return v
 
 #pydantic model for user password

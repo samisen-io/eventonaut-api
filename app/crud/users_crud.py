@@ -4,7 +4,6 @@ from ..schemas import user_schemas as schemas
 from datetime import datetime
 from pytz import timezone
 from . import agenda_crud
-from fastapi import HTTPException
 import uuid
 
 # create user
@@ -14,7 +13,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db_user.created_on = datetime.now(tz)
     db_user.updated_on = datetime.now(tz)
-    if user.company is None:
+    if user.company is None or user.company == "string" or user.company == "None" or user.company.strip() == "":
         db_user.company = "None"
     db_user.uuid = str(uuid.uuid4())
     db.add(db_user)
@@ -40,25 +39,30 @@ def get_user_by_email_and_password(db: Session, email: str, password: str):
     return False
 
 # get all users
-def get_users(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.User).offset(skip).limit(limit).all()
+def get_users(db: Session, offset: int = 0, limit: int = 100):
+    return db.query(models.User).offset(offset).limit(limit).all()
 
 # update user
 def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
     tz = timezone('Asia/Kolkata')
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
 
+
     updates = {
         'email': user.email,
         'first_name': user.first_name,
         'last_name': user.last_name,
-        'account_type': user.account_type,
+        'company': user.company,
         'bussiness_type': user.bussiness_type
     }
     
     for key, value in updates.items():
         if value is not None:
             setattr(db_user, key, value)
+
+    if user.company is None or user.company == "string" or user.company == "None" or user.company.strip() == "":
+        db_user.company = "None"
+
 
     db_user.updated_on = datetime.now(tz)
     db.commit()
@@ -75,8 +79,8 @@ def update_user_password(db: Session, user: schemas.UserPasswordUpdate, user_id:
     db.refresh(db_user)
     return db_user
 
-def update_user_password_by_id(db: Session, user_id: int, password: str):
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+def update_user_password_by_email(db: Session, email: str, password: str):
+    db_user = db.query(models.User).filter(models.User.email == email).first()
     tz=timezone('Asia/Kolkata')
     db_user.hashed_password = hashing.get_password_hash(password)
     db_user.updated_on = datetime.now(tz)

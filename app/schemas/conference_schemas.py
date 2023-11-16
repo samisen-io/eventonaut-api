@@ -11,17 +11,22 @@ class ConferenceCreate(BaseModel):
     start_date: date
     end_date: date
     description: str | None = None
+    conference_logo: str | None = None
 
     @validator('name')
     def name_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Name too long")
         return v
     
     @validator('location')
     def location_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid location")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Location too long")
         return v
 
     @validator('start_date')
@@ -35,14 +40,6 @@ class ConferenceCreate(BaseModel):
         if v is None:
             raise HTTPException(status_code=400, detail="Invalid end date")
         return v  
-    
-    @validator('description')
-    def description_is_not_empty(cls, v):
-        if v == "string":
-            raise HTTPException(status_code=400, detail="Invalid description")
-        if len is not None and len(v) > 256:
-            raise HTTPException(status_code=400, detail="Description should be less than 256 characters")
-        return v
 
 class ConferenceUpdate(BaseModel):
     id: str
@@ -51,6 +48,7 @@ class ConferenceUpdate(BaseModel):
     start_date: date | None = None
     end_date: date  | None = None
     description: str | None = None
+    conference_logo: str | None = None
 
     @validator('id')
     def id_is_not_empty(cls, v):
@@ -60,22 +58,18 @@ class ConferenceUpdate(BaseModel):
     
     @validator('name')
     def name_is_not_empty(cls, v):
-        if v == "string" or v.strip() == "":
+        if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid name")
+        if len is not None and len(v) > 256:
+            raise HTTPException(status_code=400, detail="Name too long")
         return v
     
     @validator('location')
     def location_is_not_empty(cls, v):
-        if v == "string" or v.strip() == "":
+        if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid location")
-        return v
-    
-    @validator('description')
-    def description_is_not_empty(cls, v):
-        if v == "string" or v.strip() == "":
-            raise HTTPException(status_code=400, detail="Invalid description")
         if len is not None and len(v) > 256:
-            raise HTTPException(status_code=400, detail="Description should be less than 256 characters")
+            raise HTTPException(status_code=400, detail="Location too long")
         return v
 
 #pydantic model for conference
