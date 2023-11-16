@@ -9,16 +9,12 @@ class AttendeeConferenceCreate(BaseModel):
     def validate_attendee_id(cls, v):
         if v is None or v.strip() == '' or v == 'string':
             raise ValueError('Attendee id cannot be null')
-        elif len(v) > 36:
-            raise ValueError('Attendee id cannot be more than 36 characters')
         return v
     
     @validator('conference_id')
     def validate_conference_id(cls, v):
         if v is None or v.strip() == '' or v == 'string':
             raise ValueError('Conference id cannot be null')
-        elif len(v) > 36:
-            raise ValueError('Conference id cannot be more than 36 characters')
         return v
     
 class AttendeeConference(BaseModel):
