@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Header
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.oauth2 import get_current_active_user
@@ -7,6 +8,8 @@ from ..schemas import user_schemas as uschemas
 from ..crud import conferences_crud as crud, users_crud
 from ..dependencies import get_db
 from datetime import date
+import qrcode
+import io
 
 router = APIRouter(tags=["conferences"])
 
@@ -77,3 +80,28 @@ def delete_conference_owner_id_conference_id(conference_id: str, db: Session = D
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     return crud.delete_conference(db=db, owner_id=current_user.id, uuid=conference_id)
+
+# generate qr code based on conference uuid
+@router.get("/conferences/generate_qr_code/{conference_id}")
+def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
+    if crud.get_conference_by_uuid(db, uuid=conference_id, owner_id=current_user.id) is None:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=10,
+        border=4,
+    )
+    qr.add_data(conference_id)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr)
+    img_byte_arr.seek(0)
+
+    headers = {
+        "Content-Disposition": f"attachment; filename=conf_qrcode.png",
+    }
+
+    return StreamingResponse(img_byte_arr, media_type="image/png", headers=headers)
