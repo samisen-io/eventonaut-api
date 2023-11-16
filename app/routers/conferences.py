@@ -98,7 +98,7 @@ def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_
     qr_data = {
         "conference_id": conference.uuid,
         "conference_name": conference.name,
-        "conference_code": conference.code.upper()
+        "conference_code": conference.code
     }
 
     qr.add_data(json.dumps(qr_data))
