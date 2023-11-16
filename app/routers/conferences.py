@@ -84,7 +84,8 @@ def delete_conference_owner_id_conference_id(conference_id: str, db: Session = D
 # generate qr code based on conference uuid
 @router.get("/conferences/generate_qr_code/{conference_id}")
 def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
-    if crud.get_conference_by_uuid(db, uuid=conference_id, owner_id=current_user.id) is None:
+    conference = crud.get_conference_by_uuid(db, uuid=conference_id, owner_id=current_user.id)
+    if conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     qr = qrcode.QRCode(
         version=1,
@@ -92,7 +93,14 @@ def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_
         box_size=10,
         border=4,
     )
-    qr.add_data(conference_id)
+
+    qr_data = {
+        "conference_id": conference.uuid,
+        "conference_name": conference.name,
+        "conference_code": conference.code
+    }
+
+    qr.add_data(qr_data)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
 
