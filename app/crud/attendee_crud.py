@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from pytz import timezone
 from .. import models
-from ..schemas import attendee_schemas as schemas
+from ..schemas import attendee_schemas as schemas, attendee_conference_schemas
 from datetime import datetime
 from .. import hashing
 from .. AI_assitant import create_thread
@@ -65,5 +65,47 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: str, attendee: sc
 # delete attendee by id
 def delete_attendee_by_uuid(db: Session, attendee_id: str):
     db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).delete()
+    db.commit()
+    return True
+
+# create attendee conference
+def create_attendee_conference(db: Session, attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate):
+    attendee_id = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_conference.attendee_id).first().id
+    conference_id = db.query(models.Conference).filter(models.Conference.uuid == attendee_conference.conference_id).first().id
+    db_attendee_conference = models.Attendee_Conferences(attendee_id=attendee_id, conference_id=conference_id)
+    db_attendee_conference.uuid = str(uuid.uuid4())
+    tz = timezone('Asia/Kolkata')
+    db_attendee_conference.created_on = datetime.now(tz)
+    db_attendee_conference.updated_on = datetime.now(tz)
+    db.add(db_attendee_conference)
+    db.commit()
+    db.refresh(db_attendee_conference)
+    conf_list = []
+    for conf in db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee_id).all():
+        conf_uuid = db.query(models.Conference).filter(models.Conference.id == conf.conference_id).first().uuid
+        conf_list.append(conf_uuid)
+    attendee_conf = attendee_conference_schemas.AttendeeConference(uuid=db_attendee_conference.uuid, attendee_id=attendee_conference.attendee_id, conference_id=conf_list)
+    return attendee_conf
+
+# get attendee conference by attendee id and conference id
+def get_attendee_conference_by_attendee_id_and_conference_id(db: Session, attendee_id: str, conference_id: str):
+    attendee_id = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first().id
+    conference_id = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first().id
+    return db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee_id).filter(models.Attendee_Conferences.conference_id == conference_id).first()
+
+# get all attendee conferences
+def get_all_attendee_conferences(db: Session, attendee_id: str, skip: int = 0, limit: int = 100):
+    attendee_id = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first().id
+    attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee_id).offset(skip).limit(limit).all()
+    conferences = []
+    for attendee_conference in attendee_conferences:
+        conferences.append(db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id).first())
+    return conferences
+
+# delete attendee conference by attendee id and conference id
+def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, attendee_id: str, conference_id: str):
+    attendee_id = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first().id
+    conference_id = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first().id
+    db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee_id,models.Attendee_Conferences.conference_id == conference_id).delete()
     db.commit()
     return True
