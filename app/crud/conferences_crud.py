@@ -20,7 +20,7 @@ def get_conferences_by_owner_id(db: Session, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
 
 def get_conference_by_code(db: Session, code: str):
-    return db.query(models.Conference).filter(models.Conference.code.ilike(code)).first()
+    return db.query(models.Conference).filter(models.Conference.code == code).first()
 
 # create conference
 def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
