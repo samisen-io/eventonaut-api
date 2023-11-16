@@ -30,6 +30,8 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     db.refresh(db_session)
     return db_session
 
+# def create_conference_session_from_csv(db: Session, session: schemas.SessionCreate, owner_id: int):
+
 def get_session_by_conference_uuid_session_uuid(db: Session, session_id: str, conference_id: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
     return db.query(models.Session).filter(models.Session.uuid == session_id, models.Session.conference_id == conference.id).first()

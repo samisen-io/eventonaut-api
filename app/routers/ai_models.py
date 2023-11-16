@@ -1,3 +1,4 @@
+import ast
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from app.data_deletion import delete_collection
 from app.file_reader import read_file_return_csv
@@ -44,27 +45,33 @@ async def upload_session_file(file: UploadFile,
                               token: str = Depends(oauth_2_scheme),
                               db: Session = Depends(get_db)):
     # check if conference id is valid
-    check_conference_id(conference_id)
+    # check_conference_id(conference_id)
     contents = await file.read()
     filename = file.filename
     # read the file and return a csv reader object
     reader = await read_file_return_csv(contents,filename)
     headers = reader.fieldnames
-    my_headers = ['name', 'start_time', 'end_time', 'location', 'date', 'description']
+    print(headers)
+    my_headers = ['name', 'description', 'location', 'date', 'start_time', 'end_time', 'tags', 'speakers']
     if set(headers) != set(my_headers):
         return {"error": "The headers of the CSV file are not correct.", "expected headers": my_headers, "received headers": headers},  
     for row in reader:
+        print("speakers before conversion", row['speakers'])
         payload = {
-            "name": f"{row['name']}",
-            "start_time": f"{row['start_time']}",
-            "end_time": f"{row['end_time']}",
-            "location": f"{row['location']}",
-            "date": f"{row['date']}",
-            "description": f"{row['description']}",
-            "conference_id": f"{conference_id}"
+            "name": f"{row['name']}" if row['name'] else None,
+            "start_time": f"{row['start_time']}" if row['start_time'] else None,
+            "end_time": f"{row['end_time']}" if row['end_time'] else None,
+            "location": f"{row['location']}" if row['location'] else None,
+            "date": f"{row['date']}" if row['date'] else None,
+            "description": f"{row['description']}" if row['description'] else None,
+            "conference_id": f"{conference_id}",
+            "speakers": ast.literal_eval(row['speakers']) if row['speakers'] else None,
+            "tags": ast.literal_eval(row['tags']) if row['tags'] else None
         }
         session = schemas.SessionCreate(**payload)
-        create_session_for_conference(session,db,current_user)
-    write_data_to_csv(int(conference_id),db)
-    createVectorDb(conference_id)
-    return {'filename':file.filename}
+        break
+        # create_session_for_conference(session,db,current_user)
+    print(session)
+    # write_data_to_csv(int(conference_id),db)
+    # createVectorDb(conference_id)
+    # return {'filename':file.filename}
