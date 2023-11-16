@@ -74,9 +74,10 @@ def delete_attendee_by_id(attendee_id: str, db: Session = Depends(get_db)):
 def create_attendee_conference(attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate, db: Session = Depends(get_db)):
     if not crud.get_attendee_by_uuid(db, attendee_id=attendee_conference.attendee_id):
         raise HTTPException(status_code=400, detail="Attendee not found")
-    if not conferences_crud.get_conference_by_conference_uuid(db=db, uuid=attendee_conference.conference_id):
+    conference = conferences_crud.get_conference_by_code(db=db, code=attendee_conference.conference_code)
+    if not conference:
         raise HTTPException(status_code=400, detail="Conference not found")
-    if crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_conference.attendee_id, conference_id=attendee_conference.conference_id):
+    if crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_conference.attendee_id, conference_id=conference.id):
         raise HTTPException(status_code=400, detail="Conference already exists")
     return crud.create_attendee_conference(db=db, attendee_conference=attendee_conference)
 
@@ -91,12 +92,13 @@ def get_all_attendee_conferences(attendee_id: str, skip: int = 0, limit: int = 1
     return attendee_conferences
 
 # delete attendee conference by attendee id and conference id
-@router.delete("/attendee/conference/{attendee_id}/{conference_id}")
-def delete_attendee_conference_by_attendee_id_and_conference_id(attendee_id: str, conference_id: str, db: Session = Depends(get_db)):
+@router.delete("/attendee/conference/{attendee_id}/{conference_code}")
+def delete_attendee_conference_by_attendee_id_and_conference_id(attendee_id: str, conference_code: str, db: Session = Depends(get_db)):
     if not crud.get_attendee_by_uuid(db, attendee_id=attendee_id):
         raise HTTPException(status_code=400, detail="Attendee not found")
-    if not conferences_crud.get_conference_by_conference_uuid(db=db, uuid=conference_id):
+    conference = conferences_crud.get_conference_by_code(db=db, code = conference_code)
+    if not conference:
         raise HTTPException(status_code=400, detail="Conference not found")
-    if not crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference_id):
+    if not crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference.id):
         raise HTTPException(status_code=404, detail="No conference found")
-    return crud.delete_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference_id)
+    return crud.delete_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference_code)
