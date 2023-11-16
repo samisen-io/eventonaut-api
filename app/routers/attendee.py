@@ -77,7 +77,7 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
     if not conferences_crud.get_conference_by_conference_uuid(db=db, uuid=attendee_conference.conference_id):
         raise HTTPException(status_code=400, detail="Conference not found")
     if crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_conference.attendee_id, conference_id=attendee_conference.conference_id):
-        raise HTTPException(status_code=400, detail="Attendee conference already exists")
+        raise HTTPException(status_code=400, detail="Conference already exists")
     return crud.create_attendee_conference(db=db, attendee_conference=attendee_conference)
 
 # get all attendee conferences
@@ -87,7 +87,7 @@ def get_all_attendee_conferences(attendee_id: str, skip: int = 0, limit: int = 1
         raise HTTPException(status_code=400, detail="Attendee not found")
     attendee_conferences = crud.get_all_attendee_conferences(db, skip=skip, limit=limit, attendee_id=attendee_id)
     if not attendee_conferences or len(attendee_conferences) == 0:
-        raise HTTPException(status_code=404, detail="No attendee conferences found")
+        raise HTTPException(status_code=404, detail="No conferences found")
     return attendee_conferences
 
 # delete attendee conference by attendee id and conference id
@@ -98,5 +98,5 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(attendee_id: str
     if not conferences_crud.get_conference_by_conference_uuid(db=db, uuid=conference_id):
         raise HTTPException(status_code=400, detail="Conference not found")
     if not crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference_id):
-        raise HTTPException(status_code=404, detail="Attendee conference not found")
+        raise HTTPException(status_code=404, detail="No conference found")
     return crud.delete_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference_id)
