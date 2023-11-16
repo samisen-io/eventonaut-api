@@ -7,7 +7,7 @@ from . import agenda_crud
 from .. import AI_assitant
 from pytz import timezone
 import uuid
-from ..uuid_generator import generate_unique_string
+from ..code_generator import generate_unique_string
 
 # get all conferences ordered by start date in descending order
 def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
