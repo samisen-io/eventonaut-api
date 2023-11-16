@@ -10,6 +10,7 @@ from ..dependencies import get_db
 from datetime import date
 import qrcode
 import io
+import json
 
 router = APIRouter(tags=["conferences"])
 
@@ -100,7 +101,7 @@ def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_
         "conference_code": conference.code.upper()
     }
 
-    qr.add_data(qr_data)
+    qr.add_data(json.dumps(qr_data))
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
 
