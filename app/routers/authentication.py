@@ -31,6 +31,7 @@ def authenticate_user(db: Session, username: str, password: str, token_jti: str)
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends()):
+    form_data.username = form_data.username.lower().strip()
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
