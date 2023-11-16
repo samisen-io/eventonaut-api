@@ -77,7 +77,7 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
     conference = conferences_crud.get_conference_by_code(db=db, code=attendee_conference.conference_code)
     if not conference:
         raise HTTPException(status_code=400, detail="Conference not found")
-    if crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_conference.attendee_id, conference_id=conference.id):
+    if crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_conference.attendee_id, conference_id=conference.uuid):
         raise HTTPException(status_code=400, detail="Conference already exists")
     return crud.create_attendee_conference(db=db, attendee_conference=attendee_conference)
 
@@ -99,6 +99,6 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(attendee_id: str
     conference = conferences_crud.get_conference_by_code(db=db, code = conference_code)
     if not conference:
         raise HTTPException(status_code=400, detail="Conference not found")
-    if not crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference.id):
+    if not crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference.uuid):
         raise HTTPException(status_code=404, detail="No conference found")
-    return crud.delete_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_id=conference_code)
+    return crud.delete_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=attendee_id, conference_code=conference_code)
