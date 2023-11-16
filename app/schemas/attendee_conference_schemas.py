@@ -3,7 +3,7 @@ from .conference_schemas import Conference
 
 class AttendeeConferenceCreate(BaseModel):
     attendee_id: str
-    conference_id: str
+    conference_code: str
 
     @validator('attendee_id')
     def validate_attendee_id(cls, v):
@@ -11,10 +11,10 @@ class AttendeeConferenceCreate(BaseModel):
             raise ValueError('Attendee id cannot be null')
         return v
     
-    @validator('conference_id')
-    def validate_conference_id(cls, v):
+    @validator('conference_code')
+    def validate_conference_code(cls, v):
         if v is None or v.strip() == '' or v == 'string':
-            raise ValueError('Conference id cannot be null')
+            raise ValueError('Conference code cannot be null')
         return v
     
 class AttendeeConference(BaseModel):
