@@ -3,6 +3,7 @@ from ..dependencies import get_db
 from sqlalchemy.orm import Session
 from ..schemas import agenda_schemas as schemas
 from ..crud import agenda_crud as crud, attendee_crud, conferences_crud, sessions_crud
+from ..models import Session
 
 router = APIRouter(tags=["agenda"])
 
@@ -19,7 +20,21 @@ def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db)):
     for session_id in agenda.sessions:
         if sessions_crud.get_session_by_conference_uuid_session_uuid(db, session_id=session_id, conference_id=agenda.conference_id) is None:
             raise HTTPException(status_code=400, detail="Session not found")
-    return crud.create_agenda(db=db, conference_id=agenda.conference_id,attendee_id=agenda.attendee_id, agenda=agenda)
+    created_agenda = crud.create_agenda(db=db, conference_id=agenda.conference_id,attendee_id=agenda.attendee_id, agenda=agenda)
+    if isinstance(created_agenda, Session):
+        session = {
+            "id" : created_agenda.uuid,
+            "name" : created_agenda.name,
+            "date" : created_agenda.date.isoformat(),
+            "start_time" : created_agenda.start_time.isoformat(),
+            "end_time" : created_agenda.end_time.isoformat(),
+            "description" : created_agenda.description,
+            "location" : created_agenda.location,
+            "speakers" : created_agenda.speakers,
+            "tags" : created_agenda.tags
+        }
+        raise HTTPException(status_code=400, detail={"error":"found conflict with a session", "session": session})
+    return created_agenda
 
 # get all agenda
 @router.get("/agenda", response_model=list[schemas.Agenda])
@@ -53,7 +68,21 @@ def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db)):
         for session_id in agenda.sessions:
             if sessions_crud.get_session_by_conference_uuid_session_uuid(db, session_id=session_id, conference_id=agenda.conference_id) is None:
                 raise HTTPException(status_code=400, detail="Session not found")
-    return crud.update_agenda(db=db, conference_id=agenda.conference_id, attendee_id=agenda.attendee_id, agenda=agenda)
+    updated_agenda = crud.update_agenda(db=db, conference_id=agenda.conference_id, attendee_id=agenda.attendee_id, agenda=agenda)
+    if isinstance(updated_agenda,Session):
+        session = {
+            "id" : updated_agenda.uuid,
+            "name" : updated_agenda.name,
+            "date" : updated_agenda.date.isoformat(),
+            "start_time" : updated_agenda.start_time.isoformat(),
+            "end_time" : updated_agenda.end_time.isoformat(),
+            "description" : updated_agenda.description,
+            "location" : updated_agenda.location,
+            "speakers" : updated_agenda.speakers,
+            "tags" : updated_agenda.tags
+        }
+        raise HTTPException(status_code=400, detail={"error":"found conflict with a session", "session": session})
+    return updated_agenda
 
 # delete agenda by conference id and attendee id
 @router.delete("/agenda/attendee_id/{attendee_id}/conference_id/{conference_id}")
