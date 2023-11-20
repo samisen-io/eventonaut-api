@@ -10,6 +10,7 @@ from app.routers.sessions import create_session_for_conference
 from app.schemas.user_schemas import User
 from ..data_ingestion import createVectorDb, write_data_to_json
 from ..data_query import query_document
+from ..crud import conferences_crud, attendee_crud
 from sqlalchemy.orm import Session
 
 router = APIRouter(tags=["ai_models"])
@@ -18,15 +19,24 @@ def check_conference_id(conference_id):
     if int(conference_id) <= 0:
         raise HTTPException(status_code=400, detail="Invalid conference id")
     
+# @router.post("/query_document")
+# async def query_document_endpoint(question: str, conference_id: str, current_user: User = Depends(get_current_active_user)):
+#     check_conference_id(conference_id)
+#     answer = query_document(question,conference_id)
+#     return {"answer": answer}
+
 @router.post("/query_document")
-async def query_document_endpoint(question: str, conference_id: str, current_user: User = Depends(get_current_active_user)):
-    check_conference_id(conference_id)
-    answer = query_document(question,conference_id)
+async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db)):
+    assistant_id = conferences_crud.get_conference_by_conference_uuid(db, conference_id).assistant_id
+    thread_id = attendee_crud.get_attendee_by_uuid(db, attendee_id).thread_id
+    print(assistant_id, thread_id)
+    answer = query_document(question,assistant_id,thread_id)
     return {"answer": answer}
 
 @router.post("/refresh_input_file/")
 async def update_conference(conference_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
     write_data_to_json(conference_id,db)
+    # upload it to openai assistant api
     return {"success": "Conference updated successfully."}
 
 # @router.delete("/delete_conference/")
@@ -66,7 +76,7 @@ async def upload_session_file(file: UploadFile,
             "tags": ast.literal_eval(row['tags']) if row['tags'] else None
         }
         session = schemas.SessionCreate(**payload)
-        create_session_for_conference(session,db,current_user)
+        # create_session_for_conference(session,db,current_user)
     # print(session)
     write_data_to_json(conference_id,db)
     # createVectorDb(conference_id)

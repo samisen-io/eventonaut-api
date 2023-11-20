@@ -1,5 +1,1617 @@
 [
     {
+        "uuid": "8fe0deaa-ed7f-4a04-b277-89327e365ca0",
+        "name": "Architectural Awareness: Engineering Super-skill",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "Architecture",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "Awareness is the knowledge or perception of a situation or fact, which based on myriad of factors is an elusive attribute. Likely the most significant unasked for skill perhaps because it's challenging to \"measure\" or verify. It is challenging to be aware of aware, or is evidence of it's adherence. This session will cover different levels of architectural awareness. How to surface awareness and how you might respond to different technical situations once you are aware.\n\nWithin this session we look holistically an engineering, architecture and the software development process. Discussing:\n\n* Awareness of when process needs to change (original purpose of Agile)\n* Awareness of architectural complexity\n* Awareness of a shift in architectural needs \n* Awareness of application portfolio and application categorization \n* Awareness of metrics surfacing system challenges\n* Awareness of system scale (and what scale means for your application)\n* Awareness when architectural rules are changing\n* Awareness of motivation for feature requests\n* Awareness of solving the right problem\n\nThe focus of the session will be mindful (defined as focusing on one's awareness), commentating in sharing strategies for heightening awareness as an architect and engineer.",
+        "location": "Grand Ballroom A",
+        "speakers": [
+            "Johnny Richards",
+            "Brynleigh Erickson"
+        ]
+    },
+    {
+        "uuid": "86b422f8-105e-4a2c-a637-3f551c27a71a",
+        "name": "A guided journey into AI",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "AI",
+            "Artificial Inteligence",
+            "Introductory and overview"
+        ],
+        "start_time": "08:30:00",
+        "description": "Do you feel like an explorer in uncharted territory with all the different terminology around the area of Artificial Intelligence? Dont despair!  In this session I'll explain the difference between classical machine learning and deep learning and their strengths and limitations.  Ill also show how modern AI advances allow us to combine natural language and vision to see what a neural network can imagine. Come get some inspiration and find out where to go next to learn about exciting AI topics!",
+        "location": "Grand Ballroom B",
+        "speakers": [
+            "Trinity Case"
+        ]
+    },
+    {
+        "uuid": "c697b5cd-7663-4f41-b4f4-54b3fcf49bd5",
+        "name": "Chopping the monolith",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "microservices",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "Micro services are ubiquitous. However, most companies that implement micro services do not reap their full benefits - at best. At worst, its an epic failure.\n\nThere are reasons for micro services: independent deployment of business capabilities. However, the unspoken assumption is that you need to deploy all capabilities all the time. My experience has shown me that its plain wrong. Some capabilities need frequent deployment, while some are much more stable. In \u201cthe past\u201d, we used Rule Engines to allow updating business rules without deployment. While it solved the problem, this approach had issues. Between introducing a Rule Engine and migrating your complete system to micro services, I believe that theres a middle path, and that this path is Function-as-a-Service.\n\nIn this talk, Ill detail every point Ive made above, and show how one can use Serverless to pragmatically design a system that allows deploying as often as you need.",
+        "location": "Grand Ballroom C",
+        "speakers": [
+            "Bentlee Maddox"
+        ]
+    },
+    {
+        "uuid": "c1703736-5a31-44cd-aa4b-8812da1ec3f5",
+        "name": "But It was Logged!  Practical Logging & Monitoring with .NET Core",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            ".net core",
+            "logging",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": ".NET Core makes writing log entries a breeze within your applications, however, that is where the out-of-the-box simplicity ends.  So you have decorated your code with all of these pretty log messages that are designed to make your life easier, but then what?  Have you actually reviewed them?  Something bad happened, did it tell you?  What about confidential information, have you limited that from being logged?\n\nWell, this session is designed to help take your logging from ***IMPLEMENTED*** to ***USABLE***.  Logging is great, but we have so many questions to answer, including where you store the logs, how you get notifications etc.  In this code-focused solution, we explore the following concepts, with detailed examples.\n\n* Where to log entries to, and flexible configurations\n* Monitoring and escalation of log entries\n* Integration with logging & external assemblies\n* Configuration & build systems with logging\n\nAt the end of the session, attendees should be able to work with logging and exception handling in .NET Core effectively. ",
+        "location": "Junior Ballroom B",
+        "speakers": [
+            "Tate Estrada",
+            "Sawyer Roberts"
+        ]
+    },
+    {
+        "uuid": "f6bbae34-25cd-4e75-a3a0-7f740afb05aa",
+        "name": "C# Past, Present, and Beyond",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "c#",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "With the modern open source C# Compiler we've seen so many new language features it's hard to keep up. In this session we'll survey as many of the newer language features from C# 6 string interpolation to C#9 Records and see how you can take advantage of them in your applications today.",
+        "location": "Junior Ballroom D",
+        "speakers": [
+            "Mariam Hamilton"
+        ]
+    },
+    {
+        "uuid": "1c72b329-4645-4d36-954f-726bb88b6249",
+        "name": "Exploring Serverless Options for .NET in Azure, AWS, and Beyond",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            ".net",
+            "serverless",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "When it comes to serverless hosting options for .NET, there are a bevy of choices available for deploying your application, from AWS to Azure to Google Cloud Platform (no, really). In this session, Spencer will explore the multitude of serverless options for .NET, from Azure App Service to AWS Lambdas to Azure Functions and more. We'll discuss the development experience, ease of deployment, and upfront (and downstream) costs. Finally, we'll talk about options for promoting your app should you outgrow your serverless solution.",
+        "location": "Room D2",
+        "speakers": [
+            "Kai George",
+            "Adelyn Carter",
+            "Maverick Garner"
+        ]
+    },
+    {
+        "uuid": "d5cb589c-d8d6-4537-b9fd-f99c1e52c1d7",
+        "name": "Orchestrate and build serverless solutions with Azure Logic Apps",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "Azure",
+            "Logic Apps",
+            "Introductory and overview"
+        ],
+        "start_time": "08:30:00",
+        "description": "This presentation will cover how developers can and should be using Azure Logic Apps as a viable solution when building out serverless processes.  With over 200 connectors and the ability to orchestrate workflows, Logic Apps can get you up and running fairly quickly.  Logic Apps also allow for full integration with the Azure Active Directory, and can easily leverage other pieces of your Azure solutions, including Key Vaults and Azure Functions.  This talk will show how to use Logic Apps, as well as discuss the when and why for using logic apps.  The talk will also highlight a few gotchas and things every developer should know before committing to using logic apps.",
+        "location": "Junior Ballroom A",
+        "speakers": [
+            "Zainab Moran"
+        ]
+    },
+    {
+        "uuid": "17e58426-80e9-4bc0-805c-b24bb86c230f",
+        "name": "Leadership Journey: From Individual Contributor to Leader",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "leadership",
+            "team management",
+            "Introductory and overview"
+        ],
+        "start_time": "08:30:00",
+        "description": "Youve spent years working on your technical skills and can write code with the best of them. Then, one day, a leadership position opens up on your team, and you start thinking about it. Should I or shouldnt I? What if I hate it? What if I love it? What if I'm not that good at it? In this interactive session,\nwell explore \u201cwhy leadership,\u201d answer some hard questions, and talk about one developers path from individual contributor to leader.",
+        "location": "Junior Ballroom C",
+        "speakers": [
+            "Josiah Leon",
+            "Jamie Boone"
+        ]
+    },
+    {
+        "uuid": "52280686-213e-4b3a-8391-5cbd1cea8d62",
+        "name": "3-Minute Improv Games to Improve Your Teams",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "team management",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "This unique workshop will have you out of your seat and on your feet actively practicing the techniques Improv Teams use to build Collaboration, Creativity, Communication, and Trust. This hands-on workshop provides actionable material for participants to use immediately upon returning to work. A flier with the top 20 games is provided to every participant.",
+        "location": "Room D1",
+        "speakers": [
+            "Jason Cuevas",
+            "Adele Castillo"
+        ]
+    },
+    {
+        "uuid": "d57241eb-6c2b-48c2-8bf3-c0d4466e7849",
+        "name": "An Agile Approach to Documentation and Onboarding Your Team",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "agile",
+            "documentation",
+            "Introductory and overview"
+        ],
+        "start_time": "08:30:00",
+        "description": "So, how's the documentation coming along on your project?  How long does it take to on-board someone on your team whether technical or non-technical?  Is your documentation getting lost in User Stories that get completed?\n\nI have been working to discover effective approaches to documentation and creating on-boarding content for new team members.  I look forward to sharing some tools, techniques, and examples that you can apply to your next project.  The value of creating effective documentation is just as important as the product itself.",
+        "location": "Room 101",
+        "speakers": [
+            "Jacqueline Underwood"
+        ]
+    },
+    {
+        "uuid": "64424766-842b-441f-86a8-0b0b73c4a3b4",
+        "name": "Don't put your messages in a bottle; Implement messaging patterns",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "communicaion",
+            "messaging",
+            "azure",
+            "Introductory and overview"
+        ],
+        "start_time": "08:30:00",
+        "description": "When building enterprise solutions, messages are the heart of our communication. They convey commands and data between various systems and ensure that we can work in a decoupled, scalable, and distributed manner. Our messages represent value, so we can't just slip them in a bottle, toss them into the ocean, and hope they arrive at their destination. Instead, we need a messaging backbone that can provide resilience and stability. Therefore, we implement proven messaging patterns, to ensure they are handled with the care they deserve.\n\nIn this session we will have a look at these messaging patterns, and how they can help in modern software architecture. As a result we come to understand how secure and reliable communication help us solve complex messaging challenges. \n\nCome and learn about handling transactions involving different systems, implementing data consistency across them, and controlling intermittent and critical failures. The patterns explained in this session are vendor agnostic, we will use Azure Service Bus to explain some of the specifics, however they can be applied to any message broker.",
+        "location": "Room 103",
+        "speakers": [
+            "Leia Schroeder",
+            "Izaiah Kent",
+            "Jazmine Graham"
+        ]
+    },
+    {
+        "uuid": "2087c16f-864c-4829-8c00-f6dd954f0e7a",
+        "name": "ChatGPT, OpenAI, and Power Platform | How to leverage Chat GPT to enable AI your Power Apps",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "ai",
+            "ChatGPT",
+            "OpenAi",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "Learn how to leverage OpenAI services such as  ChatGPT within your Power Apps and Power Automate flows",
+        "location": "Grand Ballroom B",
+        "speakers": [
+            "Idris Aguirre"
+        ]
+    },
+    {
+        "uuid": "10ed3f59-2df0-4ead-a587-9cfc081df33c",
+        "name": "AppSec 101: Live Demos of Real-World Application Security Attacks",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "application security",
+            "appsec",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "In this session, join Jason Gillam for a thrilling journey into the attacker's mindset as he demonstrates real-world application security attacks. Through live demos of attack scenarios, Jason will show you how attackers exploit common vulnerabilities such as injection attacks, cross-site scripting, and privilege escalation.\n\nThis session will be an eye-opening experience for developers and anyone who wants to learn more about application security. You'll gain a deeper understanding of how attackers think, and learn practical strategies for protecting your applications from their attacks.\n\nYou'll leave this session with a greater appreciation for the challenges of defending against  attackers, and a toolkit for improving your application security posture. Don't miss this opportunity to learn from a leading penetration tester and security expert.",
+        "location": "Junior Ballroom A",
+        "speakers": [
+            "Riggs Johnston"
+        ]
+    },
+    {
+        "uuid": "e42fe7f2-5af7-4505-b6d4-e8b5896c713f",
+        "name": "Automate your cloud application testing with Playwright",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "cloud",
+            "continuous integration",
+            "continuous deployment",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "Your company has CI/CD (continuous integration/continuous deployment), youve created a culture of regular cloud deployments, but your tests arent automated? Automated testing is the next frontier in quality assurance. Lets make more technically resilient applications in the cloud. In this fun and interactive session, you'll learn how to harness the power of Playwright to automate web tasks with ease. From setting up your own automated tests to discovering the latest trends in web automation, you'll leave this session with the skills and knowledge you need to become a web automation wizard. Attend this session to hear and see a demonstration of testing at scale for your cloud applications.  ",
+        "location": "Junior Ballroom C",
+        "speakers": [
+            "Alijah Atkins",
+            "Mina Carrillo"
+        ]
+    },
+    {
+        "uuid": "ce85ceff-6128-4e14-b46d-44bfbf844049",
+        "name": "A new approach to upskilling your workforce",
+        "end_time": "09:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "training",
+            "upskilling",
+            "Introductory and overview"
+        ],
+        "start_time": "08:30:00",
+        "description": "\"In order to scale initiatives. we need to transform the way the organization learns\"\n\nThere is always a high need for new skills.  What is your strategy to upskill your workforce?  \n\nI will share the training programs that I have created during a transformation that lead to higher learning retention and skills gain.  I will share what worked and how we not only changed the training approach, we also had to change the way we measured the effectiveness of the training to know if we are having a meaningful impact.",
+        "location": "Room 102",
+        "speakers": [
+            "Reece Walsh"
+        ]
+    },
+    {
+        "uuid": "a9415c73-f990-48c0-af64-ed5633cde19f",
+        "name": "Demystifying Web API Security in Azure",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "azure",
+            "security",
+            "web api",
+            ".net",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "Building APIs can be easy, but securing them is hard. We have external and internal applications, APIs, users, and more. Each might use a different authentication and authorization strategy, depending on customer and system needs. The stakes are high and there is no margin for error!\n\nIn this talk, well look at the different categories of applications and users, and what possibilities we have for securing them. Well also look at what Azure provides for securing internal users and applications, and an external provider such as Auth0 for external users and applications. Well also cover different authentication and authorization strategies, and how we can map these to our various communication scenarios.\n\nFinally, well look at a full end-to-end example using .NET 5 and Azure, building out a playbook for the common and not-so-common scenarios we encounter.",
+        "location": "Grand Ballroom A",
+        "speakers": [
+            "Giovanni York",
+            "Milan Noble"
+        ]
+    },
+    {
+        "uuid": "e0fc57dd-a164-4ed0-9490-2dbf62c85913",
+        "name": "Agile: You Keep Using That Word...",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "agile",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "Much like the DOTCOM boom when everyone declared themselves a programmer, once David Norton (Gartner Research) declared agile mainstream on August 26, 2009, you cant throw a stone without hitting someone who claims to be an Agilista.  From the proliferation of \u201cagile\u201d frameworks and certifications, to all of the people who decided to hang out a shingle as a coach, it can be hard to remember what is the essence of being agile.  In this talk, I remove the fluff and hyperbole, and get down to the roots of what it means to be agile.",
+        "location": "Grand Ballroom C",
+        "speakers": [
+            "Anais Jaramillo"
+        ]
+    },
+    {
+        "uuid": "f516b43f-8d29-422e-bac8-fa748d6ce3e3",
+        "name": "New Product Concept & Design Workshop",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "product design",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "There's never been a better time to create amazing technology solutions. In this hands on workshop, you will learn the fundamental skills and techniques necessary to transform a digital dream into a viable solution that your customers and users will love. ",
+        "location": "Junior Ballroom B",
+        "speakers": [
+            "Laila Reese"
+        ]
+    },
+    {
+        "uuid": "c722be8a-ea27-420c-92d7-7ade9ff5d981",
+        "name": "Memory First: An Introduction to Redis",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "redis",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "Odds are, youve heard of Redis. Maybe youre a total noob and want to learn all about it. Maybe youve used it to cache an API call or some JSON strings and want to know what else it can do. Maybe you *havent* heard of Redis and are curious what all the fuss is about.\n\nWanna find out? Join me as I explain what Redis is\u2014a wicked-fast, memory-first database\u2014and why you should care. Ill share with you what it can store, how you can access it, and how you can make sure that whats in memory is still there when the power goes off. Well explore how you can extend Redis\u2014adding new commands, new data structures, and new capabilities. And, well do it both from the command line and from code with examples in C#, Java, JavaScript, and Python.\n\nWhen were done, youll know what Redis is and what all the fuss was about. But, more importantly, youll know how to put memory first to build fast applications and faster experiences.",
+        "location": "Junior Ballroom D",
+        "speakers": [
+            "Wade Enriquez"
+        ]
+    },
+    {
+        "uuid": "2f65e790-d8e3-42b9-9ab3-5879661f0a1c",
+        "name": "Building MVVM Apps with .NET MAUI & Prism",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            ".net",
+            ".net maui",
+            "prism",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": ".NET MAUI is here, and is a major evolution to Xamarin.Forms. Ok, it sounds like a fancy of way saying an update that broke your app. Whether you are trying to update your legacy Prism.Forms app, or getting ready to build a new Prism.Maui app you're probably wondering where to even start. It's time to build powerful apps that leverage the best that .NET MAUI has with the #1 MVVM Framework in the .NET Ecosystem.\n\nIn this talk we'll hear from Prism's lead maintainer on the changes that we see in the application design patterns between Xamarin.Forms and .NET MAUI. How this affected Prism. How all of this will affect your apps, and what subtle changes exist between Prism.Forms and Prism.Maui. Learn how to easily migrate your existing apps, and how to get started building your new greenfield apps. Plus we will discuss common bad practices that we see and how to fix them, improving the testability & reliability of your Codebase!",
+        "location": "Room D2",
+        "speakers": [
+            "Tate Estrada"
+        ]
+    },
+    {
+        "uuid": "da060b97-c127-4459-a8cb-10ddaa1712ba",
+        "name": "Automated information extraction with Azure Form Recognizer",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "data extraction",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "In today's digital age, data extraction is an essential part of many businesses' processes. However, manually extracting data from forms and documents can be a time-consuming and error-prone task. Thats where tools like Azure Form Recognizer come in; by integrating machine learning technology into a cloud service Azure Form Recognizer allows you to extract key-value pairs and tables from structured and semi-structured forms and documents. \nIn this talk, we will explore the out of the box models that Form Recognizer offers, we will then walk through the process of creating a custom model and will finish by putting it all together in a demo application. Whether you are new to Azure Form Recognizer or looking to optimize your current data extraction workflows, this presentation will provide you with the knowledge and resources to get started and streamline your data extraction processes.\n",
+        "location": "Room 102",
+        "speakers": [
+            "Everest Woodward"
+        ]
+    },
+    {
+        "uuid": "830a49b8-e3ab-42bb-b767-ab7a834c4c72",
+        "name": "Deploying your JS App Anywhere with .NET MAUI",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            ".net maui",
+            "web app",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "As a JS girl in a .NET World, I have recently started learning the power of MAUI. MAUI is a .NET framework used for creating native mobile and desktop apps. I learned how to utilize a WebView inside a .NET MAUI application to wrap any sort of web app I desired (Angular, React, Vue, you name it!) and deploy it with the power of MAUI to any platform under the sun. Im excited to show you how to do this \u2014 bridging two worlds has never been more fun!",
+        "location": "Room 105",
+        "speakers": [
+            "Sawyer Roberts"
+        ]
+    },
+    {
+        "uuid": "64319e1f-4528-4863-b7ad-60dcb4c5d352",
+        "name": "File New: Build a Event-Driven Architected Microservice from Scratch",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "microsevice",
+            "event-driven",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "Event-driven microservice architectures provide a versatile approach to designing and integrating complex software systems with independent, encapsulated components. During this session, we will focus on the how by starting with an empty Visual Studio solution and building a complete event-driven architected microservice to solve a real-world problem. You will see firsthand how to design, develop, and deploy a decoupled, encapsulated, responsive, scalable, and independent solution. Well talk about potential pitfalls, and you will see how to get around them.",
+        "location": "Room D1",
+        "speakers": [
+            "Nellie Madden"
+        ]
+    },
+    {
+        "uuid": "c6208ff4-732d-4054-a3ba-ad89d500c353",
+        "name": "Application Code of Conduct - Full Stack Policy as Code",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "full stack",
+            "Intermediate",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "The increasing complexity of applications and the need for fine-grained authorization mechanisms have made it necessary to build a comprehensive policy management system that covers the entire stack. With the rise of Policy as Code, it's now possible to codify policies and enforce them at different layers of the application.\n\nOne of the biggest challenges in implementing policy as code is ensuring that the policies are consistently enforced throughout the stack, and streamlining policies across multi-functional applications and business functions. It's important to have a solution that can handle policies across the full stack, from the back-end to the front-end, while also being flexible enough to support the unique needs of different business functions.\n\nIn this talk, we'll share our journey of building a full-stack authorization solution using open-source tools such as Rego and the Open Policy Agent. We'll show how we used these tools to build an open-source administration layer, run sidecars in applications, and integrate with the front-end using CASL to enforce policies in the web app. Come and learn about our experience and how you can implement a similar solution for your applications.",
+        "location": "Room 101",
+        "speakers": [
+            "Allison Lyons"
+        ]
+    },
+    {
+        "uuid": "ebe62fe8-6283-433a-afcc-1d67c52d7fe4",
+        "name": "Disrupting Culture: Building a Strong Culture for Success in an Age of Generational Shifts",
+        "end_time": "10:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "organizational culture",
+            "ceo",
+            "hr",
+            "leadership",
+            "Advanced"
+        ],
+        "start_time": "09:45:00",
+        "description": "In this session, we will explore how to build a healthy and productive culture from scratch. We will also discuss how to change an unhealthy or unproductive culture. We'll delve into the impact of generational shifts and how organizations can adapt to meet the changing needs of their employees.\n\nWe'll show how organizations can build stronger connections with their employees and customers. Our goal is to provide valuable insights and practical tips for building a culture that will thrive in an age of generational shifts.\n\nThis session is perfect for CEOs, HR professionals, or anyone interested in the future of work. Join us for an engaging and thought-provoking discussion on the future of work and the role of culture in shaping it.",
+        "location": "Room 103",
+        "speakers": [
+            "Drew Olson"
+        ]
+    },
+    {
+        "uuid": "cf8bf3ac-85d3-49fd-83b5-5c98e582e938",
+        "name": "The Immutable Laws of Software and Life: Code Accordingly",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "software engineering",
+            "software design",
+            "Intermediate"
+        ],
+        "start_time": "11:00:00",
+        "description": "The first Law of Ecology: you can never merely do one thing. Actions have side-effects. In this session, we'll explore how changes in software design can have unexpected, profound impacts. In this story-based session, I'll reference both popular and little-known \"laws\" of computing and life. I'll show how to use these laws to write better software. This session will give you new mental models for thinking about the tradeoffs we make in software...and life. ",
+        "location": "Grand Ballroom A",
+        "speakers": [
+            "Cyrus Watson"
+        ]
+    },
+    {
+        "uuid": "0891645b-59ee-4394-9e92-bd9e09666c96",
+        "name": "10 Ways to Write Clean TypeScript Code",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "javascript",
+            "typescript",
+            "Intermediate"
+        ],
+        "start_time": "11:00:00",
+        "description": "As a superset of JavaScript, TypeScript continues to deliver better tooling at scale that the JavaScript developer had hoped for years. However, if written poorly, one can end up with codebases that are not readable or maintainable.  \n\nOver the years, after working with TypeScript, there are many things that I have learned the hard way. TypeScript and its ecosystem is fast changing. When you think you have grasped a concept in TypeScript, it loves to throw another curveball at you. \n\nIn this talk, let's discuss 10 ways that I found useful to write clean TypeScript code. These guidelines will help you keep the clutter away, and write maintainable TypeScript code.",
+        "location": "Grand Ballroom C",
+        "speakers": [
+            "Hailey Reed"
+        ]
+    },
+    {
+        "uuid": "00c4e060-0809-48c3-bdc1-883d38aafba6",
+        "name": "Agile Project Management 101: Optimize Your Team's Performance with Azure DevOps",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "agile",
+            "azure",
+            "Introductory and overview"
+        ],
+        "start_time": "11:00:00",
+        "description": "Learn how to optimize your team's Agile project management process with Azure DevOps. In this talk, I'll walk you through the basics of setting up and running a scrum team with Azure DevOps.\n\nI'll walk you through my process for setting up a team, building a backlog and facilitating a new project. Whether you're new to Agile or an experienced practitioner, this session is designed to provide practical tips to help take your team's productivity to the next level.",
+        "location": "Junior Ballroom B",
+        "speakers": [
+            "Jacob Boyle"
+        ]
+    },
+    {
+        "uuid": "31b0ad61-ee54-45da-b140-b8ee7ffd87d8",
+        "name": "Packaging your world with NuGet",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "NuGet",
+            "Intermediate"
+        ],
+        "start_time": "11:00:00",
+        "description": "Whether you are creating an open source library or building enterprise app core components, you need to get that functionality into other projects. But developing these resources is usually easier than consuming them. How about a worry free way to distribute and reference those resources in your project that will let you stay up to date, but allow you to avoid problems that may introduce breaking changes or new bugs? NuGet packages to the rescue! We'll also take a look at where you can find NuGet (packages aren't just for code any more) and how to create, distribute, and maintain your very own package. Then, youll be ready to share your package with your team, your enterprise, or even The world!",
+        "location": "Junior Ballroom D",
+        "speakers": [
+            "Odin Carpenter"
+        ]
+    },
+    {
+        "uuid": "42fc8693-a595-4dcb-a763-795d8c847b43",
+        "name": "Do You Even IaC, Brah? Use Bicep for Huge Gains in Azure!",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "azure",
+            "IaC",
+            "DevOps",
+            "Intermediate"
+        ],
+        "start_time": "11:00:00",
+        "description": "Show up with confidence to your next deployment war room by defining your infrastructure as code. You've already put in the reps testing every aspect of the infrastructure in dev. Your swole PRs have been viewed and vetted. Now, the only thing left is to kick it into beast mode and run the deployment script, no spotter required.\n\nJoin us as we explore Bicep, Microsoft's latest IaC tool for Azure. We'll discuss what it is, why it was created, how it's different from other popular IaC tools and see how it can be used to stand up a simple application. ",
+        "location": "Room D2",
+        "speakers": [
+            "Jamison Whitney",
+            "Madalynn Burch"
+        ]
+    },
+    {
+        "uuid": "cb6e0c03-8918-4200-8d2e-661e9e655d25",
+        "name": "Codespaces: Life is too short for local environments!",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "access control",
+            "cloud",
+            "Introductory and overview"
+        ],
+        "start_time": "11:00:00",
+        "description": "Use the tools you love, start developing faster and accelerate onboarding for teammates - come learn how to get started with a cloud-based development environment with GitHub Codespaces. We'll cover how to control access, manage secrets and more.",
+        "location": "Grand Ballroom B",
+        "speakers": [
+            "Easton Schultz"
+        ]
+    },
+    {
+        "uuid": "a485404e-ddf4-489c-9ca4-f4083387a40b",
+        "name": "Blazor Hybrid and Web in One Solution",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "blazor"
+        ],
+        "start_time": "11:00:00",
+        "description": "Blazor Hybrid is an exciting new development pattern from Microsoft that allows developers to create desktop and mobile applications using the Blazor framework and platform native .NET apps. Because Blazor Hybrid apps use HTML, CSS, C# and JavaScript, there is ample opportunity to share a common code base between a Blazor web client, desktop and mobile app. In addition, existing Blazor applications can be configured to work with .NET MAUI adding desktop and mobile clients. In this session we'll configure a single Visual Studio solution with Blazor Hybrid and Blazor WebAssembly while sharing a single component library for all clients: web, desktop and mobile.",
+        "location": "Junior Ballroom A",
+        "speakers": [
+            "Briella Anderson"
+        ]
+    },
+    {
+        "uuid": "8f59a9cb-1e26-4b6f-882b-c10d2f195aba",
+        "name": "Better Parallel Code with C# Channels",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "c#",
+            "concurrency",
+            "Intermediate"
+        ],
+        "start_time": "11:00:00",
+        "description": "Producer/consumer problems show up in a lot of programming scenarios, including data processing and machine learning. Channels give us a thread-safe way to communicate between producers and consumers, and we can run them all concurrently. In this presentation, we will explore channels by comparing parallel tasks with continuations to using a producer/consumer model. In the end, we'll have another tool in our toolbox to help us with concurrent programming.",
+        "location": "Junior Ballroom C",
+        "speakers": [
+            "Aliya Craig"
+        ]
+    },
+    {
+        "uuid": "b66758a2-1bf4-4f34-a9aa-38084a3ca27d",
+        "name": "Code Hoarders: Tackling Tech Debt",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "coding prctices",
+            "development strategies",
+            "Introductory and overview"
+        ],
+        "start_time": "11:00:00",
+        "description": "It has happened to a lot of us. We join a new team, pull the code, and find a heaping steaming pile of complicated spaghetti code. When we look at the backlog, bug tickets are piling up and the product team is asking for new features. Examining the code further reveals few valuable unit tests and all integration testing is being manually performed by a separate team several time zones away. Developing in this code base is going to be risky and difficult. \n\n\nSo what can we do next? In this talk I offer some tried and true advice for how to begin cleaning up technical debt, how to strategize where to start building up robust test suites and how to implement guard rails to prevent further build up of code that does not meet your teams coding standards. We will discuss how to create a shared understanding of code excellence amongst your teams, how to enforce good coding practices, and which tools we can leverage to enforce these standards. We will cover how to develop strategies that can be built into our daily coding practices that will intentionally reduce technical debt. And finally, we will discuss how to talk about technical debt with non-technical leaders and how to provide tangible metrics to help prove the value of reducing tech debt in our applications to both developers and end users.\n",
+        "location": "Room D1",
+        "speakers": [
+            "Lilly Farmer"
+        ]
+    },
+    {
+        "uuid": "cb2b0170-0fd3-451d-9e5a-e5a6ee71d4c8",
+        "name": "Benchmarking like a Scientist: Communicating Code's Performance.",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "Benchmarking",
+            "performance measurement",
+            "Intermediate"
+        ],
+        "start_time": "11:00:00",
+        "description": "As software developers, it's not enough to simply write efficient code - we need to be able to communicate its performance effectively too. That's where benchmarking comes in. In this session, we'll dive into benchmarking, examining the different approaches and tools available for measuring the performance of your code. From micro to macro and synthetic benchmarking, we'll cover best practices and common pitfalls to avoid. We'll also delve into the crucial aspect of communication - how to present your benchmark results in a clear and concise manner, so that they can be easily understood by both technical and non-technical stakeholders. Whether you're a seasoned developer or new to the field, this talk will give you the skills and knowledge you need to effectively benchmark your code and communicate its performance.",
+        "location": "Room 101",
+        "speakers": [
+            "Gerald Luna",
+            "Journey Tanner",
+            "Bruno Hudson"
+        ]
+    },
+    {
+        "uuid": "69068842-3fa7-40a5-b54b-248251fd7eb5",
+        "name": "Azure AD for devs - a primer",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "azure",
+            "cloud",
+            ".net",
+            "authentication",
+            "Intermediate"
+        ],
+        "start_time": "11:00:00",
+        "description": "Come learn about Azure AD - Microsoft's cloud-scale identity platform. It can be tricky to figure out how auth works, but once you know it's a powerful tool in your toolbox. In this session we'll learn how it's done in a .NET web app. We'll discover what app registrations are, why we need one and how to wire up auth between a web app and an API backend.\u00a0",
+        "location": "Room 103",
+        "speakers": [
+            "Boden Nguyen",
+            "Nova Vasquez"
+        ]
+    },
+    {
+        "uuid": "fd065418-e4b0-4fc1-b9cc-117e41ba60a7",
+        "name": "React: The Most Common Mistakes in 2023",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "react",
+            "Intermediate"
+        ],
+        "start_time": "13:30:00",
+        "description": "React is unopinionated. This makes it flexible. But it also means it's intimidating to get started, and difficult to scale. You constantly wonder if you're \"doing it wrong\". In this session, we'll explore the most common mistakes teams are making in modern React applications, and how to avoid them.",
+        "location": "Grand Ballroom A",
+        "speakers": [
+            "Rowan Pope"
+        ]
+    },
+    {
+        "uuid": "8b2e1375-0dde-48ff-b6c1-c0d8f39b85f1",
+        "name": "Architecting ASP.NET Core for Geo-Distributed Deployment",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "asp.net",
+            "azure",
+            "Intermediate"
+        ],
+        "start_time": "13:30:00",
+        "description": "With the combination of ASP.NET Core and Azure PaaS tooling, it is possible to quickly, easily, and cost-effectively create a geo-distributed application that can be hosted for <= $400 a month.  Doing so, however, does require specific knowledge in both application architecture as well as application deployment to ensure operational effectiveness is managed.\n\nThis session will explore a sample application and distribution that shows automated deployment and operation of an application in multiple Azure Data Centers and the inputs necessary to accomplish this, including application architecture dependencies and options for Azure Configuration.\n\nAfter this session attendees will have an example model allowing them to explore geo-distribution of their own applications with a solid understanding of pitfalls and troublesome areas of implementation.\n  ",
+        "location": "Grand Ballroom C",
+        "speakers": [
+            "Nicholas Felix"
+        ]
+    },
+    {
+        "uuid": "11cce2e9-1c90-4635-8232-766243f1ef2c",
+        "name": "Demystifying data privacy and your responsibilities",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "data privacy",
+            "data collection",
+            "privacy regurlations",
+            "Introductory and overview"
+        ],
+        "start_time": "11:00:00",
+        "description": "We've been collecting as much data as we can about anyone or anything in hopes of better understanding our users, their habits, how they use our applications, where they're using it, or glean any other insight to give us a competitive advantage over our competitors. But with laws and regulations being enacted around the world to protect the data rights of users, it can be difficult to understand when and how we can collect this information, as well as how we can use it.\n\nIn this talks, we'll explore the various types of data privacy laws and regulations in play today, new laws going into effect throughout the year, and what do we as developers need to do to ensure that we are compliant and stay out of regulators cross-hairs. Big or small no one goes unnoticed!",
+        "location": "Room 102",
+        "speakers": [
+            "Kamila Knapp"
+        ]
+    },
+    {
+        "uuid": "64279399-f088-4756-9e32-7a65d44bebd4",
+        "name": "Message Queue Technology Approach to Dynamically Scaling C# Apps",
+        "end_time": "12:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "c#",
+            "dynamic scaling",
+            "Intermediate"
+        ],
+        "start_time": "11:00:00",
+        "description": "This session will discuss and demonstrate using Message Queues to create fault-tolerant, dynamic scaling (both horizontal and vertical) C# applications that will operate in a container without the need for hosting or licensing the container.  This will work for both .NET Framework applications as well as >= .NET 6 technology based C# applications.",
+        "location": "Room 105",
+        "speakers": [
+            "Liam Farmer"
+        ]
+    },
+    {
+        "uuid": "e2cc7b9a-868e-40db-9d9a-3d8a0302ca6e",
+        "name": "SOLID Design Patterns for Mere Mortals",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "SOLID",
+            "MVC",
+            "design patterns",
+            "C#",
+            "Intermediate"
+        ],
+        "start_time": "13:30:00",
+        "description": "Software design patterns have been around long before the MVC Framework gained momentum. In this session we will start with a review of Robert C. Martin's (Uncle Bob) SOLID macronym. After building the proper foundation, I will show you several design patterns, their C# implementation, and when and how they should be used in modern software development.",
+        "location": "Grand Ballroom B",
+        "speakers": [
+            "Aurelia Gray"
+        ]
+    },
+    {
+        "uuid": "442e52e6-e3e3-4773-9e50-8b29da3a5d1c",
+        "name": "Creative Problem Solving",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "problem solving",
+            "Introductory and overview"
+        ],
+        "start_time": "13:30:00",
+        "description": "You're a developer. Solving problems is a big part of what you do. But how can you learn to think more clearly and more creatively about the problems you are solving? In this session, you will learn about the cognitive science of creative thinking. You will also learn some practical things you can do to solve problems individually or as a team. ",
+        "location": "Junior Ballroom A",
+        "speakers": [
+            "Paisleigh Small"
+        ]
+    },
+    {
+        "uuid": "bda9a636-0751-4384-b88c-8dd86b19cc18",
+        "name": "Democratizing & Accelerating AI Through Azure Machine Learning and the Power Platform",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "azure",
+            "machine learning",
+            "Artificial Inteligence",
+            "Introductory and overview"
+        ],
+        "start_time": "13:30:00",
+        "description": "Learn the current state of affairs as it relates to Artificial Intelligence in the Microsoft space.  We'll cover things like Azure Machine Learning, AI Builder, Cognitive Services, and how to connect each of these tools with PowerApps.",
+        "location": "Junior Ballroom C",
+        "speakers": [
+            "Esme Savage"
+        ]
+    },
+    {
+        "uuid": "a4f70d67-9a57-40d6-818c-f9310049dd42",
+        "name": "Blazor on Desktop: PWA, Electron or .NET MAUI",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "blazor",
+            "c#",
+            ".net",
+            "web development",
+            "mobile app developement",
+            "Intermediate"
+        ],
+        "start_time": "13:30:00",
+        "description": "The desire to see web technologies power experiences on mobile/desktop is nothing new \u2013 the tools & techniques developers have at their disposal have gotten smart. With Blazor, developers get to build modern web apps with C#/.NET, running on server or fully client-side through WebAssembly - .NET developers are understandably excited about Blazor.\n\nBlazor is very suitable for writing Progressive Web Apps (PWAs) that makes web apps wonderful citizens on mobile form factors. Blazor can also be used to build truly native or hybrid cross-platform apps, thus inviting .NET web developers to share code better. Electron is the battle-tested way of bringing web apps, including Blazor, to desktop land, complete with deep OS integrations.\n\n.NET MAUI, the next generation of .NET cross-platform strategy, changes the game for Blazor. With a modern abstracted cross-platform WebView, Blazor UI can be rendered across mobile/desktop apps with lighter footprint, while sharing components, routes & styles from web world. Armed with full platform API access from .NET MAUI, Blazor can also pull off some very native features on mobile & desktop. JS Interop works too.\n\nBlazor is very welcome on desktop apps \u2013 the how depends on app needs. The familiarity of Blazor component model, Razor rendering engine, CSS styling & UI extensibility can now be applied towards building desktop apps, all the while sharing code with web. You game?\n",
+        "location": "Room D1",
+        "speakers": [
+            "Ashton Crane",
+            "Della Mann"
+        ]
+    },
+    {
+        "uuid": "f6899356-a3dd-4b03-a93b-feecdd938710",
+        "name": "7 Habits of Highly Successful Developers",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "carrer"
+        ],
+        "start_time": "13:30:00",
+        "description": "Software and website developers are in extremely high demand and rates continue to climb, but many developers have not yet realized their potential. Being good at what you do is important, but it's equally important that you can communicate the value you bring to an organization and build a reputation that will provide opportunities for growth, both professionally and financially. We will work together to measure your accomplishments, establish a personal brand, and walk away with a resume that conveys your true value!",
+        "location": "Room 101",
+        "speakers": [
+            "Mckenna Khan"
+        ]
+    },
+    {
+        "uuid": "f435028d-a9d6-4f58-b445-0b2c67fb739f",
+        "name": "Don't Wait for Permission: A Young Professional's Guide to Taking Ownership of Your Career",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "carrer"
+        ],
+        "start_time": "13:30:00",
+        "description": "A guide for young professionals to fight for autonomy in their workspace. You will gain tools and techniques for assessing your current job environment and molding it to empower the growth of your career and leadership capabilities.\n\nTopic include:\nManaging up - advocate for yourself as a tool to prepare for leading others.\nCommon mischaracterizations of job satisfaction.\nBe a go getter - on agency and productively failing. \nRecipes for leading by influence. ",
+        "location": "Room 103",
+        "speakers": [
+            "Kendrick Compton"
+        ]
+    },
+    {
+        "uuid": "b5419afa-ff4e-4832-ac28-d6964297bb37",
+        "name": "Feeling the Flow: Orchestration and Choreography in Message-Based Applications",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            ".net",
+            "software architecture",
+            "Intermediate"
+        ],
+        "start_time": "14:45:00",
+        "description": "In this session, I will guide you through the practical aspects of building message-based services in .NET. We'll explore orchestration using sagas, choreography using routing slips, and explain how each approach manages message flow and coordinates the interaction between services.\n\nWhether you're a developer or an architect, this session will guide you to unlock the secrets of orchestrating and choreographing message-based applications. Join us and discover how these techniques can boost the performance and scalability of your applications while maintaining reliability and adaptability.\n",
+        "location": "Grand Ballroom B",
+        "speakers": [
+            "Ainhoa Rollins"
+        ]
+    },
+    {
+        "uuid": "5c1228bf-9907-4369-8517-774004df433e",
+        "name": "Database Strategies for Better Mobile and Edge Apps - why REST won't cut it anymore",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "database",
+            "moblie app",
+            "Introductory and overview"
+        ],
+        "start_time": "13:30:00",
+        "description": "Its the modern developers dilemma: Your mobile app needs to deliver real time responsiveness, maintain 24x7 uptime, and be secureand do so wherever the user happens to be - even if that's on a subway, airplane or elevator. Any failure to meet these requirements means a sub-par user experience which leads to an abandoned app and a poor app rating. To deliver on user expectations, you need to ensure your mobile apps have fast access to the data that makes them run. But if youre using REST APIs in the cloud for app data this can present challenges, not the least of which is a dependency on the internet. Options and approaches for dealing with internet dead-zones are available, but which one is best for meeting speed and availability requirements, and what are the tradeoffs to keep in mind when making a decision?  If these challenges sound familiar, then this talk is for you.\n\nJoin this session for a discussion of database strategies for mobile apps. We'll talk about how to choose the best database for your requirements, and for the development teams skill set. The session will include a LIVE DEMO of a mobile database powered app in action!\n\nTopics include:\n~Enabling and handling data persistence on a mobile device\n\n~Essential database components like local data storage, data synchronization, and conflict resolution\n\n~What to look for in an intuitive query API, including SQL support\n\n~The importance of full-text search and flexible data models\n\n~How an off-the-shelf solution accelerates app development\n",
+        "location": "Junior Ballroom B",
+        "speakers": [
+            "Rudy Velasquez"
+        ]
+    },
+    {
+        "uuid": "9e285ffd-dbaa-4fac-9d8e-6fb23b874e2e",
+        "name": "Digitally Transforming a Call Center with Azure Cosmos DB and SignalR",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "azure",
+            "cosmos db",
+            "signalr",
+            "Advanced"
+        ],
+        "start_time": "13:30:00",
+        "description": "Call Center agents have some of the hardest gigs, especially in a healthcare setting where they need to be licensed and credentialed, dealing with potentially life threatening situations. I recently worked with a group of nationally recognized agents to build a custom solution for them that allowed me to take advantage of both Azure Cosmos DB as well as SignalR. It positioned them to have software that fit their business processes, rather than having to tailor their business to the shortcoming of something off-the-shelf, and will allow them to scale up to meet future business opportunities with a highly responsive database and little to no code changes.",
+        "location": "Junior Ballroom D",
+        "speakers": [
+            "Keaton Pace",
+            "Giana Murray"
+        ]
+    },
+    {
+        "uuid": "0501ade9-feeb-493c-9911-76f50f25368d",
+        "name": "Back-end Developers Guide to UI/UX Design: You have users too!",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "UI/UX",
+            "design",
+            "Intermediate"
+        ],
+        "start_time": "13:30:00",
+        "description": "Have you ever considered the fact that as a developer, you are a user interface/user experience designer? Its true. Whether intentional or not, we create user experiences every time we write code that someone else interacts with. \nIf you've ever used an API that behaved exactly the way you expected it to you, it's likely that someone spent time thinking about who would be using that API and what their needs were. On the other hand, if you've ever tried to debug a 200-line method that did six different things, you can bet the person who wrote it wasn't thinking about maintainability, or how difficult it would be for someone else to understand that code.\nIn this session, we'll look at the most common types of users we serve, what their user interface looks like, and ways to improve those interfaces and their user experience.",
+        "location": "Room D2",
+        "speakers": [
+            "Nehemiah Howell"
+        ]
+    },
+    {
+        "uuid": "0ea90277-6592-4a28-a9bd-d830876683e0",
+        "name": "Don't skip the hard parts - migrating old .net apps",
+        "end_time": "14:30:00",
+        "date": "2024-08-28",
+        "tags": [
+            "cloud",
+            "migration",
+            "azure",
+            "Advanced"
+        ],
+        "start_time": "13:30:00",
+        "description": "Migration is hard, going at it alone is harder. My team at Microsoft has spent years working with customers - we heard one message loud and clear: please don't skip the hard parts when you offer migration guidance.\n\nIn this session we'll cover the Reliable web app pattern that launched in 2023 in the new Enterprise app patterns on Microsoft Learn. Come learn about the pillars of a well-architected cloud app and how we advise customers who are planning to move apps to the cloud.",
+        "location": "Room 102",
+        "speakers": [
+            "Elina Dudley"
+        ]
+    },
+    {
+        "uuid": "5dc1539f-3a74-4419-926d-97cfa16bb303",
+        "name": "Empower Your Software Development Team: Top 10 Essential Tools for Success",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "software development",
+            "Introductory and overview"
+        ],
+        "start_time": "14:45:00",
+        "description": " We will explore the top 10 essential tools that every software development team should be used to maximize productivity, efficiency, and collaboration. This session is designed for team leaders and individual contributors, covering a wide range of categories such as remote collaboration, password management, note-taking, email testing, development principles, and more.\n\nWe will discuss the pros and cons of each tool, along with practical tips on how to integrate them effectively into your team's workflow. Featuring tools like Miro, 1Password, Mailtrap, 12 Factor Apps, and other industry favorites, attendees will have a comprehensive understanding of the best tools available and how to leverage them for optimal team performance.",
+        "location": "Grand Ballroom A",
+        "speakers": [
+            "Colter Mayer"
+        ]
+    },
+    {
+        "uuid": "271d385a-9b4f-4ed1-8d9f-6be5ab5ce0bf",
+        "name": "Going Schema-less: How to migrate a relational database to a NoSQL database",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "nosql",
+            "cosmos db",
+            "Introductory and overview"
+        ],
+        "start_time": "14:45:00",
+        "description": "There can be a lot of great benefits of developing with a NoSQL database over a relational database. In this presentation, you will learn about those benefits and also the potential pitfalls.  There will be demonstrations where we take relationally developed data, restructure it into a NoSQL database (Cosmos DB in particular), and develop an application to work with that data.",
+        "location": "Grand Ballroom C",
+        "speakers": [
+            "Wes McCarthy"
+        ]
+    },
+    {
+        "uuid": "56bdb267-c022-4e2c-b8e7-64e2228b7491",
+        "name": "Let's Skip the Buzz Words: Truly Understanding GenAI",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "ai",
+            "GenAI",
+            "Introductory and overview"
+        ],
+        "start_time": "14:45:00",
+        "description": "This session aims to provide attendees with a comprehensive introduction to GenAI, covering its core concepts, applications, ethical considerations, and future directions. Participants will have the opportunity to learn about the fundamental principles behind Generative Artificial Intelligence, discover its wide range of real-world applications such as creative content generation, healthcare, localization implications, and natural language processing. Additionally, they will gain insights into the ethical implications of GenAI, including responsible development practices and privacy concerns. By the end of the talk, attendees will be equipped with a solid understanding of GenAI's potential, its impact on various industries, and the challenges and opportunities that lie ahead.",
+        "location": "Junior Ballroom B",
+        "speakers": [
+            "Israel Moon"
+        ]
+    },
+    {
+        "uuid": "d794a2ea-0e9b-4887-88e8-4acaabdebba7",
+        "name": "Saving Your Ass(ets) - Azure Resiliency Planning",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "cloud",
+            "azure",
+            "Intermediate"
+        ],
+        "start_time": "14:45:00",
+        "description": "Every cloud architecture should include resiliency planning. But what should that planning include? Every cloud application implementation varies and understanding how applications behave when the infrastructure fails is paramount. For some companies it could mean the difference of near zero downtime to the other extreme of closing their business entirely. Are you really prepared?\n\nIn this talk, you'll learn about various architecture resiliency options. We'll discuss the cost analysis to understand if various approaches are cost effective. Also included in this talk in an understanding of what Azure regions are made of and how they can have an outage. The greatest takeaway you'll have is how to start making preparations against the unknowns that can happen at any time.",
+        "location": "Junior Ballroom A",
+        "speakers": [
+            "Kira Rios"
+        ]
+    },
+    {
+        "uuid": "15f3dc37-ad48-430b-9494-e03d2e6e00b0",
+        "name": "I Don't Need No Stinking Controllers - Composing Minimal APIs in ASP.NET Core",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            ".net",
+            "web development",
+            "api",
+            "Introductory and overview"
+        ],
+        "start_time": "14:45:00",
+        "description": "Minimal APIs are one of the most talked about features in ASP.NET Core - they make starting and running your .NET API super simple. But how do they fit into the world of .NET web development? Are they really a solid replacement for controllers?\n\nIn this session, Spencer will explore minimal APIs and how they fit into the real world of .NET API development. We'll go over how they fit into existing and greenfield applications. We'll discuss their strengths as well as when you should avoid them and stick to controllers. Finally, we'll talk about how they will change in .NET 7.",
+        "location": "Junior Ballroom C",
+        "speakers": [
+            "Holden Yoder"
+        ]
+    },
+    {
+        "uuid": "e6bf6a7c-9d13-4039-a12f-6ff1716875f1",
+        "name": "ARM, Bicep, knees and toes! Infrastructure as code for beginners.",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "ARM",
+            "bicep",
+            "terraform",
+            "Introductory and overview"
+        ],
+        "start_time": "14:45:00",
+        "description": "Infrastructure as code allows you to deploy consistent and stable environments in an automated fashion eliminating the need for manual configuration. Tools like ARM, Bicep and Terraform are used to build templates that make these deployments possible, but the syntax of some of them can make it challenging to get started. In this talk, we will explore the differences between these tools and how you can deploy resources using each of them. By the end of this talk youll be ready to create your own templates and deploy your resources to the cloud.",
+        "location": "Room D1",
+        "speakers": [
+            "Emerie Hutchinson"
+        ]
+    },
+    {
+        "uuid": "a9d12121-b1ea-4efe-8139-b1822f0beda5",
+        "name": "Full Stack Type Safety Across Languages",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            ".net",
+            "angular",
+            "Nx",
+            "Advanced"
+        ],
+        "start_time": "14:45:00",
+        "description": "Explore how type safety can transcend language barriers, and how you can combine your front-end and back-end code into a killer monorepo with Nx, .NET, and Angular. Using openapi extraction and code generation, we will explore how changing an interface in the backend can trigger build time failures for your front end, and exactly why that is a good thing anyways.\n\nThe driving example will utilize C# and ASP.NET Core, with Angular for the front end. Alternative commands will be provided for react, but both the front end and back end can be swapped out for nearly any tool that you may want to use. ",
+        "location": "Room 101",
+        "speakers": [
+            "Landyn Newton",
+            "Braelynn Rasmussen"
+        ]
+    },
+    {
+        "uuid": "0d2365f7-4fef-4277-847a-775e8bbd968a",
+        "name": "Discover the Power of Git for Your Infrastructure",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "git",
+            "DevOps",
+            "Advanced"
+        ],
+        "start_time": "14:45:00",
+        "description": "Git, a tool initially designed for version control, has evolved into an invaluable asset for infrastructure management. This talk will showcase how Git can transform your approach to infrastructure.\nLearn how GitOps, an approach gaining traction, simplifies managing infrastructure through code. No more manual configurations or risky setups. With GitOps, your team can ensure consistency across different environments, automate deployments, and have a single source of truth.\nJoin us to explore real-world examples of Git streamlining infrastructure processes. Uncover the benefits of this approach, such as reducing errors and speeding up delivery. Say goodbye to complex setups and welcome Git as your new application infrastructure tool.",
+        "location": "Room 103",
+        "speakers": [
+            "Brielle Skinner"
+        ]
+    },
+    {
+        "uuid": "35efcd50-5dc6-4c0c-8720-771b6242a4c9",
+        "name": "Power App Power Hour:   From Requirements to Release in an Hour (with time for questions)",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "power apps",
+            "data management",
+            "Introductory and overview"
+        ],
+        "start_time": "16:00:00",
+        "description": "In this fast paced and informative sessions Kevin will demonstrate the power (and speed) available in the Microsoft Power Platform and, more specifically, DataVerse and Power Apps.\n\nStarting with a set of real-world (and non-trivial) requirements Kevin will start from scratch and spend the hour implementing a production ready solution built using DataVerse and a Model-Driven Power App.   As he implements the solution he will describe the technologies and capabilities of these platforms and explain how they can be utilized in a variety of scenarios.\n\nIf you are a developer or manager who has only heard about the power of the Power Platform (or scoff at people who dare to consider Low Code/No Code solutions) then this session will be the perfect opportunity to see it in action and get a sense of what it can be used for.\n",
+        "location": "Grand Ballroom A",
+        "speakers": [
+            "Eithan Mason"
+        ]
+    },
+    {
+        "uuid": "c4cc5881-d499-43eb-9905-72060b4433f3",
+        "name": "Going Solo",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "Independent Software Developer",
+            "carrer",
+            "Introductory and overview"
+        ],
+        "start_time": "16:00:00",
+        "description": "I went solo as an independent software developer over 10 years ago, and I never looked back.  Unlike many that have gone solo, I did not want to have employees, nor create a software consultancy.  I wanted a career path that provided the most flexibility without any financial cap.\n\nIn this talk, you will learn from successes and (big) failures.  We will briefly touch on how to get started.  You will discover that working by the hour is not how you can grow your business.  Also, you will discover that niching-down is what really opens the door to success.",
+        "location": "Grand Ballroom C",
+        "speakers": [
+            "Rory Galvan"
+        ]
+    },
+    {
+        "uuid": "cb9beec3-cdb1-4bd9-9782-ed45a51539ca",
+        "name": "Let's abstract management & control of the integration APIs with Azure API Management",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "azure",
+            "api management",
+            "Intermediate"
+        ],
+        "start_time": "16:00:00",
+        "description": "As businesses expose their capabilities through API, the delivery team wants to manage variations in integration requests from Clients and control how & who uses it. Azure API Management provides a management plane which lets you to separate these business needs & concerns without changing the backend service (API) and addresses them in a centralized way. \nIn this session, I will walk you through core concepts of Azure API Management and how to apply them in Azure Portal.",
+        "location": "Junior Ballroom B",
+        "speakers": [
+            "Alexis McCall"
+        ]
+    },
+    {
+        "uuid": "37721d04-cd5f-459d-bbfe-9f63fc5bb235",
+        "name": "Getting Started with Accessibility in React",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "web development",
+            "react",
+            "jsx",
+            "Introductory and overview"
+        ],
+        "start_time": "14:45:00",
+        "description": "Many of us have heard the accessibility basics: use semantic HTML, include alt text, test with a screen reader, etc. However, when we're dealing with React \u2013 and JSX specifically \u2013 there are a few extra things we need to keep in mind. In this session, we'll discuss the React-specific adjustments we need to make in order to build accessible applications.",
+        "location": "Junior Ballroom D",
+        "speakers": [
+            "Naya Richards"
+        ]
+    },
+    {
+        "uuid": "95231409-dc6f-41d8-950b-740a509a42b5",
+        "name": "Dynamics CRM Customization: A Technical Overview & Career Opportunities",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "Microsoft Dynamics 365",
+            "CRM",
+            "Introductory and overview"
+        ],
+        "start_time": "14:45:00",
+        "description": "Want to enrich your career opportunities? Want to transition from a generic developer into a specialized Microsoft Dynamics 365 professional?\n\nWhether you are a front-end or back-end developer, you can leverage your existing coding skills to get into the world of Microsoft Dynamics 365 customization.\n\nIn this session you will learn,\n-What are the opportunities in Microsoft new direction with Dynamics 365?\n-What type of customizations can be done: front-end web resources and back-end plugins?\n\nWe will focus on examples from CRM/Customer Engagement module. Walkthrough some examples in JavaScripts, C#, and single-page applications.\n\nThis session is best suited for developers who want to get into Dynamics CRM customization and know how to code in JavaScripts or one of .NET programming languages, e.g. C#, VB, F#.\n",
+        "location": "Room D2",
+        "speakers": [
+            "Korbin Butler",
+            "Athena Singleton"
+        ]
+    },
+    {
+        "uuid": "f3e58fa9-1986-4306-9438-8ca7e83a7427",
+        "name": "Introducing the Privacy Stack",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "data privacy",
+            "Intermediate"
+        ],
+        "start_time": "14:45:00",
+        "description": "Laws have been, and are being, enacted to reign in the rampant misuse of consumers data by a few, albeit large, organizations looking to profit on this bountiful field of consumer knowledge. But where does that leave those teams and organizations doing, or looking to do the right thing by our consumers? How do we handle the complexity due to our ever expanding, sometimes fragile architecture? Where do we start? What do we need? \n\nThat is why we created the Privacy Stack! The Privacy Stack is a blueprint for an architecture designed to integrate into and operate with the traditional data stack. It aims to move the industry towards a much more robust data privacy stance - that collecting and processing every piece of data for every purpose must have a legitimizing reason, i.e., permission.\n\nIn this talk we will \n- seek to educate attendees on the current state of the privacy regulation landscape so they can better understand the complexities and ever changing landscape surrounding data privacy,\n- define a common language, lingua franca, to be used throughout the discussion of understanding data privacy and the Privacy Stack,\n- look at the various components that make up the Privacy Stack and their purpose,\n- discuss the future of the Privacy Stack and how attendees can get involved\n\n\nAttendees should come away with,\n- a high-level understanding of todays privacy landscape, how complex it is, and how its continually evolving,\n- a common set of terminology used throughout the data privacy landscape and a common language to use when discussing with fellow data privacy enthusiasts,\n- an understanding of what components are needed when integrating data privacy choices within a new or existing architecture,\n- a way to be a part of the effort to grow and improve this reference architecture.\n",
+        "location": "Room 102",
+        "speakers": [
+            "Will Foster"
+        ]
+    },
+    {
+        "uuid": "8b607e47-8b83-4ae9-8503-94a87739fb40",
+        "name": "Introduction to Software Defined Radio (SDR)",
+        "end_time": "15:45:00",
+        "date": "2024-08-28",
+        "tags": [
+            "Software Defined Radio",
+            "SDR",
+            "Introductory and overview"
+        ],
+        "start_time": "14:45:00",
+        "description": "In recent years, cheap hardware devices and prolific software packages have allowed hobbyists and tinkerers to learn and play with radio using a laptop and USB stick.  This session will introduce participants to some of the devices and software available for exploring the radio signals around them.  It will also explore some alternative approaches to introduce participants to common radio signals and give them ways to start exploring without buying hardware.",
+        "location": "Room 105",
+        "speakers": [
+            "Ridge Carter",
+            "Lucy Bernal"
+        ]
+    },
+    {
+        "uuid": "5e49bc59-4ece-4b9e-b432-a2b233c50f49",
+        "name": "JSON Data Modeling in Document Databases",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "data modeling",
+            "document database",
+            "Intermediate"
+        ],
+        "start_time": "16:00:00",
+        "description": "If youre thinking about using a document database, it can be intimidating to start. A flexible data model gives you a lot of choices, but which way is the right way? Is a document database even the right tool? In this session well go over the basics of data modeling using JSON. Well compare and contrast with traditional RDBMS modeling. Impact on application code will be discussed, as well as some tooling that could be helpful along the way. The examples use the Couchbase Capella document database, but the principles from this session can also be applied to CosmosDb, Mongo, RavenDb, etc.",
+        "location": "Grand Ballroom B",
+        "speakers": [
+            "Sienna Acosta",
+            "Jensen Potter"
+        ]
+    },
+    {
+        "uuid": "6034d72a-1acc-46f0-98ab-b39adc27fffb",
+        "name": "Customizing ASP.Net Identity and adding Third-Party sign-in providers",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "asp.net",
+            "mvc",
+            "Third-Party Sign-In",
+            "Intermediate"
+        ],
+        "start_time": "16:00:00",
+        "description": "You have identity baked into your ASP.Net MVC, but you want to change some of the default user properties and you're not sure where to start, especially when it comes to creating custom sign-in forms.  \nAdditionally, you want to create the ability to sign in to the application via Microsoft, Facebook, or Google. \nThis session will show how to update the default application user with new properties, scaffold the identity pages for modification, and integrate third-party sign in via Microsoft and other providers",
+        "location": "Junior Ballroom A",
+        "speakers": [
+            "Kingsley Curtis"
+        ]
+    },
+    {
+        "uuid": "985078d7-b01e-4921-b93d-7ddb25140c24",
+        "name": "Practical introduction to OpenTelemetry tracing",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "distributed systems",
+            "distributed architecture",
+            "Introductory and overview"
+        ],
+        "start_time": "16:00:00",
+        "description": "Tracking a requests flow across different components in distributed systems is essential. With the rise of microservices, their importance has risen to critical levels. Some proprietary tools for tracking have been used already: Jaeger and Zipkin naturally come to mind.\n\nObservability is built on three pillars: logging, metrics, and tracing. OpenTelemetry is a joint effort to bring an open standard to them. Jaeger and Zipkin joined the effort so that they are now OpenTelemetry compatible.\n\nIn this talk, Ill describe the above in more detail and showcase a (simple) use case to demo how you could benefit from OpenTelemetry in your distributed architecture.",
+        "location": "Junior Ballroom C",
+        "speakers": [
+            "Leilani Richards"
+        ]
+    },
+    {
+        "uuid": "3380eecf-f2aa-4ffd-92cb-7c3c8fd2e125",
+        "name": "Getting on the Message Bus",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "message bus",
+            "Introductory and overview"
+        ],
+        "start_time": "16:00:00",
+        "description": "This session covers the basics of a message bus. What is it? What is its purpose? What benefits are there?\n\nThe first stop is how a message bus works including an overview of the architecture and key components, such as producers, consumers, and message brokers.\n\nThe next stop is an explanation of message flow and how messages are routed and filtered in a message bus.\n\nThe third stop is for use cases of a message bus including microservices architecture, event-driven architecture, enterprise integration, and asynchronous processing.\n\nThe last stop ties it all together: we will get a message bus running with RabbitMQ. ",
+        "location": "Room D1",
+        "speakers": [
+            "Benson Vang"
+        ]
+    },
+    {
+        "uuid": "caac2571-0458-467e-94cb-65fd03cb1bcc",
+        "name": "Lessons from E2E Testing Web Applications - Cypress Best Practices",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "software testing",
+            "cypress",
+            "Intermediate"
+        ],
+        "start_time": "16:00:00",
+        "description": "Lots of companies are investing in end to end testing to release high quality software and remain competitive in todays market. Now with Cypress, end to end testing web applications have become very intuitive and a whole lot of fun.\n\nOver the years, after working with Cypress, there are many lessons that I have learned the hard way. These valuable lessons taught me how to write robust and reliable tests that vastly improved the quality of my applications.\n\nIn this session, let's discuss best practices that I found useful to write Cypress E2E tests. These guidelines will enable you to release high quality software to your clients.",
+        "location": "Junior Ballroom D",
+        "speakers": [
+            "Holden Navarro",
+            "Winter Cain"
+        ]
+    },
+    {
+        "uuid": "f149bc2d-d935-43ff-9760-1febadb3dbeb",
+        "name": "Improving code quality with Static Analyzers",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "coding prctices",
+            "Intermediate"
+        ],
+        "start_time": "16:00:00",
+        "description": "How do you keep code consistent across a team or make sure your independent code follows accepted standards, use a Static Analyzer tool. See how to use some of these tools for your .Net, JavaScript, Style sheets, etc. to improve your code as an independent or large team lead.\n\nWhether you're an independent developer that needs assistance reviewing your code, or a member of a large team that wants to keep code consistency among the team, static analyzer tools can help identify and optionally fix issues in your code. Many platforms have their own version to help based on the language, including Roslyn, JsLint, CssLint, SonarQube. FxCop, StyleCop, etc. We'll take a look at some of these tools and explore how they can help identify issues in your code and improve maintainability and decrease errors before you deploy to production. We'll also look at the ability to build your own tool to enforce rules in your specific domain.\n",
+        "location": "Room D2",
+        "speakers": [
+            "Madisyn Rodriguez"
+        ]
+    },
+    {
+        "uuid": "31bcf76b-e153-4e9c-b3ee-488d6f470ffc",
+        "name": "Let's Change How Your IT Team Adapts to Change",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "team management",
+            "Intermediate"
+        ],
+        "start_time": "16:00:00",
+        "description": "As dealing with change becomes a regular software development  activity, leading change becomes a skill to develop and master. Adapting a team in today's world of \u201calways on\u201d transformation can actually be invigorating instead of exhausting. Don't try to avoid the chaos, manage it by understanding the Satir Change Curve Model. Focusing on the people through empathy and perspective are the keys to success. Discover the steps to becoming an effective change leader through this enlightening look at IT organizational transformation.\n\nAttendees will learn how to:\n\n-\tSwitch from being a change manager to a change leader\n-\tUnderstand that chaos during change is not failure\n-\tDevelop organizational flexibility\n-\tFocus on the people you are leading through change\n",
+        "location": "Room 102",
+        "speakers": [
+            "Brinley Campos"
+        ]
+    },
+    {
+        "uuid": "cf6aec7e-7aaa-4f85-b404-0927b576d50c",
+        "name": "Maximizing Value in Azure: A Strategic Guide for Architects and Administrators",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "azure",
+            "cloud",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "In this session, we will explore cost optimization strategies for offerings in Azure. As an Azure engineer, ensuring that your organization's cloud resources are utilized efficiently and effectively is crucial. We will discuss various Azure tools, such as the Pricing Calculator, Policies, Cost Management, and Reserved Instances, which can help you make informed decisions and optimize your cloud spend.\n\nThrough real-world case studies, attendees will learn how organizations have successfully implemented cost-saving measures in their Azure environments. By the end of the session, participants will have a deeper understanding of Azure cost optimization strategies, enabling them to maximize value and minimize costs for their organizations.",
+        "location": "Grand Ballroom A",
+        "speakers": [
+            "Bexley Klein"
+        ]
+    },
+    {
+        "uuid": "685425e7-505f-4eb8-a1a5-bb31b8fd087c",
+        "name": "Middleware Showdown: Exploring Diverse Messaging Solutions",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "messaging",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "Get ready for an insightful session where we delve into messaging solutions and compare popular options such as RabbitMQ, Azure Service Bus, Amazon SQS, and Apache Kafka. In addition, we'll challenge these solutions and consider the unconventional approach of using a database as a message queue. Join us as we evaluate each approach's benefits, trade-offs, and considerations.\n\nDuring this session, we will explore each messaging solution's strengths, use cases, and integration possibilities. We'll examine how they handle message routing, scalability, reliability, and support for various messaging patterns. We'll also consider non-functional criteria such as ease of use, ecosystem maturity, and deployment options.\n\nBy the end of this session, you'll have gained valuable insights to help you make informed decisions when selecting the most suitable messaging solution for your application. Join us for this enlightening discussion and broaden your understanding of the diverse messaging landscape.",
+        "location": "Grand Ballroom C",
+        "speakers": [
+            "Summer Zhang"
+        ]
+    },
+    {
+        "uuid": "6203773b-59a6-4db9-8e00-e8b61436ad68",
+        "name": "Manage Kubernetes anywhere with Azure Arc-enabled K8's",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "Kubernetes",
+            "azure",
+            "cloud",
+            "azure arc",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "If you need to manage K8's in Azure, on-prem, or other clouds, don't miss this session. We will discuss what Azure Arc is and then jump into a demo of Azure Arc 4 Kubernetes features, including deploying applications, monitoring, threat protection and other key features.",
+        "location": "Junior Ballroom B",
+        "speakers": [
+            "Reina Gould"
+        ]
+    },
+    {
+        "uuid": "04e715cf-1c5b-4b34-9167-82b0d7d19778",
+        "name": "Reduce System Fragility with Terraform",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "terraform",
+            "Introductory and overview"
+        ],
+        "start_time": "08:30:00",
+        "description": "As infrastructure stacks grow increasingly more complex and involve an ever-growing number of services and systems there are a lot of opportunities for error and misconfiguration. To provide more system stability teams have looked to abstract configuration to its own layer of code. This concept of configuring infrastructure as code is gaining traction throughout the industry for a variety of reasons. It's fast, consistent, reduces errors, self-documentation, and did I mention it's fast? Tools such as Terraform from HashiCorp have emerged as one of the leading ways to declaratively configure technology stacks.\n\nIn this talk you'll gain an understanding of the benefits of Infrastructure as Code in general, and of using Terraform specifically. You'll be introduced to how Terraform works, what the code looks like, and how to get started.",
+        "location": "Junior Ballroom D",
+        "speakers": [
+            "Alexia Abbott"
+        ]
+    },
+    {
+        "uuid": "ae55ad10-905d-4aea-b73a-37fd1c86807f",
+        "name": "I'll Get Back to You: Task, Await, and Asynchronous Methods in C#",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "parallel programming",
+            "c#",
+            "Intermediate"
+        ],
+        "start_time": "16:00:00",
+        "description": "There's a lot of confusion about async/await, Task/TPL, and asynchronous and parallel programming in general. So let's start with the basics and look at how we can call asynchronous methods using Task and then see how the \"await\" operator can makes things easier for us. Along the way, well look at continuations and exception handling.",
+        "location": "Room 101",
+        "speakers": [
+            "Henry Hale"
+        ]
+    },
+    {
+        "uuid": "968e93fd-edee-4c1c-9164-7bad1df21538",
+        "name": "Animating Vue.js with GSAP",
+        "end_time": "17:00:00",
+        "date": "2024-08-28",
+        "tags": [
+            "animation",
+            "vue.js",
+            "GSAP",
+            "Intermediate"
+        ],
+        "start_time": "16:00:00",
+        "description": "Animations are an easy way to add depth and dimension to an application. There are a lot of animation platforms out there, but in my opinion, GSAP is head and shoulders above the rest. In this presentation we will be discussing adding the Greensock Animation Platform to your Vue.js application and how using it can bring your application to life. Specific demos will be given on how to integrate GSAP into lifecycle hooks, router guards, page transitions, and list generation while using Vue.js.",
+        "location": "Room 103",
+        "speakers": [
+            "Gideon Conrad"
+        ]
+    },
+    {
+        "uuid": "e69d3f39-b61a-4379-812e-3e344c094eb0",
+        "name": "So you want to be an Architect",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "software architecture",
+            "security",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "This session is a quick look at all aspects of being a corporate software architect. Whither you are a developer looking to move into the role of architect, needing to have an understanding of what is expected or already in the role of software architect looking for new and interesting ideas, this session is for you.\n\nThis session is designed to be a jam session on all aspects of software architecture and many of the roles of software architect. The following subject areas will be covered:\n\n* Software Development Process\n* Project Key Mechanisms: Languages and Frameworks\n* Security: Threats, Securing Code Review, Adding Security to you process\n* Layers, Partitions and Topologies\n* VM Optimizations\n* Usability and User Experience\n* Optimizing the Web\n* Ready for Production: Monitoring\n* Integration\n* Data Modeling",
+        "location": "Grand Ballroom B",
+        "speakers": [
+            "Marco Henry"
+        ]
+    },
+    {
+        "uuid": "ae54b2ad-2f9d-4ac7-849e-7cb36cf1f192",
+        "name": "Entity Framework performance monitoring and tuning",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "Object Relational Mapping",
+            "ORM",
+            "database",
+            "Entity Framwork",
+            "Advanced"
+        ],
+        "start_time": "08:30:00",
+        "description": "Object Relational Mapping technologies, including the Entity Framework can drastically simplify the programming model against databases, but when done carelessly, performance can suffer. In this session, we'll explore some real-life strategies that have solved performance issues in production applications that I have encountered at a variety of customers. We'll discuss the pros and cons of working without stored procs and cover strategies for monitoring and tuning your entity queries.",
+        "location": "Junior Ballroom A",
+        "speakers": [
+            "Isaias Greer"
+        ]
+    },
+    {
+        "uuid": "80543f4e-492c-4e97-a367-6463495012d4",
+        "name": "Mastering messaging; a comprehensive guide to the Azure messaging services",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "azure",
+            "messaging",
+            "cloud",
+            "Introductory and overview"
+        ],
+        "start_time": "08:30:00",
+        "description": "As our architectures are becoming increasingly distributed, messaging has become an integral part of building scalable and reliable solutions. However, with the vast array of messaging options available, it is not always easy to choose the right type of messaging that suits your specific needs. From messages to events, from streams to publish and subscribe, the different options can become overwhelming. \n\nIn this session, we will provide a comprehensive overview of the different types of messaging, their pros and cons, and how to choose the right type of messaging for your solutions. We will discuss the different Azure messaging services, such as Azure Service Bus, Event Hubs, and Event Grid, and how to leverage these services to implement messaging in your solutions.\n\nBy attending this session, you will gain knowledge and skills necessary to choose the right type of messaging for your project and implement this using Azure messaging services. Upon completion of this session, you will be understand the intricacies of all these different options, placing the world of messaging at your feet.",
+        "location": "Junior Ballroom C",
+        "speakers": [
+            "Blaine Snow"
+        ]
+    },
+    {
+        "uuid": "c4ee5403-bf3c-4c53-afb7-405f8591d77d",
+        "name": "Reactive Patterns For Angular",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "angular",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "Have you ever found yourself making yet another component property just to hold state between user interactions? Do you wonder how you can even begin to refactor that three thousand line component? Well chances are you could use a little reactivity in your application. In this talk we will learn how to think about our components from a more reactive mindset. Then we will cover some reactive patterns you can start using today to make coding your Angular application faster, cleaner, and less bug prone. Whether you are working on a brand new component or desperately trying to refactor an existing disaster, there will be something for you in this talk.",
+        "location": "Room D1",
+        "speakers": [
+            "Kohen Contreras"
+        ]
+    },
+    {
+        "uuid": "bef9a653-387b-4e11-9689-5f3034619321",
+        "name": "SQL Server Indexing Strategies",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "sql",
+            "database",
+            "Intermediate"
+        ],
+        "start_time": "08:30:00",
+        "description": "Optimal indexes reduce costs, improve performance, and mitigate blocking and deadlocks. This session will review SQL Server index architecture and explore strategies to optimize indexes supporting OLTP, reporting, and mixed workloads running on SQL Server RDBMS platforms.",
+        "location": "Room 101",
+        "speakers": [
+            "Sam Sweeney",
+            "Yara Newton"
+        ]
+    },
+    {
+        "uuid": "f3447566-b14c-4d59-9b9c-2a55cdf99baf",
+        "name": "The 7 Pillar Developer: Lifestyle Systems for the Exceptional Developer",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "software development",
+            "developer",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "To dramatically expand our potential as developers, we must reconsider our behaviors away from the keyboard, as humans. In this story-oriented session, we'll explore seven surprisingly relevant facets of life that profoundly impact our software quality: focus, systems thinking, psychology, communication, image, time management, and education. ",
+        "location": "Grand Ballroom A",
+        "speakers": [
+            "Adelina Rosario",
+            "Jedidiah Small"
+        ]
+    },
+    {
+        "uuid": "6dcf8d7d-c46c-46a6-8c5a-24b2bd190103",
+        "name": "Session intentionally left null?",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "nullable",
+            "c#",
+            ".net",
+            "asp.net",
+            "blazor",
+            "Introductory and overview"
+        ],
+        "start_time": "08:30:00",
+        "description": "In this session well discuss relatively new Nullable types in C# 8.0 and above. Nullable types are both useful and nuisance as the well-intended feature causes compiler warnings while attempting to help ensure stability. Well discuss patterns and practices for handling nullable values as they relate to .NET, ASP.NET and Blazor applications. Get an understanding of when to use nullable, how to correctly handle compiler warnings, and how set proper default values.",
+        "location": "Room D2",
+        "speakers": [
+            "Daniela Wyatt"
+        ]
+    },
+    {
+        "uuid": "fc7cd5cf-2086-418e-8824-409eff14bff3",
+        "name": "What's New In JDK 20? A Quick Tour Of The New Features",
+        "end_time": "09:30:00",
+        "date": "2024-08-29",
+        "tags": [
+            "jdk20",
+            "java",
+            "Introductory and overview"
+        ],
+        "start_time": "08:30:00",
+        "description": "JDK 20 will be released in 2023. This session will examine some of the new features that are being introduced, and will discuss how to use them and why they are useful. We'll look at scoped values and how they may be used to share immutable data between threads. We'll see what record patterns are and how to use them. We'll look at the foreign function and memory API, and see why it's better than JNI. Next, we'll examine the new lightweight virtual threads and then we'll wrap up with a look at structured concurrency and pattern matching.",
+        "location": "Room 102",
+        "speakers": [
+            "Santino Marsh"
+        ]
+    },
+    {
+        "uuid": "20350afe-f0a2-41c6-b1f5-7c6730f82960",
+        "name": "SQL Server vs Azure Cosmos DB",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "azure",
+            "cloud",
+            "databases",
+            "distributed database",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "Do you need to move your legacy application to the cloud? or maybe you need to select a database for a new cloud project. This session will help you by comparing the functionalities of Azure SQL and Azure Cosmos DB in detail.\n\nWe will start the session by explaining the differences between distributed databases and centralized databases. We will compare indexing, stored procedures, partitioning, constraints, and scaling in these two great products. Next, \nWe will explore the available tools and languages to query and maintain the Azure Cosmos DB. Finally, we will compare the query optimization engine and execution plans between the two database engines.\n\nThis session will help you to understand and make the right decision for your upcoming cloud projects.",
+        "location": "Grand Ballroom B",
+        "speakers": [
+            "Zaria Thompson"
+        ]
+    },
+    {
+        "uuid": "39a58f19-b779-4243-a68e-e2b827ac5b10",
+        "name": "Data Storytelling - The Key to Business Buy-In",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "problem solving",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "Technologists and developers love tinkering and problem solving and finding the perfect technical solution to anything thrown their way. So why do beautiful technical implementations often fail? Because the technology itself isn't the answer. As an engineer-turned-data-guru, it took me way too long to figure that out. No technology will make a difference in any business without the proper buy-in from stakeholders (including non-technical stakeholders), enablement support, and carefully crafted adoption frameworks. During this session, you'll learn about how to communicate the value of technology decisions to non-technical co-workers or stakeholders. And we'll talk about some very specific buy-in, enablement, and adoption activities and suggestions for supporting implementations.",
+        "location": "Junior Ballroom A",
+        "speakers": [
+            "Karter Rivera"
+        ]
+    },
+    {
+        "uuid": "f44748aa-5b7e-455c-9a81-15760719e26a",
+        "name": "The API Call is Coming from Inside the House!",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "security",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "Securing applications with the Microsoft identity platform\n\nIt's the middle of the night when there is a bump in the logs. Something is trying to get in. Your palms start to sweat as your mind races. How was that last microservice secured? Was it a home grown JWT implementation? Maybe some sample code from Stack Overflow? When were the latest patches supposed to be applied anyways?\n\nLet's join together to lock all the doors and board up the windows. We'll invoke the almost mystical powers of the Microsoft identity platform to secure our applications. We'll dive into the sea of confusing nomenclature and the alphabet soup of acronyms to make sense of the common flows of modern authentication. Let's explore how to apply these concepts to a variety of different types of applications and APIs.  \n\nIt's going to be a dark and stormy night and we need to be ready. Now, let's all split up and find that intruder!\n",
+        "location": "Junior Ballroom C",
+        "speakers": [
+            "Collins Callahan"
+        ]
+    },
+    {
+        "uuid": "10930367-0c62-43a7-a876-f28bfe693e74",
+        "name": "Evolving your APIs, a step-by-step approach",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "api",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "When you publish your first HTTP API, youre more focused on short-term issues than planning for the future. However, chances are youll be successful, and youll \u201chit the wall\u201d. How do you evolve your API without breaking the contract with your existing users?\n\nIn this talk, Ill first show you some tips and tricks to achieve that: moving your endpoints, deprecating them, monitoring whos using them, and letting users know about the new endpoints. The talk is demo-based, and Ill use the Apache APISIX project for it.\n",
+        "location": "Room D1",
+        "speakers": [
+            "Bristol Schultz"
+        ]
+    },
+    {
+        "uuid": "775c8a58-26ab-4155-bd89-fcb30578d189",
+        "name": "Sweatpants and Shirt collars.  Elevating communication over appearance in a virtual workplace",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "team management",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "Does it feel like something is... missing... with your remote team's communication?  Do you find yourself talking TO a sea of inactive webcam windows instead of speaking WITH your co-workers?  This session explores a paradigm shift in the approach to communicating with each other in remote work situations.  You'll learn ways to improve emotional intelligence on chat clients, conduct better meetings with remote working agreements, and how to ensure that your entire team is HEARD rather than trying to simply control perception.",
+        "location": "Room 101",
+        "speakers": [
+            "Zainab Hayden"
+        ]
+    },
+    {
+        "uuid": "0c35b58f-50b5-4b6d-a44b-2b6866733709",
+        "name": "MSBuild to the Rescue",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            ".net",
+            "DevOps",
+            "MSBuild",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "As a .NET Developer you've probably heard about MSBuild, maybe you've even been to Microsoft's MSBuild conference where the one thing they don't talk about is MSBuild. It's time we learn more about what MSBuild, and how we can leverage it to bring complex DevOps tasks and move them right into the build pipeline making DevOps as simple as running 'dotnet build'. We'll learn more about PropertyGroups and ItemGroups and how they can help you as well as how to write in-line MSBuild Tasks and even how to write a MSBuild library you can use as a dependency for your projects.",
+        "location": "Room 103",
+        "speakers": [
+            "Kairi Hester"
+        ]
+    },
+    {
         "uuid": "6d88e0a5-b220-4501-8301-d702ff5ef330",
         "name": "New Product Concept & Design Workshop",
         "end_time": "10:45:00",
@@ -116,6 +1728,143 @@
         "location": "Room 102",
         "speakers": [
             "Everest Woodward"
+        ]
+    },
+    {
+        "uuid": "3875156d-0cb8-4632-9171-1997200c5e98",
+        "name": "The AI Revolution Begins Here!",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "ai",
+            "OpenAI",
+            "ChatGPT",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "Artificial Intelligence (AI) has come a long way. And one of its latest creations is ChatGPT, an AI text generator trained by OpenAI. Are you ready to dive into the world of AI and discover the magic of OpenAI? In this exciting session, you'll get to experience the cutting-edge technology of OpenAI first hand! From hearing about AI models to exploring the latest advancements in the field, you'll leave this session with a better understanding of how OpenAI is shaping the future.  AI has never been more accessible or useful, and with OpenAI leading the charge, its an exciting time to be a part of this revolution. If thats not enough, get ready to explore the world of AI-powered voice assistants and discover how OpenAI is revolutionizing the way we interact with technology. From creating your own voice-controlled AI models to learning about the latest advancements in voice recognition, this session is guaranteed to be a blast! So sit back, grab a coffee, grab your thinking cap, bring your sense of adventure, and let's have some fun!\"\n\nSession Agenda:\n\u2022\tIntroduction to AI and OpenAI.\n\u2022\tOverview of ChatGPT, an AI text generator.\n\u2022\tExploring the latest advancements in the field of AI.\n\u2022\tUnderstanding the potential and applications of AI in various industries.\n\u2022\tIntroduction to AI-powered voice assistants.\n\u2022\tOverview of OpenAI's work in voice recognition and voice-controlled AI models.\n\u2022\tDiscussion on the benefits and challenges of AI in the future.",
+        "location": "Grand Ballroom C",
+        "speakers": [
+            "Theodore Moses"
+        ]
+    },
+    {
+        "uuid": "e027147d-6c6f-4156-acde-82493ad163ee",
+        "name": "Stop Committing Your Secrets - GIt Hooks To The Rescue!",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "git",
+            "git hooks",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "No one wants their keys and secrets on GitHub, but one bad push can mean you are suddenly exposed. In the best-case scenario, you discover the issue and fix it before something bad happens, but in the worse case, you dont find out until it is far too late.\n\nMost devs are familiar with using .gitignore files to prevent Git from tracking specific files and folders, but did you know that you can leverage Git hooks and some open source awesomeness to keep you from accidentally committing your secrets in the first place?\n\nIf you are not actively using Git hooks in your workflows, then this talk is for you. Let's look into the .git folder and unlock a whole world of automation possibilities!",
+        "location": "Junior Ballroom B",
+        "speakers": [
+            "Charles Benson"
+        ]
+    },
+    {
+        "uuid": "e111beb9-204d-4af0-a8af-1631e70e7a74",
+        "name": "The Angular Renaissance",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "angular",
+            "web development",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "Angular hasn't gone through a time of innovation such as this since the creation of 2.0. There are so many cool features here today and upcoming on the horizon. Alyssa Nicoll is going to walk us through things like Standalone Components and APIs, what a module-less Angular looks like, and upcoming features like Signals for built in reactivity in Angular. Come learn about the Angular Renaissance we are stepping into and celebrate this new era of creativity and problem solving.",
+        "location": "Junior Ballroom D",
+        "speakers": [
+            "Quinton Waters"
+        ]
+    },
+    {
+        "uuid": "a70231de-bd46-44db-85b2-28edfcd27be2",
+        "name": "Resume-Driven Development Is Awful",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "carrer",
+            "Intermediate"
+        ],
+        "start_time": "09:45:00",
+        "description": "Employers demand expertise in the Shiny New Thing\u2122. We make a mad dash to learn juuust enough about Shiny New Thing\u2122 so we can find a way to less-than-gracefully shoehorn it into our stack. Once our resume has Shiny New Thing\u2122 added to it in some embellished manner, we start the cycle all over again at Next Employer\u2122.\n\nWorking across the tech industry for several years has made me realize something very sobering: generally speaking, we hate our jobs. We want to do better, learn more, stay relevant. But were terrified that present & future employers wont give us a second look unless our resumes are chock-full of the Shiny New Thing\u2122-of-the-week technologies. And sadly, theyre not entirely wrong.\n\nThe cycle is maddening, and no party involved really benefits in the long term. No one likes \u201cboring technology\u201d anymore. But what if we did again? What if we all found a collaborative way to appreciate safe & sane tech stack options, stop chasing the next new thing for the sake of itself, and actually deliver business value over buzzwords? This talk will explore learnings & observations of this phenomenon, and postulate on what we can do as an industry to just chill out already.",
+        "location": "Room D2",
+        "speakers": [
+            "Cody Maddox"
+        ]
+    },
+    {
+        "uuid": "8a6a129b-53b5-42b9-85dc-0a0894eb487e",
+        "name": "Let's talk interviewing: How to stand out and get that offer!",
+        "end_time": "10:45:00",
+        "date": "2024-08-29",
+        "tags": [
+            "carrer",
+            "interview",
+            "Introductory and overview"
+        ],
+        "start_time": "09:45:00",
+        "description": "Interviewing is hard. Being across the table from one or more interviewers or standing in front of a whiteboard with a marker that barely works in clothes you probably only wear at interviews, trying to figure out how to answer the obscure question you were just asked while everyone is staring at you can be stressful and scary. This session will give you proven strategies and tactics to help put you at ease, but also make you stand out so you nail the interview and get the offer! ",
+        "location": "Room 102",
+        "speakers": [
+            "Leroy Morse"
+        ]
+    },
+    {
+        "uuid": "adf92871-8869-4e29-80c5-b772893e22dd",
+        "name": "Virtually Unstoppable:   Our Experience Transitioning to Running a Fully Virtual Technology Company",
+        "end_time": "12:00:00",
+        "date": "2024-08-29",
+        "tags": [
+            "carrer",
+            "Introductory and overview"
+        ],
+        "start_time": "11:00:00",
+        "description": "During this session hear Kevin discuss how his technology company, ArchitectNow,  grew from working in a single office in St. Louis to over 30 full time employees spread across 14 states.\n\nKevin will discuss the how his team navigated the transition process and have thrived in a virtual workplace.   He will share lessons learned as well as things he wished they would have done differently \n\nTopics to be covered include:\n\n\t\u2022 Finding talent anywhere in the US\n\t\u2022 Onboard/off-boarding \n\t\u2022 Payroll and other benefits\n\t\u2022 Collaboration and communication\n\t\u2022 Securing a remote workforce\n\t\u2022 Team building and virtual social opportunities\n\t\u2022 Key tools and technologies\n\nThis will be a great opportunity to gain some tips and tricks regarding working efficiently from around the US.\n",
+        "location": "Grand Ballroom A",
+        "speakers": [
+            "Kevin"
+        ]
+    },
+    {
+        "uuid": "f37104c0-3d05-47d0-b6dd-672e8bd7e88f",
+        "name": "Consistency and Agreements in Microservices",
+        "end_time": "12:00:00",
+        "date": "2024-08-29",
+        "tags": [
+            "database",
+            "api",
+            "messaging",
+            "microservices",
+            "Intermediate"
+        ],
+        "start_time": "11:00:00",
+        "description": "In a monolith, achieving consistency is easy - just use a transaction! In a distributed world, where we mix legacy and greenfield, getting systems to agree becomes quite a bit more complex. We have different databases, different communication methods, caches, and more. How can we get anything to agree on the state of anything?\n\nIn this session, we'll look at how to implement various consistency and transactional patterns, to support both real-time and async updates. We'll also look at long-running transaction patterns such as sagas to manage agreements between systems. Finally, we'll look at a full working example that crosses databases, APIs, messaging, and more.",
+        "location": "Grand Ballroom B",
+        "speakers": [
+            "Rene Robertson",
+            "Harmony Dunn"
+        ]
+    },
+    {
+        "uuid": "d0697caa-892b-46a2-b777-347847b7eacf",
+        "name": "State of Mobile Development",
+        "end_time": "12:00:00",
+        "date": "2024-08-29",
+        "tags": [
+            "mobile app development",
+            "Introductory and overview"
+        ],
+        "start_time": "11:00:00",
+        "description": "Its 2024. Thankfully, developers have a lot of choice in how to build for mobile form factors. Mobile strategy can often be an afterthought \u2013 in reality, it needs to be driven by type of app, audience, platform reach, developer expertise & need for code reuse. \n\nIs Mobile web still an option? Have PWAs matured enough to prove the web as a distribution medium? What key factors demand native mobile apps for iOS/Android/Windows? Can you target dual screen devices or share code with wearables? Developers also want to leverage preferred technology stacks - .NET or JavaScript. .NET MAUI sounds like the next-generation .NET cross-platform story \u2013 is it truly native & does it allow bringing in web technologies? How do NativeScript & React Native fare for JS Native apps? How do Blazor & JS Spa apps play in the mobile space? What could developers achieve with Flutter or Uno Platform or Avalonia? \n\nThe answer to the correct mobile strategy is \u2013 it depends. Developers today can build true modern cross-platform mobile apps from single code base, with easy platform API access & matured tooling everywhere. The choice of technology stack should not matter as much. Design & UX are of utmost importance though. Lets recap options, glimpse into the future and equip ourselves to build amazing mobile apps.\n",
+        "location": "Grand Ballroom C",
+        "speakers": [
+            "Dawson Mosley"
         ]
     },
     {

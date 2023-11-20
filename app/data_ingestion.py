@@ -39,6 +39,9 @@ def file_path_in_files_json(conference_id):
     if not os.path.exists(files_folder):
         os.makedirs(files_folder)        
     file_path = os.path.join(files_folder, 'sessions_'+str(conference_id)+'.json')
+    # Check if file exists, then delete it
+    if os.path.isfile(file_path):
+        os.remove(file_path)
     return file_path
 
 def createVectorDb(conference_id):
@@ -75,7 +78,7 @@ def write_data_to_json(conference_id, db):
         for key, value in row.__dict__.items() 
         if key != '_sa_instance_state' and key not in ['id', 'created_on', 'conference_id', 'updated_on', 'owner_id']
     } for row in result])
-    with open(file_path, 'w') as f:
+    with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(json.loads(json_result), f, indent=4)
     
 def write_data_to_csv(conference_id, db):
