@@ -50,9 +50,9 @@ def check_run_status_and_retrieve(thread_id, run):
             )
         time.sleep(1)
 
-def query_document(question,assistant_id,thread_id):
+def query_document(question,assistant_id,thread_id,file_id):
     # get file id
-    file_id = ["file-soKMG7cFuUgkpJuu7Wartd2h"]
+    # file_id = ["file-soKMG7cFuUgkpJuu7Wartd2h"]
     # create message
     message = create_message(thread_id, question, file_id)
     # run the assistant

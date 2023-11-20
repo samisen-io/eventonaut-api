@@ -63,7 +63,7 @@ def delete_thread(thread_id: str):
 def upload_file(file: UploadFile):
     global client
 
-    uploaded_file = client.files.create(file=file)
+    uploaded_file = client.files.create(file=file, purpose="assistants")
     return uploaded_file
 
 def delete_file(file_id: str):

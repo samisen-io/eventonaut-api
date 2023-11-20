@@ -108,7 +108,7 @@ def upload_file_id(db: Session, file_id: str, conference_id: str, owner_id: int)
     db_file.uuid = str(uuid.uuid4())
     db.add(db_file)
     db.commit()
-    db.refresh()
+    db.refresh(db_file)
     print(f"File_Id - {file_id} uploaded to DB")
     return True
 
@@ -119,3 +119,9 @@ def delete_file_id(db: Session, file_id: str, conference_id: str, owner_id: int)
     db.commit()
     print(f"File_Id - {file_id} Deleted from DB")
     return True
+
+def get_file_ids_by_conference_id(db, conference_id):
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
+    files = db.query(models.Conference_Files).filter(models.Conference_Files.conference_id == conference.id).all()
+    file_ids = [file.file_id for file in files]
+    return file_ids
