@@ -40,6 +40,9 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db.refresh(db_conference)
     return db_conference
 
+def get_conf_by_uuid(db:Session, conference_id: str):
+    return db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
+
 # get conference by uuid and owner id
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
@@ -95,3 +98,24 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
     db.commit()
     db.refresh(db_conference)
     return db_conference
+
+def upload_file_id(db: Session, file_id: str, conference_id: str, owner_id: int):
+    conference = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.uuid == conference_id).first()
+    db_file = models.Conference_Files(file_id = file_id, conference_id = conference.id)
+    tz = timezone('Asia/Kolkata')
+    db_file.created_on = datetime.now(tz)
+    db_file.updated_on = datetime.now(tz)
+    db_file.uuid = str(uuid.uuid4())
+    db.add(db_file)
+    db.commit()
+    db.refresh()
+    print(f"File_Id - {file_id} uploaded to DB")
+    return True
+
+def delete_file_id(db: Session, file_id: str, conference_id: str, owner_id: int):
+    conference = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.uuid == conference_id).first()
+    db_file = db.query(models.Conference_Files).filter(models.Conference_Files.file_id == file_id, models.Conference_Files.conference_id == conference.id).first()
+    db.delete(db_file)
+    db.commit()
+    print(f"File_Id - {file_id} Deleted from DB")
+    return True

@@ -12,6 +12,7 @@ from ..data_ingestion import createVectorDb, write_data_to_json
 from ..data_query import query_document
 from ..crud import conferences_crud, attendee_crud
 from sqlalchemy.orm import Session
+from ..AI_assitant import upload_file
 
 router = APIRouter(tags=["ai_models"])
 
@@ -79,5 +80,7 @@ async def upload_session_file(file: UploadFile,
         # create_session_for_conference(session,db,current_user)
     # print(session)
     write_data_to_json(conference_id,db)
+    file = upload_file()
+    conferences_crud.upload_file_id(db=db,conference_id=conference_id, owner_id=current_user.id)
     # createVectorDb(conference_id)
     return {'filename':file.filename}
