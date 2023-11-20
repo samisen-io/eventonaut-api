@@ -42,8 +42,8 @@ async def update_conference(conference_id: str, current_user: User = Depends(get
     with open(file_path, 'rb') as file:
         try:
             file = upload_file(file)
-        except:
-            HTTPException(status_code=400, detail="File upload failed")
+        except Exception as e:
+            HTTPException(status_code=400, detail=str(e))
     conferences_crud.upload_file_id(db=db, file_id = file.id, conference_id=conference_id, owner_id=current_user.id)
     return {"success": "Conference updated successfully."}
 
@@ -75,12 +75,15 @@ async def upload_session_file(file: UploadFile,
             "tags": ast.literal_eval(row['tags']) if row['tags'] else None
         }
         session = schemas.SessionCreate(**payload)
-        # create_session_for_conference(session,db,current_user)
+        create_session_for_conference(session,db,current_user)
     write_data_to_json(conference_id,db)
     # get the file from the files folder
     file_path = os.path.join('app', 'files')
     file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
     with open(file_path, 'rb') as file:
-        file = upload_file(file)
+        try:
+            file = upload_file(file)
+        except Exception as e:
+            HTTPException(status_code=400, detail=str(e))
     conferences_crud.upload_file_id(db=db, file_id = file.id, conference_id=conference_id, owner_id=current_user.id)
     return {'filename':file.filename}
