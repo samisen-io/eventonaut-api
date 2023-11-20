@@ -2,7 +2,7 @@ import random
 import string
 
 def generate_unique_string():
-    letters = string.ascii_lowercase
+    letters = string.ascii_uppercase
     numbers = string.digits
 
     random_chars = random.sample(letters, 3) + random.sample(numbers, 3)
