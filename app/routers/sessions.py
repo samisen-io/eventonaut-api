@@ -80,9 +80,9 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
     if db_session is None:
         raise HTTPException(status_code=404, detail="Session not found")
     conference=conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id, owner_id=current_user.id)
-    if session.date < conference.start_date or session.date > conference.end_date or session.date < date.today():
+    if session.date is not None and (session.date < conference.start_date or session.date > conference.end_date or session.date < date.today()):
         raise HTTPException(status_code=400, detail="Invalid date")
-    if session.start_time > session.end_time:
+    if session.start_time is not None and session.end_time is not None and session.start_time > session.end_time:
         raise HTTPException(status_code=400, detail="Invalid time")
     return crud.update_session(db=db, session=session, uuid=session.id, owner_id=current_user.id)
 
