@@ -111,9 +111,15 @@ class Attendee(Base):
     last_name = Column(String, index=True)
     email = Column(String, index=True)
     hashed_password = Column(String, index=True)
+    title = Column(String, index=True, default="None")
+    company = Column(String, index=True, default="None")
+    bio = Column(String, index=True, default="None")
+    share_my_profile = Column(Boolean, default=False)
+    share_my_agenda = Column(Boolean, default=False)
+    profile_image_url = Column(String, index=True, default="None")
     is_active = Column(Boolean, default=True)
     thread_id = Column(String, index=True, default="None")
-    profile_image_url = Column(String, index=True, default="None")
+
 
     agenda = relationship("Agenda", back_populates="attendees")
     agenda_session = relationship("AgendaSession", back_populates="attendees")
