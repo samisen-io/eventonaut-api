@@ -113,6 +113,7 @@ class Attendee(Base):
     hashed_password = Column(String, index=True)
     is_active = Column(Boolean, default=True)
     thread_id = Column(String, index=True, default="None")
+    profile_image_url = Column(String, index=True, default="None")
 
     agenda = relationship("Agenda", back_populates="attendees")
     agenda_session = relationship("AgendaSession", back_populates="attendees")
