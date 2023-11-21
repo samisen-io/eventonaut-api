@@ -96,10 +96,11 @@ def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner
         if value is not None:
             setattr(db_session, key, value)
 
-    if session.date < db_session.conference.start_date or session.date > db_session.conference.end_date or session.date < date.today():
+
+    if session.date is not None and (session.date < db_session.conference.start_date or session.date > db_session.conference.end_date or session.date < date.today()):
         raise HTTPException(status_code=400, detail="Invalid date")
     
-    if session.start_time > session.end_time:
+    if session.start_time is not None and session.end_time is not None and session.start_time > session.end_time:
         raise HTTPException(status_code=400, detail="Invalid time")
 
     db_session.updated_on = datetime.now(tz)
