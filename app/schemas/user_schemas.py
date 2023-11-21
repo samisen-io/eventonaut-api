@@ -10,6 +10,14 @@ class UserBase(BaseModel):
     company: str | None = None
     bussiness_type: str
 
+    @validator('email')
+    def email_is_valid(cls, v):
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
+            raise HTTPException(status_code=400, detail="Invalid email")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Email too long")
+        return v
+
     @validator('first_name')
     def first_name_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
@@ -42,6 +50,14 @@ class UserBaseUpdate(BaseModel):
     company: str |None = None
     bussiness_type: str |None = None
     
+    @validator('email')
+    def email_is_valid(cls, v):
+        if v is not None and (v.strip() == "" or v == "string" or v.__contains__(" ")):
+            raise HTTPException(status_code=400, detail="Invalid email")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Email too long")
+        return v
+
     @validator('first_name')
     def first_name_is_not_empty(cls, v):
         if v is not None and (v.strip() == "" or v == "string"):
