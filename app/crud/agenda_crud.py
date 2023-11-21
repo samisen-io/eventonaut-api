@@ -9,6 +9,28 @@ import uuid
 
 # create agenda
 def create_agenda(db: Session, conference_id: str, attendee_id: str, agenda: schemas.AgendaCreate):
+
+    session_ids = []
+    for session_id in agenda.sessions:
+        if session_id not in session_ids:
+            session_ids.append(session_id)
+
+    sessions = []
+    for session_id in session_ids:
+        session = sessions_crud.get_session_by_session_uuid(db, uuid=session_id)
+        conflicting_session = None
+    
+        for s in sessions:
+            if s.date == session.date:
+                if (s.start_time >= session.start_time and s.start_time < session.end_time) or (s.end_time > session.start_time and s.end_time <= session.end_time) or (s.start_time <= session.start_time and s.end_time >= session.end_time):
+                    conflicting_session = s
+                    break
+
+        if conflicting_session:
+            return conflicting_session
+        else:
+            sessions.append(session)
+
     conference = conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
     attendee = attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
     db_agenda = models.Agenda(conference_id=conference.id, name=agenda.name, attendee_id=attendee.id)
@@ -20,13 +42,7 @@ def create_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
     db.commit()
     db.refresh(db_agenda)
 
-    session_ids = []
-    for session_id in agenda.sessions:
-        if session_id not in session_ids:
-            session_ids.append(session_id)
-
-    for session_id in session_ids:
-        session = sessions_crud.get_session_by_session_uuid(db, uuid=session_id)
+    for session in sessions:
         db_agenda_session = models.AgendaSession(agenda_id=db_agenda.id, session_id=session.id, attendee_id=attendee.id, date=session.date, start_time=session.start_time, end_time=session.end_time)
         db_agenda_session.created_on = datetime.now(tz)
         db_agenda_session.updated_on = datetime.now(tz)
@@ -77,6 +93,28 @@ def get_agendas_by_attendee_id_name(db: Session, attendee_id: int, name: str):
 
 # update agenda by conference id and attendee id
 def update_agenda(db: Session, conference_id: str, attendee_id: str, agenda: schemas.AgendaUpdate):
+
+    session_ids = []
+    for session_id in agenda.sessions:
+        if session_id not in session_ids:
+            session_ids.append(session_id)
+
+    sessions = []
+    for session_id in session_ids:
+        session = sessions_crud.get_session_by_session_uuid(db, uuid=session_id)
+        conflicting_session = None
+    
+        for s in sessions:
+            if s.date == session.date:
+                if (s.start_time >= session.start_time and s.start_time < session.end_time) or (s.end_time > session.start_time and s.end_time <= session.end_time) or (s.start_time <= session.start_time and s.end_time >= session.end_time):
+                    conflicting_session = s
+                    break
+
+        if conflicting_session:
+            return conflicting_session
+        else:
+            sessions.append(session)
+
     conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
     attendee=attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
@@ -88,15 +126,8 @@ def update_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
 
     if agenda.sessions is not None:
         db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
-    
-        session_ids = []
 
-        for session_id in agenda.sessions:
-            if session_id not in session_ids:
-                session_ids.append(session_id)
-
-        for session_id in session_ids:
-            session = sessions_crud.get_session_by_session_uuid(db, uuid=session_id)
+        for session in sessions:
             db_agenda_session = models.AgendaSession(agenda_id=db_agenda.id, session_id=session.id, attendee_id=attendee.id, date=session.date, start_time=session.start_time, end_time=session.end_time)
             db_agenda_session.created_on = datetime.now(tz)
             db_agenda_session.updated_on = datetime.now(tz)

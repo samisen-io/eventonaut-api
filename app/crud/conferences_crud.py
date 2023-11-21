@@ -7,6 +7,7 @@ from . import agenda_crud
 from .. import AI_assitant
 from pytz import timezone
 import uuid
+from ..code_generator import generate_unique_string
 
 # get all conferences ordered by start date in descending order
 def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
@@ -17,6 +18,9 @@ def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
+
+def get_conference_by_code(db: Session, code: str):
+    return db.query(models.Conference).filter(models.Conference.code == code).first()
 
 # create conference
 def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
@@ -35,6 +39,15 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db_conference.uuid = str(uuid.uuid4())
     assistant = assistant_schemas.AssistantCreate(model="gpt-4-1106-preview", name=f"ca_{db_conference.uuid}", description="Conference Assistant", instructions="You are conference assitant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.")
     db_conference.assistant_id = AI_assitant.create_assistant(schema=assistant).id
+    
+    while True:
+        try:
+            db_conference.code = generate_unique_string()
+            break
+        except:
+            print("Duplicate code found")
+            continue
+
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
@@ -62,7 +75,8 @@ def delete_conference(db: Session, owner_id: int, uuid: str):
         db.delete(session)
     db.query(models.Settings).filter(models.Settings.conference_id == conference.id, models.Settings.owner_id == owner_id).delete()
     agenda_crud.delete_agenda_by_conference_id(db, conference_id=conference.id)
-    AI_assitant.delete_assistant(assistant_id=conference.assistant_id)
+    if conference.assistant_id is not None or conference.assistant_id != "None":
+        AI_assitant.delete_assistant(assistant_id=conference.assistant_id)
     db.delete(conference)
     db.commit()
     return True

@@ -17,6 +17,8 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db_attendee.uuid = str(uuid.uuid4())
     db_attendee.thread_id = create_thread(thread_schemas.Thread()).id
     db_attendee.is_active = True
+    if attendee.profile_image_url is None or attendee.profile_image_url.strip() == "" or attendee.profile_image_url == "string" or attendee.profile_image_url == "None":
+        attendee.profile_image_url = "None"
     db.add(db_attendee)
     db.commit()
     db.refresh(db_attendee)
@@ -43,11 +45,15 @@ def update_attendee_by_uuid(db: Session, attendee_id: str, attendee: schemas.Att
         "first_name": attendee.first_name,
         "last_name": attendee.last_name,
         "email": attendee.email,
+        "profile_image_url": attendee.profile_image_url if attendee.profile_image_url is not None else "None"
     }
 
     for key, value in updates.items():
         if value is not None:
             setattr(db_attendee, key, value)
+
+    if attendee.profile_image_url is None or attendee.profile_image_url.strip() == "" or attendee.profile_image_url == "string" or attendee.profile_image_url == "None":
+        attendee.profile_image_url = "None"
 
     db.commit()
     db.refresh(db_attendee)
@@ -71,7 +77,7 @@ def delete_attendee_by_uuid(db: Session, attendee_id: str):
 # create attendee conference
 def create_attendee_conference(db: Session, attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate):
     attendee_id = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_conference.attendee_id).first().id
-    conference_id = db.query(models.Conference).filter(models.Conference.uuid == attendee_conference.conference_id).first().id
+    conference_id = db.query(models.Conference).filter(models.Conference.code == attendee_conference.conference_code).first().id
     db_attendee_conference = models.Attendee_Conferences(attendee_id=attendee_id, conference_id=conference_id)
     db_attendee_conference.uuid = str(uuid.uuid4())
     tz = timezone('Asia/Kolkata')
@@ -103,9 +109,9 @@ def get_all_attendee_conferences(db: Session, attendee_id: str, skip: int = 0, l
     return conferences
 
 # delete attendee conference by attendee id and conference id
-def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, attendee_id: str, conference_id: str):
+def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, attendee_id: str, conference_code: str):
     attendee_id = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first().id
-    conference_id = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first().id
+    conference_id = db.query(models.Conference).filter(models.Conference.code == conference_code).first().id
     db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee_id,models.Attendee_Conferences.conference_id == conference_id).delete()
     db.commit()
     return True

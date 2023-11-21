@@ -41,6 +41,12 @@ class ConferenceCreate(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid end date")
         return v  
 
+    @validator('description')
+    def description_is_not_empty(cls, v):
+        if len(v) > 256:
+            raise HTTPException(status_code=400, detail="Description too long")
+        return v
+
 class ConferenceUpdate(BaseModel):
     id: str
     name: str | None = None
@@ -70,6 +76,12 @@ class ConferenceUpdate(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid location")
         if len is not None and len(v) > 256:
             raise HTTPException(status_code=400, detail="Location too long")
+        return v
+    
+    @validator('description')
+    def description_is_not_empty(cls, v):
+        if len(v) > 256:
+            raise HTTPException(status_code=400, detail="Description too long")
         return v
 
 #pydantic model for conference
