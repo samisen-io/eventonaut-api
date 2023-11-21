@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from pytz import timezone
 from .. import models
-from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
+from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas, session_schemas
 from datetime import datetime
 from .. import hashing
 from .. AI_assitant import create_thread
@@ -115,3 +115,11 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, att
     db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee_id,models.Attendee_Conferences.conference_id == conference_id).delete()
     db.commit()
     return True
+
+def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str):
+    conference_id = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first().id
+    attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
+    attendees = []
+    for attendee_conference in attendee_conferences:
+        attendees.append(db.query(models.Attendee).filter(models.Attendee.id == attendee_conference.attendee_id,models.Attendee.share_my_profile == True).first())
+    return attendees
