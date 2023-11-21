@@ -1,5 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+# from app import my_token
 from app import token
 from app.schemas.user_schemas import User
 from .dependencies import get_db

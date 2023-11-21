@@ -1,102 +1,142 @@
+import ast
 import os
-import logging
-from fastapi import APIRouter, Depends, UploadFile
-from app.oauth2 import get_current_active_user
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from app.data_deletion import delete_collection
+from app.file_reader import read_file_return_csv
+from app.schemas import session_schemas as schemas
+from app.schemas import ai_assistant_schemas as ai_schemas
+from app.dependencies import get_db
+from app.file_upload import file_upload
+from app.oauth2 import get_current_active_user, oauth_2_scheme
+from app.routers.sessions import create_session_for_conference
 from app.schemas.user_schemas import User
-from ..data_ingestion import createVectorDb
+from ..data_ingestion import file_path_in_files, write_data_to_json
 from ..data_query import query_document
-
-import csv
-import json
-import pandas as pd
-import requests
-from bs4 import BeautifulSoup
+from ..crud import conferences_crud, attendee_crud
+from sqlalchemy.orm import Session
+from ..AI_assitant import update_assistant, upload_file, delete_file
 
 router = APIRouter(tags=["ai_models"])
 
 @router.post("/query_document")
-async def query_document_endpoint(question: str):
-    answer = query_document(question)
+async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db)):
+    conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
+    if not conference:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    assistant_id = conference.assistant_id
+    attendee = attendee_crud.get_attendee_by_uuid(db, attendee_id)
+    if not attendee:
+        raise HTTPException(status_code=404, detail="Attendee not found")
+    thread_id = attendee.thread_id
+    file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
+    if not file_ids:
+        raise HTTPException(status_code=404, detail="No files found for this conference")
+    print(assistant_id,thread_id, file_ids)
+    answer = query_document(question,assistant_id,thread_id, file_ids)
     return {"answer": answer}
+    # return {"answer": "answer"}
+
+@router.post("/refresh_input_file/")
+async def update_conference(conference_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    write_data_to_json(conference_id,db)
+    file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
+    if not file_ids:
+        raise HTTPException(status_code=404, detail="No files found for this conference")
+    file_id = file_ids[0]
+    # delete from openai assistant api
+    try:
+        delete_file(file_id=file_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    conferences_crud.delete_file_id(db=db, file_id=file_id, conference_id=conference_id, owner_id=current_user.id)
+    # upload it into openai assistant api
+    file_path = os.path.join('app', 'files')
+    file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
+    with open(file_path, 'rb') as file:
+        try:
+            file = upload_file(file)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    try:
+        conferences_crud.upload_file_id(db=db, file_id=file.id, conference_id=conference_id, owner_id=current_user.id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error uploading file: {str(e)}")
+    try:
+        assistant_id = conferences_crud.get_assistant_id_by_conference_id(db, conference_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error getting assistant ID: {str(e)}")
+    assistant_schema = create_assistant_schema(assistant_id, conference_id, file_id)
+    update_assistant(assistant_schema)
+    return {"success": "Sessions file updated successfully."}
 
 @router.post("/upload_session_file/")
-async def upload_session_file(file: UploadFile):
-    
-    app_folder = 'app'
-
-    # Define the path to the vector_db folder within the app folder
-    files_folder = os.path.join(app_folder, 'files')
-
-    # Check if the vector_db folder exists, and create it if it doesn't
-    if not os.path.exists(files_folder):
-        os.makedirs(files_folder)
-    
-    # Check if the uploaded file is a CSV file
-    if file.filename.endswith(".csv"):
-        # Generate a unique file path within the upload folder
-        file_path = os.path.join(files_folder, 'sessions.csv')
-
-        logging.info("Uploading file to %s" % file_path)
-        
-        # Save the uploaded CSV file to disk
-        with open(file_path, "wb") as f:
-            f.write(file.file.read())            
-        
-        logging.info("Creating vector database")
-
-        createVectorDb()
-        
-        logging.info("Vector database created")
-        return {"filename": file.filename}
-    
-    elif file.filename.endswith(".json"): # Check if the uploaded file is a JSON file
-        file_path = os.path.join(files_folder, 'sessions.json')
-        
-        # Save the uploaded JSON file to disk
-        with open(file_path, "wb") as f:
-            f.write(file.file.read())
-            
-        # Load the JSON file into memory
-        with open(file_path, "r") as f:
-            data = json.load(f)
-            
-        csv_file_path = os.path.join(files_folder, 'sessions.csv')
-        
-        # write the json data to a csv file
-        with open(csv_file_path, 'w', newline='', encoding='utf-8') as csv_file:
-            csv_writer = csv.writer(csv_file, delimiter=';')
-            
-            # write the header (filed names) to the csv file
-            header = data[0].keys()
-            csv_writer.writerow(header)
-            
-            # write the values to the csv file
-            for row in data:
-                csv_writer.writerow(row.values())
-                
-        createVectorDb()
-            
-        return {"filename": file.filename}
-    
-    elif file.filename.endswith(".xlsx"):
-        # Handle Excel files
-        file_path = os.path.join(files_folder, 'sessions.xlsx')
-        with open(file_path, "wb") as f:
-            f.write(file.file.read())
-        
-        # Read the Excel file into a DataFrame using pandas
+async def upload_session_file(file: UploadFile,
+                              conference_id: str,
+                              current_user:User = Depends(get_current_active_user),
+                              token: str = Depends(oauth_2_scheme),
+                              db: Session = Depends(get_db)):
+    contents = await file.read()
+    filename = file.filename
+    # read the file and return a csv reader object
+    reader = await read_file_return_csv(contents,filename)
+    headers = reader.fieldnames
+    reader = [{k.lower(): v for k, v in row.items()} for row in reader]
+    my_headers = ['name', 'description', 'location', 'date', 'start_time', 'end_time', 'tags', 'speakers']
+    if set(headers) != set(my_headers):
+        error_message = {
+            "error": "The attributes(Column Names) provided are not correct.", 
+            "expected attributes(Column Names)": my_headers, 
+            "received attributes(Column Names)": headers
+        }
+        raise HTTPException(status_code=400, detail=error_message)  
+    for row in reader:
+        payload = {
+            "name": f"{row['name']}" if row['name'] else None,
+            "start_time": f"{row['start_time']}" if row['start_time'] else None,
+            "end_time": f"{row['end_time']}" if row['end_time'] else None,
+            "location": f"{row['location']}" if row['location'] else None,
+            "date": f"{row['date']}" if row['date'] else None,
+            "description": f"{row['description']}" if row['description'] else None,
+            "conference_id": f"{conference_id}",
+            "speakers": ast.literal_eval(row['speakers']) if row['speakers'] else None,
+            "tags": ast.literal_eval(row['tags']) if row['tags'] else None
+        }
         try:
-            df = pd.read_excel(file_path)
-            
-            # Convert the DataFrame to CSV format
-            csv_file_path = os.path.join(files_folder, 'sessions.csv')
-            df.to_csv(csv_file_path, index=False, sep=';', encoding='utf-8')
-            
-            createVectorDb()
-
-            return {"filename": file.filename}
+            session = schemas.SessionCreate(**payload)
         except Exception as e:
-            return {"error": "Failed to process the Excel file: " + str(e)}
+            raise HTTPException(status_code=400, detail=str(e)+"\n"+str(payload))
+        create_session_for_conference(session,db,current_user)
+    write_data_to_json(conference_id,db)
+    # get the file from the files folder
+    file_path = os.path.join('app', 'files')
+    file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
+    with open(file_path, 'rb') as file:
+        try:
+            file = upload_file(file)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    try:
+        conferences_crud.upload_file_id(db=db, file_id=file.id, conference_id=conference_id, owner_id=current_user.id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error uploading file: {str(e)}")
+    try:
+        assistant_id = conferences_crud.get_assistant_id_by_conference_id(db, conference_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error getting assistant ID: {str(e)}")
+    assistant_schema = create_assistant_schema(assistant_id, conference_id, file.id)
+    update_assistant(assistant_schema)
+    return {'filename':file.filename}
 
-    else:
-        return {"error": "Only CSV, JSON and Excel are allowed."}
+def create_assistant_schema(assistant_id, conference_id, file_id):
+    payload = {
+        "assistant_id": f"{assistant_id}",
+        "model": "gpt-4-1106-preview",
+        "name": f"{conference_id}",
+        "description": "It's a conference assistant. it can help users with their queries related to the sessions of the conference to build their agenda/schedule.",
+        "instructions": "You are conference assistant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.",
+        "tools": [{"type": "code_interpreter"}],
+        "file_ids": [f"{file_id}"],
+        "metadata": {}
+    }
+    assistant = ai_schemas.AssistantUpdate(**payload)
+    return assistant
