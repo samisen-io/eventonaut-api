@@ -1,74 +1,82 @@
+import datetime
+import json
 import os
+import csv
 import csv
 from dotenv import load_dotenv
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.vectorstores import Chroma
 from langchain.embeddings.openai import OpenAIEmbeddings
+from app.routers.sessions import get_sessions_by_conference_id
 
-def find_delimiter(file_path, possible_delimiters):
+load_dotenv()
+api_key = os.environ.get('OPENAI_API_KEY')
+if not api_key:
+    print('OpenAI API key not found in environment variables.')
+    exit()
+embedding_function = OpenAIEmbeddings()
+
+def find_delimiter(file_path):
+    possible_delimiters = [',', ';', '\t']  # Add more as needed
     with open(file_path, 'r', encoding='utf-8') as file:
         first_line = file.readline()
         for delimiter in possible_delimiters:
             if delimiter in first_line:
                 return delimiter
-    return ','  # Default to comma if none of the possible delimiters are found
+    return ','
 
-def createVectorDb():
-    load_dotenv()
-
-    api_key = os.environ.get('OPENAI_API_KEY')
-    if not api_key:
-        print('OpenAI API key not found in environment variables.')
-        exit()
-    
+def file_path_in_files(conference_id):
     app_folder = 'app'
-
-    # # Define the path to the vector_db folder within the app folder
     files_folder = os.path.join(app_folder, 'files')
     if not os.path.exists(files_folder):
-        os.makedirs(files_folder)
-        
-    file_path = os.path.join(files_folder, 'sessions.csv')
+        os.makedirs(files_folder)        
+    file_path = os.path.join(files_folder, 'sessions'+str(conference_id)+'.csv')
+    return file_path
 
-    # List of possible delimiters
-    possible_delimiters = [',', ';', '\t']  # Add more as needed
+def file_path_in_files_json(conference_id):
+    app_folder = 'app'
+    files_folder = os.path.join(app_folder, 'files')
+    if not os.path.exists(files_folder):
+        os.makedirs(files_folder)        
+    file_path = os.path.join(files_folder, 'sessions_'+str(conference_id)+'.json')
+    # Check if file exists, then delete it
+    if os.path.isfile(file_path):
+        os.remove(file_path)
+    return file_path
 
-    # Find the delimiter
-    delimiter = find_delimiter(file_path, possible_delimiters)
-
-    # Read the CSV file using the determined delimiter
-    with open(file_path, 'r', encoding='utf-8') as file:
-        csv_reader = csv.reader(file, delimiter=delimiter)
-        first_row = next(csv_reader)  # Get the first row
-
-    # Assuming the first_row contains the column headers, you can access the header of the first column
-    if first_row:
-        first_column_header = first_row[0]
-        print(f"Column header of the first column: {first_column_header}")
-    else:
-        print("No data found in the CSV file.")
-        
-    loader = CSVLoader(file_path=file_path, encoding='utf-8', source_column=first_column_header, csv_args={
-                'delimiter': delimiter,
-            })
+def write_data_to_json(conference_id, db):
+    file_path = file_path_in_files_json(conference_id)
+    result = get_sessions_by_conference_id(conference_id, db)    
+    json_result = json.dumps([{
+        key: value.strftime("%Y-%m-%d %H:%M:%S") if isinstance(value, datetime.datetime) 
+             else value.strftime("%H:%M:%S") if isinstance(value, datetime.time)
+             else value.strftime("%Y-%m-%d") if isinstance(value, datetime.date)
+             else value 
+        for key, value in row.__dict__.items() 
+        if key != '_sa_instance_state' and key not in ['id', 'created_on', 'conference_id', 'updated_on', 'owner_id']
+    } for row in result])
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(json.loads(json_result), f, indent=4)
     
-    data = loader.load()
-        
-    embedding_function = OpenAIEmbeddings()
-
-    # Define the path to the vector_db folder within the app folder
-    vector_db_folder = os.path.join(app_folder, 'vector_db')
-    if not os.path.exists(vector_db_folder):
-        os.makedirs(vector_db_folder)
-    
-    # save vectors to chromadb
-    conference_id = '12345' # this has to be resolved later
-    persist_directory = os.path.join(vector_db_folder, 'db_'+conference_id)
-    if not os.path.exists(persist_directory):
-        os.makedirs(persist_directory)
-            
-    vectordb = Chroma.from_documents(documents=data, embedding=embedding_function, persist_directory=persist_directory)
-    vectordb.persist()
-
-        
-        
+def write_data_to_csv(conference_id, db):
+    file_path = file_path_in_files_json(conference_id)
+    result = get_sessions_by_conference_id(conference_id, db)
+    with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+        fieldnames = ['id', 'name', 'end_time', 'date', 'conference_id', 'start_time', 'description', 'location', 'owner_id']
+        fieldnames = ['name', 'description', 'location', 'date', 'start_time', 'end_time', 'tags', 'speakers']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for session in result:
+            session_dict = session.__dict__
+            session_dict.pop('_sa_instance_state', None)
+            for field in ['end_time', 'date', 'created_on', 'updated_on', 'start_time']:
+                if field in session_dict:
+                    if isinstance(session_dict[field], datetime.date):
+                        session_dict[field] = session_dict[field].strftime("%Y-%m-%d")
+                    elif isinstance(session_dict[field], datetime.time):
+                        session_dict[field] = session_dict[field].strftime("%H:%M:%S")
+                    elif isinstance(session_dict[field], datetime.datetime):
+                        session_dict[field] = session_dict[field].strftime("%Y-%m-%d %H:%M:%S")
+            session_dict.pop('created_on', None)
+            session_dict.pop('updated_on', None)
+            writer.writerow(session_dict)  

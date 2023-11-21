@@ -7,10 +7,11 @@ from app.schemas.user_schemas import User
 from app.schemas.token_schemas import TokenInput
 from ..crud import users_crud
 from ..dependencies import get_db
-from app.token import Token, create_access_token
+from app.my_token import Token, create_access_token
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from ..token import create_refresh_token, invalidate_refresh_token, token_cache
+# from ..my_token import token_cache
 
 from app.oauth2 import get_current_active_user, get_current_user_RT, oauth_2_scheme
 
