@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, conference_schemas
-from ..crud import attendee_crud as crud, conferences_crud
+from ..crud import attendee_crud as crud, conferences_crud, sessions_crud
 from email_validator import validate_email, EmailNotValidError
 
 router = APIRouter(tags=["attendee"])
@@ -35,6 +35,12 @@ def get_attendee_by_id(attendee_id: str, db: Session = Depends(get_db)):
     if not db_attendee:
         raise HTTPException(status_code=404, detail="Attendee not found")
     return db_attendee
+
+@router.get("/attendee/profiles/", response_model=list[schemas.Attendee])
+def get_attendee_profiles_for_session_id(conference_id: str, db: Session = Depends(get_db)):
+    if not conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id):
+        raise HTTPException(status_code=400, detail="Conference not found")
+    return crud.get_all_attendee_profiles_by_conference_id(db=db, conference_id=conference_id)
 
 # update attendee by email
 @router.put("/attendee", response_model=schemas.Attendee)
