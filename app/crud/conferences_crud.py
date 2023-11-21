@@ -125,3 +125,7 @@ def get_file_ids_by_conference_id(db, conference_id):
     files = db.query(models.Conference_Files).filter(models.Conference_Files.conference_id == conference.id).all()
     file_ids = [file.file_id for file in files]
     return file_ids
+
+def get_assistant_id_by_conference_id(db, conference_id):
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
+    return conference.assistant_id

@@ -51,8 +51,6 @@ def check_run_status_and_retrieve(thread_id, run):
         time.sleep(1)
 
 def query_document(question,assistant_id,thread_id,file_id):
-    # get file id
-    # file_id = ["file-soKMG7cFuUgkpJuu7Wartd2h"]
     # create message
     message = create_message(thread_id, question, file_id)
     # run the assistant
@@ -65,5 +63,6 @@ def query_document(question,assistant_id,thread_id,file_id):
     )
     data = messages.data
     data_list = list(data)
-    return  data_list[0].content[0].text.value
-    # return "hello"
+    if not data_list or not data_list[0].content or not data_list[0].content[0].text:
+        raise Exception("No messages found in the thread or the first message doesn't have any content or text")
+    return data_list[0].content[0].text.value

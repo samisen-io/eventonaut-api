@@ -44,29 +44,6 @@ def file_path_in_files_json(conference_id):
         os.remove(file_path)
     return file_path
 
-def createVectorDb(conference_id):
-    file_path = file_path_in_files(conference_id)
-    delimiter = find_delimiter(file_path)
-    with open(file_path, 'r', encoding='utf-8') as file:
-        csv_reader = csv.reader(file, delimiter=delimiter)
-        first_row = next(csv_reader)
-    # Assuming the first_row contains the column headers, you can access the header of the first column
-    if first_row:
-        first_column_header = first_row[0]
-        print(f"Column header of the first column: {first_column_header}")
-    else:
-        print("No data found in the CSV file.")
-    loader = CSVLoader(file_path=file_path, encoding='utf-8', source_column=first_column_header, csv_args={'delimiter': delimiter,})
-    data = loader.load()
-    # Define the path to the vector_db folder within the app folder
-    vector_db_folder = os.path.join('app', 'vector_db')
-    if not os.path.exists(vector_db_folder):
-        os.makedirs(vector_db_folder)
-    if(len(conference_id)<3):
-        conference_id = '0'*(3-len(conference_id))+conference_id        
-    vectordb = Chroma.from_documents(documents=data, embedding=embedding_function, persist_directory=vector_db_folder, collection_name=conference_id)
-    vectordb.persist()
-
 def write_data_to_json(conference_id, db):
     file_path = file_path_in_files_json(conference_id)
     result = get_sessions_by_conference_id(conference_id, db)    
