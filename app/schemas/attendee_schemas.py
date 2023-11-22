@@ -71,8 +71,17 @@ class AttendeeBase(BaseModel):
         return v
     
 #pydantic model for attendee create
-class AttendeeCreate(AttendeeBase):
+class AttendeeCreate(BaseModel):
+    email: str
     hashed_password: str
+
+    @validator('email')
+    def email_is_not_empty(cls, v):
+        if v is None or v.strip() == "" or v == "string":
+            raise HTTPException(status_code=400, detail="Invalid email")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Email too long")
+        return v
 
     @validator('hashed_password')
     def hashed_password_is_not_empty(cls, v):
@@ -107,6 +116,7 @@ class AttendePassword(BaseModel):
 
 class AttendeeUpdate(BaseModel):
     id: str
+    email: str | None = None
     first_name: str | None = None
     last_name: str | None = None
     title: str | None = None
@@ -120,6 +130,14 @@ class AttendeeUpdate(BaseModel):
     def id_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid id")
+        return v
+
+    @validator('email')
+    def email_is_not_empty(cls, v):
+        if v.strip() == "" or v == "string":
+            raise HTTPException(status_code=400, detail="Invalid email")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Email too long")
         return v
 
     @validator('first_name')

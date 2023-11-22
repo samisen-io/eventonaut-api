@@ -20,6 +20,6 @@ class AttendeeConferenceCreate(BaseModel):
 class AttendeeConference(BaseModel):
     uuid: str = Field(serialization_alias='id')
     attendee_id: str
-    conference_id: list[str] = []
+    conference: dict
     class Config:
         orm_mode = True
