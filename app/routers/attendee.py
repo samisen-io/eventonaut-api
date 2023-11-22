@@ -8,7 +8,7 @@ from email_validator import validate_email, EmailNotValidError
 router = APIRouter(tags=["attendee"])
 
 # create attendee
-@router.post("/attendee", response_model=schemas.Attendee)
+@router.post("/attendee/signup", response_model=schemas.Attendee)
 def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_db)):
     try:
         valid = validate_email(attendee.email)
