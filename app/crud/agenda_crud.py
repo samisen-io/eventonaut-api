@@ -80,7 +80,8 @@ def get_agenda_by_conference_uuid_attendee_uuid(db: Session, conference_id: str,
     conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
     attendee=attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
-
+    if db_agenda is None:
+        return None
     agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
     for db_agenda_session in db_agenda.agenda_session:
         session = sessions_crud.get_session_by_session_uuid(db, uuid=db_agenda_session.session.uuid)
