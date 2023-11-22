@@ -44,7 +44,6 @@ def update_attendee_by_uuid(db: Session, attendee_id: str, attendee: schemas.Att
     updates = {
         "first_name": attendee.first_name,
         "last_name": attendee.last_name,
-        "email": attendee.email,
         "profile_image_url": attendee.profile_image_url if attendee.profile_image_url is not None else "None"
     }
 

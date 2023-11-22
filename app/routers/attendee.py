@@ -45,19 +45,10 @@ def get_attendee_profiles_for_session_id(conference_id: str, db: Session = Depen
 # update attendee by email
 @router.put("/attendee", response_model=schemas.Attendee)
 def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db)):
-    if attendee.email is None and attendee.first_name is None and attendee.last_name is None:
+    if attendee.first_name is None and attendee.last_name is None:
         raise HTTPException(status_code=400, detail="Invalid request body")
     if not crud.get_attendee_by_uuid(db, attendee_id=attendee.id):
         raise HTTPException(status_code=400, detail="Attendee not found")
-    if attendee.email is not None:
-        try:
-            valid = validate_email(attendee.email)
-            attendee.email = valid.normalized.lower()
-        except EmailNotValidError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        db_attendee = crud.get_attendee_by_email(db, email=attendee.email)
-        if db_attendee and db_attendee.uuid != attendee.id:
-            raise HTTPException(status_code=400, detail="Email already registered")
     return crud.update_attendee_by_uuid(db=db, attendee_id=attendee.id, attendee=attendee)
 
 # update attende password by id
