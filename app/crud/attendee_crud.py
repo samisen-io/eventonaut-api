@@ -147,9 +147,11 @@ def create_attendee_conference(db: Session, attendee_conference: attendee_confer
 
 # get attendee conference by attendee id and conference id
 def get_attendee_conference_by_attendee_id_and_conference_id(db: Session, attendee_id: str, conference_id: str):
-    attendee_id = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first().id
-    conference_id = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first().id
-    return db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee_id).filter(models.Attendee_Conferences.conference_id == conference_id).first()
+    attendee = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
+    if attendee is None or conference is None:
+        return None
+    return db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee.id).filter(models.Attendee_Conferences.conference_id == conference.id).first()
 
 # get all attendee conferences
 def get_all_attendee_conferences(db: Session, attendee_id: str, skip: int = 0, limit: int = 100):
