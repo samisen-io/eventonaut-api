@@ -12,7 +12,7 @@ class User(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    email = Column(String, index=True)
+    email = Column(String, index=True, unique=True)
     first_name = Column(String, index=True, default="None")
     last_name = Column(String, index=True, default="None")
     company = Column(String, index=True, default="None")

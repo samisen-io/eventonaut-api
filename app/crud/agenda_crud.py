@@ -32,7 +32,7 @@ def create_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
             sessions.append(session)
 
     conference = conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
-    attendee = attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
+    attendee = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
     db_agenda = models.Agenda(conference_id=conference.id, name=agenda.name, attendee_id=attendee.id)
     tz = timezone('Asia/Kolkata')
     db_agenda.created_on = datetime.now(tz)
@@ -71,7 +71,7 @@ def get_all_agenda(db: Session, offset: int = 0, limit: int = 100):
 
 def get_agenda(db: Session, conference_id: str, attendee_id: str):
     conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
-    attendee=attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
+    attendee=db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
     return db_agenda
 

@@ -12,7 +12,7 @@ router = APIRouter(tags=["agenda"])
 def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db)):
     if attendee_crud.get_attendee_by_uuid(db, attendee_id=agenda.attendee_id) is None:
         raise HTTPException(status_code=400, detail="Attendee not found")
-    if conferences_crud.get_conference_by_conference_uuid(db, uuid=agenda.conference_id) is None:
+    if attendee_crud.get_attendee_conference_by_attendee_id_and_conference_id(db, attendee_id=agenda.attendee_id, conference_id=agenda.conference_id) is None:
         raise HTTPException(status_code=400, detail="Conference not found")
     db_agenda = crud.get_agenda(db, conference_id=agenda.conference_id, attendee_id=agenda.attendee_id)
     if db_agenda:

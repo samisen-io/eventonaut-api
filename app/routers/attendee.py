@@ -1,14 +1,14 @@
 from fastapi import APIRouter, HTTPException, Depends
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
-from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, conference_schemas
-from ..crud import attendee_crud as crud, conferences_crud, sessions_crud
+from ..schemas import attendee_schemas as schemas
+from ..crud import attendee_crud as crud
 from email_validator import validate_email, EmailNotValidError
 
 router = APIRouter(tags=["attendee"])
 
 # create attendee
-@router.post("/attendee/signup", response_model=schemas.Attendee)
+@router.post("/attendee/signup")
 def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_db)):
     try:
         valid = validate_email(attendee.email)

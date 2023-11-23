@@ -48,7 +48,7 @@ def get_attendees(db: Session, skip: int = 0, limit: int = 100):
 
 # get attendee by email
 def get_attendee_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email == email,models.User.role == 'attendee').first()
+    return db.query(models.User).filter(models.User.email == email).first()
 
 # get attendee by id
 def get_attendee_by_uuid(db: Session, attendee_id: str):
