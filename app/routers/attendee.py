@@ -79,7 +79,7 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
     return crud.create_attendee_conference(db=db, attendee_conference=attendee_conference)
 
 # get all attendee conferences
-@router.get("/attendee/conference/{attendee_id}", response_model=list[conference_schemas.Conference])
+@router.get("/attendee/conference/{attendee_id}")
 def get_all_attendee_conferences(attendee_id: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     if not crud.get_attendee_by_uuid(db, attendee_id=attendee_id):
         raise HTTPException(status_code=400, detail="Attendee not found")

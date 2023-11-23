@@ -18,8 +18,8 @@ def create_message(thread_id, question, file_id):
     message = client.beta.threads.messages.create(
         thread_id=thread_id,
         role = "user",
-        content = question,
-        file_ids = file_id
+        content = question
+        # file_ids = file_id
     )
     return message
 

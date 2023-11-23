@@ -77,6 +77,8 @@ def delete_conference(db: Session, owner_id: int, uuid: str):
     agenda_crud.delete_agenda_by_conference_id(db, conference_id=conference.id)
     if conference.assistant_id is not None and conference.assistant_id != "None":
         AI_assitant.delete_assistant(assistant_id=conference.assistant_id)
+    db.query(models.Conference_Files).filter(models.Conference_Files.conference_id == conference.id).delete()
+    db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).delete()
     db.delete(conference)
     db.commit()
     return True
