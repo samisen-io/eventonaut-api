@@ -24,14 +24,14 @@ async def query_document_endpoint(question: str, attendee_id:str, conference_id:
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
     assistant_id = conference.assistant_id
-    attendee = attendee_crud.get_attendee_by_uuid(db, attendee_id)
-    if not attendee:
-        raise HTTPException(status_code=404, detail="Attendee not found")
-    thread_id = attendee.thread_id
+    # attendee = attendee_crud.get_attendee_by_uuid(db, attendee_id)
+    # if not attendee:
+    #     raise HTTPException(status_code=404, detail="Attendee not found")
+    # thread_id = attendee.thread_id
+    thread_id = 'thread_1KwlOxdppPQk3QT0NdY7CboK'
     file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
     if not file_ids:
         raise HTTPException(status_code=404, detail="No files found for this conference")
-    thread_id = 'thread_YXDuZLsKU3hKKCHJ44Rxk2Qm'
     print(assistant_id,thread_id, file_ids)
     answer = query_document(question,assistant_id,thread_id, file_ids)
     return {"answer": answer}
