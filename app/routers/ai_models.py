@@ -24,10 +24,11 @@ async def query_document_endpoint(question: str, attendee_id:str, conference_id:
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
     assistant_id = conference.assistant_id
-    attendee = attendee_crud.get_attendee_by_uuid(db, attendee_id)
-    if not attendee:
-        raise HTTPException(status_code=404, detail="Attendee not found")
-    thread_id = attendee.thread_id
+    # attendee = attendee_crud.get_attendee_by_uuid(db, attendee_id)
+    # if not attendee:
+    #     raise HTTPException(status_code=404, detail="Attendee not found")
+    # thread_id = attendee.thread_id
+    thread_id = 'thread_1KwlOxdppPQk3QT0NdY7CboK'
     file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
     if not file_ids:
         raise HTTPException(status_code=404, detail="No files found for this conference")
@@ -52,11 +53,11 @@ async def update_conference(conference_id: str, current_user: User = Depends(get
     # upload it into openai assistant api
     file_path = os.path.join('app', 'files')
     file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
-    with open(file_path, 'rb') as file:
-        try:
-            file = upload_file(file)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+    # with open(file_path, 'rb') as file:
+    try:
+        file = upload_file(file_path=file_path)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     try:
         conferences_crud.upload_file_id(db=db, file_id=file.id, conference_id=conference_id, owner_id=current_user.id)
     except Exception as e:
@@ -65,7 +66,7 @@ async def update_conference(conference_id: str, current_user: User = Depends(get
         assistant_id = conferences_crud.get_assistant_id_by_conference_id(db, conference_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error getting assistant ID: {str(e)}")
-    assistant_schema = create_assistant_schema(assistant_id, conference_id, file_id)
+    assistant_schema = create_assistant_schema(assistant_id, conference_id, file.id)
     update_assistant(assistant_schema)
     return {"success": "Sessions file updated successfully."}
 
@@ -110,11 +111,11 @@ async def upload_session_file(file: UploadFile,
     # get the file from the files folder
     file_path = os.path.join('app', 'files')
     file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
-    with open(file_path, 'rb') as file:
-        try:
-            file = upload_file(file)
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
+    # with open(file_path, 'rb') as file:
+    try:
+        file = upload_file(file_path)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     try:
         conferences_crud.upload_file_id(db=db, file_id=file.id, conference_id=conference_id, owner_id=current_user.id)
     except Exception as e:

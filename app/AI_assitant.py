@@ -60,10 +60,15 @@ def delete_thread(thread_id: str):
     global client
     return client.beta.threads.delete(thread_id)
 
-def upload_file(file: UploadFile):
+# def upload_file(file: UploadFile):
+def upload_file(file_path):
     global client
 
-    uploaded_file = client.files.create(file=file, purpose="assistants")
+    # uploaded_file = client.files.create(file=file, purpose="assistants")
+    uploaded_file = client.files.create(
+        file=open(file_path, 'rb'),
+        purpose='assistants'
+    )
     return uploaded_file
 
 def delete_file(file_id: str):

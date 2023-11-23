@@ -157,6 +157,8 @@ def get_attendee_conference_by_attendee_id_and_conference_id(db: Session, attend
 def get_all_attendee_conferences(db: Session, attendee_id: str, skip: int = 0, limit: int = 100):
     attendee_id = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first().id
     attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee_id).offset(skip).limit(limit).all()
+    if attendee_conferences is None:
+        return None
     conferences = []
     for attendee_conference in attendee_conferences:
         conferences.append(db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id).first())
