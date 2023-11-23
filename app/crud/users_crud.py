@@ -16,6 +16,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     if user.company is None or user.company == "string" or user.company == "None" or user.company.strip() == "":
         db_user.company = "None"
     db_user.uuid = str(uuid.uuid4())
+    db_user.role = "organizer"
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -27,11 +28,11 @@ def get_user(db: Session, user_id: int):
 
 # get user by email ignore case
 def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email.ilike(email)).first()
+    return db.query(models.User).filter(models.User.email.ilike(email), models.User.role == 'organizer').first()
 
 # get user by email and password
 def get_user_by_email_and_password(db: Session, email: str, password: str):
-    user = db.query(models.User).filter(models.User.email.ilike(email)).first()
+    user = db.query(models.User).filter(models.User.email.ilike(email), models.User.role == 'organizer').first()
     if user is None:
         return False
     if hashing.verify_password(password, user.hashed_password):

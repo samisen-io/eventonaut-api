@@ -2,7 +2,7 @@ from fastapi import Depends, FastAPI
 from app.oauth2 import get_current_active_user
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant
+from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference
 
 app = FastAPI()
 
@@ -22,6 +22,7 @@ app.include_router(settings.router)
 # app.include_router(ai_models.router, dependencies=[Depends(get_current_active_user)])
 app.include_router(ai_models.router)
 app.include_router(attendee.router)
+app.include_router(attendee_conference.router)
 app.include_router(agenda.router)
 app.include_router(assistant.router)
 app.include_router(otp.router)

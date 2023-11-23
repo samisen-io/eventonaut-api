@@ -42,7 +42,7 @@ class UserBase(BaseModel):
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Bussiness type too long")
         return v
-
+    
 class UserBaseUpdate(BaseModel):
     email: str | None = None
     first_name: str | None = None
