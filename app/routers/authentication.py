@@ -36,14 +36,14 @@ def split_comma_separated_string(s):
 @router.post("/login", response_model=Token)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends()):
     form_data.username = form_data.username.lower().strip()
-    scopes = split_comma_separated_string(form_data.scope) if form_data.scope else None
+    grant_types = split_comma_separated_string(form_data.grant_type) if form_data.grant_type else None
 
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
-    if not scopes or user.role not in scopes:#or len(scopes) != 1:
+    if not grant_types or user.role not in grant_types:#or len(scopes) != 1:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect scope",
                             headers={"WWW-Authenticate": "Bearer"})
