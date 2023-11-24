@@ -9,7 +9,7 @@ from app.dependencies import get_db
 from app.file_upload import file_upload
 from app.oauth2 import get_current_active_user, oauth_2_scheme
 from app.routers.sessions import create_session_for_conference
-from app.schemas.user_schemas import User
+from app.schemas.user_schemas import UserAuthentication as User
 from ..data_ingestion import file_path_in_files, write_data_to_json
 from ..data_query import query_document
 from ..crud import conferences_crud, attendee_crud

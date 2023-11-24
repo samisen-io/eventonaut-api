@@ -128,3 +128,12 @@ class User(UserBase):
     is_active: bool
     class Config:
         orm_mode = True
+        
+class UserAuthentication(UserBase):
+    uuid: str = Field(serialization_alias="id")
+    conferences: list[Conference] = []
+    role: str
+    is_active: bool
+    class Config:
+        orm_mode = True
+        

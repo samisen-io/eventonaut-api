@@ -3,11 +3,11 @@ from datetime import timedelta
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from app.schemas.user_schemas import User
+from app.schemas.user_schemas import UserAuthentication as User
 from app.schemas.token_schemas import TokenInput
 from ..crud import users_crud
 from ..dependencies import get_db
-from app.my_token import Token, create_access_token
+from app.token import Token, create_access_token
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from ..token import create_refresh_token, invalidate_refresh_token, token_cache
@@ -26,6 +26,8 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 def authenticate_user(db: Session, username: str, password: str, token_jti: str):
     user =  users_crud.get_user_by_email_and_password(db=db,email=username, password=password)
+    if user.is_active is False:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     if token_jti in token_cache:
         raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
     return user
@@ -42,7 +44,7 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
     refresh_token = create_refresh_token(data={"sub": user.email}, expires_delta=refresh_token_expires)
     rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti}, expires_delta=access_token_expires)
+    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "grant_type": user.role}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
 
 @router.get("/print_something")

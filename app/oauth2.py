@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 # from app import my_token
 from app import token
-from app.schemas.user_schemas import User
+from app.schemas.user_schemas import UserAuthentication as User
 from .dependencies import get_db
 from .crud import users_crud
 from sqlalchemy.orm import Session
@@ -23,6 +23,14 @@ async def get_current_active_user(current_user: User = Depends(get_current_user)
     if current_user.is_active is False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return current_user
+
+async def get_current_active_organizer(current_user: User = Depends(get_current_active_user)):
+    if current_user.role != "organizer":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is not an organizer")
+    
+async def get_current_active_attendee(current_user: User = Depends(get_current_active_user)):
+    if current_user.role != "attendee":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is not an attendee")
 
 def get_current_user_RT(data: str, db):
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
