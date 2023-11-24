@@ -9,7 +9,7 @@ from app.dependencies import get_db
 from app.file_upload import file_upload
 from app.oauth2 import get_current_active_user, oauth_2_scheme
 from app.routers.sessions import create_session_for_conference
-from app.schemas.user_schemas import User
+from app.schemas.user_schemas import UserAuthentication as User
 from ..data_ingestion import file_path_in_files, write_data_to_json
 from ..data_query import query_document
 from ..crud import conferences_crud, attendee_crud
@@ -19,7 +19,7 @@ from ..AI_assitant import update_assistant, upload_file, delete_file
 router = APIRouter(tags=["ai_models"])
 
 @router.post("/query_document")
-async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db)):
+async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")

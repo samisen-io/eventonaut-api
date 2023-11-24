@@ -1,13 +1,13 @@
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordRequestForm
-from app.schemas.user_schemas import User
+from app.schemas.user_schemas import UserAuthentication as User
 from app.schemas.token_schemas import TokenInput
 from ..crud import users_crud
 from ..dependencies import get_db
-from app.my_token import Token, create_access_token
+from app.token import Token, create_access_token
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from ..token import create_refresh_token, invalidate_refresh_token, token_cache
@@ -33,20 +33,31 @@ def authenticate_user(db: Session, username: str, password: str, token_jti: str)
 @router.post("/login", response_model=Token)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends()):
     form_data.username = form_data.username.lower().strip()
+    scopes = form_data.scopes
+    scope = form_data.scopes[0].lower()
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
+    if user.role != scope: #or len(scopes) != 1:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail="Incorrect scope",
+                            headers={"WWW-Authenticate": "Bearer"})
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
     refresh_token = create_refresh_token(data={"sub": user.email}, expires_delta=refresh_token_expires)
     rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti}, expires_delta=access_token_expires)
+    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": [user.role]}, expires_delta=access_token_expires)
     return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
 
-@router.get("/print_something")
-def print_something(current_user: User = Depends(get_current_active_user)):
+@router.get("/print_something_attendee")
+def print_something(current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+    return {"message": "Hello World"}
+
+#new
+@router.get("/print_something_organizer")
+def print_something2(current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     return {"message": "Hello World"}
     
 @router.post("/refresh_token", response_model = Token)
