@@ -28,11 +28,11 @@ def get_user(db: Session, user_id: int):
 
 # get user by email ignore case
 def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email.ilike(email), models.User.role == 'organizer').first()
+    return db.query(models.User).filter(models.User.email.ilike(email)).first()
 
 # get user by email and password
 def get_user_by_email_and_password(db: Session, email: str, password: str):
-    user = db.query(models.User).filter(models.User.email.ilike(email), models.User.role == 'organizer').first()
+    user = db.query(models.User).filter(models.User.email.ilike(email)).first()
     if user is None:
         return False
     if hashing.verify_password(password, user.hashed_password):
