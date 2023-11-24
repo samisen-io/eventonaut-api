@@ -30,17 +30,20 @@ def authenticate_user(db: Session, username: str, password: str, token_jti: str)
         raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
     return user
 
+def split_comma_separated_string(s):
+    return s.split(',')
+
 @router.post("/login", response_model=Token)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends()):
     form_data.username = form_data.username.lower().strip()
-    scopes = form_data.scopes
-    scope = form_data.scopes[0].lower()
+    scopes = split_comma_separated_string(form_data.scope) if form_data.scope else None
+
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
-    if user.role != scope: #or len(scopes) != 1:
+    if not scopes or user.role not in scopes:#or len(scopes) != 1:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect scope",
                             headers={"WWW-Authenticate": "Bearer"})
