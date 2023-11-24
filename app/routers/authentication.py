@@ -30,13 +30,10 @@ def authenticate_user(db: Session, username: str, password: str, token_jti: str)
         raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
     return user
 
-def split_comma_separated_string(s):
-    return s.split(',')
-
 @router.post("/login", response_model=Token)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends()):
     form_data.username = form_data.username.lower().strip()
-    scopes = split_comma_separated_string(form_data.scope) if form_data.scope else None
+    scopes = form_data.scopes if form_data.scopes else None
 
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
     if not user:
