@@ -19,7 +19,7 @@ from ..AI_assitant import update_assistant, upload_file, delete_file
 router = APIRouter(tags=["ai_models"])
 
 @router.post("/query_document")
-async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db)):
+async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")

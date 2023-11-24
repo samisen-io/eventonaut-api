@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List
 
 class Token(BaseModel):
     access_token: str
@@ -7,6 +8,7 @@ class Token(BaseModel):
     
 class TokenData(BaseModel):
     username: str or None = None
+    scopes: List[str] = []
     
 class TokenInput(BaseModel):
     token: str
