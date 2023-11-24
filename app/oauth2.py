@@ -23,7 +23,6 @@ def get_current_user(
                                           detail="Could not validate credentials",
                                           headers={"WWW-Authenticate": "Bearer"})
     token_data = token.verify_token(data, credentials_exception) 
-    print("hello")
     user = users_crud.get_user_by_email(db, email=token_data.username)
     if user is None:
         raise credentials_exception
