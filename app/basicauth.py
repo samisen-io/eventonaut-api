@@ -1,0 +1,32 @@
+import secrets
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+
+security = HTTPBasic()
+
+user_credentials = {
+    "client_id": "foo",
+    "client_secret": "bar",
+}
+
+def basic_auth(credentials: HTTPBasicCredentials = Depends(security)):
+    global user_credentials
+    current_username_bytes = credentials.username.encode("utf-8")
+    correct_username_bytes = user_credentials["client_id"].encode("utf-8")
+    is_username_correct = secrets.compare_digest(
+        current_username_bytes, correct_username_bytes
+    )
+
+    current_password_bytes = credentials.password.encode("utf-8")
+    correct_password_bytes = user_credentials["client_secret"].encode("utf-8")
+    is_password_correct = secrets.compare_digest(
+        current_password_bytes, correct_password_bytes
+    )
+
+    if is_username_correct and is_password_correct:
+        return True
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Incorrect email or password",
+        headers={"WWW-Authenticate": "Basic"},
+    )

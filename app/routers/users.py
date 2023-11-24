@@ -5,13 +5,14 @@ from ..schemas import user_schemas as schemas
 from ..crud import users_crud as crud
 from ..dependencies import get_db
 from email_validator import validate_email, EmailNotValidError
-
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from .. import basicauth
 
 router = APIRouter(tags=["users"])
 
 
 @router.post("/users", response_model=schemas.User)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:
         valid = validate_email(user.email)
         user.email = valid.normalized.lower()
