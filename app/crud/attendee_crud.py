@@ -61,6 +61,17 @@ def get_attendee_by_uuid(db: Session, attendee_id: str):
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     return attendee
 
+# get attendee by user id
+def get_attendee_by_user_id(db: Session, user_id: int):
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if db_user is None:
+        return None
+    db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == user_id).first()
+    if db_attendee is None:
+        return None
+    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    return attendee
+
 # update attendee by id
 def update_attendee_by_uuid(db: Session, attendee_id: str, attendee: schemas.AttendeeBase):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
