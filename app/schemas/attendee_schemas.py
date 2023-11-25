@@ -3,6 +3,8 @@ from fastapi import HTTPException
 
 #pydantic model for attendeebase
 class AttendeeBase(BaseModel):
+    id: int
+    uuid: str
     email: str
     first_name: str | None = None
     last_name: str | None = None
