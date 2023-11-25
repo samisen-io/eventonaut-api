@@ -40,10 +40,12 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
+        
     if not scopes or user.role not in scopes:#or len(scopes) != 1:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect scope",
                             headers={"WWW-Authenticate": "Bearer"})
+        
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
     refresh_token = create_refresh_token(data={"sub": user.email}, expires_delta=refresh_token_expires)

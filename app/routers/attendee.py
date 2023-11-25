@@ -36,6 +36,14 @@ def get_attendee_by_id(attendee_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Attendee not found")
     return db_attendee
 
+# get attendee by userId
+@router.get("/attendee/user/{user_id}", response_model=schemas.Attendee)
+def get_attendee_by_user_id(user_id: int, db: Session = Depends(get_db)):
+    db_attendee = crud.get_attendee_by_user_id(db, user_id=user_id)
+    if not db_attendee:
+        raise HTTPException(status_code=404, detail="Attendee not found")
+    return db_attendee
+
 # update attendee by email
 @router.put("/attendee")
 def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db)):
