@@ -188,7 +188,6 @@ class AttendeeUpdate(BaseModel):
 
 #pydantic model for attendee
 class Attendee(AttendeeBase):
-    uuid: str = Field(serialization_alias="id")
     is_active: bool
     class Config:
         orm_mode = True
