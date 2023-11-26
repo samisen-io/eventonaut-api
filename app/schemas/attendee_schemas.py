@@ -1,8 +1,10 @@
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
+from typing import Optional
 
 #pydantic model for attendeebase
 class AttendeeBase(BaseModel):
+    id: Optional[int] = None
     email: str
     first_name: str | None = None
     last_name: str | None = None
@@ -188,7 +190,6 @@ class AttendeeUpdate(BaseModel):
 
 #pydantic model for attendee
 class Attendee(AttendeeBase):
-    uuid: str = Field(serialization_alias="id")
     is_active: bool
     class Config:
         orm_mode = True
