@@ -37,7 +37,7 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db_conference.created_on = datetime.now(tz)
     db_conference.updated_on = datetime.now(tz)
     db_conference.uuid = str(uuid.uuid4())
-    assistant = assistant_schemas.AssistantCreate(model="gpt-4-1106-preview", name=f"ca_{db_conference.uuid}", description="Conference Assistant", instructions="You are conference assitant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.")
+    assistant = assistant_schemas.AssistantCreate(model="gpt-3.5-turbo-1106", name=f"ca_{db_conference.uuid}", description="Conference Assistant", instructions="You are conference assitant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.", tools=[{"type": "code_interpreter"}])
     db_conference.assistant_id = AI_assitant.create_assistant(schema=assistant).id
     
     while True:

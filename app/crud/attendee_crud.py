@@ -34,6 +34,12 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     return attendee
 
+def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
+    db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
+    if db_attendee is None:
+        return None
+    return db_attendee.thread_id
+
 # get all attendees
 def get_attendees(db: Session, skip: int = 0, limit: int = 100):
     db_attendees = db.query(models.Attendee).offset(skip).limit(limit).all()
