@@ -61,20 +61,19 @@ def get_attendee_by_uuid(db: Session, attendee_id: str):
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     return attendee
 
-# get attendee by user id
-def get_attendee_by_user_id(db: Session, user_id: int):
-    db_user = db.query(models.User).filter(models.User.id == user_id).first()
-    if db_user is None:
-        return None
-    db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == user_id).first()
+def get_attendee_by_id(db: Session, attendee_id: int):
+    db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     if db_attendee is None:
+        return None
+    db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id).first()
+    if db_user is None:
         return None
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     return attendee
 
 # update attendee by id
-def update_attendee_by_uuid(db: Session, attendee_id: str, attendee: schemas.AttendeeBase):
-    db_attendee = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
+def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendeeBase):
+    db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id).first()
     if db_attendee is None or db_user is None:
         return None
@@ -110,12 +109,14 @@ def update_attendee_by_uuid(db: Session, attendee_id: str, attendee: schemas.Att
     return attendee
 
 # update attendee password by id
-def update_attendee_password_by_uuid(db: Session, attendee_id: str, attendee: schemas.AttendePassword):
-    db_attendee = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
+def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendePassword):
+    db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id).first()
     if db_attendee is None or db_user is None:
         return None
-    db_user.hashed_password = hashing.get_password_hash(attendee.hashed_password)
+    if not hashing.verify_password(attendee.old_password, db_user.hashed_password):
+        return None
+    db_user.hashed_password = hashing.get_password_hash(attendee.new_password)
     db_user.updated_on = datetime.now(timezone('Asia/Kolkata'))
     db.commit()
     db.refresh(db_user)
@@ -123,12 +124,16 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: str, attendee: sc
     return attendee
 
 # delete attendee by id
-def delete_attendee_by_uuid(db: Session, attendee_id: str):
-    db_attendee = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
-    db.query(models.User).filter(models.User.id == db_attendee.user_id).delete()
+def delete_attendee_by_uuid(db: Session, attendee_id: int):
+    db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
+    db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id).first()
     if db_attendee.thread_id != "None" and db_attendee.thread_id is not None:
         delete_thread(db_attendee.thread_id)
+    db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == db_attendee.id).delete()
+    db.query(models.Agenda).filter(models.Agenda.attendee_id == db_attendee.id).delete()
+    db.query(models.AgendaSession).filter(models.AgendaSession.attendee_id == db_attendee.id).delete()
     db.delete(db_attendee)
+    db.delete(db_user)
     db.commit()
     return True
 
