@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from app.oauth2 import get_current_active_user
 from .. import AI_assitant as assistant
 from ..schemas import ai_assistant_schemas as schemas
 import re

@@ -1,9 +1,12 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Security
+
+from app.oauth2 import get_current_active_user
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
 from ..schemas import attendee_schemas as schemas
 from ..crud import attendee_crud as crud
 from email_validator import validate_email, EmailNotValidError
+from app.schemas.user_schemas import UserAuthentication as User
 
 router = APIRouter(tags=["attendee"])
 
@@ -30,7 +33,7 @@ def get_all_attendees(skip: int = 0, limit: int = 100, db: Session = Depends(get
 
 # get attendee by id
 @router.get("/attendee/{attendee_id}", response_model=schemas.Attendee)
-def get_attendee_by_id(attendee_id: str, db: Session = Depends(get_db)):
+def get_attendee_by_id(attendee_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     db_attendee = crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
     if not db_attendee:
         raise HTTPException(status_code=404, detail="Attendee not found")
@@ -38,7 +41,7 @@ def get_attendee_by_id(attendee_id: str, db: Session = Depends(get_db)):
 
 # get attendee by userId
 @router.get("/attendee/user/{user_id}", response_model=schemas.Attendee)
-def get_attendee_by_user_id(user_id: int, db: Session = Depends(get_db)):
+def get_attendee_by_user_id(user_id: int, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     db_attendee = crud.get_attendee_by_user_id(db, user_id=user_id)
     if not db_attendee:
         raise HTTPException(status_code=404, detail="Attendee not found")
@@ -46,7 +49,7 @@ def get_attendee_by_user_id(user_id: int, db: Session = Depends(get_db)):
 
 # update attendee by email
 @router.put("/attendee")
-def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db)):
+def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if attendee.first_name is None and attendee.last_name is None:
         raise HTTPException(status_code=400, detail="Invalid request body")
     if not crud.get_attendee_by_uuid(db, attendee_id=attendee.id):
@@ -55,14 +58,14 @@ def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depend
 
 # update attende password by id
 @router.put("/attendee/password", response_model=schemas.Attendee)
-def update_attendee_password_by_id(attendee: schemas.AttendePassword, db: Session = Depends(get_db)):
+def update_attendee_password_by_id(attendee: schemas.AttendePassword, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if not crud.get_attendee_by_uuid(db, attendee_id=attendee.id):
         raise HTTPException(status_code=400, detail="Attendee not found")
     return crud.update_attendee_password_by_uuid(db=db, attendee_id=attendee.id, attendee=attendee)
 
 # delete all attendee by id
 @router.delete("/attendee/{attendee_id}")
-def delete_attendee_by_id(attendee_id: str, db: Session = Depends(get_db)):
+def delete_attendee_by_id(attendee_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     db_attendee = crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
     if not db_attendee:
         raise HTTPException(status_code=404, detail="Attendee not found")

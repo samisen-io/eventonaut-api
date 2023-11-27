@@ -19,7 +19,7 @@ from ..AI_assitant import update_assistant, upload_file, delete_file
 router = APIRouter(tags=["ai_models"])
 
 @router.post("/query_document")
-async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db), ):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
@@ -28,7 +28,7 @@ async def query_document_endpoint(question: str, attendee_id:str, conference_id:
     # if not attendee:
     #     raise HTTPException(status_code=404, detail="Attendee not found")
     # thread_id = attendee.thread_id
-    thread_id = 'thread_1KwlOxdppPQk3QT0NdY7CboK'
+    thread_id = 'thread_tMECGnPSxB4ZGYRYnigJl0W5'
     file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
     if not file_ids:
         raise HTTPException(status_code=404, detail="No files found for this conference")
@@ -111,7 +111,6 @@ async def upload_session_file(file: UploadFile,
     # get the file from the files folder
     file_path = os.path.join('app', 'files')
     file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
-    # with open(file_path, 'rb') as file:
     try:
         file = upload_file(file_path)
     except Exception as e:
