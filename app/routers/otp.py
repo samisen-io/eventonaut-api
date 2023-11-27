@@ -9,6 +9,7 @@ from ..crud import users_crud as crud
 from dotenv import load_dotenv
 import os
 import time
+from .. import basicauth
 
 load_dotenv()
 
@@ -24,7 +25,7 @@ def delete_entry(email: str,delay: int,task_timestamp: datetime):
         del otp_db[email]
 
 @router.post('/otp')
-async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: Session = Depends(get_db)):
+async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     global otp_db, default_time_limit
     try:
         valid = validate_email(email)
@@ -43,7 +44,7 @@ async def send_otp(bgtask:BackgroundTasks,email: str, email_subject: str , db: S
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
-async def verify_otp(email: str, otp: str):
+async def verify_otp(email: str, otp: str, basic_auth = Depends(basicauth.basic_auth)):
     global otp_db
     if email not in otp_db.keys():
         raise HTTPException(status_code=400, detail="Email not verified")
@@ -58,7 +59,7 @@ async def verify_otp(email: str, otp: str):
     return {"msg": "OTP verified successfully"}
 
 @router.put('/otp/passwordreset')
-async def password_reset(email: str, password: str, db: Session = Depends(get_db)):
+async def password_reset(email: str, password: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     global otp_db
     if email in otp_db.keys() and otp_db[email][2]:
         crud.update_user_password_by_email(db=db, email=email, password=password)

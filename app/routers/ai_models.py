@@ -20,7 +20,7 @@ from .. import basicauth
 router = APIRouter(tags=["ai_models"])
 
 @router.post("/query_document")
-async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db)):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")

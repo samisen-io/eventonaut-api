@@ -4,12 +4,13 @@ from sqlalchemy.orm import Session
 from ..schemas import attendee_schemas as schemas
 from ..crud import attendee_crud as crud
 from email_validator import validate_email, EmailNotValidError
+from .. import basicauth
 
 router = APIRouter(tags=["attendee"])
 
 # create attendee
 @router.post("/attendee/signup")
-def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_db)):
+def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:
         valid = validate_email(attendee.email)
         attendee.email = valid.normalized.lower()
