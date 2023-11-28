@@ -5,7 +5,6 @@ from .. import models
 from ..schemas import conference_schemas as schemas, ai_assistant_schemas as assistant_schemas
 from . import agenda_crud
 from .. import AI_assitant
-from pytz import timezone
 import uuid
 from ..code_generator import generate_unique_string
 
@@ -14,7 +13,7 @@ def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.Conference).offset(offset).limit(limit).all()
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(models.Conference).filter(models.Conference.start_date >= datetime.now(timezone('Asia/Kolkata')).date()).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
+    return db.query(models.Conference).filter(models.Conference.start_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
@@ -29,13 +28,12 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         db_conference.description = "None"
     if conference.conference_logo is None:
         db_conference.conference_logo = "None"
-    tz = timezone('Asia/Kolkata')
     if conference.description is None or conference.description.strip() == "" or conference.description == "string" or conference.description == "None":
         db_conference.description = "None"
     if conference.conference_logo is None or conference.conference_logo.strip() == "" or conference.conference_logo == "string" or conference.conference_logo == "None":
         db_conference.conference_logo = "None"
-    db_conference.created_on = datetime.now(tz)
-    db_conference.updated_on = datetime.now(tz)
+    db_conference.created_on = datetime.utcnow()
+    db_conference.updated_on = datetime.utcnow()
     db_conference.uuid = str(uuid.uuid4())
     assistant = assistant_schemas.AssistantCreate(model="gpt-4-1106-preview", name=f"ca_{db_conference.uuid}", description="Conference Assistant", instructions="You are conference assitant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.")
     db_conference.assistant_id = AI_assitant.create_assistant(schema=assistant).id
@@ -86,7 +84,6 @@ def delete_conference(db: Session, owner_id: int, uuid: str):
 # update conference by conference id
 def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uuid: str, owner_id:int):
     db_conference = db.query(models.Conference).filter(models.Conference.uuid == uuid,models.Conference.owner_id == owner_id).first()
-    tz = timezone('Asia/Kolkata')
 
     updates = {
         'name': conference.name,
@@ -114,7 +111,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         if value is None or value.strip() in ("", "string", "None"):
             setattr(db_conference, attr, "None")
 
-    db_conference.updated_on = datetime.now(tz)
+    db_conference.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_conference)
     return db_conference
@@ -122,9 +119,8 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
 def upload_file_id(db: Session, file_id: str, conference_id: str, owner_id: int):
     conference = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.uuid == conference_id).first()
     db_file = models.Conference_Files(file_id = file_id, conference_id = conference.id)
-    tz = timezone('Asia/Kolkata')
-    db_file.created_on = datetime.now(tz)
-    db_file.updated_on = datetime.now(tz)
+    db_file.created_on = datetime.utcnow()
+    db_file.updated_on = datetime.utcnow()
     db_file.uuid = str(uuid.uuid4())
     db.add(db_file)
     db.commit()
