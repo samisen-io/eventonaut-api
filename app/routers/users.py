@@ -39,7 +39,7 @@ def get_user(db: Session = Depends(get_db), current_user: schemas.User = Depends
 #update user by user id and check if email is already registered
 @router.put("/users", response_model=schemas.User)
 def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: schemas.User = Depends(get_current_active_user)):
-    if user.email is None and user.first_name is None and user.last_name is None and user.company is None and user.bussiness_type is None:
+    if all(value is None for value in dict(user).values()):
         raise HTTPException(status_code=400, detail="Invalid request body")
     if current_user.id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user id")

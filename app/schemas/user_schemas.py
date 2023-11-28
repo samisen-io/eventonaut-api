@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     last_name: str
     company: str | None = None
     bussiness_type: str
+    timezone: str | None = None
 
     @validator('email')
     def email_is_valid(cls, v):
@@ -34,7 +35,6 @@ class UserBase(BaseModel):
             raise HTTPException(status_code=400, detail="Last name too long")
         return v
     
-    
     @validator('bussiness_type')
     def bussiness_type_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
@@ -43,12 +43,21 @@ class UserBase(BaseModel):
             raise HTTPException(status_code=400, detail="Bussiness type too long")
         return v
     
+    @validator('timezone')
+    def timezone_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid timezone")
+        elif len(v) > 50:
+            raise HTTPException(status_code=400, detail="Timezone too long")
+        return v
+    
 class UserBaseUpdate(BaseModel):
     email: str | None = None
     first_name: str | None = None
     last_name: str | None = None
     company: str |None = None
     bussiness_type: str |None = None
+    timezone: str |None = None
     
     @validator('email')
     def email_is_valid(cls, v):
@@ -80,6 +89,14 @@ class UserBaseUpdate(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid bussiness type")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Bussiness type too long")
+        return v
+    
+    @validator('timezone')
+    def timezone_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid timezone")
+        elif len(v) > 50:
+            raise HTTPException(status_code=400, detail="Timezone too long")
         return v
 
 #pydantic model for user create
@@ -129,11 +146,6 @@ class User(UserBase):
     class Config:
         orm_mode = True
         
-class UserAuthentication(UserBase):
-    uuid: str = Field(serialization_alias="id")
-    conferences: list[Conference] = []
+class UserAuthentication(User):
     role: str
-    is_active: bool
-    class Config:
-        orm_mode = True
         
