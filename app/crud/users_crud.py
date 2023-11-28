@@ -54,7 +54,8 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
         'first_name': user.first_name,
         'last_name': user.last_name,
         'company': user.company,
-        'bussiness_type': user.bussiness_type
+        'bussiness_type': user.bussiness_type,
+        'timezone': user.timezone
     }
     
     for key, value in updates.items():
