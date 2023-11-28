@@ -27,7 +27,6 @@ async def query_document_endpoint(question: str, conference_id: str, db: Session
     thread_id = attendee_crud.get_thread_id_by_attendee_id(db, current_user.id)
     if not thread_id:
         raise HTTPException(status_code=404, detail="Thread not found")
-    # thread_id = 'thread_tMECGnPSxB4ZGYRYnigJl0W5'
     file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
     if not file_ids:
         raise HTTPException(status_code=404, detail="No files found for this conference")
