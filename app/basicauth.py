@@ -25,6 +25,7 @@ def basic_auth(credentials: HTTPBasicCredentials = Depends(security)):
 
     if is_username_correct and is_password_correct:
         return True
+    
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect email or password",
