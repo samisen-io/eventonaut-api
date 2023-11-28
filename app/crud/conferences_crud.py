@@ -93,7 +93,10 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         'location': conference.location,
         'start_date': conference.start_date,
         'end_date': conference.end_date,
-        'description': conference.description if conference.description is not None else "None"
+        'description': conference.description if conference.description is not None else "None",
+        'conference_logo': conference.conference_logo if conference.conference_logo is not None else "None",
+        'timezone': conference.timezone,
+        'registration_link': conference.registration_link if conference.registration_link is not None else "None"
     }
 
     for key, value in updates.items():
@@ -104,11 +107,12 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         if conference.start_date > conference.end_date or conference.start_date < date.today():
             raise HTTPException(status_code=400, detail="Invalid date range")
         
-    if conference.description is None or conference.description.strip() == "" or conference.description == "string" or conference.description == "None":
-        db_conference.description = "None"
-        
-    if conference.conference_logo is None or conference.conference_logo.strip() == "" or conference.conference_logo == "string" or conference.conference_logo == "None":
-        db_conference.conference_logo = "None"
+    attributes = ["description", "conference_logo", "timezone", "registration_link"]
+
+    for attr in attributes:
+        value = getattr(conference, attr)
+        if value is None or value.strip() in ("", "string", "None"):
+            setattr(db_conference, attr, "None")
 
     db_conference.updated_on = datetime.now(tz)
     db.commit()
