@@ -47,7 +47,7 @@ class UserBase(BaseModel):
     def timezone_is_not_empty(cls, v):
         if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid timezone")
-        elif len(v) > 10:
+        elif len(v) > 50:
             raise HTTPException(status_code=400, detail="Timezone too long")
         return v
     
@@ -95,7 +95,7 @@ class UserBaseUpdate(BaseModel):
     def timezone_is_not_empty(cls, v):
         if v is not None and (v.strip() == "" or v == "string"):
             raise HTTPException(status_code=400, detail="Invalid timezone")
-        elif len(v) > 10:
+        elif len(v) > 50:
             raise HTTPException(status_code=400, detail="Timezone too long")
         return v
 
