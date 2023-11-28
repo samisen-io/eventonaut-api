@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from pytz import timezone
 from .. import models
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas, session_schemas, conference_schemas
 from datetime import datetime
@@ -11,9 +10,8 @@ import uuid
 def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db_user = models.User(**attendee.model_dump())
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
-    tz = timezone('Asia/Kolkata')
-    db_user.created_on = datetime.now(tz)
-    db_user.updated_on = datetime.now(tz)
+    db_user.created_on = datetime.utcnow()
+    db_user.updated_on = datetime.utcnow()
     db_user.uuid = str(uuid.uuid4())
     db_user.role = "attendee"
     db_user.is_active = True
@@ -22,8 +20,8 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.refresh(db_user)
 
     db_attendee = models.Attendee()
-    db_attendee.created_on = datetime.now(tz)
-    db_attendee.updated_on = datetime.now(tz)
+    db_attendee.created_on = datetime.utcnow()
+    db_attendee.updated_on = datetime.utcnow()
     db_attendee.uuid = str(uuid.uuid4())
     db_attendee.user_id = db_user.id
     db_attendee.thread_id = create_thread(thread_schemas.Thread()).id
@@ -101,8 +99,8 @@ def update_attendee_by_uuid(db: Session, attendee_id: str, attendee: schemas.Att
         if value is not None:
             setattr(db_attendee, key, value)
 
-    db_attendee.updated_on = datetime.now(timezone('Asia/Kolkata'))
-    db_user.updated_on = datetime.now(timezone('Asia/Kolkata'))
+    db_attendee.updated_on = datetime.utcnow()
+    db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_attendee)
     db.refresh(db_user)
@@ -116,7 +114,7 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: str, attendee: sc
     if db_attendee is None or db_user is None:
         return None
     db_user.hashed_password = hashing.get_password_hash(attendee.hashed_password)
-    db_user.updated_on = datetime.now(timezone('Asia/Kolkata'))
+    db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
@@ -138,9 +136,8 @@ def create_attendee_conference(db: Session, attendee_conference: attendee_confer
     conference = db.query(models.Conference).filter(models.Conference.code == attendee_conference.conference_code).first()
     db_attendee_conference = models.Attendee_Conferences(attendee_id=attendee_id, conference_id=conference.id)
     db_attendee_conference.uuid = str(uuid.uuid4())
-    tz = timezone('Asia/Kolkata')
-    db_attendee_conference.created_on = datetime.now(tz)
-    db_attendee_conference.updated_on = datetime.now(tz)
+    db_attendee_conference.created_on = datetime.utcnow()
+    db_attendee_conference.updated_on = datetime.utcnow()
     db.add(db_attendee_conference)
     db.commit()
     db.refresh(db_attendee_conference)
