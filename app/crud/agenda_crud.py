@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from pytz import timezone
 from .. import models
 from ..schemas import agenda_schemas as schemas
 from . import conferences_crud, attendee_crud, sessions_crud
