@@ -58,11 +58,3 @@ Replace the appropriate values with the actual values
 uvicorn app.main:app --reload
 ```
 The application will be available at http://localhost:8000
-
-## Debugging
-
-1. If you encounter anu issues while running the application, check th console where you started the application for any error messages.
-2. If the error messages are not clear, you can add the --debug flag when starting the application to get more detailed error messages:
-```
-uvicorn app.main:app --reload --debug
-```
