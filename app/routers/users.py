@@ -47,15 +47,6 @@ def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), cur
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    if user.email is not None and user.email.strip() != "" and user.email != "string":
-        try:
-            valid = validate_email(user.email)
-            user.email = valid.normalized.lower()
-        except EmailNotValidError as e:
-            raise HTTPException(status_code=400, detail="Invalid email")
-        db_user = crud.get_user_by_email(db, email=user.email)
-        if db_user and db_user.id != current_user.id:
-            raise HTTPException(status_code=400, detail="Email already registered")
     return crud.update_user(db=db, user=user, user_id=current_user.id)
 
 # upddate password by user id
