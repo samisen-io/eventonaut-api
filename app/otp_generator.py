@@ -86,14 +86,15 @@ def send_mail(otp: str,subject: str, receiver_email:str):
             print("Error: unable to send email")
             return False
         print("Email sent successfully")
+        return True
+    except Exception as e:
+        print(e)
+        print("Error: unable to send email")
+        return False
+    finally:
         try:
             server.quit()
         except Exception as e:
             print(e)
             print("Error: unable to quit server")
             return False
-        return True
-    except Exception as e:
-        print(e)
-        print("Error: unable to send email")
-        return False
