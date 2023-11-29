@@ -62,34 +62,39 @@ async def delete_file_from_openai(conference_id: str, current_user: User = Secur
 async def update_conference(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
     write_data_to_json(conference_id,db)
     file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
-    if not file_ids:
-        raise HTTPException(status_code=404, detail="No files found for this conference")
-    file_id = file_ids[0]
-    # delete from openai assistant api
-    try:
-        delete_file(file_id=file_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    conferences_crud.delete_file_id(db=db, file_id=file_id, conference_id=conference_id, owner_id=current_user.id)
+    # if not file_ids:
+    #     raise HTTPException(status_code=404, detail="No files found for this conference")
+    # file_id = file_ids[0]
+    if file_ids:
+        file_id = file_ids[0]
+        # delete from openai assistant api
+        try:
+            delete_file(file_id=file_id)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        conferences_crud.delete_file_id(db=db, file_id=file_id, conference_id=conference_id, owner_id=current_user.id)
     # upload it into openai assistant api
-    file_path = os.path.join('app', 'files')
-    file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
-    # with open(file_path, 'rb') as file:
-    try:
-        file = upload_file(file_path=file_path)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    try:
-        conferences_crud.upload_file_id(db=db, file_id=file.id, conference_id=conference_id, owner_id=current_user.id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error uploading file: {str(e)}")
-    try:
-        assistant_id = conferences_crud.get_assistant_id_by_conference_id(db, conference_id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Error getting assistant ID: {str(e)}")
-    assistant_schema = create_assistant_schema(assistant_id, conference_id, file.id)
-    update_assistant(assistant_schema)
-    return {"success": "Sessions file updated successfully."}
+    # new
+    filename = await upload_session_from_database(conference_id, current_user, db)
+    return filename
+    # file_path = os.path.join('app', 'files')
+    # file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
+    # # with open(file_path, 'rb') as file:
+    # try:
+    #     file = upload_file(file_path=file_path)
+    # except Exception as e:
+    #     raise HTTPException(status_code=400, detail=str(e))
+    # try:
+    #     conferences_crud.upload_file_id(db=db, file_id=file.id, conference_id=conference_id, owner_id=current_user.id)
+    # except Exception as e:
+    #     raise HTTPException(status_code=400, detail=f"Error uploading file: {str(e)}")
+    # try:
+    #     assistant_id = conferences_crud.get_assistant_id_by_conference_id(db, conference_id)
+    # except Exception as e:
+    #     raise HTTPException(status_code=400, detail=f"Error getting assistant ID: {str(e)}")
+    # assistant_schema = create_assistant_schema(assistant_id, conference_id, file.id)
+    # update_assistant(assistant_schema)
+    # return {"success": "Sessions file updated successfully."}
 
 @router.post("/upload_session_file/")
 async def upload_session_file(file: UploadFile,
