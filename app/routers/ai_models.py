@@ -15,6 +15,7 @@ from ..crud import conferences_crud, attendee_crud
 from sqlalchemy.orm import Session
 from ..AI_assitant import update_assistant, upload_file, delete_file
 from app.schemas.user_schemas import UserAuthentication as User
+from .. import basicauth
 
 router = APIRouter(tags=["ai_models"])
 

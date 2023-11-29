@@ -5,6 +5,7 @@ from app.oauth2 import get_current_active_user
 from ..schemas import settings_schemas as schemas
 from ..schemas import user_schemas as uschemas
 from ..crud import settings_crud as crud, conferences_crud
+from .. import basicauth
 from ..dependencies import get_db
 
 router = APIRouter(tags=["settings"])
@@ -31,7 +32,7 @@ def get_settings(db: Session = Depends(get_db), offset: int = 0, limit: int = 10
 
 # get settings by conference id
 @router.get("/settings/{conference_id}", response_model=schemas.Settings)
-def get_settings_by_conference_id(conference_id: str, db: Session = Depends(get_db)):
+def get_settings_by_conference_id(conference_id: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     settings = crud.get_settings_by_conf_uuid(db, conference_uuid=conference_id)
