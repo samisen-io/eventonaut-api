@@ -127,7 +127,7 @@ class AttendeeUpdate(BaseModel):
 
     @validator('first_name')
     def first_name_is_not_empty(cls, v):
-        if v.strip() == "" or v == "string":
+        if v == "string":
             raise HTTPException(status_code=400, detail="Invalid first name")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="First name too long")
@@ -135,7 +135,7 @@ class AttendeeUpdate(BaseModel):
     
     @validator('last_name')
     def last_name_is_not_empty(cls, v):
-        if v.strip() == "" or v == "string":
+        if v == "string":
             raise HTTPException(status_code=400, detail="Invalid last name")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Last name too long")
@@ -144,7 +144,7 @@ class AttendeeUpdate(BaseModel):
     @validator('title')
     def title_is_not_empty(cls, v):
         if v is not None:
-            if v.strip() == "" or v == "string":
+            if v == "string":
                 raise HTTPException(status_code=400, detail="Invalid title")
             elif len(v) > 256:
                 raise HTTPException(status_code=400, detail="Title too long")
@@ -153,7 +153,7 @@ class AttendeeUpdate(BaseModel):
     @validator('company')
     def company_is_not_empty(cls, v):
         if v is not None:
-            if v.strip() == "" or v == "string":
+            if v == "string":
                 raise HTTPException(status_code=400, detail="Invalid company")
             elif len(v) > 256:
                 raise HTTPException(status_code=400, detail="Company too long")
@@ -162,7 +162,7 @@ class AttendeeUpdate(BaseModel):
     @validator('bio')
     def bio_is_not_empty(cls, v):
         if v is not None:
-            if v.strip() == "" or v == "string":
+            if v == "string":
                 raise HTTPException(status_code=400, detail="Invalid bio")
             elif len(v) > 256:
                 raise HTTPException(status_code=400, detail="Bio too long")
@@ -170,7 +170,7 @@ class AttendeeUpdate(BaseModel):
     
     @validator('profile_image_url')
     def profile_image_url_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
+        if v is not None and v == "string":
             raise HTTPException(status_code=400, detail="Invalid profile image url")
         return v
 
