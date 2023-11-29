@@ -116,7 +116,6 @@ class AttendePassword(BaseModel):
         return v
 
 class AttendeeUpdate(BaseModel):
-    email: str | None = None
     first_name: str | None = None
     last_name: str | None = None
     title: str | None = None
@@ -125,14 +124,6 @@ class AttendeeUpdate(BaseModel):
     share_my_profile: bool | None = None
     share_my_agenda: bool | None = None
     profile_image_url: str | None = None
-
-    @validator('email')
-    def email_is_not_empty(cls, v):
-        if v.strip() == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid email")
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Email too long")
-        return v
 
     @validator('first_name')
     def first_name_is_not_empty(cls, v):
