@@ -151,6 +151,7 @@ class User(UserBase):
     conferences: list[Conference] = []
     is_active: bool
     class Config:
+        orm_mode = True
         
 class UserAuthentication(User):
     role: str
