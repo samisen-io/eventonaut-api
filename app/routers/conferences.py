@@ -7,6 +7,7 @@ from ..schemas import conference_schemas as schemas
 from ..schemas import user_schemas as uschemas
 from ..crud import conferences_crud as crud, users_crud
 from ..dependencies import get_db
+from .. import basicauth
 from datetime import date
 import qrcode
 import io
@@ -37,7 +38,7 @@ def get_all_conferences(offset: int = 0, limit: int = 100, db: Session = Depends
 
 # get all conferences for attendee
 @router.get("/conferences/for_attendee", response_model=list[schemas.Conference])
-def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Session = Depends(get_db),basic_auth = Depends(basicauth.basic_auth)):
     if offset < 0 or limit < 0:
         raise HTTPException(status_code=400, detail="Invalid query parameters")
     conferences = crud.get_all_conferences_for_attendee(db, offset=offset, limit=limit)
