@@ -1,4 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Security
+from app.schemas.user_schemas import UserAuthentication as User
+from app.oauth2 import get_current_active_user
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
 from ..schemas import agenda_schemas as schemas
@@ -9,7 +11,7 @@ router = APIRouter(tags=["agenda"])
 
 # create agenda
 @router.post("/agenda/attendee_id", response_model=schemas.Agenda)
-def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db)):
+def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if attendee_crud.get_attendee_by_uuid(db, attendee_id=agenda.attendee_id) is None:
         raise HTTPException(status_code=400, detail="Attendee not found")
     if attendee_crud.get_attendee_conference_by_attendee_id_and_conference_id(db, attendee_id=agenda.attendee_id, conference_id=agenda.conference_id) is None:
@@ -46,7 +48,7 @@ def get_all_agenda(offset: int = 0, limit: int = 100, db: Session = Depends(get_
 
 # get agenda by conference id and attendee id
 @router.get("/agenda/attendee_id/{attendee_id}/conference_id/{conference_id}", response_model=schemas.Agenda)
-def get_agenda_by_conference_id_attendee_id(conference_id: str, attendee_id: str, db: Session = Depends(get_db)):
+def get_agenda_by_conference_id_attendee_id(conference_id: str, attendee_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id) is None:
         raise HTTPException(status_code=400, detail="Attendee not found")
     if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
@@ -58,7 +60,7 @@ def get_agenda_by_conference_id_attendee_id(conference_id: str, attendee_id: str
 
 # update agenda by conference id and attendee id
 @router.put("/agenda/attendee_id", response_model=schemas.Agenda)
-def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db)):
+def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if agenda.name is None and agenda.sessions is None:
         raise HTTPException(status_code=400, detail="Invalid request body")
     if attendee_crud.get_attendee_by_uuid(db, attendee_id=agenda.attendee_id) is None:
@@ -90,7 +92,7 @@ def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db)):
 
 # delete agenda by conference id and attendee id
 @router.delete("/agenda/attendee_id/{attendee_id}/conference_id/{conference_id}")
-def delete_agenda(conference_id: str, attendee_id: str, db: Session = Depends(get_db)):
+def delete_agenda(conference_id: str, attendee_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id) is None:
         raise HTTPException(status_code=400, detail="Attendee not found")
     if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
