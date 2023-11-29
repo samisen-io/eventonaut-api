@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from .. import models
 from ..schemas import settings_schemas as schemas
-import pytz
 import uuid
 
 #crud for settings
@@ -17,9 +16,8 @@ def get_settings_by_id(db: Session, settings_id: int):
 def create_settings(db: Session, settings: schemas.SettingsCreate, owner_id: int):
     db_settings = models.Settings(body=settings.body)
     db_settings.owner_id = owner_id
-    tz = pytz.timezone('Asia/Kolkata')
-    db_settings.created_on = datetime.now(tz)
-    db_settings.updated_on = datetime.now(tz)
+    db_settings.created_on = datetime.utcnow()
+    db_settings.updated_on = datetime.utcnow()
     db_settings.uuid = str(uuid.uuid4())
     conference_id = db.query(models.Conference).filter(models.Conference.uuid == settings.conference_id, models.Conference.owner_id == owner_id).first().id
     db_settings.conference_id = conference_id
@@ -48,7 +46,7 @@ def update_settings(db: Session, settings:schemas.SettingsCreate, owner_id: int)
     conference_id = db.query(models.Conference).filter(models.Conference.uuid == settings.conference_uuid, models.Conference.owner_id == owner_id).first().id
     db_settings = db.query(models.Settings).filter(models.Settings.conference_id == conference_id, models.Settings.owner_id == owner_id).first()
     db_settings.body = settings.body
-    db_settings.updated_on = datetime.now(pytz.timezone('Asia/Kolkata'))
+    db_settings.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_settings)
     return db_settings

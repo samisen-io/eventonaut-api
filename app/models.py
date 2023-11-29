@@ -19,6 +19,7 @@ class User(Base):
     bussiness_type = Column(String, index=True, default="None")
     hashed_password = Column(String)
     role = Column(String, index=True, default="None")
+    timezone = Column(String, index=True, default="None")
     is_active = Column(Boolean, default=True)
 
     attendees = relationship("Attendee", back_populates="user")
@@ -43,6 +44,8 @@ class Conference(Base):
     conference_logo = Column(String, index=True, default="None")
     assistant_id = Column(String, index=True, default="None")
     code = Column(String, index=True, default="None")
+    timezone = Column(String, index=True, default="None")
+    registration_link = Column(String, index=True, default="None")
 
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")

@@ -9,6 +9,7 @@ class UserBase(BaseModel):
     last_name: str
     company: str | None = None
     bussiness_type: str
+    timezone: str | None = None
 
     @validator('email')
     def email_is_valid(cls, v):
@@ -50,20 +51,20 @@ class UserBase(BaseModel):
             raise HTTPException(status_code=400, detail="Bussiness type too long")
         return v
     
+    @validator('timezone')
+    def timezone_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid timezone")
+        elif len(v) > 50:
+            raise HTTPException(status_code=400, detail="Timezone too long")
+        return v
+    
 class UserBaseUpdate(BaseModel):
-    email: str | None = None
     first_name: str | None = None
     last_name: str | None = None
     company: str |None = None
     bussiness_type: str |None = None
-    
-    @validator('email')
-    def email_is_valid(cls, v):
-        if v is not None and (v.strip() == "" or v == "string" or v.__contains__(" ")):
-            raise HTTPException(status_code=400, detail="Invalid email")
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Email too long")
-        return v
+    timezone: str |None = None
 
     @validator('first_name')
     def first_name_is_not_empty(cls, v):
@@ -95,6 +96,14 @@ class UserBaseUpdate(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid bussiness type")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Bussiness type too long")
+        return v
+    
+    @validator('timezone')
+    def timezone_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid timezone")
+        elif len(v) > 50:
+            raise HTTPException(status_code=400, detail="Timezone too long")
         return v
 
 #pydantic model for user create
@@ -142,4 +151,7 @@ class User(UserBase):
     conferences: list[Conference] = []
     is_active: bool
     class Config:
-        orm_mode = True
+        
+class UserAuthentication(User):
+    role: str
+        

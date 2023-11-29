@@ -1,10 +1,8 @@
 from sqlalchemy.orm import Session
-from pytz import timezone
 from .. import models
 from ..schemas import agenda_schemas as schemas
 from . import conferences_crud, attendee_crud, sessions_crud
 from datetime import datetime
-from pytz import timezone
 import uuid
 
 # create agenda
@@ -34,9 +32,8 @@ def create_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
     conference = conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
     attendee = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
     db_agenda = models.Agenda(conference_id=conference.id, name=agenda.name, attendee_id=attendee.id)
-    tz = timezone('Asia/Kolkata')
-    db_agenda.created_on = datetime.now(tz)
-    db_agenda.updated_on = datetime.now(tz)
+    db_agenda.created_on = datetime.utcnow()
+    db_agenda.updated_on = datetime.utcnow()
     db_agenda.uuid = str(uuid.uuid4())
     db.add(db_agenda)
     db.commit()
@@ -44,8 +41,8 @@ def create_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
 
     for session in sessions:
         db_agenda_session = models.AgendaSession(agenda_id=db_agenda.id, session_id=session.id, attendee_id=attendee.id, date=session.date, start_time=session.start_time, end_time=session.end_time)
-        db_agenda_session.created_on = datetime.now(tz)
-        db_agenda_session.updated_on = datetime.now(tz)
+        db_agenda_session.created_on = datetime.utcnow()
+        db_agenda_session.updated_on = datetime.utcnow()
         db_agenda_session.uuid = str(uuid.uuid4())
         db.add(db_agenda_session)
         db.commit()
@@ -119,8 +116,7 @@ def update_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
     conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
     attendee=db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
-    tz = timezone('Asia/Kolkata')
-    db_agenda.updated_on=datetime.now(tz)
+    db_agenda.updated_on=datetime.utcnow()
 
     if agenda.name is not None:
         db_agenda.name = agenda.name
@@ -130,8 +126,8 @@ def update_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
 
         for session in sessions:
             db_agenda_session = models.AgendaSession(agenda_id=db_agenda.id, session_id=session.id, attendee_id=attendee.id, date=session.date, start_time=session.start_time, end_time=session.end_time)
-            db_agenda_session.created_on = datetime.now(tz)
-            db_agenda_session.updated_on = datetime.now(tz)
+            db_agenda_session.created_on = datetime.utcnow()
+            db_agenda_session.updated_on = datetime.utcnow()
             db_agenda_session.uuid = str(uuid.uuid4())
             db.add(db_agenda_session)
             db.commit()

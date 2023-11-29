@@ -12,6 +12,8 @@ class ConferenceCreate(BaseModel):
     end_date: date
     description: str | None = None
     conference_logo: str | None = None
+    timezone: str | None = None
+    registration_link: str | None = None
 
     @validator('name')
     def name_is_not_empty(cls, v):
@@ -46,6 +48,22 @@ class ConferenceCreate(BaseModel):
         if len(v) > 256:
             raise HTTPException(status_code=400, detail="Description too long")
         return v
+    
+    @validator('timezone')
+    def timezone_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid timezone")
+        elif len(v) > 50:
+            raise HTTPException(status_code=400, detail="Timezone too long")
+        return v
+    
+    @validator('registration_link')
+    def registration_link_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid registration link")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Registration link too long")
+        return v
 
 class ConferenceUpdate(BaseModel):
     id: str
@@ -55,6 +73,8 @@ class ConferenceUpdate(BaseModel):
     end_date: date  | None = None
     description: str | None = None
     conference_logo: str | None = None
+    timezone: str | None = None
+    registration_link: str | None = None
 
     @validator('id')
     def id_is_not_empty(cls, v):
@@ -82,6 +102,22 @@ class ConferenceUpdate(BaseModel):
     def description_is_not_empty(cls, v):
         if len(v) > 256:
             raise HTTPException(status_code=400, detail="Description too long")
+        return v
+    
+    @validator('timezone')
+    def timezone_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid timezone")
+        elif len(v) > 50:
+            raise HTTPException(status_code=400, detail="Timezone too long")
+        return v
+    
+    @validator('registration_link')
+    def registration_link_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid registration link")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Registration link too long")
         return v
 
 #pydantic model for conference

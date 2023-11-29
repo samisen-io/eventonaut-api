@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from app.schemas.token_schemas import Token, TokenData
+from pydantic import BaseModel, ValidationError
 
 token_cache = TTLCache(maxsize=1000, ttl=5400)
     
@@ -20,7 +21,7 @@ def create_access_token(data: dict, expires_delta: timedelta or None = None):
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(minutes=15)  
-    issue_time = datetime.utcnow()  
+    issue_time = datetime.utcnow().timestamp()  
     to_encode.update({"iat":issue_time, "exp": expire, "jti": str(uuid.uuid4())})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -31,7 +32,7 @@ def create_refresh_token(data: dict, expires_delta: timedelta or None = None):
         expire = datetime.utcnow() + expires_delta
     else:
         expire = datetime.utcnow() + timedelta(days=30)
-    issue_time = datetime.utcnow()
+    issue_time = datetime.utcnow().timestamp()
     to_encode.update({"iat":issue_time,"exp": expire, "jti": str(uuid.uuid4())})
     encoded_jwt = jwt.encode(to_encode, REFRESH_TOKEN_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -45,10 +46,14 @@ def verify_token(token:str, credentials_exception):
             raise credentials_exception
         if jti and jti in token_cache:
             raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
-        token_data = TokenData(username=username)
-    except JWTError:
+        token_scopes = payload.get("scopes", [])
+        # print(token_scopes)
+        token_data = TokenData(username=username, scopes=token_scopes)
+        # print(token_data)
+    except (JWTError, ValidationError):
         raise credentials_exception
     return token_data
+
 
 def verify_token_RT(token:str, credentials_exception):
     try:

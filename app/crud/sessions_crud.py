@@ -3,7 +3,6 @@ from datetime import datetime, date
 from .. import models
 from ..schemas import session_schemas as schemas
 from fastapi import HTTPException
-from pytz import timezone
 import uuid
 
 #get all sessions
@@ -15,9 +14,8 @@ def get_sessions(db: Session, offset: int = 0, limit: int = 100):
 def create_conference_session(db: Session, session: schemas.SessionCreate, owner_id: int):
     db_session = models.Session(name=session.name, start_time=session.start_time, end_time=session.end_time, description=session.description, date=session.date, location=session.location, owner_id=owner_id)
     conference_id = db.query(models.Conference).filter(models.Conference.uuid == session.conference_id).first().id
-    tz = timezone('Asia/Kolkata')
-    db_session.created_on = datetime.now(tz)
-    db_session.updated_on = datetime.now(tz)
+    db_session.created_on = datetime.utcnow()
+    db_session.updated_on = datetime.utcnow()
     db_session.uuid = str(uuid.uuid4())
     db_session.owner_id = owner_id
     db_session.conference_id = conference_id
@@ -58,7 +56,6 @@ def delete_session(db: Session, uuid: str, owner_id: int):
 #update session
 def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner_id: int):
     db_session = db.query(models.Session).filter(models.Session.uuid == uuid,models.Session.owner_id == owner_id).first()
-    tz = timezone('Asia/Kolkata')
     
     speakers:list[str] = []
     tags:list[str] = []
@@ -103,7 +100,7 @@ def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner
     if session.start_time is not None and session.end_time is not None and session.start_time > session.end_time:
         raise HTTPException(status_code=400, detail="Invalid time")
 
-    db_session.updated_on = datetime.now(tz)
+    db_session.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_session)
     return db_session
