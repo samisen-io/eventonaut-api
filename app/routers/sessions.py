@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Security
 from sqlalchemy.orm import Session
-
+from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from ..schemas import session_schemas as schemas
 from ..schemas import user_schemas as uschemas
@@ -13,7 +13,7 @@ router = APIRouter(tags=["sessions"])
 # create session by owner id and conference id
 @router.post("/sessions", response_model=schemas.Session)
 def create_session_for_conference(
-    session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)
+    session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])
 ):
     conference=conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id, owner_id=current_user.id)
     if conference is None:
@@ -28,7 +28,7 @@ def create_session_for_conference(
 # create sessions by list of sessions
 @router.post("/sessions/list", response_model=list[schemas.Session])
 def create_sessions_for_conference(
-    sessions: list[schemas.SessionCreate], db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)
+    sessions: list[schemas.SessionCreate], db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])
 ):
     if sessions is None or len(sessions) == 0:
         raise HTTPException(status_code=400, detail="Invalid request body")
@@ -71,7 +71,7 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
 
 # update session
 @router.put("/sessions", response_model=schemas.Session)
-def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
+def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if session.name is None and session.date is None and session.start_time is None and session.end_time is None and session.description is None and session.speakers is None and session.tags is None and session.location is None:
         raise HTTPException(status_code=400, detail="Invalid request body")
     if conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id,owner_id=current_user.id) is None:
@@ -88,7 +88,7 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
 
 #delete session
 @router.delete("/sessions/{session_id}")
-def delete_session(session_id: str, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
+def delete_session(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_session = crud.get_session_by_uuid_id(db, uuid=session_id, owner_id=current_user.id)
     if db_session is None:
         raise HTTPException(status_code=404, detail="Session not found")

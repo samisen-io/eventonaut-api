@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Security
 from sqlalchemy.orm import Session
-
+from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from ..schemas import settings_schemas as schemas
 from ..schemas import user_schemas as uschemas
@@ -11,7 +11,7 @@ router = APIRouter(tags=["settings"])
 
 # create settings by conference id and take body as any valid JSON and convert it to string
 @router.post("/settings", response_model=schemas.Settings)
-def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
+def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if conferences_crud.get_conference_by_uuid(db, uuid=settings.conference_id,owner_id=current_user.id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_settings = crud.get_settings_by_conference_uuid(db, conference_uuid=settings.conference_id,owner_id=current_user.id)
@@ -41,7 +41,7 @@ def get_settings_by_conference_id(conference_id: str, db: Session = Depends(get_
 
 # update settings by conference id and settings id
 @router.put("/settings", response_model=schemas.Settings)
-def update_settings(settings: schemas.SettingsCreate,db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
+def update_settings(settings: schemas.SettingsCreate,db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if conferences_crud.get_conference_by_uuid(db, uuid=settings.conference_id,owner_id=current_user.id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_settings = crud.get_settings_by_conference_uuid(db, conference_uuid=settings.conference_id,owner_id=current_user.id)
@@ -54,7 +54,7 @@ def update_settings(settings: schemas.SettingsCreate,db: Session = Depends(get_d
 
 # delete settings by conference id and settings id
 @router.delete("/settings/{conference_id}")
-def delete_settings(conference_id: str, db: Session = Depends(get_db), current_user: uschemas.User = Depends(get_current_active_user)):
+def delete_settings(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_settings = crud.get_settings_by_conference_uuid(db, conference_uuid=conference_id,owner_id=current_user.id)
     if db_settings is None:
         raise HTTPException(status_code=404, detail="Settings not found")
