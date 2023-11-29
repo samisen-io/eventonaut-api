@@ -92,27 +92,30 @@ class AttendeeCreate(BaseModel):
 
 #pydantic model for attendee password
 class AttendePassword(BaseModel):
-    id: str
-    hashed_password: str
-
-    @validator('id')
-    def id_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid id")
-        return v
+    old_password: str
+    new_password: str
     
-    @validator('hashed_password')
-    def hashed_password_is_not_empty(cls, v):
+    @validator('old_password')
+    def old_password_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
             raise HTTPException(status_code=400, detail="Invalid password")
         elif len(v) < 8:
-            raise HTTPException(status_code=400, detail="Password too short")
+            raise HTTPException(status_code=400, detail="Old password too short")
         elif len(v) > 16:
-            raise HTTPException(status_code=400, detail="Password too long")
+            raise HTTPException(status_code=400, detail="Old password too long")
+        return v
+    
+    @validator('new_password')
+    def new_password_is_not_empty(cls, v):
+        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
+            raise HTTPException(status_code=400, detail="Invalid password")
+        elif len(v) < 8:
+            raise HTTPException(status_code=400, detail="New password too short")
+        elif len(v) > 16:
+            raise HTTPException(status_code=400, detail="New password too long")
         return v
 
 class AttendeeUpdate(BaseModel):
-    id: str
     email: str | None = None
     first_name: str | None = None
     last_name: str | None = None
@@ -122,12 +125,6 @@ class AttendeeUpdate(BaseModel):
     share_my_profile: bool | None = None
     share_my_agenda: bool | None = None
     profile_image_url: str | None = None
-
-    @validator('id')
-    def id_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid id")
-        return v
 
     @validator('email')
     def email_is_not_empty(cls, v):

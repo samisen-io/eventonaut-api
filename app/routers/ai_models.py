@@ -1,7 +1,6 @@
 import ast
 import os
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
-from app.data_deletion import delete_collection
+from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
 from app.file_reader import read_file_return_csv
 from app.schemas import session_schemas as schemas
 from app.schemas import ai_assistant_schemas as ai_schemas
@@ -10,35 +9,57 @@ from app.file_upload import file_upload
 from app.oauth2 import get_current_active_user, oauth_2_scheme
 from app.routers.sessions import create_session_for_conference
 from app.schemas.user_schemas import UserAuthentication as User
-from ..data_ingestion import file_path_in_files, write_data_to_json
+from ..data_ingestion import write_data_to_json
 from ..data_query import query_document
 from ..crud import conferences_crud, attendee_crud
 from sqlalchemy.orm import Session
 from ..AI_assitant import update_assistant, upload_file, delete_file
+from app.schemas.user_schemas import UserAuthentication as User
 
 router = APIRouter(tags=["ai_models"])
 
 @router.post("/query_document")
-async def query_document_endpoint(question: str, attendee_id:str, conference_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_active_user)):
+async def query_document_endpoint(question: str, conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
     assistant_id = conference.assistant_id
-    # attendee = attendee_crud.get_attendee_by_uuid(db, attendee_id)
-    # if not attendee:
-    #     raise HTTPException(status_code=404, detail="Attendee not found")
-    # thread_id = attendee.thread_id
-    thread_id = 'thread_1KwlOxdppPQk3QT0NdY7CboK'
+    thread_id = attendee_crud.get_thread_id_by_attendee_id(db, current_user.id)
+    if not thread_id:
+        raise HTTPException(status_code=404, detail="Thread not found")
     file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
     if not file_ids:
         raise HTTPException(status_code=404, detail="No files found for this conference")
     print(assistant_id,thread_id, file_ids)
     answer = query_document(question,assistant_id,thread_id, file_ids)
     return {"answer": answer}
-    # return {"answer": "answer"}
+
+@router.delete("/delete_file/")
+async def delete_file_from_openai(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+    conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
+    if not conference:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    assistant_id = conference.assistant_id
+    file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
+    if not file_ids:
+        raise HTTPException(status_code=404, detail="No files found for this conference")
+    file_id = file_ids[0]
+    # delete from openai assistant api and conference_files table
+    try:
+        delete_file(file_id=file_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    conferences_crud.delete_file_id(db=db, file_id=file_id, conference_id=conference_id, owner_id=current_user.id)
+    assistant_schema = create_assistant_schema(assistant_id, conference_id, file_id=None)
+    update_assistant(assistant_schema)
+    # delete the file from the files folder
+    file_path = os.path.join('app', 'files')
+    file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
+    os.remove(file_path)
+    return {"success": "Sessions file deleted successfully."}
 
 @router.post("/refresh_input_file/")
-async def update_conference(conference_id: str, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+async def update_conference(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
     write_data_to_json(conference_id,db)
     file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
     if not file_ids:
@@ -73,7 +94,7 @@ async def update_conference(conference_id: str, current_user: User = Depends(get
 @router.post("/upload_session_file/")
 async def upload_session_file(file: UploadFile,
                               conference_id: str,
-                              current_user:User = Depends(get_current_active_user),
+                              current_user: User = Security(get_current_active_user, scopes=["organizer"]),
                               token: str = Depends(oauth_2_scheme),
                               db: Session = Depends(get_db)):
     contents = await file.read()
@@ -90,6 +111,7 @@ async def upload_session_file(file: UploadFile,
             "received attributes(Column Names)": headers
         }
         raise HTTPException(status_code=400, detail=error_message)  
+    c=0
     for row in reader:
         payload = {
             "name": f"{row['name']}" if row['name'] else None,
@@ -107,11 +129,19 @@ async def upload_session_file(file: UploadFile,
         except Exception as e:
             raise HTTPException(status_code=400, detail=str(e)+"\n"+str(payload))
         create_session_for_conference(session,db,current_user)
+        c=c+1
+        print(c)
+    filename = await upload_session_from_database(conference_id, current_user, db)
+    return filename
+
+@router.post("/upload_sessions_from_database/")
+async def upload_session_from_database(conference_id: str,
+                                       current_user: User = Security(get_current_active_user, scopes=["organizer"]),
+                                       db: Session = Depends(get_db)):
     write_data_to_json(conference_id,db)
     # get the file from the files folder
     file_path = os.path.join('app', 'files')
     file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
-    # with open(file_path, 'rb') as file:
     try:
         file = upload_file(file_path)
     except Exception as e:
@@ -131,8 +161,8 @@ async def upload_session_file(file: UploadFile,
 def create_assistant_schema(assistant_id, conference_id, file_id):
     payload = {
         "assistant_id": f"{assistant_id}",
-        "model": "gpt-4-1106-preview",
-        "name": f"{conference_id}",
+        "model": "gpt-3.5-turbo-1106",
+        "name": f"ca_{conference_id}",
         "description": "It's a conference assistant. it can help users with their queries related to the sessions of the conference to build their agenda/schedule.",
         "instructions": "You are conference assistant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.",
         "tools": [{"type": "code_interpreter"}],

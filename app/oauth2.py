@@ -26,8 +26,6 @@ def get_current_user(
     user = users_crud.get_user_by_email(db, email=token_data.username)
     if user is None:
         raise credentials_exception
-    # print(security_scopes.scopes)
-    # print(token_data.scopes)
     for scope in security_scopes.scopes:
         if scope not in token_data.scopes:
             raise HTTPException(
