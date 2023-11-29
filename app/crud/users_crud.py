@@ -44,10 +44,8 @@ def get_users(db: Session, offset: int = 0, limit: int = 100):
 # update user
 def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
     db_user = db.query(models.User).filter(models.User.id == user_id).first()
-
-
+    
     updates = {
-        'email': user.email,
         'first_name': user.first_name,
         'last_name': user.last_name,
         'company': user.company,
@@ -61,7 +59,6 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
 
     if user.company is None or user.company == "string" or user.company == "None" or user.company.strip() == "":
         db_user.company = "None"
-
 
     db_user.updated_on = datetime.utcnow()
     db.commit()

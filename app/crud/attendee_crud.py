@@ -76,13 +76,12 @@ def get_attendee_by_id(db: Session, attendee_id: int):
     return attendee
 
 # update attendee by id
-def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendeeBase):
+def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendeeUpdate):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id).first()
     if db_attendee is None or db_user is None:
         return None
     updates_user = {
-        'email': attendee.email,
         'company': attendee.company,
         'first_name': attendee.first_name,
         'last_name': attendee.last_name,
@@ -99,10 +98,14 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
     for key, value in updates_user.items():
         if value is not None:
             setattr(db_user, key, value)
+        elif value == "":
+            setattr(db_user, key, "None")
 
     for key, value in updates_attendee.items():
         if value is not None:
             setattr(db_attendee, key, value)
+        elif value == "":
+            setattr(db_attendee, key, "None")
 
     db_attendee.updated_on = datetime.utcnow()
     db_user.updated_on = datetime.utcnow()
