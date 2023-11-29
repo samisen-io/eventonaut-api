@@ -57,7 +57,7 @@ async def delete_file_from_openai(conference_id: str, current_user: User = Secur
     os.remove(file_path)
     return {"success": "Sessions file deleted successfully."}
 
-@router.post("/refresh_input_file/")
+@router.post("/database_and_repository_synchronization/")
 async def update_conference(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
     write_data_to_json(conference_id,db)
     file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
