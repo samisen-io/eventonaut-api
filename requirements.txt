@@ -5,7 +5,7 @@ pytz
 langchain
 python-multipart
 python-dotenv
-openai == 1.2.4
+openai
 chromadb
 tiktoken
 pandas
