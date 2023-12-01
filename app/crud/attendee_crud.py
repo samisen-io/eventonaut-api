@@ -15,17 +15,6 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db_user.uuid = str(uuid.uuid4())
     db_user.role = "attendee"
     db_user.is_active = True
-    empty_user = {
-        'first_name': "None",
-        'last_name': "None",
-        'company': "None",
-        'business_type': "None",
-        'timezone': "None"
-    }
-
-    for key, value in empty_user.items():
-        setattr(db_user, key, value)
-
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -36,18 +25,6 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db_attendee.uuid = str(uuid.uuid4())
     db_attendee.user_id = db_user.id
     db_attendee.thread_id = create_thread(thread_schemas.Thread()).id
-
-    empty_attendee = {
-        'title': "None",
-        'bio': "None",
-        'share_my_profile': False,
-        'share_my_agenda': False,
-        'profile_image_url': "None"
-    }
-
-    for key, value in empty_attendee.items():
-        setattr(db_attendee, key, value)
-
     db.add(db_attendee)
     db.commit()
     db.refresh(db_attendee)
@@ -119,16 +96,16 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
     }
 
     for key, value in updates_user.items():
-        if value is not None:
-            setattr(db_user, key, value)
-        elif value == "":
+        if value == "":
             setattr(db_user, key, "None")
+        elif value is not None:
+            setattr(db_user, key, value)
 
     for key, value in updates_attendee.items():
-        if value is not None:
-            setattr(db_attendee, key, value)
-        elif value == "":
+        if value == "":
             setattr(db_attendee, key, "None")
+        elif value is not None:
+            setattr(db_attendee, key, value)
 
     db_attendee.updated_on = datetime.utcnow()
     db_user.updated_on = datetime.utcnow()
