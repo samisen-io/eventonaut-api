@@ -6,7 +6,7 @@ from datetime import datetime
 import uuid
 
 # create agenda
-def create_agenda(db: Session, conference_id: str, attendee_id: str, agenda: schemas.AgendaCreate):
+def create_agenda(db: Session, conference_id: str, attendee_id: int, agenda: schemas.AgendaCreate):
 
     session_ids = []
     for session_id in agenda.sessions:
@@ -30,7 +30,7 @@ def create_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
             sessions.append(session)
 
     conference = conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
-    attendee = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
+    attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_agenda = models.Agenda(conference_id=conference.id, name=agenda.name, attendee_id=attendee.id)
     db_agenda.created_on = datetime.utcnow()
     db_agenda.updated_on = datetime.utcnow()
@@ -66,16 +66,16 @@ def get_all_agenda(db: Session, offset: int = 0, limit: int = 100):
             agenda_session.sessions.append(schemas.Session(uuid=session.uuid, name=session.name, date=session.date, start_time=session.start_time, end_time=session.end_time, description=session.description, location=session.location, speakers=session.speakers, tags=session.tags))
     return agenda_sessions
 
-def get_agenda(db: Session, conference_id: str, attendee_id: str):
+def get_agenda(db: Session, conference_id: str, attendee_id: int):
     conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
-    attendee=db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
+    attendee=db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
     return db_agenda
 
 # get agenda by conference id and attendee id
-def get_agenda_by_conference_uuid_attendee_uuid(db: Session, conference_id: str, attendee_id: str):
+def get_agenda_by_conference_uuid_attendee_uuid(db: Session, conference_id: str, attendee_id: int):
     conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
-    attendee=db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
+    attendee=db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
     if db_agenda is None:
         return None
@@ -90,31 +90,32 @@ def get_agendas_by_attendee_id_name(db: Session, attendee_id: int, name: str):
     return db.query(models.Agenda).filter(models.Agenda.attendee_id == attendee_id,models.Agenda.name.ilike('%'+name+'%')).all()
 
 # update agenda by conference id and attendee id
-def update_agenda(db: Session, conference_id: str, attendee_id: str, agenda: schemas.AgendaUpdate):
+def update_agenda(db: Session, conference_id: str, attendee_id: int, agenda: schemas.AgendaUpdate):
 
-    session_ids = []
-    for session_id in agenda.sessions:
-        if session_id not in session_ids:
-            session_ids.append(session_id)
+    if agenda.sessions is not None:
+        session_ids = []
+        for session_id in agenda.sessions:
+            if session_id not in session_ids:
+                session_ids.append(session_id)
 
-    sessions = []
-    for session_id in session_ids:
-        session = sessions_crud.get_session_by_session_uuid(db, uuid=session_id)
-        conflicting_session = None
-    
-        for s in sessions:
-            if s.date == session.date:
-                if (s.start_time >= session.start_time and s.start_time < session.end_time) or (s.end_time > session.start_time and s.end_time <= session.end_time) or (s.start_time <= session.start_time and s.end_time >= session.end_time):
-                    conflicting_session = s
-                    break
+        sessions = []
+        for session_id in session_ids:
+            session = sessions_crud.get_session_by_session_uuid(db, uuid=session_id)
+            conflicting_session = None
 
-        if conflicting_session:
-            return conflicting_session
-        else:
-            sessions.append(session)
+            for s in sessions:
+                if s.date == session.date:
+                    if (s.start_time >= session.start_time and s.start_time < session.end_time) or (s.end_time > session.start_time and s.end_time <= session.end_time) or (s.start_time <= session.start_time and s.end_time >= session.end_time):
+                        conflicting_session = s
+                        break
+
+            if conflicting_session:
+                return conflicting_session
+            else:
+                sessions.append(session)
 
     conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
-    attendee=db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
+    attendee=db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
     db_agenda.updated_on=datetime.utcnow()
 
@@ -143,10 +144,11 @@ def update_agenda(db: Session, conference_id: str, attendee_id: str, agenda: sch
     return agenda_session
 
 # delete agenda by conference id and attendee id
-def delete_agenda(db: Session, conference_id: str, attendee_id: str):
+def delete_agenda(db: Session, conference_id: str, attendee_id: int):
     conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
-    attendee=db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
+    attendee=db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
+    db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee.id,models.Attendee_Conferences.conference_id==conference.id).delete()
     db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
     db.delete(db_agenda)
     db.commit()
