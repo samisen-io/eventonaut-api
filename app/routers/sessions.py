@@ -6,6 +6,7 @@ from ..schemas import session_schemas as schemas
 from ..schemas import user_schemas as uschemas
 from ..crud import sessions_crud as crud, conferences_crud
 from ..dependencies import get_db
+from .. import basicauth
 from datetime import date
 
 router = APIRouter(tags=["sessions"])
@@ -61,7 +62,7 @@ def get_all_sessions(offset: int = 0, limit: int = 100, db: Session = Depends(ge
 
 # get all sessions by conference id
 @router.get("/sessions/{conference_id}", response_model=list[schemas.Session])
-def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_db)):
+def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_db),basic_auth = Depends(basicauth.basic_auth)):
     if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     db_sessions = crud.get_all_sessions_by_uuid_id(db, conference_uuid=conference_id)

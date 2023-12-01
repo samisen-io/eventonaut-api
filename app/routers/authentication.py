@@ -11,6 +11,7 @@ from app.token import Token, create_access_token
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from ..token import create_refresh_token, invalidate_refresh_token, token_cache
+from .. import basicauth
 # from ..my_token import token_cache
 
 from app.oauth2 import get_current_active_user, get_current_user_RT, oauth_2_scheme
@@ -31,7 +32,7 @@ def authenticate_user(db: Session, username: str, password: str, token_jti: str)
     return user
 
 @router.post("/login", response_model=Token)
-async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends()):
+async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends(), basic_auth = Depends(basicauth.basic_auth)):
     form_data.username = form_data.username.lower().strip()
     scopes = form_data.scopes if form_data.scopes else None
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
@@ -59,7 +60,7 @@ def print_something2(current_user: User = Security(get_current_active_user, scop
     return {"message": "Hello World"}
     
 @router.post("/refresh_token", response_model = Token)
-async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = Depends(get_db)):
+async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:
         jwt_token = token.token
         # validate refresh token
@@ -75,7 +76,7 @@ async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = D
         raise HTTPException(status_code=400, detail="Invalid token")
     
 @router.post("/invalidate_refresh_token")
-async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db)):
+async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:
         jwt_token = token.token
         current_user: User = get_current_user_RT(jwt_token,db)

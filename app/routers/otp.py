@@ -9,6 +9,7 @@ from ..crud import users_crud as crud
 from dotenv import load_dotenv
 import os
 import time
+from .. import basicauth
 
 load_dotenv()
 
@@ -32,7 +33,7 @@ def delete_entry(email: str,delay: int,task_timestamp: datetime, otp_manager: OT
         del otp_db[email]
 
 @router.post('/otp')
-async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, otp_manager: OTPManager = Depends(get_otp_manager), db: Session = Depends(get_db)):
+async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, otp_manager: OTPManager = Depends(get_otp_manager), db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     global default_time_limit
     otp_db = otp_manager.otp_db
     try:
@@ -52,7 +53,7 @@ async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, otp_m
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
-async def verify_otp(email: str, otp: str, otp_manager: OTPManager = Depends(get_otp_manager)):
+async def verify_otp(email: str, otp: str, otp_manager: OTPManager = Depends(get_otp_manager), basic_auth = Depends(basicauth.basic_auth)):
     otp_db = otp_manager.otp_db
     if email not in otp_db.keys():
         raise HTTPException(status_code=400, detail="Email not verified")
@@ -67,7 +68,7 @@ async def verify_otp(email: str, otp: str, otp_manager: OTPManager = Depends(get
     return {"msg": "OTP verified successfully"}
 
 @router.put('/otp/passwordreset')
-async def password_reset(email: str, password: str, otp_manager: OTPManager = Depends(get_otp_manager), db: Session = Depends(get_db)):
+async def password_reset(email: str, password: str, otp_manager: OTPManager = Depends(get_otp_manager), db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     otp_db = otp_manager.otp_db
     if email in otp_db.keys() and otp_db[email][2]:
         crud.update_user_password_by_email(db=db, email=email, password=password)
