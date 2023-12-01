@@ -100,16 +100,12 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
             setattr(db_user, key, "None")
         elif value is not None:
             setattr(db_user, key, value)
-        elif value == "":
-            setattr(db_user, key, "None")
 
     for key, value in updates_attendee.items():
         if value == "":
             setattr(db_attendee, key, "None")
         elif value is not None:
             setattr(db_attendee, key, value)
-        elif value == "":
-            setattr(db_attendee, key, "None")
 
     db_attendee.updated_on = datetime.utcnow()
     db_user.updated_on = datetime.utcnow()
