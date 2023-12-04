@@ -18,7 +18,7 @@ def create_assistant(schema: schemas.AssistantCreate, basic_auth = Depends(basic
         hyphen_index = exception.find('-')
         error_code = int(re.search(r'\d+',exception[:hyphen_index].strip()).group())
         error_message = exception[hyphen_index+1:].strip()
-        logging.error(error_message)
+        logging.exception(error_message)
         raise HTTPException(status_code=error_code, detail=error_message)
     
 @router.get("/assistant/get_assistant/{assistant_id}")
@@ -32,7 +32,7 @@ def get_assistant(assistant_id: str, basic_auth = Depends(basicauth.basic_auth))
         hyphen_index = exception.find('-')
         error_code = int(re.search(r'\d+',exception[:hyphen_index].strip()).group())
         error_message = exception[hyphen_index+1:].strip()
-        logging.error(error_message)
+        logging.exception(error_message)
         raise HTTPException(status_code=error_code, detail=error_message)
     
 @router.put("/assistant/update_assistant")
@@ -46,7 +46,7 @@ def update_assistant(schema: schemas.AssistantUpdate, basic_auth = Depends(basic
         hyphen_index = exception.find('-')
         error_code = int(re.search(r'\d+',exception[:hyphen_index].strip()).group())
         error_message = exception[hyphen_index+1:].strip()
-        logging.error(error_message)
+        logging.exception(error_message)
         raise HTTPException(status_code=error_code, detail=error_message)
     
 @router.delete("/assistant/delete_assistant/{assistant_id}")
@@ -60,7 +60,7 @@ def delete_assistant(assistant_id: str, basic_auth = Depends(basicauth.basic_aut
         hyphen_index = exception.find('-')
         error_code = int(re.search(r'\d+',exception[:hyphen_index].strip()).group())
         error_message = exception[hyphen_index+1:].strip()
-        logging.error(error_message)
+        logging.exception(error_message)
         raise HTTPException(status_code=error_code, detail=error_message)
 
 @router.get("/assistant/list_assistants")
@@ -74,5 +74,5 @@ def list_assistants(basic_auth = Depends(basicauth.basic_auth)):
         hyphen_index = exception.find('-')
         error_code = int(re.search(r'\d+',exception[:hyphen_index].strip()).group())
         error_message = exception[hyphen_index+1:].strip()
-        logging.error(error_message)
+        logging.exception(error_message)
         raise HTTPException(status_code=error_code, detail=error_message)
