@@ -17,7 +17,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_a
         valid = validate_email(user.email)
         user.email = valid.normalized.lower()
     except EmailNotValidError as e:
-        logging.exception("Invalid email")
+        logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
