@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+import logging
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 from .. import models
@@ -102,6 +103,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
 
     if conference.start_date is not None and conference.end_date is not None:
         if conference.start_date > conference.end_date or conference.start_date < date.today():
+            logging.exception("Invalid date range")
             raise HTTPException(status_code=400, detail="Invalid date range")
         
     attributes = ["description", "conference_logo", "timezone", "registration_link"]
