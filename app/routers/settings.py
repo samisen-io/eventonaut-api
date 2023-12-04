@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Security
+import logging
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
@@ -20,7 +21,9 @@ def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_d
         raise HTTPException(status_code=400, detail="Settings already exists")
     if settings.body is None or len(settings.body) == 0:
         raise HTTPException(status_code=400, detail="Body is empty")
-    return crud.create_settings(db=db, settings=settings, owner_id=current_user.id)
+    settings = crud.create_settings(db=db, settings=settings, owner_id=current_user.id)
+    logging.info("Settings created: " + settings.conference_id)
+    return settings
 
 # get all settings
 @router.get("/settings/all_settings", response_model=list[schemas.Settings])
@@ -28,6 +31,7 @@ def get_settings(db: Session = Depends(get_db), offset: int = 0, limit: int = 10
     settings = crud.get_settings(db, offset=offset, limit=limit)
     if settings is None or len(settings) == 0:
         raise HTTPException(status_code=404, detail="Settings not found")
+    logging.info("Settings retrieved")
     return settings
 
 # get settings by conference id
@@ -38,6 +42,7 @@ def get_settings_by_conference_id(conference_id: str, db: Session = Depends(get_
     settings = crud.get_settings_by_conf_uuid(db, conference_uuid=conference_id)
     if settings is None:
         raise HTTPException(status_code=404, detail="Settings not found")
+    logging.info("Settings retrieved by conference id: " + conference_id)
     return settings
 
 # update settings by conference id and settings id
@@ -51,6 +56,7 @@ def update_settings(settings: schemas.SettingsCreate,db: Session = Depends(get_d
     if settings.body is None or len(settings.body) == 0:
         raise HTTPException(status_code=400, detail="Body is empty")
     settings=crud.update_settings(db=db, settings=settings, owner_id=current_user.id)
+    logging.info("Settings updated: " + settings.conference_id)
     return settings
 
 # delete settings by conference id and settings id
@@ -59,4 +65,6 @@ def delete_settings(conference_id: str, db: Session = Depends(get_db), current_u
     db_settings = crud.get_settings_by_conference_uuid(db, conference_uuid=conference_id,owner_id=current_user.id)
     if db_settings is None:
         raise HTTPException(status_code=404, detail="Settings not found")
-    return crud.delete_settings(db=db, conference_uuid=conference_id, owner_id=current_user.id)
+    deleted_settings = crud.delete_settings(db=db, conference_uuid=conference_id, owner_id=current_user.id)
+    logging.info("Settings deleted: " + conference_id)
+    return deleted_settings
