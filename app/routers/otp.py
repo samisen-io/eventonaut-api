@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+import logging
 from ..dependencies import get_db
 from ..crud import users_crud as crud
 from email_validator import validate_email, EmailNotValidError
@@ -50,6 +51,7 @@ async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, otp_m
     sent_time = datetime.now()
     otp_db[email] = [otp, sent_time, False]
     bgtask.add_task(delete_entry, email, default_time_limit, sent_time)
+    logging.info("OTP sent to: " + email)
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
@@ -64,7 +66,9 @@ async def verify_otp(email: str, otp: str, otp_manager: OTPManager = Depends(get
     if valid_otp:
         otp_db[email][0] = 0
     else:
+        logging.info("OTP not verified for: " + email)
         raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
+    logging.info("OTP verified for: " + email)
     return {"msg": "OTP verified successfully"}
 
 @router.put('/otp/passwordreset')
@@ -73,6 +77,8 @@ async def password_reset(email: str, password: str, otp_manager: OTPManager = De
     if email in otp_db.keys() and otp_db[email][2]:
         crud.update_user_password_by_email(db=db, email=email, password=password)
         del otp_db[email]
+        logging.info("Password updated for: " + email)
         return {"msg": "Password updated successfully"}
     else:
+        logging.info("OTP not verified for: " + email)
         raise HTTPException(status_code=400, detail="OTP not verified")
