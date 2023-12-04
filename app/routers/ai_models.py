@@ -1,5 +1,6 @@
 import ast
 import os
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
 from app.file_reader import read_file_return_csv
 from app.schemas import session_schemas as schemas
@@ -32,6 +33,7 @@ async def query_document_endpoint(question: str, conference_id: str, db: Session
     if not file_ids:
         raise HTTPException(status_code=404, detail="No files found for this conference")
     answer = query_document(question,assistant_id,thread_id, file_ids)
+    logging.info("Answer retrieved")
     return {"answer": answer}
 
 @router.delete("/delete_file/")
@@ -56,6 +58,7 @@ async def delete_file_from_openai(conference_id: str, current_user: User = Secur
     file_path = os.path.join('app', 'files')
     file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
     os.remove(file_path)
+    logging.info("File deleted")
     return {"success": "Sessions file deleted successfully."}
 
 @router.post("/database_and_repository_synchronization/")
@@ -71,6 +74,7 @@ async def update_conference(conference_id: str, current_user: User = Security(ge
             raise HTTPException(status_code=400, detail=str(e))
         conferences_crud.delete_file_id(db=db, file_id=file_id, conference_id=conference_id, owner_id=current_user.id)
     filename = await upload_session_from_database(conference_id, current_user, db)
+    logging.info("Database and repository synchronized")
     return filename
 
 @router.post("/upload_session_file/")
@@ -114,6 +118,7 @@ async def upload_session_file(file: UploadFile,
         c=c+1
         print(c)
     filename = await upload_session_from_database(conference_id, current_user, db)
+    logging.info("Session file uploaded")
     return filename
 
 # @router.post("/upload_sessions_from_database/")
