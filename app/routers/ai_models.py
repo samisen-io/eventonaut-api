@@ -24,13 +24,16 @@ router = APIRouter(tags=["ai_models"])
 async def query_document_endpoint(question: str, conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
+        logging.exception("Conference not found")
         raise HTTPException(status_code=404, detail="Conference not found")
     assistant_id = conference.assistant_id
     thread_id = attendee_crud.get_thread_id_by_attendee_id(db, current_user.id)
     if not thread_id:
+        logging.exception("Thread not found")
         raise HTTPException(status_code=404, detail="Thread not found")
     file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
     if not file_ids:
+        logging.exception("No files found for this conference")
         raise HTTPException(status_code=404, detail="No files found for this conference")
     answer = query_document(question,assistant_id,thread_id, file_ids)
     logging.info("Answer retrieved")
@@ -40,16 +43,19 @@ async def query_document_endpoint(question: str, conference_id: str, db: Session
 async def delete_file_from_openai(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
+        logging.exception("Conference not found")
         raise HTTPException(status_code=404, detail="Conference not found")
     assistant_id = conference.assistant_id
     file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
     if not file_ids:
+        logging.exception("No files found for this conference")
         raise HTTPException(status_code=404, detail="No files found for this conference")
     file_id = file_ids[0]
     # delete from openai assistant api and conference_files table
     try:
         delete_file(file_id=file_id)
     except Exception as e:
+        logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
     conferences_crud.delete_file_id(db=db, file_id=file_id, conference_id=conference_id, owner_id=current_user.id)
     assistant_schema = create_assistant_schema(assistant_id, conference_id, file_id="")
@@ -71,6 +77,7 @@ async def update_conference(conference_id: str, current_user: User = Security(ge
         try:
             delete_file(file_id=file_id)
         except Exception as e:
+            logging.exception(str(e))
             raise HTTPException(status_code=400, detail=str(e))
         conferences_crud.delete_file_id(db=db, file_id=file_id, conference_id=conference_id, owner_id=current_user.id)
     filename = await upload_session_from_database(conference_id, current_user, db)
@@ -96,6 +103,7 @@ async def upload_session_file(file: UploadFile,
             "expected attributes(Column Names)": my_headers, 
             "received attributes(Column Names)": headers
         }
+        logging.exception(error_message)
         raise HTTPException(status_code=400, detail=error_message)  
     c=0
     for row in reader:
@@ -113,6 +121,7 @@ async def upload_session_file(file: UploadFile,
         try:
             session = schemas.SessionCreate(**payload)
         except Exception as e:
+            logging.exception(str(e)+"\n"+str(payload))
             raise HTTPException(status_code=400, detail=str(e)+"\n"+str(payload))
         create_session_for_conference(session,db,current_user)
         c=c+1
@@ -132,17 +141,21 @@ async def upload_session_from_database(conference_id: str,
     try:
         file = upload_file(file_path)
     except Exception as e:
+        logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
     try:
         conferences_crud.upload_file_id(db=db, file_id=file.id, conference_id=conference_id, owner_id=current_user.id)
     except Exception as e:
+        logging.exception(str(e))
         raise HTTPException(status_code=400, detail=f"Error uploading file: {str(e)}")
     try:
         assistant_id = conferences_crud.get_assistant_id_by_conference_id(db, conference_id)
     except Exception as e:
+        logging.exception(str(e))
         raise HTTPException(status_code=400, detail=f"Error getting assistant ID: {str(e)}")
     assistant_schema = create_assistant_schema(assistant_id, conference_id, file.id)
     update_assistant(assistant_schema)
+    logging.info("Sessions uploaded from database")
     return {'filename':file.filename}
 
 def create_assistant_schema(assistant_id, conference_id, file_id):
@@ -157,4 +170,5 @@ def create_assistant_schema(assistant_id, conference_id, file_id):
         "metadata": {}
     }
     assistant = ai_schemas.AssistantUpdate(**payload)
+    logging.info("Assistant schema created")
     return assistant
