@@ -41,34 +41,39 @@ async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, otp_m
         valid = validate_email(email)
         email = valid.email
     except EmailNotValidError as e:
+        logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
     user = crud.get_user_by_email(db, email)
     if not user:
+        logging.exception("User not found")
         raise HTTPException(status_code=404, detail="User not found")
     otp = generate_otp()
     if not send_mail(otp, email_subject, email):
+        logging.exception("Email not sent")
         raise HTTPException(status_code=400, detail="Email not sent")
     sent_time = datetime.now()
     otp_db[email] = [otp, sent_time, False]
     bgtask.add_task(delete_entry, email, default_time_limit, sent_time)
-    logging.info("OTP sent to: " + email)
+    logging.info("OTP sent to Email")
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
 async def verify_otp(email: str, otp: str, otp_manager: OTPManager = Depends(get_otp_manager), basic_auth = Depends(basicauth.basic_auth)):
     otp_db = otp_manager.otp_db
     if email not in otp_db.keys():
+        logging.exception("Email not found")
         raise HTTPException(status_code=400, detail="Email not verified")
     if len(otp) != 6:
+        logging.exception("Invalid OTP")
         raise HTTPException(status_code=400, detail="Invalid OTP")
     valid_otp = validate_otp(otp_db[email][0], otp, otp_db[email][1], datetime.now())
     otp_db[email][2] = valid_otp
     if valid_otp:
         otp_db[email][0] = 0
     else:
-        logging.info("OTP not verified for: " + email)
+        logging.info("OTP not verified for Email")
         raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
-    logging.info("OTP verified for: " + email)
+    logging.info("OTP verified for Email")
     return {"msg": "OTP verified successfully"}
 
 @router.put('/otp/passwordreset')
@@ -77,8 +82,8 @@ async def password_reset(email: str, password: str, otp_manager: OTPManager = De
     if email in otp_db.keys() and otp_db[email][2]:
         crud.update_user_password_by_email(db=db, email=email, password=password)
         del otp_db[email]
-        logging.info("Password updated for: " + email)
+        logging.info("Password updated for Email")
         return {"msg": "Password updated successfully"}
     else:
-        logging.info("OTP not verified for: " + email)
+        logging.exception("OTP not verified")
         raise HTTPException(status_code=400, detail="OTP not verified")
