@@ -134,6 +134,7 @@ class Attendee_Conferences(Base):
     updated_on = Column(DateTime)
     attendee_id = Column(Integer, ForeignKey("attendees.id"))
     conference_id = Column(Integer, ForeignKey("conferences.id"))
+    is_registered = Column(Boolean, default=False)
 
     attendee = relationship("Attendee", back_populates="attendee_conference")
     conference = relationship("Conference", back_populates="attendee_conference")
