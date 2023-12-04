@@ -18,7 +18,7 @@ def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_
         valid = validate_email(attendee.email)
         attendee.email = valid.normalized.lower()
     except EmailNotValidError as e:
-        logging.exception("Invalid email")
+        logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
     db_attendee = crud.get_attendee_by_email(db, email=attendee.email)
     if db_attendee:
