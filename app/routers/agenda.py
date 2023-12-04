@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Security
+import logging
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from ..dependencies import get_db
@@ -36,6 +37,7 @@ def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), c
             "tags" : created_agenda.tags
         }
         raise HTTPException(status_code=400, detail={"error":"found conflict with a session", "session": session})
+    logging.info("Agenda created: " + agenda.attendee_id)
     return created_agenda
 
 # get all agenda
@@ -44,6 +46,7 @@ def get_all_agenda(offset: int = 0, limit: int = 100, db: Session = Depends(get_
     agenda=crud.get_all_agenda(db, offset=offset, limit=limit)
     if agenda is None or len(agenda) == 0:
         raise HTTPException(status_code=404, detail="No Agenda found")
+    logging.info("All Agenda retrieved")
     return agenda
 
 # get agenda by conference id and attendee id
@@ -56,6 +59,7 @@ def get_agenda_by_conference_id_attendee_id(conference_id: str, attendee_id: str
     agenda=crud.get_agenda_by_conference_uuid_attendee_uuid(db, conference_id=conference_id, attendee_id=attendee_id)
     if agenda is None:
         raise HTTPException(status_code=404, detail="Agenda not found")
+    logging.info("Agenda retrieved" + conference_id)
     return agenda
 
 # update agenda by conference id and attendee id
@@ -88,6 +92,7 @@ def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), c
             "tags" : updated_agenda.tags
         }
         raise HTTPException(status_code=400, detail={"error":"found conflict with a session", "session": session})
+    logging.info("Agenda updated: " + agenda.attendee_id)
     return updated_agenda
 
 # delete agenda by conference id and attendee id
@@ -103,4 +108,6 @@ def delete_agenda(conference_id: str, attendee_id: str, db: Session = Depends(ge
             raise HTTPException(status_code=404, detail="Agenda not found")
     except:
         raise HTTPException(status_code=404, detail="Agenda not found")
-    return crud.delete_agenda(db=db, conference_id=conference_id, attendee_id=attendee_id)
+    deleted_agenda = crud.delete_agenda(db=db, conference_id=conference_id, attendee_id=attendee_id)
+    logging.info("Agenda deleted: " + attendee_id)
+    return deleted_agenda
