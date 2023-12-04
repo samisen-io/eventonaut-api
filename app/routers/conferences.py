@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Header, Security
+import logging
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
@@ -24,6 +25,7 @@ def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session
         raise HTTPException(status_code=404, detail="User not found")
     if conference.start_date > conference.end_date or conference.start_date < date.today():
         raise HTTPException(status_code=400, detail="Invalid date range")
+    logging.info("Conference created: " + conference.name)
     return crud.create_user_conference(db=db, conference=conference, user_id=current_user.id)
 
 # get all conferences
@@ -34,6 +36,7 @@ def get_all_conferences(offset: int = 0, limit: int = 100, db: Session = Depends
     conferences = crud.get_all_conferences(db, offset=offset, limit=limit)
     if conferences is None or len(conferences) == 0:
         raise HTTPException(status_code=404, detail="Conference not found")
+    logging.info("Conferences retrieved")
     return conferences
 
 # get all conferences for attendee
@@ -44,6 +47,7 @@ def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Sess
     conferences = crud.get_all_conferences_for_attendee(db, offset=offset, limit=limit)
     if conferences is None or len(conferences) == 0:
         raise HTTPException(status_code=404, detail="Conference not found")
+    logging.info("Conferences retrieved for attendee")
     return conferences
 
 # get all conferences by owner_id
@@ -56,6 +60,7 @@ def get_all_conferences_by_owner_id(db: Session = Depends(get_db), current_user:
     db_conferences = crud.get_conferences_by_owner_id(db, owner_id=current_user.id)
     if db_conferences is None or len(db_conferences) == 0:
         raise HTTPException(status_code=404, detail="Conference not found")
+    logging.info("Conferences retrieved by owner id: " + current_user.email)
     return db_conferences
 
 # update conference by conference id
@@ -69,7 +74,9 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
     if conference.start_date is not None and conference.end_date is not None:
         if conference.start_date > conference.end_date or conference.start_date < date.today():
             raise HTTPException(status_code=400, detail="Invalid date range")
-    return crud.update_user_conference(db=db, conference=conference, uuid=conference.id, owner_id=current_user.id)
+    updated_conference = crud.update_user_conference(db=db, conference=conference, uuid=conference.id, owner_id=current_user.id)
+    logging.info("Conference updated: " + db_conference.name)
+    return updated_conference
 
 # delete conference
 @router.delete("/conferences/{conference_id}")
@@ -81,6 +88,7 @@ def delete_conference_owner_id_conference_id(conference_id: str, db: Session = D
     db_conference = crud.get_conference_by_uuid(db,owner_id=current_user.id, uuid=conference_id)
     if db_conference is None:
         raise HTTPException(status_code=404, detail="Conference not found")
+    logging.info("Conference deleted: " + db_conference.name)
     return crud.delete_conference(db=db, owner_id=current_user.id, uuid=conference_id)
 
 # generate qr code based on conference uuid
@@ -113,5 +121,7 @@ def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_
     headers = {
         "Content-Disposition": f"attachment; filename=conf_qrcode.png",
     }
+
+    logging.info("QR code generated: " + conference.name)
 
     return StreamingResponse(img_byte_arr, media_type="image/png", headers=headers)
