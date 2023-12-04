@@ -15,11 +15,14 @@ router = APIRouter(tags=["settings"])
 @router.post("/settings", response_model=schemas.Settings)
 def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if conferences_crud.get_conference_by_uuid(db, uuid=settings.conference_id,owner_id=current_user.id) is None:
+        logging.exception("Conference not found")
         raise HTTPException(status_code=404, detail="Conference not found")
     db_settings = crud.get_settings_by_conference_uuid(db, conference_uuid=settings.conference_id,owner_id=current_user.id)
     if db_settings:
+        logging.exception("Settings already exists")
         raise HTTPException(status_code=400, detail="Settings already exists")
     if settings.body is None or len(settings.body) == 0:
+        logging.exception("Body is empty")
         raise HTTPException(status_code=400, detail="Body is empty")
     settings = crud.create_settings(db=db, settings=settings, owner_id=current_user.id)
     logging.info("Settings created: " + settings.conference_id)
@@ -30,17 +33,20 @@ def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_d
 def get_settings(db: Session = Depends(get_db), offset: int = 0, limit: int = 100):
     settings = crud.get_settings(db, offset=offset, limit=limit)
     if settings is None or len(settings) == 0:
+        logging.exception("Settings not found")
         raise HTTPException(status_code=404, detail="Settings not found")
-    logging.info("Settings retrieved")
+    logging.info("All Settings retrieved")
     return settings
 
 # get settings by conference id
 @router.get("/settings/{conference_id}", response_model=schemas.Settings)
 def get_settings_by_conference_id(conference_id: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
+        logging.exception("Conference not found")
         raise HTTPException(status_code=404, detail="Conference not found")
     settings = crud.get_settings_by_conf_uuid(db, conference_uuid=conference_id)
     if settings is None:
+        logging.exception("Settings not found")
         raise HTTPException(status_code=404, detail="Settings not found")
     logging.info("Settings retrieved by conference id: " + conference_id)
     return settings
@@ -49,11 +55,14 @@ def get_settings_by_conference_id(conference_id: str, db: Session = Depends(get_
 @router.put("/settings", response_model=schemas.Settings)
 def update_settings(settings: schemas.SettingsCreate,db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if conferences_crud.get_conference_by_uuid(db, uuid=settings.conference_id,owner_id=current_user.id) is None:
+        logging.exception("Conference not found")
         raise HTTPException(status_code=404, detail="Conference not found")
     db_settings = crud.get_settings_by_conference_uuid(db, conference_uuid=settings.conference_id,owner_id=current_user.id)
     if db_settings is None:
+        logging.exception("Settings not found")
         raise HTTPException(status_code=404, detail="Settings not found")
     if settings.body is None or len(settings.body) == 0:
+        logging.exception("Body is empty")
         raise HTTPException(status_code=400, detail="Body is empty")
     settings=crud.update_settings(db=db, settings=settings, owner_id=current_user.id)
     logging.info("Settings updated: " + settings.conference_id)
@@ -64,6 +73,7 @@ def update_settings(settings: schemas.SettingsCreate,db: Session = Depends(get_d
 def delete_settings(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_settings = crud.get_settings_by_conference_uuid(db, conference_uuid=conference_id,owner_id=current_user.id)
     if db_settings is None:
+        logging.exception("Settings not found")
         raise HTTPException(status_code=404, detail="Settings not found")
     deleted_settings = crud.delete_settings(db=db, conference_uuid=conference_id, owner_id=current_user.id)
     logging.info("Settings deleted: " + conference_id)
