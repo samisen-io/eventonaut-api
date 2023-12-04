@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends, Security
+import logging
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
@@ -24,6 +25,7 @@ def create_session_for_conference(
     if session.start_time > session.end_time:
         raise HTTPException(status_code=400, detail="Invalid time")
     session=crud.create_conference_session(db=db, session=session, owner_id=current_user.id)
+    logging.info("Session created: " + session.name)
     return session
 
 # create sessions by list of sessions
@@ -48,6 +50,7 @@ def create_sessions_for_conference(
     for session in sessions:
         session_list.append(crud.create_conference_session(db=db, session=session, owner_id=current_user.id))
 
+    logging.info("Sessions created")
     return session_list
 
 # get all sessions
@@ -58,6 +61,7 @@ def get_all_sessions(offset: int = 0, limit: int = 100, db: Session = Depends(ge
     db_sessions = crud.get_sessions(db, offset=offset, limit=limit)
     if db_sessions is None or len(db_sessions) == 0:
         raise HTTPException(status_code=404, detail="Session not found")
+    logging.info("Sessions retrieved")
     return db_sessions
 
 # get all sessions by conference id
@@ -68,6 +72,7 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
     db_sessions = crud.get_all_sessions_by_uuid_id(db, conference_uuid=conference_id)
     if db_sessions is None or len(db_sessions) == 0:
         raise HTTPException(status_code=404, detail="Session not found")
+    logging.info("Sessions retrieved for conference: " + conference_id)
     return db_sessions
 
 # update session
@@ -85,7 +90,9 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
         raise HTTPException(status_code=400, detail="Invalid date")
     if session.start_time is not None and session.end_time is not None and session.start_time > session.end_time:
         raise HTTPException(status_code=400, detail="Invalid time")
-    return crud.update_session(db=db, session=session, uuid=session.id, owner_id=current_user.id)
+    updated_session = crud.update_session(db=db, session=session, uuid=session.id, owner_id=current_user.id)
+    logging.info("Session updated: " + db_session.name)
+    return updated_session
 
 #delete session
 @router.delete("/sessions/{session_id}")
@@ -93,4 +100,6 @@ def delete_session(session_id: str, db: Session = Depends(get_db), current_user:
     db_session = crud.get_session_by_uuid_id(db, uuid=session_id, owner_id=current_user.id)
     if db_session is None:
         raise HTTPException(status_code=404, detail="Session not found")
-    return crud.delete_session(db=db, uuid=session_id, owner_id=current_user.id)
+    session_deleted = crud.delete_session(db=db, uuid=session_id, owner_id=current_user.id)
+    logging.info("Session deleted: " + db_session.name)
+    return session_deleted
