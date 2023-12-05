@@ -19,8 +19,6 @@ from app.oauth2 import get_current_active_user, get_current_user_RT, oauth_2_sch
 router = APIRouter(tags=["authentication"])
 
 load_dotenv()
-# ACCESS_TOKEN_EXPIRE=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
-# REFRESH_TOKEN_EXPIRE=int(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES"))
 
 ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES"))
 ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS"))
