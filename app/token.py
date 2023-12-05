@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from app.schemas.token_schemas import Token, TokenData
 from pydantic import BaseModel, ValidationError
 
-token_cache = TTLCache(maxsize=1000, ttl=5400)
+token_cache = TTLCache(maxsize=1000, ttl=timedelta(days=10))
     
 load_dotenv()
 REFRESH_TOKEN_SECRET_KEY = os.getenv("REFRESH_TOKEN_SECRET_KEY")
