@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from fastapi import HTTPException
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from app.schemas.token_schemas import Token, TokenData
+from app.schemas.token_schemas import TokenData
 
 token_cache = TTLCache(maxsize=1000, ttl=864000)
     
