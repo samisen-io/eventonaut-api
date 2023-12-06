@@ -123,7 +123,6 @@ class AttendeeUpdate(BaseModel):
     bio: str | None = None
     share_my_profile: bool | None = None
     share_my_agenda: bool | None = None
-    profile_image_url: str | None = None
 
     @validator('first_name')
     def first_name_is_not_empty(cls, v):
@@ -166,12 +165,6 @@ class AttendeeUpdate(BaseModel):
                 raise HTTPException(status_code=400, detail="Invalid bio")
             elif len(v) > 256:
                 raise HTTPException(status_code=400, detail="Bio too long")
-        return v
-    
-    @validator('profile_image_url')
-    def profile_image_url_is_not_empty(cls, v):
-        if v is not None and v == "string":
-            raise HTTPException(status_code=400, detail="Invalid profile image url")
         return v
 
 #pydantic model for attendee
