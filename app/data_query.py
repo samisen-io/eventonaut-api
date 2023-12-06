@@ -1,68 +1,55 @@
+import json
 import os
-import time
+import chromadb
 from dotenv import load_dotenv
-from fastapi import HTTPException
-from openai import OpenAI
-
+from langchain.vectorstores import Pinecone
+from langchain.chains import ConversationalRetrievalChain
+from langchain.chat_models import ChatOpenAI   
+from langchain.embeddings.openai import OpenAIEmbeddings 
+from langchain.callbacks import get_openai_callback  
+import pinecone
 
 load_dotenv()
-
-api_key = os.environ.get('OPENAI_API_KEY')
+api_key = os.environ.get("OPENAI_API_KEY")
 if not api_key:
-    print('OpenAI API key not found in environment variables.')
+    print("OpenAI API key not found in environment variables.")
     exit()
+# initialize pinecone
+pinecone.init(
+    api_key=os.environ.get("PINECONE_API_KEY"),
+    environment = os.environ.get("PINECONE_API_ENV")
+)
+# initialize embedding function
+embedding_function = OpenAIEmbeddings()
+
+def handler_to_dict(handler):
+    # Convert the handler to a dict or another JSON-serializable type
+    return handler.__dict__
+
+def retrieve_answer(question, conference_id):
+    vectordb = Pinecone.from_existing_index(index_name="sessions-"+str(conference_id), embedding=embedding_function)
+    chain = ConversationalRetrievalChain.from_llm(llm=ChatOpenAI(temperature=0.0, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key),
+                                                  retriever=vectordb.as_retriever(), return_source_documents=True)
+    history = []
+    return chain({"question": question, "chat_history": history})
+
+def query_document(question, conference_id):
+    with get_openai_callback() as cb:
+        result = retrieve_answer(question, conference_id)
+        
+    usage = json.dumps(cb, default=handler_to_dict, indent=4)
+    # retrieve the answer and source documents
+    answer = result['answer']
+    docs = result['source_documents']
+    source_list = []
+    for doc in docs:
+        metadata = doc.metadata
+        source_list.append(metadata['source'])
+    data = {
+        'answer': answer,
+        'source_list': source_list,
+        'usage': json.loads(usage)
+    }
+    json_data = json.dumps(data, indent=4)
+    return json_data
     
-client = OpenAI()
-
-def create_message(thread_id, question, file_id):
-    message = client.beta.threads.messages.create(
-        thread_id=thread_id,
-        role = "user",
-        content = question
-        # file_ids = file_id
-    )
-    return message
-
-def create_run(thread_id, assistant_id):
-    run = client.beta.threads.runs.create(
-        thread_id = thread_id,
-        assistant_id = assistant_id,
-        instructions = """User is an attendee to a conference, and wants to know about the conference. 
-        Please be a helpful assistant and answer the user's question.
-        And answer them only in text format."""
-    )
-    return run
-
-def check_run_status_and_retrieve(thread_id, run):
-    while(True):
-        if(run.status == 'failed'):
-            raise HTTPException(status_code=400, detail="OpenAI API request failed")
-        elif(run.status == 'expired'):
-            raise HTTPException(status_code=410, detail="OpenAI API request expired")
-        elif(run.status == 'cancelled'):
-            raise HTTPException(status_code=422, detail="OpenAI API request was cancelled")
-        elif(run.status == 'completed'):
-            break
-        else:
-            run = client.beta.threads.runs.retrieve(
-                thread_id = thread_id,
-                run_id = run.id
-            )
-        time.sleep(1)
-
-def query_document(question,assistant_id,thread_id,file_id):
-    # create message
-    message = create_message(thread_id, question, file_id)
-    # run the assistant
-    run = create_run(thread_id, assistant_id)
-    # check the run status and retrieve the assistant's response
-    run = check_run_status_and_retrieve(thread_id, run)
-    # display the assistant's response
-    messages = client.beta.threads.messages.list(
-        thread_id = thread_id
-    )
-    data = messages.data
-    data_list = list(data)
-    if not data_list or not data_list[0].content or not data_list[0].content[0].text:
-        raise Exception("No messages found in the thread or the first message doesn't have any content or text")
-    return data_list[0].content[0].text.value

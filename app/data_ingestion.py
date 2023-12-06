@@ -47,31 +47,6 @@ def file_path_in_files_csv(conference_id):
     if os.path.isfile(file_path):
         os.remove(file_path)
     return file_path
-
-def file_path_in_files_json(conference_id):
-    app_folder = 'app'
-    files_folder = os.path.join(app_folder, 'files')
-    if not os.path.exists(files_folder):
-        os.makedirs(files_folder)        
-    file_path = os.path.join(files_folder, 'sessions-'+str(conference_id)+'.json')
-    # Check if file exists, then delete it
-    if os.path.isfile(file_path):
-        os.remove(file_path)
-    return file_path
-
-def write_data_to_json(conference_id, db):
-    file_path = file_path_in_files_json(conference_id)
-    result = get_sessions_by_conference_id(conference_id, db)    
-    json_result = json.dumps([{
-        key: value.strftime("%Y-%m-%d %H:%M:%S") if isinstance(value, datetime.datetime) 
-             else value.strftime("%H:%M:%S") if isinstance(value, datetime.time)
-             else value.strftime("%Y-%m-%d") if isinstance(value, datetime.date)
-             else value 
-        for key, value in row.__dict__.items() 
-        if key != '_sa_instance_state' and key not in ['id', 'created_on', 'conference_id', 'updated_on', 'owner_id']
-    } for row in result])
-    with open(file_path, 'w', encoding='utf-8') as f:
-        json.dump(json.loads(json_result), f, indent=4)
     
 def write_data_to_csv(conference_id, db):
     file_path = file_path_in_files_csv(conference_id)
@@ -117,5 +92,13 @@ def create_vector_db(conference_id):
         Pinecone.from_documents(documents = data, index_name=index_name, embedding=embedding_function)
     except Exception as e:
         raise HTTPException(status_code=400, detail="Unable to upload documents: " + str(e))
+    return index_name
+
+def delete_vector_db(conference_id):
+    index_name = "sessions-"+str(conference_id)
+    try:
+        pinecone.delete_index(index_name)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Unable to delete index: " + str(e))
     return index_name
     
