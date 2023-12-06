@@ -8,8 +8,8 @@ from .crud import attendee_crud as crud
 
 router = APIRouter(tags=["image"])
 
-@router.post("/upload_image")
-def upload_image(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+@router.post("/upload_file")
+def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     try:
         connect_str = "DefaultEndpointsProtocol=https;AccountName=conferencebuddydev;AccountKey=AkI79mMDMpg+Xi75ez89PO5HuhqOLdB5cOtNhsARwapbPVcQ4AuzVkpJ7jaB+iIZm8WPV7HE4CSB+AStiZkq/A==;EndpointSuffix=core.windows.net"
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
