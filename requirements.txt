@@ -20,3 +20,4 @@ openpyxl
 beautifulsoup4
 psycopg2-binary
 qrcode
+pinecone-client
