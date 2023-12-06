@@ -1,5 +1,5 @@
 from azure.storage.blob import BlobServiceClient,ContentSettings
-from fastapi import APIRouter, File, UploadFile, Depends, Security
+from fastapi import APIRouter, File, UploadFile, Depends, Security, HTTPException
 from sqlalchemy.orm import Session
 from .dependencies import get_db
 from app.oauth2 import get_current_active_user
@@ -38,4 +38,4 @@ def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), cur
         return {"message": "Image uploaded successfully", "url": blob_url}
 
     except Exception as ex:
-        return {"error": str(ex)}
+        raise HTTPException(status_code=500, detail=str(ex))
