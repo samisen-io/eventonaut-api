@@ -91,8 +91,7 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
         'title': attendee.title,
         'bio': attendee.bio,
         'share_my_profile': attendee.share_my_profile,
-        'share_my_agenda': attendee.share_my_agenda,
-        'profile_image_url': attendee.profile_image_url,
+        'share_my_agenda': attendee.share_my_agenda
     }
 
     for key, value in updates_user.items():
@@ -114,6 +113,14 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
     db.refresh(db_user)
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     return attendee
+
+def update_attendee_image_url(db: Session, attendee_id: int, image_url: str):
+    db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
+    db_attendee.profile_image_url = image_url
+    db_attendee.updated_on = datetime.utcnow()
+    db.commit()
+    db.refresh(db_attendee)
+    return db_attendee
 
 # update attendee password by id
 def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendePassword):
