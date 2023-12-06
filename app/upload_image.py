@@ -38,4 +38,4 @@ def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), cur
         return {"message": "Image uploaded successfully", "url": blob_url}
 
     except Exception as ex:
-        raise HTTPException(status_code=500, detail=str(ex))
+        raise HTTPException(status_code=502, detail=str(ex))
