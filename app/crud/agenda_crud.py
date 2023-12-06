@@ -148,7 +148,6 @@ def delete_agenda(db: Session, conference_id: str, attendee_id: int):
     conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
     attendee=db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
-    db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee.id,models.Attendee_Conferences.conference_id==conference.id).delete()
     db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
     db.delete(db_agenda)
     db.commit()
