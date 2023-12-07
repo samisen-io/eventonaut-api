@@ -104,7 +104,7 @@ async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db), basic_a
         raise HTTPException(status_code=400, detail="Invalid token")
 
 @router.post("/logout")
-async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Depends(get_current_active_user)):
+async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
     try:
         payload = jwt.decode(jwt_token, SECRET_KEY, algorithms=[ALGORITHM])
         jti = payload.get("jti")

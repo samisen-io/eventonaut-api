@@ -6,7 +6,7 @@ from app.oauth2 import get_current_active_user
 from .schemas.user_schemas import UserAuthentication as User
 from .crud import attendee_crud as crud
 
-router = APIRouter(tags=["image"])
+router = APIRouter(tags=["file"])
 
 @router.post("/upload_file", status_code=201)
 def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
