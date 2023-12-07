@@ -22,7 +22,7 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
         logging.exception("Conference already exists")
         raise HTTPException(status_code=400, detail="Conference already exists")
     attendee_conf = crud.create_attendee_conference(db=db, attendee_conference=attendee_conference, attendee_id=current_user.id)
-    logging.info("Attendee conference created for: " + attendee_conference.attendee_id)
+    logging.info("Attendee conference created for: " + attendee_conf.attendee_id)
     return attendee_conf
 
 # get all attendee conferences
