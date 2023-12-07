@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from fastapi import HTTPException
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from app.schemas.token_schemas import TokenData
+from app.schemas.token_schemas import TokenData, Token
 from pydantic import ValidationError
 from .crud import logout_token_crud
 from sqlalchemy.orm import Session
