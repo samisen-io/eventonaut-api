@@ -42,7 +42,7 @@ def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), c
         }
         logging.exception("Found conflict with a session")
         raise HTTPException(status_code=400, detail={"error":"found conflict with a session", "session": session})
-    logging.info("Agenda created for: " + agenda.attendee_id)
+    logging.info("Agenda created for: " + db_agenda.attendee_id)
     return created_agenda
 
 # get all agenda
@@ -107,7 +107,7 @@ def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), c
         }
         logging.exception("Found conflict with a session")
         raise HTTPException(status_code=400, detail={"error":"found conflict with a session", "session": session})
-    logging.info("Agenda updated for: " + agenda.attendee_id)
+    logging.info("Agenda updated for: " + db_agenda.attendee_id)
     return updated_agenda
 
 # delete agenda by conference id and attendee id
