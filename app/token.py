@@ -1,17 +1,14 @@
 import os
 import uuid
-# from cachetools import TTLCache
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-from app.schemas.token_schemas import Token, TokenData
-from pydantic import BaseModel, ValidationError
+from app.schemas.token_schemas import TokenData
+from pydantic import ValidationError
 from .crud import logout_token_crud
-from .dependencies import get_db
 from sqlalchemy.orm import Session
 
-# token_cache = TTLCache(maxsize=1000, ttl=864000)
     
 load_dotenv()
 REFRESH_TOKEN_SECRET_KEY = os.getenv("REFRESH_TOKEN_SECRET_KEY")
