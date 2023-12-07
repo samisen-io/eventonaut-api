@@ -1,14 +1,17 @@
 import os
 import uuid
-from cachetools import TTLCache
+# from cachetools import TTLCache
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from app.schemas.token_schemas import Token, TokenData
 from pydantic import BaseModel, ValidationError
+from .crud import logout_token_crud
+from .dependencies import get_db
+from sqlalchemy.orm import Session
 
-token_cache = TTLCache(maxsize=1000, ttl=864000)
+# token_cache = TTLCache(maxsize=1000, ttl=864000)
     
 load_dotenv()
 REFRESH_TOKEN_SECRET_KEY = os.getenv("REFRESH_TOKEN_SECRET_KEY")
@@ -37,14 +40,15 @@ def create_refresh_token(data: dict, expires_delta: timedelta or None = None):
     encoded_jwt = jwt.encode(to_encode, REFRESH_TOKEN_SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def verify_token(token:str, credentials_exception):
+def verify_token(token:str, credentials_exception, db: Session):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         jti: str = payload.get("jti")
         if username is None:
             raise credentials_exception
-        if jti and jti in token_cache:
+        db_tokens = logout_token_crud.get_all_jti_in_tokens(db=db)
+        if jti and jti in db_tokens:
             raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
         token_scopes = payload.get("scopes", [])
         # print(token_scopes)
@@ -55,26 +59,29 @@ def verify_token(token:str, credentials_exception):
     return token_data
 
 
-def verify_token_RT(token:str, credentials_exception):
+def verify_token_RT(token:str, credentials_exception,db: Session):
     try:
         payload = jwt.decode(token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         jti: str = payload.get("jti")
         if username is None:
             raise credentials_exception
-        if jti and jti in token_cache:
+        db_tokens = logout_token_crud.get_all_jti_in_tokens(db=db)
+        if jti and jti in db_tokens:
             raise HTTPException(status_code=401, detail="Token is invalid")
         token_data = TokenData(username=username)
     except JWTError:
         raise credentials_exception
     return token_data
 
-def invalidate_refresh_token(jwt_token:str):
+def invalidate_refresh_token(jwt_token:str, db: Session):
     try:
         payload = jwt.decode(jwt_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM])
         jti = payload.get("jti")
+        expire_time = datetime.fromtimestamp(payload.get("exp"))
+        print(expire_time)
         if jti:
-            token_cache[jti] = True
+            logout_token_crud.insert_token(db=db, token_jti=jti, expire_time=expire_time, is_invalidated=True)
             return {"message": "Token invalidated"}
         else:
             raise HTTPException(status_code=400, detail="Invalid token")
