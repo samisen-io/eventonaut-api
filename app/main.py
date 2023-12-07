@@ -3,6 +3,7 @@ from app.oauth2 import get_current_active_user
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference
+from . import upload_image
 
 app = FastAPI()
 
@@ -15,6 +16,7 @@ app.add_middleware(
 )
 
 # Add the routers to the application with authentication middleware
+app.include_router(upload_image.router)
 app.include_router(users.router)
 app.include_router(conferences.router)
 app.include_router(sessions.router)

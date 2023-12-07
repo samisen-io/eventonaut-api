@@ -20,4 +20,6 @@ openpyxl
 beautifulsoup4
 psycopg2-binary
 qrcode
+azure-storage-blob
+azure-identity
 pinecone-client

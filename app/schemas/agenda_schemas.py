@@ -15,7 +15,6 @@ class AgendaBase(BaseModel):
         return v
 
 class AgendaCreate(AgendaBase):
-    attendee_id: str
     conference_id: str
     sessions: list[str] = []
 
@@ -25,12 +24,6 @@ class AgendaCreate(AgendaBase):
             raise HTTPException(status_code=400, detail="Invalid sessions")
         return v
     
-    @validator('attendee_id')
-    def attendee_id_must_contain_space(cls, v):
-        if v is None or v.strip() == '' or v == 'string':
-            raise HTTPException(status_code=400, detail="Invalid attendee id")
-        return v
-    
     @validator('conference_id')
     def conference_id_must_contain_space(cls, v):
         if v is None or v.strip() == '' or v == 'string':
@@ -38,17 +31,10 @@ class AgendaCreate(AgendaBase):
         return v
 
 class AgendaUpdate(AgendaBase):
-    attendee_id: str
     conference_id: str
     name: str | None = None
     sessions: list[str] | None = None
 
-    @validator('attendee_id')
-    def attendee_id_must_contain_space(cls, v):
-        if v is None or v.strip() == '' or v == 'string':
-            raise HTTPException(status_code=400, detail="Invalid attendee id")
-        return v
-    
     @validator('conference_id')
     def conference_id_must_contain_space(cls, v):
         if v is None or v.strip() == '' or v == 'string':
