@@ -52,7 +52,7 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(conference_code:
         logging.exception("No conference found")
         raise HTTPException(status_code=404, detail="No conference found")
     deleted_attendee_conference = crud.delete_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=current_user.id, conference_code=conference_code)
-    logging.info("Attendee conference deleted for: " + attendee_id)
+    logging.info("Attendee conference deleted for: " + conference.uuid)
     return deleted_attendee_conference
 
 @router.get("/attendee/profiles", response_model=list[schemas.Attendee])
