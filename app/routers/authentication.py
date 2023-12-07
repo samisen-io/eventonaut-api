@@ -20,8 +20,13 @@ from app.oauth2 import get_current_active_user, get_current_user_RT, oauth_2_sch
 router = APIRouter(tags=["authentication"])
 
 load_dotenv()
-ACCESS_TOKEN_EXPIRE_MINUTES=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
-REFRESH_TOKEN_EXPIRE_MINUTES=int(os.getenv("REFRESH_TOKEN_EXPIRE_MINUTES"))
+
+ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES"))
+ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS = int(os.getenv("ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS"))
+
+ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES = int(os.getenv("ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES"))
+ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS"))
+
 REFRESH_TOKEN_SECRET_KEY = os.getenv("REFRESH_TOKEN_SECRET_KEY")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
@@ -48,8 +53,14 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect scope",
                             headers={"WWW-Authenticate": "Bearer"})
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+    if user.role == "organizer":
+        access_token_expires = timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES)
+        refresh_token_expires = timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)
+
+    elif user.role == "attendee":
+        access_token_expires = timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS)
+        refresh_token_expires = timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)
+
     refresh_token = create_refresh_token(data={"sub": user.email, "scopes": [user.role]}, expires_delta=refresh_token_expires)
     rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
     access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": [user.role]}, expires_delta=access_token_expires)
@@ -73,8 +84,15 @@ async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = D
         # validate refresh token
         current_user: User = get_current_user_RT(jwt_token,db)
         invalidate_refresh_token(jwt_token)
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
+
+        if current_user.role == "organizer":
+            access_token_expires = timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES)
+            refresh_token_expires = timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)
+        
+        elif current_user.role == "attendee":
+            access_token_expires = timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS)
+            refresh_token_expires = timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)
+
         refresh_token = create_refresh_token(data={"sub": current_user.email}, expires_delta=refresh_token_expires)
         rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
         access_token = create_access_token(data={"sub": current_user.email, "id":current_user.id, "rt_jti":rt_jti, "scopes": [current_user.role]}, expires_delta=access_token_expires)
@@ -97,7 +115,7 @@ async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db), basic_a
         raise HTTPException(status_code=400, detail="Invalid token")
 
 @router.post("/logout")
-async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Depends(get_current_active_user)):
+async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
     try:
         payload = jwt.decode(jwt_token, SECRET_KEY, algorithms=[ALGORITHM])
         jti = payload.get("jti")

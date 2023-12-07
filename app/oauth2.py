@@ -26,13 +26,13 @@ def get_current_user(
     user = users_crud.get_user_by_email(db, email=token_data.username)
     if user is None:
         raise credentials_exception
-    for scope in security_scopes.scopes:
-        if scope not in token_data.scopes:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect scope",
-                headers={"WWW-Authenticate": authenticate_value},
-            )
+    
+    if token_data.scopes[0] not in security_scopes.scopes:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect scope",
+            headers={"WWW-Authenticate": authenticate_value},
+        )
     return user
 
 async def get_current_active_user(current_user: User = Security(get_current_user)):
