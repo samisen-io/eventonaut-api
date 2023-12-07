@@ -1,27 +1,28 @@
 import ast
 import json
-import os
+import sys
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
 from app.file_reader import read_file_return_csv
+from app.pinecone_operations import delete_vector_db
 from app.schemas import session_schemas as schemas
 from app.schemas import ai_assistant_schemas as ai_schemas
 from app.dependencies import get_db
-from app.file_upload import file_upload
 from app.oauth2 import get_current_active_user, oauth_2_scheme
 from app.routers.sessions import create_session_for_conference
+from app.schemas.query_schema import QueryInput
 from app.schemas.user_schemas import UserAuthentication as User
-from ..data_ingestion import create_vector_db, delete_vector_db, write_data_to_csv, write_data_to_json
+from ..data_ingestion import create_vector_db, write_data_to_csv
 from ..data_query import query_document
 from ..crud import conferences_crud, attendee_crud
 from sqlalchemy.orm import Session
-from ..AI_assitant import update_assistant, upload_file, delete_file
 from app.schemas.user_schemas import UserAuthentication as User
-from .. import basicauth
 
 router = APIRouter(tags=["ai_models"])
 
 @router.post("/query_document")
-async def query_document_endpoint(question: str, conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+async def query_document_endpoint(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+    conference_id = query_input.conference_id
+    question = query_input.question
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)  
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
@@ -83,8 +84,14 @@ async def upload_session_file(file: UploadFile,
             raise HTTPException(status_code=400, detail=str(e)+"\n"+str(payload))
         # upload to database
         create_session_for_conference(session,db,current_user)
-        c=c+1
-        print(c)
+        loading_chars = ['-', '\\', '|', '/']
+        c = c + 1
+        current_rows = c
+        total_rows = len(reader)
+        percentage_done = (current_rows / total_rows) * 100
+        print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
+        sys.stdout.flush()
+    print()
     write_data_to_csv(conference_id,db)
     index_name = create_vector_db(conference_id)   
     return {'filename': filename, 'index_name': index_name}

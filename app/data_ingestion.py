@@ -6,7 +6,7 @@ import csv
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from langchain.document_loaders.csv_loader import CSVLoader
-from langchain.vectorstores import Chroma, Pinecone
+from langchain.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 from app.routers.sessions import get_sessions_by_conference_id
 import pinecone
@@ -59,7 +59,9 @@ def write_data_to_csv(conference_id, db):
         writer.writeheader()
         for session in result:
             session_dict = session.__dict__
-            # session_dict.pop('_sa_instance_state', None)
+            discard = ['id', 'conference_id', 'owner_id', 'created_on', 'updated_on','_sa_instance_state']
+            for field in discard:
+                session_dict.pop(field, None)
             for field in ['end_time', 'date', 'created_on', 'updated_on', 'start_time']:
                 if field in session_dict:
                     if isinstance(session_dict[field], datetime.date):
@@ -68,9 +70,6 @@ def write_data_to_csv(conference_id, db):
                         session_dict[field] = session_dict[field].strftime("%H:%M:%S")
                     elif isinstance(session_dict[field], datetime.datetime):
                         session_dict[field] = session_dict[field].strftime("%Y-%m-%d %H:%M:%S")
-            discard = ['id', 'conference_id', 'owner_id', 'created_on', 'updated_on','_sa_instance_state']
-            for field in discard:
-                session_dict.pop(field, None)
             writer.writerow(session_dict)  
             
 def create_vector_db(conference_id):
@@ -92,13 +91,10 @@ def create_vector_db(conference_id):
         Pinecone.from_documents(documents = data, index_name=index_name, embedding=embedding_function)
     except Exception as e:
         raise HTTPException(status_code=400, detail="Unable to upload documents: " + str(e))
-    return index_name
-
-def delete_vector_db(conference_id):
-    index_name = "sessions-"+str(conference_id)
+    # Delete the file
     try:
-        pinecone.delete_index(index_name)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Unable to delete index: " + str(e))
+        os.remove(file_path)
+    except OSError as e:
+        print(f"Error: {file_path} : {e.strerror}")
     return index_name
     

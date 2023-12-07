@@ -29,7 +29,7 @@ def handler_to_dict(handler):
 def retrieve_answer(question, conference_id):
     vectordb = Pinecone.from_existing_index(index_name="sessions-"+str(conference_id), embedding=embedding_function)
     chain = ConversationalRetrievalChain.from_llm(llm=ChatOpenAI(temperature=0.0, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key),
-                                                  retriever=vectordb.as_retriever(), return_source_documents=True)
+                                                retriever=vectordb.as_retriever(search_kwargs={'k':10}), return_source_documents=True)
     history = []
     return chain({"question": question, "chat_history": history})
 
