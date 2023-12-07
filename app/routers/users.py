@@ -23,8 +23,9 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_a
     if db_user:
         logging.exception("Email already registered")
         raise HTTPException(status_code=400, detail="Email already registered")
-    logging.info("User created:" + db_user.uuid)
-    return crud.create_user(db=db, user=user)
+    user = crud.create_user(db=db, user=user)
+    logging.info("User created: " + user.uuid)
+    return user
 
 @router.get("/users/all_users", response_model=list[schemas.User])
 def get_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
