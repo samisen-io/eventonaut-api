@@ -4,8 +4,12 @@ from .routers import ai_models, users, conferences, ai_models, sessions, setting
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference
 from . import upload_image
+from .crud import logout_token_crud
 
 app = FastAPI()
+
+# Start the scheduler
+logout_token_crud.start_scheduler()
 
 app.add_middleware(
     CORSMiddleware,
