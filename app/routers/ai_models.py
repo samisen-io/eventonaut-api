@@ -20,7 +20,7 @@ from app.schemas.user_schemas import UserAuthentication as User
 router = APIRouter(tags=["ai_models"])
 
 @router.post("/query_the_document/")
-async def query_document_using_conference_id(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     conference_id = query_input.conference_id
     question = query_input.question
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)  
