@@ -10,8 +10,10 @@ from ..dependencies import get_db
 from app.token import Token, create_access_token
 from sqlalchemy.orm import Session
 from jose import JWTError, jwt
-from ..token import create_refresh_token, invalidate_refresh_token, token_cache
+from ..token import create_refresh_token, invalidate_refresh_token
 from .. import basicauth
+from ..crud import logout_token_crud
+from datetime import datetime
 # from ..my_token import token_cache
 
 from app.oauth2 import get_current_active_user, get_current_user_RT, oauth_2_scheme
@@ -32,7 +34,8 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 def authenticate_user(db: Session, username: str, password: str, token_jti: str):
     user =  users_crud.get_user_by_email_and_password(db=db,email=username, password=password)
-    if token_jti in token_cache:
+    db_tokens = logout_token_crud.get_all_jti_in_tokens(db=db)
+    if token_jti in db_tokens:
         raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
     return user
 
@@ -76,7 +79,7 @@ async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = D
         jwt_token = token.token
         # validate refresh token
         current_user: User = get_current_user_RT(jwt_token,db)
-        invalidate_refresh_token(jwt_token)
+        invalidate_refresh_token(jwt_token=jwt_token, db=db)
 
         if current_user.role == "organizer":
             access_token_expires = timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -98,21 +101,25 @@ async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db), basic_a
     try:
         jwt_token = token.token
         current_user: User = get_current_user_RT(jwt_token,db)
-        invalidate_refresh_token(jwt_token)
+        invalidate_refresh_token(jwt_token=jwt_token, db=db)
         return {"message": "Token invalidated"}
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid token")
 
 @router.post("/logout")
-async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
+async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"]),db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(jwt_token, SECRET_KEY, algorithms=[ALGORITHM])
         jti = payload.get("jti")
+        jti_expires = datetime.fromtimestamp(payload.get("exp"))
         rt_jti = payload.get("rt_jti")
+        rt_jti_expires =datetime.fromtimestamp(payload.get("exp"))
         if jti:
             if rt_jti:
-                token_cache[rt_jti] = True            
-            token_cache[jti] = True
+                # token_cache[rt_jti] = True 
+                logout_token_crud.insert_token(db=db, token_jti=rt_jti, expire_time=jti_expires, is_invalidated=True)           
+            # token_cache[jti] = True
+            logout_token_crud.insert_token(db=db, token_jti=jti, expire_time=rt_jti_expires, is_invalidated=True)
             return {"message": "Token invalidated"}
         else:
             raise HTTPException(status_code=400, detail="Invalid token")

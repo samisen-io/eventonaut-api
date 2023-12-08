@@ -173,3 +173,14 @@ class AgendaSession(Base):
     agenda = relationship("Agenda", back_populates="agenda_session")
     session = relationship("Session", back_populates="agenda_session")
     attendees = relationship("Attendee", back_populates="agenda_session")
+
+class LogoutToken(Base):
+    __tablename__ = "logout_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    token_jti = Column(String, index=True, unique=True)
+    is_invalidated = Column(Boolean, default=False)
+    expires_on = Column(DateTime)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
