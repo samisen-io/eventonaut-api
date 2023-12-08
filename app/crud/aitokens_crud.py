@@ -5,7 +5,7 @@ from datetime import datetime
 import uuid
 
 def insert_aitoken(db: Session, aitoken: schemas.AITokensCreate):
-    db_aitoken = models.AITokens(**aitoken.model_dump())
+    db_aitoken = models.AITokens()
     db_aitoken.created_on = datetime.utcnow()
     db_aitoken.updated_on = datetime.utcnow()
     db_aitoken.uuid = str(uuid.uuid4())
