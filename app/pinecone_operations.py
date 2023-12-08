@@ -15,4 +15,7 @@ def delete_vector_db(conference_id):
             pinecone.delete_index(index_name)
         except Exception as e:
             raise HTTPException(status_code=400, detail="Unable to delete index: " + str(e))
-    return index_name
+        return {'index_name': index_name, 'status': 'deleted'}
+    
+    else:
+        return {'index_name': index_name, 'status': 'not found'}

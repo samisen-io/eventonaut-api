@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import chromadb
 from dotenv import load_dotenv
 from langchain.vectorstores import Pinecone
@@ -34,9 +35,9 @@ def retrieve_answer(question, conference_id):
     return chain({"question": question, "chat_history": history})
 
 def query_document(question, conference_id):
+    start_time = time.time()
     with get_openai_callback() as cb:
         result = retrieve_answer(question, conference_id)
-        
     usage = json.dumps(cb, default=handler_to_dict, indent=4)
     # retrieve the answer and source documents
     answer = result['answer']
@@ -45,10 +46,13 @@ def query_document(question, conference_id):
     for doc in docs:
         metadata = doc.metadata
         source_list.append(metadata['source'])
+    end_time = time.time()
+    processing_time = end_time - start_time
     data = {
         'answer': answer,
         'source_list': source_list,
-        'usage': json.loads(usage)
+        'usage': json.loads(usage),
+        'processing_time': processing_time
     }
     json_data = json.dumps(data, indent=4)
     return json_data

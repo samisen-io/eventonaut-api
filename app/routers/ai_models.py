@@ -35,15 +35,16 @@ async def delete_file_from_openai(conference_id: str, current_user: User = Secur
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
-    index_name = delete_vector_db(conference_id)
-    return {"success": "Sessions file deleted successfully.", "index_name": index_name}
+    status = delete_vector_db(conference_id)
+    return status
 
 @router.post("/database_and_repository_synchronization/")
 async def update_conference(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
     write_data_to_csv(conference_id,db)
-    delete_vector_db(conference_id)
+    status = delete_vector_db(conference_id)
+    status = status['status']
     index_name = create_vector_db(conference_id)   
-    return {'index_name': index_name}
+    return {'index_name': index_name, 'deletion_status': status}
 
 @router.post("/upload_session_file/")
 async def upload_session_file(file: UploadFile,
