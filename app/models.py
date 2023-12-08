@@ -53,6 +53,7 @@ class Conference(Base):
     agenda = relationship("Agenda", back_populates="conference")
     conference_files = relationship("Conference_Files", back_populates="conference")
     attendee_conference = relationship("Attendee_Conferences", back_populates="conference")
+    aitokens = relationship("AITokens", back_populates="conference")
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -124,6 +125,7 @@ class Attendee(Base):
     agenda = relationship("Agenda", back_populates="attendees")
     agenda_session = relationship("AgendaSession", back_populates="attendees")
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
+    aitokens = relationship("AITokens", back_populates="attendee")
 
 class Attendee_Conferences(Base):
     __tablename__ = "attendee_conferences"
@@ -173,3 +175,21 @@ class AgendaSession(Base):
     agenda = relationship("Agenda", back_populates="agenda_session")
     session = relationship("Session", back_populates="agenda_session")
     attendees = relationship("Attendee", back_populates="agenda_session")
+
+class AITokens(Base):
+    __tablename__ = "aitokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    attendee_id = Column(Integer, ForeignKey("attendees.id"))
+    successful_requests = Column(Integer, default=0)
+    total_cost = Column(Integer, default=0)
+    total_tokens = Column(Integer, default=0)
+    prompt_tokens = Column(Integer, default=0)
+    completion_tokens = Column(Integer, default=0)
+
+    conference = relationship("Conference", back_populates="aitokens")
+    attendee = relationship("Attendee", back_populates="aitokens")
