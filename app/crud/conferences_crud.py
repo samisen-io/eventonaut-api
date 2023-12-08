@@ -2,8 +2,6 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 
-from app.pinecone_operations import delete_vector_db
-
 from .. import models
 from ..schemas import conference_schemas as schemas, ai_assistant_schemas as assistant_schemas
 from . import agenda_crud
@@ -80,7 +78,6 @@ def delete_conference(db: Session, owner_id: int, uuid: str):
         AI_assitant.delete_assistant(assistant_id=conference.assistant_id)
     db.query(models.Conference_Files).filter(models.Conference_Files.conference_id == conference.id).delete()
     db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).delete()
-    delete_vector_db(conference.uuid)
     db.delete(conference)
     db.commit()
     
