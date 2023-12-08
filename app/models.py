@@ -190,7 +190,7 @@ class AITokens(Base):
     total_tokens = Column(Integer, default=0)
     prompt_tokens = Column(Integer, default=0)
     completion_tokens = Column(Integer, default=0)
-    processing_time = Column(TIME, index=True, default="00:00:00" )
+    processing_time = Column(TIME, index=True, default="00:00:00")
 
     conference = relationship("Conference", back_populates="aitokens")
     attendee = relationship("Attendee", back_populates="aitokens")
