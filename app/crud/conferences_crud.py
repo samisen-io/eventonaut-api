@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, date
+
 from .. import models
 from ..schemas import conference_schemas as schemas, ai_assistant_schemas as assistant_schemas
 from . import agenda_crud
@@ -79,6 +80,7 @@ def delete_conference(db: Session, owner_id: int, uuid: str):
     db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).delete()
     db.delete(conference)
     db.commit()
+    
     return True
 
 # update conference by conference id
