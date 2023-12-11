@@ -152,9 +152,12 @@ def delete_attendee_by_uuid(db: Session, attendee_id: int):
     return True
 
 # create attendee conference
-def create_attendee_conference(db: Session, attendee_id: int, attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate):
+def create_attendee_conference(db: Session, attendee_id: int, attendee_conference):
     attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-    conference = db.query(models.Conference).filter(models.Conference.code == attendee_conference.conference_code).first()
+    try:
+        conference = db.query(models.Conference).filter(models.Conference.code == attendee_conference.conference_code).first()
+    except:
+        conference = db.query(models.Conference).filter(models.Conference.uuid == attendee_conference.conference_id).first()
     db_attendee_conference = models.Attendee_Conferences(attendee_id=attendee.id, conference_id=conference.id)
     db_attendee_conference.uuid = str(uuid.uuid4())
     db_attendee_conference.created_on = datetime.utcnow()

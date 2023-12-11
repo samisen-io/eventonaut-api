@@ -22,7 +22,7 @@ def get_current_user(
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                           detail="Could not validate credentials",
                                           headers={"WWW-Authenticate": "Bearer"})
-    token_data = token.verify_token(data, credentials_exception) 
+    token_data = token.verify_token(data, credentials_exception, db) 
     user = users_crud.get_user_by_email(db, email=token_data.username)
     if user is None:
         raise credentials_exception
@@ -43,7 +43,7 @@ async def get_current_active_user(current_user: User = Security(get_current_user
 def get_current_user_RT(data: str, db):
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                           detail="Could not validate credentials")
-    token_data = token.verify_token_RT(data, credentials_exception)
+    token_data = token.verify_token_RT(data, credentials_exception, db)
     user = users_crud.get_user_by_email(db, email=token_data.username)
     if user is None:
         raise credentials_exception

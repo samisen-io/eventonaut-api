@@ -25,6 +25,17 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
     logging.info("Attendee conference created for: " + attendee_conf.attendee_id)
     return attendee_conf
 
+@router.post("/attendee/conference-id")
+def create_attendee_conference_by_id(attendee_conference: attendee_conference_schemas.AttendeeConferenceCreateId, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+    if not crud.get_attendee_by_id(db, attendee_id=current_user.id):
+        raise HTTPException(status_code=400, detail="Attendee not found")
+    conference = conferences_crud.get_conf_by_uuid(db=db, conference_id=attendee_conference.conference_id)
+    if not conference:
+        raise HTTPException(status_code=400, detail="Conference not found")
+    if crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=current_user.id, conference_id=conference.uuid):
+        raise HTTPException(status_code=400, detail="Conference already exists")
+    return crud.create_attendee_conference(db=db, attendee_conference=attendee_conference, attendee_id=current_user.id)
+
 # get all attendee conferences
 @router.get("/attendee/conference", response_model=list[conference_schemas.Conference])
 def get_all_attendee_conferences(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
