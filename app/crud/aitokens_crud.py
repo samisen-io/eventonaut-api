@@ -5,7 +5,15 @@ from datetime import datetime
 import uuid
 
 def insert_aitoken(db: Session, aitoken: schemas.AITokensCreate):
-    db_aitoken = models.AITokens(**aitoken.model_dump())
+    db_aitoken = models.AITokens()
+    db_aitoken.conference_id = db.query(models.Conference).filter(models.Conference.uuid == aitoken.conference_id).first().id
+    db_aitoken.attendee_id = db.query(models.Attendee).filter(models.Attendee.uuid == aitoken.attendee_id).first().id
+    db_aitoken.successful_requests = aitoken.successful_requests
+    db_aitoken.total_cost = aitoken.total_cost
+    db_aitoken.total_tokens = aitoken.total_tokens
+    db_aitoken.prompt_tokens = aitoken.prompt_tokens
+    db_aitoken.completion_tokens = aitoken.completion_tokens
+    db_aitoken.processing_time = aitoken.processing_time
     db_aitoken.created_on = datetime.utcnow()
     db_aitoken.updated_on = datetime.utcnow()
     db_aitoken.uuid = str(uuid.uuid4())
