@@ -1,9 +1,12 @@
 import ast
+from datetime import datetime, time, timezone
 import json
 import sys
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
+from app.crud.aitokens_crud import insert_aitoken
 from app.file_reader import read_file_return_csv
 from app.pinecone_operations import delete_vector_db
+from app.schemas import aitokens_schemas as ait_schemas
 from app.schemas import session_schemas as schemas
 from app.schemas import ai_assistant_schemas as ai_schemas
 from app.dependencies import get_db
@@ -21,13 +24,35 @@ router = APIRouter(tags=["ai_models"])
 
 @router.post("/query_the_document/")
 async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+    start_time = datetime.utcnow()
     conference_id = query_input.conference_id
     question = query_input.question
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)  
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
     data = query_document(question,conference_id)
+    end_time = datetime.utcnow()
+    # return end_time-start_time
+    processing_time = (end_time - start_time).total_seconds()
+    print(processing_time)
+    # return processing_time
     data = json.loads(data)
+    # data['processing_time'] = str(processing_time)
+    token_data = {
+        'conference_id' : conference_id,
+        'attendee_id' : current_user.uuid,
+        'successful_requests' : data['usage']['successful_requests'],
+        'total_cost' : data['usage']['total_cost'],
+        'total_tokens' : data['usage']['total_tokens'],
+        'prompt_tokens' : data['usage']['prompt_tokens'],
+        'completion_tokens' : data['usage']['completion_tokens'],
+        'processing_time' : processing_time
+    }
+    try:
+        token = ait_schemas.AITokensCreate(**token_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)+"\n"+str(token_data))
+    insert_aitoken(db,token)
     return data
 
 @router.delete("/delete_file/")
