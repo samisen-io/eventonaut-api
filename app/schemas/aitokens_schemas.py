@@ -1,6 +1,6 @@
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
-from datetime import time, datetime
+from datetime import timedelta
 
 class AITokensCreate(BaseModel):
     conference_id: str
@@ -10,7 +10,7 @@ class AITokensCreate(BaseModel):
     total_tokens: int
     prompt_tokens: int
     completion_tokens: int
-    processing_time: float
+    processing_time: timedelta
 
     @validator('conference_id', 'attendee_id')
     def check_id(cls, v):
@@ -23,23 +23,11 @@ class AITokensCreate(BaseModel):
         if v < 0:
             raise HTTPException(status_code=400, detail="must be positive")
         return v
-    # def check_time(cls, v):
-    #     current_time = datetime.now().time()
-    #     current_time_in_seconds = current_time.hour * 3600 + current_time.minute * 60 + current_time.second
-    #     processing_time_in_seconds = v.hour * 3600 + v.minute * 60 + v.second
-    #     if processing_time_in_seconds < current_time_in_seconds:
-    #         raise HTTPException(status_code=400, detail="time cannot be negative")
-    #     return v
-    
     
     @validator('processing_time')
-    # def check_time(cls, v):
-    #     if v.timestamp < time():
-    #         raise HTTPException(status_code=400, detail="time cannot be negative")
-    #     return v
-    def check_time(cls, v):
-        if v < 0:
-            raise HTTPException(status_code=400, detail="time cannot be negative")
+    def check_positive(cls, v: timedelta):
+        if v.total_seconds() < 0:
+            raise HTTPException(status_code=400, detail="Processing time must be positive")
         return v
 
 class AITokens(AITokensCreate):

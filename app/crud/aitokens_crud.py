@@ -7,7 +7,8 @@ import uuid
 def insert_aitoken(db: Session, aitoken: schemas.AITokensCreate):
     db_aitoken = models.AITokens()
     db_aitoken.conference_id = db.query(models.Conference).filter(models.Conference.uuid == aitoken.conference_id).first().id
-    db_aitoken.attendee_id = db.query(models.Attendee).filter(models.Attendee.uuid == aitoken.attendee_id).first().id
+    user = db.query(models.User).filter(models.User.uuid == aitoken.attendee_id).first()
+    db_aitoken.attendee_id = db.query(models.Attendee).filter(models.Attendee.user_id == user.id).first().id
     db_aitoken.successful_requests = aitoken.successful_requests
     db_aitoken.total_cost = aitoken.total_cost
     db_aitoken.total_tokens = aitoken.total_tokens

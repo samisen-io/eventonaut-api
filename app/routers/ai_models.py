@@ -37,7 +37,6 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     print(processing_time)
     # return processing_time
     data = json.loads(data)
-    # data['processing_time'] = str(processing_time)
     token_data = {
         'conference_id' : conference_id,
         'attendee_id' : current_user.uuid,
@@ -48,6 +47,7 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
         'completion_tokens' : data['usage']['completion_tokens'],
         'processing_time' : processing_time
     }
+    print(token_data)
     try:
         token = ait_schemas.AITokensCreate(**token_data)
     except Exception as e:

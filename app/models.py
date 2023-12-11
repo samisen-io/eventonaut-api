@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
+from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
@@ -186,7 +186,7 @@ class AITokens(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     attendee_id = Column(Integer, ForeignKey("attendees.id"))
     successful_requests = Column(Integer, default=0)
-    total_cost = Column(Integer, default=0)
+    total_cost = Column(Float, default=0)
     total_tokens = Column(Integer, default=0)
     prompt_tokens = Column(Integer, default=0)
     completion_tokens = Column(Integer, default=0)
