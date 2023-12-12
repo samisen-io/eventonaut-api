@@ -9,7 +9,7 @@ from .crud import attendee_crud as crud
 router = APIRouter(tags=["file"])
 
 @router.post("/upload_file", status_code=201)
-def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def upload_file(file: UploadFile = File(...), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     try:
         connect_str = "DefaultEndpointsProtocol=https;AccountName=conferencebuddydev;AccountKey=AkI79mMDMpg+Xi75ez89PO5HuhqOLdB5cOtNhsARwapbPVcQ4AuzVkpJ7jaB+iIZm8WPV7HE4CSB+AStiZkq/A==;EndpointSuffix=core.windows.net"
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
@@ -34,7 +34,6 @@ def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), cur
 
         # Get the image URL
         blob_url = blob_client.url
-        crud.update_attendee_image_url(db=db, attendee_id=current_user.id, image_url=blob_url)
         return {"message": "Image uploaded successfully", "url": blob_url}
 
     except Exception as ex:
