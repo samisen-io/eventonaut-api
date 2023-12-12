@@ -54,10 +54,6 @@ def delete_client(db: Session, client_id: str):
     db_client = db.query(models.Client).filter(models.Client.uuid == client_id).first()
     if db_client is None:
         return False
-    # conferences = db.query(models.Conference).filter(models.Conference.client_id == db_client.id).all()
-    # for conference in conferences:
-    #     conference.client_id = "None"
-    # db.add(conferences)
     db.delete(db_client)
     db.commit()
     return True
