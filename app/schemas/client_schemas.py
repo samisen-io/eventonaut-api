@@ -36,8 +36,8 @@ class ClientBase(BaseModel):
     def contact_phone_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
             raise HTTPException(status_code=400, detail="Invalid contact phone")
-        elif len(v) > 15:
-            raise HTTPException(status_code=400, detail="Contact phone too long")
+        elif len(v) > 15 or len(v) < 10:
+            raise HTTPException(status_code=400, detail="Invalid Phone Number")
         return v
     
     @validator('profile_image_url')
