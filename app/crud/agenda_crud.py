@@ -85,6 +85,20 @@ def get_agenda_by_conference_uuid_attendee_uuid(db: Session, conference_id: str,
         agenda_session.sessions.append(schemas.Session(uuid=session.uuid, name=session.name, date=session.date, start_time=session.start_time, end_time=session.end_time, description=session.description, location=session.location, speakers=session.speakers, tags=session.tags))
     return agenda_session
 
+def get_agenda_for_attendee(db: Session, conference_id: str, attendee_id: str):
+    conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
+    attendee=db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id,models.Attendee.share_my_agenda == True).first()
+    if attendee is None:
+        return None
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
+    if db_agenda is None:
+        return None
+    agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
+    for db_agenda_session in db_agenda.agenda_session:
+        session = sessions_crud.get_session_by_session_uuid(db, uuid=db_agenda_session.session.uuid)
+        agenda_session.sessions.append(schemas.Session(uuid=session.uuid, name=session.name, date=session.date, start_time=session.start_time, end_time=session.end_time, description=session.description, location=session.location, speakers=session.speakers, tags=session.tags))
+    return agenda_session
+
 # get agenda by attendee id and like name string
 def get_agendas_by_attendee_id_name(db: Session, attendee_id: int, name: str):
     return db.query(models.Agenda).filter(models.Agenda.attendee_id == attendee_id,models.Agenda.name.ilike('%'+name+'%')).all()

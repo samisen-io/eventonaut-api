@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from ..schemas import agenda_schemas as schemas
 from ..crud import agenda_crud as crud, attendee_crud, conferences_crud, sessions_crud
 from ..models import Session
+from ..basicauth import basic_auth
 
 router = APIRouter(tags=["agenda"])
 
@@ -54,6 +55,17 @@ def get_agenda_by_conference_id_attendee_id(conference_id: str, db: Session = De
     if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
         raise HTTPException(status_code=400, detail="Conference not found")
     agenda=crud.get_agenda_by_conference_uuid_attendee_uuid(db, conference_id=conference_id, attendee_id=current_user.id)
+    if agenda is None:
+        raise HTTPException(status_code=404, detail="Agenda not found")
+    return agenda
+
+@router.get("/agenda/attendee/{attendee_id}/conference/{conference_id}", response_model=schemas.Agenda)
+def get_agenda_by_conference_id_attendee_id(conference_id: str, attendee_id: str, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
+    if attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id) is None:
+        raise HTTPException(status_code=400, detail="Attendee not found")
+    if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
+        raise HTTPException(status_code=400, detail="Conference not found")
+    agenda=crud.get_agenda_for_attendee(db, conference_id=conference_id, attendee_id=attendee_id)
     if agenda is None:
         raise HTTPException(status_code=404, detail="Agenda not found")
     return agenda
