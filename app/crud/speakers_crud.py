@@ -11,7 +11,7 @@ def create_speaker(db: Session, speaker: schemas.SpeakerCreate):
     conference = db.query(Conference).filter(Conference.uuid == speaker.conference_id).first()
     speaker.model_dump().pop("conference_id")
     db_speaker = Speakers(**speaker.model_dump())
-    db_speaker.uuid = str(uuid.uuid4())
+    db_speaker.uuid = "spk-" + str(uuid.uuid4())
     db_speaker.created_on = datetime.utcnow()
     db_speaker.updated_on = datetime.utcnow()
     db_speaker.conference_id = conference.id
