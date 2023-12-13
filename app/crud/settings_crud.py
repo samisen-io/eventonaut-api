@@ -18,7 +18,7 @@ def create_settings(db: Session, settings: schemas.SettingsCreate, owner_id: int
     db_settings.owner_id = owner_id
     db_settings.created_on = datetime.utcnow()
     db_settings.updated_on = datetime.utcnow()
-    db_settings.uuid = str(uuid.uuid4())
+    db_settings.uuid = "set-" + str(uuid.uuid4())
     conference_id = db.query(models.Conference).filter(models.Conference.uuid == settings.conference_id, models.Conference.owner_id == owner_id).first().id
     db_settings.conference_id = conference_id
     db.add(db_settings)
