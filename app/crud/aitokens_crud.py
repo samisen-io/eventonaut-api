@@ -17,7 +17,7 @@ def insert_aitoken(db: Session, aitoken: schemas.AITokensCreate):
     db_aitoken.processing_time = aitoken.processing_time
     db_aitoken.created_on = datetime.utcnow()
     db_aitoken.updated_on = datetime.utcnow()
-    db_aitoken.uuid = str(uuid.uuid4())
+    db_aitoken.uuid = "ait-" + str(uuid.uuid4())
     db.add(db_aitoken)
     db.commit()
     db.refresh(db_aitoken)
