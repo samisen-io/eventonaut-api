@@ -13,7 +13,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.updated_on = datetime.utcnow()
     if user.company is None or user.company == "string" or user.company == "None" or user.company.strip() == "":
         db_user.company = "None"
-    db_user.uuid = str(uuid.uuid4())
+    db_user.uuid = "usr-"+str(uuid.uuid4())
     db_user.role = "organizer"
     db.add(db_user)
     db.commit()
