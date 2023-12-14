@@ -65,6 +65,7 @@ class Conference(Base):
     code = Column(String, index=True, default="None")
     timezone = Column(String, index=True, default="None")
     registration_link = Column(String, index=True, default="None")
+    information_guide = Column(String, index=True, default="None")
 
     client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")

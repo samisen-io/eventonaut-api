@@ -16,6 +16,7 @@ class ConferenceCreate(BaseModel):
     conference_logo: str | None = None
     timezone: str | None = None
     registration_link: str | None = None
+    information_guide: str
 
     @validator('name')
     def name_is_not_empty(cls, v):
@@ -75,6 +76,14 @@ class ConferenceCreate(BaseModel):
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Registration link too long")
         return v
+    
+    @validator('information_guide')
+    def information_guide_is_not_empty(cls, v):
+        if v is None or v.strip() == "" or v == "string":
+            raise HTTPException(status_code=400, detail="Invalid information guide")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Information guide too long")
+        return v
 
 class ConferenceUpdate(BaseModel):
     id: str
@@ -87,6 +96,7 @@ class ConferenceUpdate(BaseModel):
     conference_logo: str | None = None
     timezone: str | None = None
     registration_link: str | None = None
+    information_guide: str | None = None
 
     @validator('id')
     def id_is_not_empty(cls, v):
@@ -146,6 +156,15 @@ class ConferenceUpdate(BaseModel):
                 raise HTTPException(status_code=400, detail="Invalid registration link")
             if len(v) > 256:
                 raise HTTPException(status_code=400, detail="Registration link too long")
+        return v
+    
+    @validator('information_guide')
+    def information_guide_is_not_empty(cls, v):
+        if v is not None:
+            if v.strip() == "" or v == "string":
+                raise HTTPException(status_code=400, detail="Invalid information guide")
+            if len(v) > 256:
+                raise HTTPException(status_code=400, detail="Information guide too long")
         return v
 
 #pydantic model for conference

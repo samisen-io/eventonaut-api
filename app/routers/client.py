@@ -36,7 +36,7 @@ def get_all_clients(offset: int = 0, limit: int = 100, db: Session = Depends(get
 
 # get client by id
 @router.get("/clients/{client_id}", response_model=schemas.Client)
-def get_client(client_id: str, db: Session = Depends(get_db)):
+def get_client(client_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_client = crud.get_client_by_uuid(db, client_uuid=client_id)
     if db_client is None:
         raise HTTPException(status_code=404, detail="Client not found")
