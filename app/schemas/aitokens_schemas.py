@@ -25,7 +25,7 @@ class AITokensCreate(BaseModel):
         return v
     
     @validator('processing_time')
-    def check_positive(cls, v: timedelta):
+    def check_processing_time_positive(cls, v: timedelta):
         if v.total_seconds() < 0:
             raise HTTPException(status_code=400, detail="Processing time must be positive")
         return v
