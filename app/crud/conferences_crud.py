@@ -10,10 +10,16 @@ from ..code_generator import generate_unique_string
 
 # get all conferences ordered by start date in descending order
 def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(models.Conference).offset(offset).limit(limit).all()
+    conferences = db.query(models.Conference).offset(offset).limit(limit).all()
+    for conference in conferences:
+        conference.__dict__.pop('client_id')
+    return conferences
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(models.Conference).filter(models.Conference.start_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
+    conferences = db.query(models.Conference).filter(models.Conference.start_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
+    for conference in conferences:
+        conference.__dict__.pop('client_id')
+    return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
     return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
