@@ -3,10 +3,12 @@ from fastapi import HTTPException
 from datetime import date
 from .settings_schemas import Settings
 from .session_schemas import Session
+from typing import Optional, Any
 
 #pydantic model for conference create
 class ConferenceCreate(BaseModel):
     name: str
+    client_id: str | None = None
     location: str
     start_date: date
     end_date: date
@@ -21,6 +23,12 @@ class ConferenceCreate(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid name")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Name too long")
+        return v
+    
+    @validator('client_id')
+    def client_id_is_not_empty(cls, v):
+        if len(v) > 256:
+            raise HTTPException(status_code=400, detail="Client id too long")
         return v
     
     @validator('location')
@@ -68,6 +76,7 @@ class ConferenceCreate(BaseModel):
 class ConferenceUpdate(BaseModel):
     id: str
     name: str | None = None
+    client_id: str | None = None
     location: str | None = None
     start_date: date | None = None
     end_date: date  | None = None
@@ -88,6 +97,14 @@ class ConferenceUpdate(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid name")
         if len is not None and len(v) > 256:
             raise HTTPException(status_code=400, detail="Name too long")
+        return v
+    
+    @validator('client_id')
+    def client_id_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid client id")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Client id too long")
         return v
     
     @validator('location')
@@ -125,5 +142,6 @@ class Conference(ConferenceCreate):
     uuid: str = Field(serialization_alias="id")
     sessions: list[Session] = []
     settings: list[Settings] = []
+    client_id: Optional[Any] = Field(None, exclude=True)
     class Config:
         orm_mode = True

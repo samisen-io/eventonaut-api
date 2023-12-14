@@ -26,7 +26,25 @@ class User(Base):
     conferences = relationship("Conference", back_populates="owner")
     sessions = relationship("Session", back_populates="owner")
     settings = relationship("Settings", back_populates="owner")
+    client = relationship("Client", back_populates="owner")
 
+class Client(Base):
+    __tablename__ = "clients"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String, index=True, unique=True)
+    contact_name = Column(String, index=True, default="None")
+    contact_email = Column(String, index=True, default="None")
+    contact_phone = Column(String, index=True, default="None")
+    profile_image_url = Column(String, index=True, default="None")
+
+    owner = relationship("User", back_populates="client")
+    conferences = relationship("Conference", back_populates="client")
+  
 #class to create conference table and add relationship to session table
 class Conference(Base):
     __tablename__ = "conferences"
@@ -35,6 +53,7 @@ class Conference(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
+    client_id = Column(Integer, ForeignKey("clients.id"))
     name = Column(String, index=True)
     location = Column(String, index=True)
     start_date = Column(DATE, index=True)
@@ -47,6 +66,7 @@ class Conference(Base):
     timezone = Column(String, index=True, default="None")
     registration_link = Column(String, index=True, default="None")
 
+    client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")
     settings = relationship("Settings", back_populates="conference")
