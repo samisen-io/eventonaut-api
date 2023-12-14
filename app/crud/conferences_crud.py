@@ -50,10 +50,10 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         except:
             print("Duplicate code found")
             continue
-
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
+    db_conference.__dict__.pop('client_id')
     return db_conference
 
 def get_conf_by_uuid(db:Session, conference_id: str):
@@ -99,7 +99,6 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         'conference_logo': conference.conference_logo if conference.conference_logo is not None else "None",
         'timezone': conference.timezone,
         'registration_link': conference.registration_link if conference.registration_link is not None else "None",
-        'client_id': conference.client_id if conference.client_id is not None else 'None',
         'information_guide': conference.information_guide if conference.information_guide is not None else 'None'
     }
 
@@ -118,9 +117,15 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         if value is None or value.strip() in ("", "string", "None"):
             setattr(db_conference, attr, "None")
 
+    if conference.client_id is not None:
+        db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first().id
+    else:
+        db_conference.client_id = None
+
     db_conference.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_conference)
+    db_conference.__dict__.pop('client_id')
     return db_conference
 
 def upload_file_id(db: Session, file_id: str, conference_id: str, owner_id: int):
