@@ -5,7 +5,7 @@ from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from ..schemas import conference_schemas as schemas
 from ..schemas import user_schemas as uschemas
-from ..crud import conferences_crud as crud, users_crud
+from ..crud import conferences_crud as crud, users_crud, client_crud
 from ..dependencies import get_db
 from .. import basicauth
 from datetime import date
@@ -69,6 +69,9 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
     if conference.start_date is not None and conference.end_date is not None:
         if conference.start_date > conference.end_date or conference.start_date < date.today():
             raise HTTPException(status_code=400, detail="Invalid date range")
+    if conference.client_id is not None:
+        if not client_crud.get_client_by_uuid(db, client_uuid=conference.client_id):
+            raise HTTPException(status_code=404, detail="Client not found")
     return crud.update_user_conference(db=db, conference=conference, uuid=conference.id, owner_id=current_user.id)
 
 # delete conference
