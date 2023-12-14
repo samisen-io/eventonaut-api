@@ -26,6 +26,7 @@ def get_conference_by_code(db: Session, code: str):
 
 # create conference
 def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
+    client_id = conference.model_dump().pop("client_id")
     db_conference = models.Conference(**conference.model_dump(), owner_id=user_id)
     if conference.description is None:
         db_conference.description = "None"
@@ -35,6 +36,10 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         db_conference.description = "None"
     if conference.conference_logo is None or conference.conference_logo.strip() == "" or conference.conference_logo == "string" or conference.conference_logo == "None":
         db_conference.conference_logo = "None"
+    if client_id is None:
+        db_conference.client_id = "None"
+    else:
+        db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == client_id).first().id
     db_conference.created_on = datetime.utcnow()
     db_conference.updated_on = datetime.utcnow()
     db_conference.uuid = str(uuid.uuid4())
@@ -98,7 +103,8 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         'description': conference.description if conference.description is not None else "None",
         'conference_logo': conference.conference_logo if conference.conference_logo is not None else "None",
         'timezone': conference.timezone,
-        'registration_link': conference.registration_link if conference.registration_link is not None else "None"
+        'registration_link': conference.registration_link if conference.registration_link is not None else "None",
+        'client_id': conference.client_id if conference.client_id is not None else 'None'
     }
 
     for key, value in updates.items():
@@ -109,7 +115,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         if conference.start_date > conference.end_date or conference.start_date < date.today():
             raise HTTPException(status_code=400, detail="Invalid date range")
         
-    attributes = ["description", "conference_logo", "timezone", "registration_link"]
+    attributes = ["description", "conference_logo", "timezone", "registration_link", "client_id"]
 
     for attr in attributes:
         value = getattr(conference, attr)
