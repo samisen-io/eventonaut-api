@@ -22,4 +22,5 @@ psycopg2-binary
 qrcode
 azure-storage-blob
 azure-identity
+apscheduler
 pinecone-client
