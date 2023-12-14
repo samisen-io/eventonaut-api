@@ -36,7 +36,7 @@ class Client(Base):
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     owner_id = Column(Integer, ForeignKey("users.id"))
-    name = Column(String, index=True, unique=True)
+    name = Column(String, index=True)
     contact_name = Column(String, index=True, default="None")
     contact_email = Column(String, index=True, default="None")
     contact_phone = Column(String, index=True, default="None")
