@@ -8,7 +8,7 @@ def create_client(db: Session, client: schemas.ClientCreate, user_id: int):
     db_client = models.Client(**client.model_dump())
     db_client.created_on = datetime.utcnow()
     db_client.updated_on = datetime.utcnow()
-    db_client.uuid = str(uuid.uuid4())
+    db_client.uuid = "cli-" + str(uuid.uuid4())
     db_client.owner_id = user_id
     db.add(db_client)
     db.commit()
