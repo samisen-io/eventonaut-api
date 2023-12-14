@@ -99,7 +99,8 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         'conference_logo': conference.conference_logo if conference.conference_logo is not None else "None",
         'timezone': conference.timezone,
         'registration_link': conference.registration_link if conference.registration_link is not None else "None",
-        'client_id': conference.client_id if conference.client_id is not None else 'None'
+        'client_id': conference.client_id if conference.client_id is not None else 'None',
+        'information_guide': conference.information_guide if conference.information_guide is not None else 'None'
     }
 
     for key, value in updates.items():
@@ -110,7 +111,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         if conference.start_date > conference.end_date or conference.start_date < date.today():
             raise HTTPException(status_code=400, detail="Invalid date range")
         
-    attributes = ["description", "conference_logo", "timezone", "registration_link", "client_id"]
+    attributes = ["description", "conference_logo", "timezone", "registration_link", "client_id", "information_guide"]
 
     for attr in attributes:
         value = getattr(conference, attr)
