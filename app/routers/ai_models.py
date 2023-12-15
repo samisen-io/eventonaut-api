@@ -49,7 +49,7 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
         'completion_tokens' : data['usage']['completion_tokens'],
         'processing_time' : processing_time
     }
-    print(token_data)
+    data['processing_time']=processing_time
     try:
         token = ait_schemas.AITokensCreate(**token_data)
     except Exception as e:
@@ -111,8 +111,6 @@ async def upload_session_file(file: UploadFile,
         print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
         sys.stdout.flush()
     print()
-    # write_sessions_to_csv(conference_id,db)
-    # index_name = create_vector_db(conference_id)   
     return {'filename': filename}
 
 @router.post("/upload_speaker_file/")
