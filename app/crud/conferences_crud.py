@@ -22,10 +22,14 @@ def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
-    return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
+    confernces = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
+    for conference in confernces:
+        conference.__dict__.pop('client_id')
 
 def get_conference_by_code(db: Session, code: str):
-    return db.query(models.Conference).filter(models.Conference.code == code).first()
+    conference = db.query(models.Conference).filter(models.Conference.code == code).first()
+    conference.__dict__.pop('client_id')
+    return conference
 
 # create conference
 def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
