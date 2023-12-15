@@ -74,6 +74,7 @@ class Conference(Base):
     agenda = relationship("Agenda", back_populates="conference")
     conference_files = relationship("Conference_Files", back_populates="conference")
     attendee_conference = relationship("Attendee_Conferences", back_populates="conference")
+    speakers = relationship("Speakers", back_populates="conference")
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -86,6 +87,21 @@ class Conference_Files(Base):
     file_id = Column(String, index=True, default="None")
 
     conference = relationship("Conference", back_populates="conference_files")
+
+class Speakers(Base):
+    __tablename__ = "speakers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    name = Column(String, index=True, default="None")
+    title = Column(String, index=True, default="None")
+    bio = Column(String, index=True, default="None")
+    profile_image_url = Column(String, index=True, default="None")
+
+    conference = relationship("Conference", back_populates="speakers")
 
 # class to define session table
 class Session(Base):
