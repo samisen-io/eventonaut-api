@@ -193,7 +193,9 @@ def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, l
         return None
     conferences = []
     for attendee_conference in attendee_conferences:
-        conferences.append(db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id).first())
+        conference = db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id).first()
+        conference.__dict__.pop('client_id')
+        conferences.append(conference)
     return conferences
 
 # delete attendee conference by attendee id and conference id
