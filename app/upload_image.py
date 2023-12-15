@@ -28,7 +28,7 @@ def upload_file(file: UploadFile = File(...), current_user: User = Security(get_
 
         file_extension = file.filename.split(".")[-1]  # Get the file extension
 
-        if file_extension not in ["jpg", "jpeg", "png"]:
+        if file_extension not in ["jpg", "jpeg", "png"]: 
             raise HTTPException(status_code=400, detail="Invalid file type. Only jpg, jpeg, and png are allowed.")
 
         blob_name = f"profile-{current_user.uuid}.{file_extension}"  # Append the file extension to the blob name
@@ -44,5 +44,7 @@ def upload_file(file: UploadFile = File(...), current_user: User = Security(get_
         blob_url = blob_client.url
         return {"message": "Image uploaded successfully", "url": blob_url}
 
+    except HTTPException as ex:
+        raise HTTPException(status_code=ex.status_code, detail=ex.detail)
     except Exception as ex:
         raise HTTPException(status_code=502, detail=str(ex))
