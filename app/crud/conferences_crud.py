@@ -67,14 +67,20 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     return db_conference
 
 def get_conf_by_uuid(db:Session, conference_id: str):
-    return db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
+    conference.__dict__.pop('client_id')
+    return conference
 
 # get conference by uuid and owner id
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
-    return db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
+    conference.__dict__.pop('client_id')
+    return conference
 
 def get_conference_by_conference_uuid(db: Session, uuid: str):
-    return db.query(models.Conference).filter(models.Conference.uuid == uuid).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == uuid).first()
+    conference.__dict__.pop('client_id')
+    return conference
 
 # delete conference by conference id
 def delete_conference(db: Session, owner_id: int, uuid: str):
