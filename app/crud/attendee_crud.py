@@ -12,7 +12,7 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db_user.created_on = datetime.utcnow()
     db_user.updated_on = datetime.utcnow()
-    db_user.uuid = str(uuid.uuid4())
+    db_user.uuid = "usr-" + str(uuid.uuid4())
     db_user.role = "attendee"
     db_user.is_active = True
     db.add(db_user)
@@ -22,7 +22,7 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db_attendee = models.Attendee()
     db_attendee.created_on = datetime.utcnow()
     db_attendee.updated_on = datetime.utcnow()
-    db_attendee.uuid = str(uuid.uuid4())
+    db_attendee.uuid = "atd-" + str(uuid.uuid4())
     db_attendee.user_id = db_user.id
     db_attendee.thread_id = create_thread(thread_schemas.Thread()).id
     db.add(db_attendee)
@@ -159,7 +159,7 @@ def create_attendee_conference(db: Session, attendee_id: int, attendee_conferenc
     except:
         conference = db.query(models.Conference).filter(models.Conference.uuid == attendee_conference.conference_id).first()
     db_attendee_conference = models.Attendee_Conferences(attendee_id=attendee.id, conference_id=conference.id)
-    db_attendee_conference.uuid = str(uuid.uuid4())
+    db_attendee_conference.uuid = "ate-" + str(uuid.uuid4())
     db_attendee_conference.created_on = datetime.utcnow()
     db_attendee_conference.updated_on = datetime.utcnow()
     db.add(db_attendee_conference)
@@ -193,7 +193,9 @@ def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, l
         return None
     conferences = []
     for attendee_conference in attendee_conferences:
-        conferences.append(db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id).first())
+        conference = db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id).first()
+        conference.__dict__.pop('client_id')
+        conferences.append(conference)
     return conferences
 
 # delete attendee conference by attendee id and conference id
