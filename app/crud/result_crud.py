@@ -1,9 +1,5 @@
 from sqlalchemy.orm import Session
 from .. import models
-from ..schemas import user_schemas as schemas
-from datetime import datetime
-from . import agenda_crud
-import uuid
 
 def get_objects(db: Session, objects: list[str]):
     tables = {
@@ -18,5 +14,23 @@ def get_objects(db: Session, objects: list[str]):
         'ags': models.AgendaSession,
         'ltk': models.LogoutToken,
         'cli': models.Client,
-        'spk': models.Speaker
+        'spk': models.Speakers
     }
+
+    final_objects = []
+    rank = 1
+
+    for obj in objects:
+        code = obj[:3]
+        if code not in tables:
+            return False
+        else:
+            db_obj = db.query(tables[code]).filter(tables[code].uuid == obj).first()
+            if db_obj is None:
+                return False
+            db_obj = db_obj.model_dump()
+            db_obj['rank'] = rank
+            rank += 1
+            final_objects.append(db_obj)
+
+    return final_objects
