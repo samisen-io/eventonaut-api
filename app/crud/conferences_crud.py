@@ -25,6 +25,7 @@ def get_conferences_by_owner_id(db: Session, owner_id: int):
     confernces = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
     for conference in confernces:
         conference.__dict__.pop('client_id')
+    return confernces
 
 def get_conference_by_code(db: Session, code: str):
     conference = db.query(models.Conference).filter(models.Conference.code == code).first()
