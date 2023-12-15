@@ -26,6 +26,11 @@ def get_all_speakers(db: Session, offset: int = 0, limit: int = 100):
 def get_speaker(db: Session, speaker_id: uuid):
     return db.query(Speakers).filter(Speakers.uuid == speaker_id).first()
 
+def get_speakers_by_conference_id(db: Session, conference_uuid: str):
+    conference = db.query(Conference).filter(Conference.uuid == conference_uuid).first()
+    conference_id = conference.id if conference else None
+    return db.query(Speakers).filter(Speakers.conference_id == conference_id).all()
+
 def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker.id).first()
     speaker_dict = speaker.model_dump()
