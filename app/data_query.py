@@ -27,14 +27,13 @@ def handler_to_dict(handler):
     return handler.__dict__
 
 def retrieve_answer(question, conference_id):
-    vectordb = Pinecone.from_existing_index(index_name="sessions-"+str(conference_id), embedding=embedding_function)
+    vectordb = Pinecone.from_existing_index(index_name="eventonaut-events", embedding=embedding_function, namespace='conf-'+conference_id, text_key = 'csv_text')
     chain = ConversationalRetrievalChain.from_llm(llm=ChatOpenAI(temperature=0.0, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key),
                                                 retriever=vectordb.as_retriever(search_kwargs={'k':10}), return_source_documents=True)
     history = []
     return chain({"question": question, "chat_history": history})
 
 def query_document(question, conference_id):
-    
     with get_openai_callback() as cb:
         result = retrieve_answer(question, conference_id)
     usage = json.dumps(cb, default=handler_to_dict, indent=4)
@@ -45,14 +44,11 @@ def query_document(question, conference_id):
     for doc in docs:
         metadata = doc.metadata
         source_list.append(metadata['source'])
-    
-    
     data = {
         'answer': answer,
         'source_list': source_list,
         'usage': json.loads(usage)
     }
     json_data = json.dumps(data, indent=4)
-    
     return json_data
     
