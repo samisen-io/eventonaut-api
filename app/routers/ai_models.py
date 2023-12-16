@@ -1,11 +1,11 @@
 import ast
-from datetime import datetime, time, timezone
+from datetime import date, datetime, time, timezone
 import json
 import sys
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
 from app.crud.aitokens_crud import insert_aitoken
 from app.file_reader import read_file_return_csv
-from app.pinecone_operations import create_vector_db, delete_namespace, delete_vector_db
+from app.pinecone_operations import arranging_ouput_object, create_vector_db, delete_namespace, delete_vector_db
 from app.routers.speakers import create_speaker
 from app.schemas import aitokens_schemas as ait_schemas
 from app.schemas import session_schemas as schemas
@@ -59,13 +59,20 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
         'processing_time' : processing_time
     }
     data['processing_time']=processing_time
-    return result_crud.get_objects(db=db,objects=data['source_list'])
+    objects = result_crud.get_objects(db=db, objects=data['source_list'])
+    objects_dict = [{k: datetime_to_str(v) for k, v in obj.__dict__.items() if not k.startswith('_')} for obj in objects]
+    json_data = json.dumps(objects_dict)
+    final_result = arranging_ouput_object(json_data)
+    final_result = json.loads(final_result)
+    final_result['answer'] = data['answer']
+    final_result['processing_time'] = processing_time
+    final_result['usage'] = data['usage']
     try:
         token = ait_schemas.AITokensCreate(**token_data)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e)+"\n"+str(token_data))
     insert_aitoken(db,token)
-    return data
+    return final_result
 
 @router.delete("/delete_file/")
 async def delete_file_from_openai(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
@@ -179,3 +186,11 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
     namespace = add_documents(conference_id,'events')
     namespace = namespace['namespace']
     return {'namespace': namespace, 'deletion_status': status}
+
+def datetime_to_str(dt):
+    if isinstance(dt, date):
+        return dt.strftime('%Y-%m-%d')
+    elif isinstance(dt, time):
+        return dt.strftime('%H:%M:%S')
+    else:
+        return dt

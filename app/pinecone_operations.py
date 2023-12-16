@@ -1,3 +1,4 @@
+import json
 import os
 from fastapi import HTTPException
 import pinecone
@@ -41,3 +42,26 @@ def delete_namespace(conference_id):
             return {'namespace': namespace, 'status': 'deleted'}
         except:
             return {'namespace': namespace, 'status': 'not found'}
+            
+def arranging_ouput_object(json_data):
+    data = json.loads(json_data)
+    speakers = []
+    sessions = []
+    events = []
+    # Iterate over the dictionaries in the data
+    for obj in data:
+        if obj['uuid'].startswith('spk'):
+            speakers.append(obj)
+        elif obj['uuid'].startswith('ses'):
+            sessions.append(obj)
+        elif obj['uuid'].startswith('evt'):
+            events.append(obj)       
+    data_dict = {
+        'speakers': speakers,
+        'sessions': sessions,
+        'events': events
+    }
+    # Convert the dictionary to a JSON string
+    json_str = json.dumps(data_dict, indent=4)
+    # Print the JSON string
+    return json_str
