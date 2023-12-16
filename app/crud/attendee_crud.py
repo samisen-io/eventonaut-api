@@ -91,7 +91,8 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
         'title': attendee.title,
         'bio': attendee.bio,
         'share_my_profile': attendee.share_my_profile,
-        'share_my_agenda': attendee.share_my_agenda
+        'share_my_agenda': attendee.share_my_agenda,
+        'profile_image_url': attendee.profile_image_url
     }
 
     for key, value in updates_user.items():
@@ -193,7 +194,9 @@ def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, l
         return None
     conferences = []
     for attendee_conference in attendee_conferences:
-        conferences.append(db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id).first())
+        conference = db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id).first()
+        conference.__dict__.pop('client_id')
+        conferences.append(conference)
     return conferences
 
 # delete attendee conference by attendee id and conference id
