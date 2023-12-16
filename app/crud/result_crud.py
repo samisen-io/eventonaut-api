@@ -28,7 +28,7 @@ def get_objects(db: Session, objects: list[str]):
             db_obj = db.query(tables[code]).filter(tables[code].uuid == obj).first()
             if db_obj is None:
                 return False
-            db_obj = db_obj.model_dump()
+            db_obj = db_obj.__dict__
             db_obj['rank'] = rank
             rank += 1
             final_objects.append(db_obj)
