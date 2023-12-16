@@ -62,7 +62,7 @@ async def delete_file_from_openai(conference_id: str, current_user: User = Secur
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
-    status = delete_vector_db(conference_id)
+    status = delete_namespace(conference_id)
     return status
 
 @router.post("/upload_session_file/")
