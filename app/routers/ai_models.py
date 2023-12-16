@@ -50,7 +50,7 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
         'processing_time' : processing_time
     }
     data['processing_time']=processing_time
-    result_crud.get_objects(db=db,objects=data['source_list'])
+    return result_crud.get_objects(db=db,objects=data['source_list'])
     try:
         token = ait_schemas.AITokensCreate(**token_data)
     except Exception as e:
