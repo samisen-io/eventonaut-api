@@ -5,7 +5,7 @@ import sys
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
 from app.crud.aitokens_crud import insert_aitoken
 from app.file_reader import read_file_return_csv
-from app.pinecone_operations import delete_namespace, delete_vector_db
+from app.pinecone_operations import create_vector_db, delete_namespace, delete_vector_db
 from app.routers.speakers import create_speaker
 from app.schemas import aitokens_schemas as ait_schemas
 from app.schemas import session_schemas as schemas
@@ -16,13 +16,23 @@ from app.oauth2 import get_current_active_user, oauth_2_scheme
 from app.routers.sessions import create_session_for_conference
 from app.schemas.query_schema import QueryInput
 from app.schemas.user_schemas import UserAuthentication as User
-from ..data_ingestion import add_documents, create_vector_db, write_events_to_csv, write_sessions_to_csv, write_speakers_to_csv
+from ..data_ingestion import add_documents, write_events_to_csv, write_sessions_to_csv, write_speakers_to_csv
 from ..data_query import query_document
 from ..crud import conferences_crud, attendee_crud
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 
 router = APIRouter(tags=["ai_models"])
+
+@router.put("/create_vector_db/")
+async def create_index(name:str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+    index_name = create_vector_db(name)   
+    return {'index_name': index_name}
+
+@router.delete("/delete_vector_db/")
+async def delete_index(current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+    status = delete_vector_db()
+    return status
 
 @router.post("/query_the_document/")
 async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
@@ -36,7 +46,6 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     end_time = datetime.utcnow()
     # return end_time-start_time
     processing_time = (end_time - start_time).total_seconds()
-    print(processing_time)
     # return processing_time
     data = json.loads(data)
     token_data = {
@@ -156,11 +165,6 @@ async def upload_speaker_file(file: UploadFile,
         sys.stdout.flush()
     print()
     return {'filename': filename}
-
-@router.put("/create_vector_db/")
-async def create_index(current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
-    index_name = create_vector_db()   
-    return {'index_name': index_name}
 
 @router.post("/synchronize_database_and_pinecone/")
 async def update_namespace(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):

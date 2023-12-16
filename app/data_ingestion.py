@@ -15,6 +15,7 @@ import pinecone
 
 load_dotenv()
 api_key = os.environ.get('OPENAI_API_KEY')
+index_name = os.environ.get('PINECONE_API_INDEX')
 if not api_key:
     print('OpenAI API key not found in environment variables.')
     exit()
@@ -104,11 +105,6 @@ def write_events_to_csv(db, conference_id):
         for field in discard:
             conference_dict.pop(field, None)
         writer.writerow(conference_dict)  
-            
-def create_vector_db():
-    index_name = "eventonaut-events"
-    pinecone.create_index(name = index_name, dimension=1536, metric = "cosine", shards=1)
-    return {"index_name": index_name}
 
 def add_documents(conference_id,category):
     # get the file path
@@ -119,7 +115,6 @@ def add_documents(conference_id,category):
     loader = CSVLoader(file_path = file_path, encoding='utf-8',source_column = 'uuid',csv_args = {'delimiter': delimiter})
     data = loader.load()
     # get the pineone index
-    index_name = "eventonaut-events"
     namespace = "conf-"+str(conference_id)
     index = pinecone.Index(index_name)
     vectorstore = Pinecone(index, embedding=embedding_function, text_key = 'csv_text', namespace = namespace)
@@ -130,30 +125,3 @@ def add_documents(conference_id,category):
     except OSError as e:
         print(f"Error: {file_path} : {e.strerror}")
     return {"namespace":namespace}
-    
-# def create_vector_db(conference_id):
-#     # get the file path
-#     file_path = file_path_in_files(conference_id)
-#     # find the delimiter
-#     delimiter = find_delimiter(file_path)
-#     # split the csv file into chunks
-#     loader = CSVLoader(file_path = file_path, encoding='utf-8',source_column = 'uuid',csv_args = {'delimiter': delimiter})
-#     data = loader.load()
-#     # create pinecone index
-#     index_name = "sessions-"+str(conference_id)
-#     try:
-#         pinecone.create_index(name = index_name, dimension=1536, metric = "cosine", shards=1)
-#     except Exception as e:
-#         raise HTTPException(status_code=409, detail="Unable to create index: " + str(e))
-#     # upload the data to pinecone
-#     try:
-#         Pinecone.from_documents(documents = data, index_name=index_name, embedding=embedding_function)
-#     except Exception as e:
-#         raise HTTPException(status_code=400, detail="Unable to upload documents: " + str(e))
-#     # Delete the file
-#     try:
-#         os.remove(file_path)
-#     except OSError as e:
-#         print(f"Error: {file_path} : {e.strerror}")
-#     return index_name
-    
