@@ -57,7 +57,7 @@ def write_sessions_to_csv(db,conference_id):
     if not result:
         raise HTTPException(status_code=404, detail="No sessions found for this conference_id")
     with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['uuid','name', 'description', 'location', 'date', 'start_time', 'end_time', 'tags', 'speakers']
+        fieldnames = ['uuid','name', 'description', 'location', 'date', 'start_time', 'end_time', 'tags', 'speakers','type']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for session in result:
@@ -73,6 +73,7 @@ def write_sessions_to_csv(db,conference_id):
                         session_dict[field] = session_dict[field].strftime("%H:%M:%S")
                     elif isinstance(session_dict[field], datetime.datetime):
                         session_dict[field] = session_dict[field].strftime("%Y-%m-%d %H:%M:%S")
+            session_dict['type'] = 'session'
             writer.writerow(session_dict)  
             
 def write_speakers_to_csv(db, conference_id):
@@ -81,7 +82,7 @@ def write_speakers_to_csv(db, conference_id):
     if not result:
         raise HTTPException(status_code=404, detail="No speakers found for this conference_id")
     with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-        filednames = ['uuid','name','conference_id','title','bio']
+        filednames = ['uuid','name','conference_id','title','bio', 'type']
         writer = csv.DictWriter(csvfile, fieldnames=filednames)
         writer.writeheader()
         for speaker in result:
@@ -89,6 +90,7 @@ def write_speakers_to_csv(db, conference_id):
             discard = ['id', 'created_on', 'updated_on','_sa_instance_state','profile_image_url']
             for field in discard:
                 speaker_dict.pop(field, None)
+            speaker_dict['type'] = 'speaker'
             writer.writerow(speaker_dict)
 
 def write_events_to_csv(db, conference_id):
@@ -97,13 +99,14 @@ def write_events_to_csv(db, conference_id):
     if not result:
         raise HTTPException(status_code=404, detail="Conference not found")
     with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['uuid','name', 'description', 'location', 'start_date', 'end_date']
+        fieldnames = ['uuid','name', 'description', 'location', 'start_date', 'end_date', 'type']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         conference_dict = result.__dict__
         discard = ['id', 'created_on', 'updated_on','_sa_instance_state','owner_id','conferenece_logo','assistant_id','code','timezone','registration_link','client_id', 'conference_logo', 'information_guide']
         for field in discard:
             conference_dict.pop(field, None)
+        conference_dict['type'] = 'event'
         writer.writerow(conference_dict)  
 
 def add_documents(conference_id,category):
