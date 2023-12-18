@@ -34,7 +34,7 @@ def create_agenda(db: Session, conference_id: str, attendee_id: int, agenda: sch
     db_agenda = models.Agenda(conference_id=conference.id, name=agenda.name, attendee_id=attendee.id)
     db_agenda.created_on = datetime.utcnow()
     db_agenda.updated_on = datetime.utcnow()
-    db_agenda.uuid = str(uuid.uuid4())
+    db_agenda.uuid = "aga-" + str(uuid.uuid4())
     db.add(db_agenda)
     db.commit()
     db.refresh(db_agenda)
@@ -43,7 +43,7 @@ def create_agenda(db: Session, conference_id: str, attendee_id: int, agenda: sch
         db_agenda_session = models.AgendaSession(agenda_id=db_agenda.id, session_id=session.id, attendee_id=attendee.id, date=session.date, start_time=session.start_time, end_time=session.end_time)
         db_agenda_session.created_on = datetime.utcnow()
         db_agenda_session.updated_on = datetime.utcnow()
-        db_agenda_session.uuid = str(uuid.uuid4())
+        db_agenda_session.uuid = "ags-" + str(uuid.uuid4())
         db.add(db_agenda_session)
         db.commit()
         db.refresh(db_agenda_session)
@@ -76,6 +76,20 @@ def get_agenda(db: Session, conference_id: str, attendee_id: int):
 def get_agenda_by_conference_uuid_attendee_uuid(db: Session, conference_id: str, attendee_id: int):
     conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
     attendee=db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
+    if db_agenda is None:
+        return None
+    agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
+    for db_agenda_session in db_agenda.agenda_session:
+        session = sessions_crud.get_session_by_session_uuid(db, uuid=db_agenda_session.session.uuid)
+        agenda_session.sessions.append(schemas.Session(uuid=session.uuid, name=session.name, date=session.date, start_time=session.start_time, end_time=session.end_time, description=session.description, location=session.location, speakers=session.speakers, tags=session.tags))
+    return agenda_session
+
+def get_agenda_for_attendee(db: Session, conference_id: str, attendee_id: str):
+    conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
+    attendee=db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id,models.Attendee.share_my_agenda == True).first()
+    if attendee is None:
+        return None
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
     if db_agenda is None:
         return None
@@ -129,7 +143,7 @@ def update_agenda(db: Session, conference_id: str, attendee_id: int, agenda: sch
             db_agenda_session = models.AgendaSession(agenda_id=db_agenda.id, session_id=session.id, attendee_id=attendee.id, date=session.date, start_time=session.start_time, end_time=session.end_time)
             db_agenda_session.created_on = datetime.utcnow()
             db_agenda_session.updated_on = datetime.utcnow()
-            db_agenda_session.uuid = str(uuid.uuid4())
+            db_agenda_session.uuid = "ags-" + str(uuid.uuid4())
             db.add(db_agenda_session)
             db.commit()
             db.refresh(db_agenda_session)

@@ -3,7 +3,7 @@ from app.oauth2 import get_current_active_user
 import logging
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference
+from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference, client, speakers
 from . import upload_image
 from .crud import logout_token_crud
 
@@ -26,7 +26,9 @@ app.add_middleware(
 # Add the routers to the application with authentication middleware
 app.include_router(upload_image.router)
 app.include_router(users.router)
+app.include_router(client.router)
 app.include_router(conferences.router)
+app.include_router(speakers.router)
 app.include_router(sessions.router)
 app.include_router(settings.router)
 # app.include_router(ai_models.router, dependencies=[Depends(get_current_active_user)])

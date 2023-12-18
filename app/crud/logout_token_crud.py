@@ -9,7 +9,7 @@ def insert_token(db: Session, token_jti: str, expire_time: datetime, is_invalida
     token = db.query(models.LogoutToken).filter(models.LogoutToken.token_jti == token_jti).first()
     
     if token is None:
-        token = models.LogoutToken(uuid=str(uuid.uuid4()), token_jti=token_jti, created_on=datetime.utcnow())
+        token = models.LogoutToken(uuid="ltk-" + str(uuid.uuid4()), token_jti=token_jti, created_on=datetime.utcnow())
         token.updated_on = datetime.utcnow()
         db.add(token)
     else:

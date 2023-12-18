@@ -11,19 +11,31 @@ from ..code_generator import generate_unique_string
 
 # get all conferences ordered by start date in descending order
 def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(models.Conference).offset(offset).limit(limit).all()
+    conferences = db.query(models.Conference).offset(offset).limit(limit).all()
+    for conference in conferences:
+        conference.__dict__.pop('client_id')
+    return conferences
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(models.Conference).filter(models.Conference.start_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
+    conferences = db.query(models.Conference).filter(models.Conference.start_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
+    for conference in conferences:
+        conference.__dict__.pop('client_id')
+    return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
-    return db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
+    confernces = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
+    for conference in confernces:
+        conference.__dict__.pop('client_id')
+    return confernces
 
 def get_conference_by_code(db: Session, code: str):
-    return db.query(models.Conference).filter(models.Conference.code == code).first()
+    conference = db.query(models.Conference).filter(models.Conference.code == code).first()
+    conference.__dict__.pop('client_id')
+    return conference
 
 # create conference
 def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
+    client_id = conference.model_dump().pop("client_id")
     db_conference = models.Conference(**conference.model_dump(), owner_id=user_id)
     if conference.description is None:
         db_conference.description = "None"
@@ -33,9 +45,13 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         db_conference.description = "None"
     if conference.conference_logo is None or conference.conference_logo.strip() == "" or conference.conference_logo == "string" or conference.conference_logo == "None":
         db_conference.conference_logo = "None"
+    if client_id is None:
+        db_conference.client_id = "None"
+    else:
+        db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == client_id).first().id
     db_conference.created_on = datetime.utcnow()
     db_conference.updated_on = datetime.utcnow()
-    db_conference.uuid = str(uuid.uuid4())
+    db_conference.uuid = "evt-" + str(uuid.uuid4())
     assistant = assistant_schemas.AssistantCreate(model="gpt-3.5-turbo-1106", name=f"ca_{db_conference.uuid}", description="Conference Assistant", instructions="You are conference assitant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.", tools=[{"type": "code_interpreter"}])
     db_conference.assistant_id = AI_assitant.create_assistant(schema=assistant).id
     
@@ -46,21 +62,27 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         except:
             print("Duplicate code found")
             continue
-
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
+    db_conference.__dict__.pop('client_id')
     return db_conference
 
 def get_conf_by_uuid(db:Session, conference_id: str):
-    return db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
+    conference.__dict__.pop('client_id')
+    return conference
 
 # get conference by uuid and owner id
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
-    return db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
+    conference.__dict__.pop('client_id')
+    return conference
 
 def get_conference_by_conference_uuid(db: Session, uuid: str):
-    return db.query(models.Conference).filter(models.Conference.uuid == uuid).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == uuid).first()
+    conference.__dict__.pop('client_id')
+    return conference
 
 # delete conference by conference id
 def delete_conference(db: Session, owner_id: int, uuid: str):
@@ -94,7 +116,8 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         'description': conference.description if conference.description is not None else "None",
         'conference_logo': conference.conference_logo if conference.conference_logo is not None else "None",
         'timezone': conference.timezone,
-        'registration_link': conference.registration_link if conference.registration_link is not None else "None"
+        'registration_link': conference.registration_link if conference.registration_link is not None else "None",
+        'information_guide': conference.information_guide if conference.information_guide is not None else 'None'
     }
 
     for key, value in updates.items():
@@ -106,16 +129,22 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
             logging.exception("Invalid date range")
             raise HTTPException(status_code=400, detail="Invalid date range")
         
-    attributes = ["description", "conference_logo", "timezone", "registration_link"]
+    attributes = ["description", "conference_logo", "timezone", "registration_link", "client_id", "information_guide"]
 
     for attr in attributes:
         value = getattr(conference, attr)
         if value is None or value.strip() in ("", "string", "None"):
             setattr(db_conference, attr, "None")
 
+    if conference.client_id is not None:
+        db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first().id
+    else:
+        db_conference.client_id = None
+
     db_conference.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_conference)
+    db_conference.__dict__.pop('client_id')
     return db_conference
 
 def upload_file_id(db: Session, file_id: str, conference_id: str, owner_id: int):
@@ -123,7 +152,7 @@ def upload_file_id(db: Session, file_id: str, conference_id: str, owner_id: int)
     db_file = models.Conference_Files(file_id = file_id, conference_id = conference.id)
     db_file.created_on = datetime.utcnow()
     db_file.updated_on = datetime.utcnow()
-    db_file.uuid = str(uuid.uuid4())
+    db_file.uuid = "cnf-" + str(uuid.uuid4())
     db.add(db_file)
     db.commit()
     db.refresh(db_file)

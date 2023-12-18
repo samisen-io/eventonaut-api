@@ -16,7 +16,7 @@ class User(Base):
     first_name = Column(String, index=True, default="None")
     last_name = Column(String, index=True, default="None")
     company = Column(String, index=True, default="None")
-    bussiness_type = Column(String, index=True, default="None")
+    business_type = Column(String, index=True, default="None")
     hashed_password = Column(String)
     role = Column(String, index=True, default="None")
     timezone = Column(String, index=True, default="None")
@@ -26,7 +26,25 @@ class User(Base):
     conferences = relationship("Conference", back_populates="owner")
     sessions = relationship("Session", back_populates="owner")
     settings = relationship("Settings", back_populates="owner")
+    client = relationship("Client", back_populates="owner")
 
+class Client(Base):
+    __tablename__ = "clients"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String, index=True)
+    contact_name = Column(String, index=True, default="None")
+    contact_email = Column(String, index=True, default="None")
+    contact_phone = Column(String, index=True, default="None")
+    profile_image_url = Column(String, index=True, default="None")
+
+    owner = relationship("User", back_populates="client")
+    conferences = relationship("Conference", back_populates="client")
+  
 #class to create conference table and add relationship to session table
 class Conference(Base):
     __tablename__ = "conferences"
@@ -35,6 +53,7 @@ class Conference(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
+    client_id = Column(Integer, ForeignKey("clients.id"))
     name = Column(String, index=True)
     location = Column(String, index=True)
     start_date = Column(DATE, index=True)
@@ -46,13 +65,16 @@ class Conference(Base):
     code = Column(String, index=True, default="None")
     timezone = Column(String, index=True, default="None")
     registration_link = Column(String, index=True, default="None")
+    information_guide = Column(String, index=True, default="None")
 
+    client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")
     settings = relationship("Settings", back_populates="conference")
     agenda = relationship("Agenda", back_populates="conference")
     conference_files = relationship("Conference_Files", back_populates="conference")
     attendee_conference = relationship("Attendee_Conferences", back_populates="conference")
+    speakers = relationship("Speakers", back_populates="conference")
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -65,6 +87,21 @@ class Conference_Files(Base):
     file_id = Column(String, index=True, default="None")
 
     conference = relationship("Conference", back_populates="conference_files")
+
+class Speakers(Base):
+    __tablename__ = "speakers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    name = Column(String, index=True, default="None")
+    title = Column(String, index=True, default="None")
+    bio = Column(String, index=True, default="None")
+    profile_image_url = Column(String, index=True, default="None")
+
+    conference = relationship("Conference", back_populates="speakers")
 
 # class to define session table
 class Session(Base):
