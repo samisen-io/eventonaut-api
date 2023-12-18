@@ -50,12 +50,15 @@ def arranging_ouput_object(json_data):
     events = []
     # Iterate over the dictionaries in the data
     for obj in data:
-        if obj['uuid'].startswith('spk'):
+        # Rename 'uuid' to 'id'
+        obj['id'] = obj.pop('uuid')
+        if obj['id'].startswith('spk'):
             speakers.append(obj)
-        elif obj['uuid'].startswith('ses'):
+        elif obj['id'].startswith('ses'):
             sessions.append(obj)
-        elif obj['uuid'].startswith('evt'):
-            events.append(obj)       
+        elif obj['id'].startswith('evt'):
+            events.append(obj)    
+    
     data_dict = {
         'speakers': speakers,
         'sessions': sessions,
