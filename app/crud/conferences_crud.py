@@ -28,6 +28,8 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         db_conference.description = "None"
     if conference.conference_logo is None:
         db_conference.conference_logo = "None"
+    if conference.conference_banner_url is None:
+        db_conference.conference_banner_url = "None"
     if conference.description is None or conference.description.strip() == "" or conference.description == "string" or conference.description == "None":
         db_conference.description = "None"
     if conference.conference_logo is None or conference.conference_logo.strip() == "" or conference.conference_logo == "string" or conference.conference_logo == "None":
@@ -93,7 +95,8 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         'description': conference.description if conference.description is not None else "None",
         'conference_logo': conference.conference_logo if conference.conference_logo is not None else "None",
         'timezone': conference.timezone,
-        'registration_link': conference.registration_link if conference.registration_link is not None else "None"
+        'registration_link': conference.registration_link if conference.registration_link is not None else "None",
+        'conference_banner_url': conference.conference_banner_url if conference.conference_banner_url is not None else "None"
     }
 
     for key, value in updates.items():
@@ -104,7 +107,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         if conference.start_date > conference.end_date or conference.start_date < date.today():
             raise HTTPException(status_code=400, detail="Invalid date range")
         
-    attributes = ["description", "conference_logo", "timezone", "registration_link"]
+    attributes = ["description", "conference_logo", "timezone", "registration_link", "conference_banner_url"]
 
     for attr in attributes:
         value = getattr(conference, attr)
