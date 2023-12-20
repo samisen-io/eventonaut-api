@@ -15,6 +15,15 @@ load_dotenv()
 @router.post("/upload_file", status_code=201)
 def upload_file(file: UploadFile = File(...), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     try:
+        # Check file size
+        file_size = len(file.file.read())
+        max_file_size = 5 * 1024 * 1024  # 5 MB
+
+        if file_size > max_file_size:
+            raise HTTPException(status_code=400, detail="The file size cannot exceed 5MB.")
+
+        file.file.seek(0)  # Reset file pointer to the beginning
+
         connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
         container_name = "attende-profile-images"
