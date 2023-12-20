@@ -8,7 +8,7 @@ class UserBase(BaseModel):
     first_name: str
     last_name: str
     company: str | None = None
-    bussiness_type: str
+    business_type: str
     timezone: str | None = None
 
     @validator('email')
@@ -43,12 +43,12 @@ class UserBase(BaseModel):
             raise HTTPException(status_code=400, detail="Company too long")
         return v
 
-    @validator('bussiness_type')
-    def bussiness_type_is_not_empty(cls, v):
+    @validator('business_type')
+    def business_type_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid bussiness type")
+            raise HTTPException(status_code=400, detail="Invalid business type")
         elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Bussiness type too long")
+            raise HTTPException(status_code=400, detail="Business type too long")
         return v
     
     @validator('timezone')
@@ -63,7 +63,7 @@ class UserBaseUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     company: str |None = None
-    bussiness_type: str |None = None
+    business_type: str |None = None
     timezone: str |None = None
 
     @validator('first_name')
@@ -90,12 +90,12 @@ class UserBaseUpdate(BaseModel):
             raise HTTPException(status_code=400, detail="Company too long")
         return v
 
-    @validator('bussiness_type')
-    def bussiness_type_is_not_empty(cls, v):
+    @validator('business_type')
+    def business_type_is_not_empty(cls, v):
         if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid bussiness type")
+            raise HTTPException(status_code=400, detail="Invalid business type")
         elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Bussiness type too long")
+            raise HTTPException(status_code=400, detail="Business type too long")
         return v
     
     @validator('timezone')

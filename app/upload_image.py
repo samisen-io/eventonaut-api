@@ -5,13 +5,26 @@ from .dependencies import get_db
 from app.oauth2 import get_current_active_user
 from .schemas.user_schemas import UserAuthentication as User
 from .crud import attendee_crud as crud
+from dotenv import load_dotenv
+import os
 
 router = APIRouter(tags=["file"])
 
+load_dotenv()
+
 @router.post("/upload_file", status_code=201)
-def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def upload_file(file: UploadFile = File(...), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     try:
-        connect_str = "DefaultEndpointsProtocol=https;AccountName=conferencebuddydev;AccountKey=AkI79mMDMpg+Xi75ez89PO5HuhqOLdB5cOtNhsARwapbPVcQ4AuzVkpJ7jaB+iIZm8WPV7HE4CSB+AStiZkq/A==;EndpointSuffix=core.windows.net"
+        # Check file size
+        file_size = len(file.file.read())
+        max_file_size = 5 * 1024 * 1024  # 5 MB
+
+        if file_size > max_file_size:
+            raise HTTPException(status_code=400, detail="The file size cannot exceed 5MB.")
+
+        file.file.seek(0)  # Reset file pointer to the beginning
+
+        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
         container_name = "attende-profile-images"
         container_client = blob_service_client.get_container_client(container_name)
@@ -23,6 +36,10 @@ def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), cur
             pass  # The container already exists
 
         file_extension = file.filename.split(".")[-1]  # Get the file extension
+
+        if file_extension not in ["jpg", "jpeg", "png"]: 
+            raise HTTPException(status_code=400, detail="Invalid file type. Only jpg, jpeg, and png are allowed.")
+
         blob_name = f"profile-{current_user.uuid}.{file_extension}"  # Append the file extension to the blob name
         blob_client = blob_service_client.get_blob_client(container_name, blob_name)
 
@@ -34,8 +51,9 @@ def upload_file(file: UploadFile = File(...), db: Session = Depends(get_db), cur
 
         # Get the image URL
         blob_url = blob_client.url
-        crud.update_attendee_image_url(db=db, attendee_id=current_user.id, image_url=blob_url)
         return {"message": "Image uploaded successfully", "url": blob_url}
 
+    except HTTPException as ex:
+        raise HTTPException(status_code=ex.status_code, detail=ex.detail)
     except Exception as ex:
         raise HTTPException(status_code=502, detail=str(ex))

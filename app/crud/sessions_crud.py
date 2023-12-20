@@ -16,11 +16,13 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     conference_id = db.query(models.Conference).filter(models.Conference.uuid == session.conference_id).first().id
     db_session.created_on = datetime.utcnow()
     db_session.updated_on = datetime.utcnow()
-    db_session.uuid = str(uuid.uuid4())
+    db_session.uuid = "ses-" + str(uuid.uuid4())
     db_session.owner_id = owner_id
     db_session.conference_id = conference_id
     db_session.speakers = session.speakers
     db_session.tags = session.tags
+    if session.session_image_url is None:
+        db_session.session_image_url = "None"
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
@@ -86,7 +88,8 @@ def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner
         'location': session.location,
         'description': session.description,
         'speakers': speakers,
-        'tags': tags
+        'tags': tags,
+        'session_image_url': session.session_image_url if session.session_image_url is not None else 'None'
     }
     
     for key, value in updates.items():
