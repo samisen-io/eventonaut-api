@@ -16,7 +16,7 @@ class User(Base):
     first_name = Column(String, index=True, default="None")
     last_name = Column(String, index=True, default="None")
     company = Column(String, index=True, default="None")
-    bussiness_type = Column(String, index=True, default="None")
+    business_type = Column(String, index=True, default="None")
     hashed_password = Column(String)
     role = Column(String, index=True, default="None")
     timezone = Column(String, index=True, default="None")
