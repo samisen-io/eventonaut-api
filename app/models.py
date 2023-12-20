@@ -42,6 +42,7 @@ class Conference(Base):
     description = Column(String, index=True, default="None")
     owner_id = Column(Integer, ForeignKey("users.id"))
     conference_logo = Column(String, index=True, default="None")
+    conference_banner_url = Column(String, index=True, default="None")
     assistant_id = Column(String, index=True, default="None")
     code = Column(String, index=True, default="None")
     timezone = Column(String, index=True, default="None")
@@ -84,6 +85,7 @@ class Session(Base):
     speakers = Column(ARRAY(String), index=True)
     tags = Column(ARRAY(String), index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
+    session_image_url = Column(String, index=True, default="None")
 
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
