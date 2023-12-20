@@ -12,10 +12,11 @@ class ConferenceCreate(BaseModel):
     location: str
     start_date: date
     end_date: date
-    description: str | None = None
-    conference_logo: str | None = None
-    timezone: str | None = None
-    registration_link: str | None = None
+    description: str | None = "None"
+    conference_logo: str | None = "None"
+    timezone: str | None = "None"
+    registration_link: str | None = "None"
+    conference_banner_url: str | None = "None"
     information_guide: str
 
     @validator('name')
@@ -84,6 +85,14 @@ class ConferenceCreate(BaseModel):
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Information guide too long")
         return v
+    
+    @validator('conference_banner_url')
+    def conference_banner_url_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid conference banner url")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Conference banner url too long")
+        return v
 
 class ConferenceUpdate(BaseModel):
     id: str
@@ -97,6 +106,7 @@ class ConferenceUpdate(BaseModel):
     timezone: str | None = None
     registration_link: str | None = None
     information_guide: str | None = None
+    conference_banner_url: str | None = None
 
     @validator('id')
     def id_is_not_empty(cls, v):
@@ -165,6 +175,14 @@ class ConferenceUpdate(BaseModel):
                 raise HTTPException(status_code=400, detail="Invalid information guide")
             if len(v) > 256:
                 raise HTTPException(status_code=400, detail="Information guide too long")
+        return v
+    
+    @validator('conference_banner_url')
+    def conference_banner_url_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid conference banner url")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Conference banner url too long")
         return v
 
 #pydantic model for conference
