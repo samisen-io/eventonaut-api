@@ -1,6 +1,9 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, date
+
+from app.pinecone_operations import delete_namespace
+
 from .. import models
 from ..schemas import conference_schemas as schemas, ai_assistant_schemas as assistant_schemas
 from . import agenda_crud
@@ -40,6 +43,8 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         db_conference.description = "None"
     if conference.conference_logo is None:
         db_conference.conference_logo = "None"
+    if conference.conference_banner_url is None:
+        db_conference.conference_banner_url = "None"
     if conference.description is None or conference.description.strip() == "" or conference.description == "string" or conference.description == "None":
         db_conference.description = "None"
     if conference.conference_logo is None or conference.conference_logo.strip() == "" or conference.conference_logo == "string" or conference.conference_logo == "None":
@@ -98,9 +103,11 @@ def delete_conference(db: Session, owner_id: int, uuid: str):
     if conference.assistant_id is not None and conference.assistant_id != "None":
         AI_assitant.delete_assistant(assistant_id=conference.assistant_id)
     db.query(models.Conference_Files).filter(models.Conference_Files.conference_id == conference.id).delete()
+    delete_namespace(conference_id=conference.uuid)
     db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).delete()
     db.delete(conference)
     db.commit()
+    
     return True
 
 # update conference by conference id
@@ -116,7 +123,8 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         'conference_logo': conference.conference_logo if conference.conference_logo is not None else "None",
         'timezone': conference.timezone,
         'registration_link': conference.registration_link if conference.registration_link is not None else "None",
-        'information_guide': conference.information_guide if conference.information_guide is not None else 'None'
+        'information_guide': conference.information_guide if conference.information_guide is not None else 'None',
+        'conference_banner_url': conference.conference_banner_url if conference.conference_banner_url is not None else "None"
     }
 
     for key, value in updates.items():
@@ -127,7 +135,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         if conference.start_date > conference.end_date or conference.start_date < date.today():
             raise HTTPException(status_code=400, detail="Invalid date range")
         
-    attributes = ["description", "conference_logo", "timezone", "registration_link", "client_id", "information_guide"]
+    attributes = ["description", "conference_logo", "timezone", "registration_link", "client_id", "information_guide", "conference_banner_url"]
 
     for attr in attributes:
         value = getattr(conference, attr)
