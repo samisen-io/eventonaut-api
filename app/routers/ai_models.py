@@ -18,7 +18,7 @@ from app.schemas.query_schema import QueryInput
 from app.schemas.user_schemas import UserAuthentication as User
 from ..data_ingestion import add_documents, write_events_to_csv, write_sessions_to_csv, write_speakers_to_csv
 from ..data_query import query_document
-from ..crud import conferences_crud, attendee_crud, result_crud
+from ..crud import conferences_crud, result_crud
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 

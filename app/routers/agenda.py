@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Security
+from fastapi import APIRouter, HTTPException, Depends, Security, status
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from ..dependencies import get_db
@@ -11,7 +11,7 @@ from ..basicauth import basic_auth
 router = APIRouter(tags=["agenda"])
 
 # create agenda
-@router.post("/agenda", response_model=schemas.Agenda)
+@router.post("/agenda", response_model=schemas.Agenda, status_code=status.HTTP_201_CREATED)
 def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id) is None:
         raise HTTPException(status_code=400, detail="Attendee not found")

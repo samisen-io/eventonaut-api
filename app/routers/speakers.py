@@ -1,7 +1,6 @@
 from ..dependencies import get_db
-from .. import models
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException, Security
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from ..schemas import speaker_schemas as schemas
 from ..crud import speakers_crud as crud, conferences_crud
 from app.oauth2 import get_current_active_user
@@ -10,7 +9,7 @@ from app.schemas.user_schemas import UserAuthentication as User
 
 router = APIRouter(tags=["speakers"])
 
-@router.post("/speakers", response_model=schemas.Speaker)
+@router.post("/speakers", response_model=schemas.Speaker, status_code=status.HTTP_201_CREATED)
 def create_speaker(speaker: schemas.SpeakerCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if conferences_crud.get_conference_by_uuid(db=db,uuid=speaker.conference_id,owner_id=current_user.id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
