@@ -186,10 +186,116 @@ class ConferenceUpdate(BaseModel):
         return v
 
 #pydantic model for conference
-class Conference(ConferenceCreate):
+class Conference(BaseModel):
     uuid: str = Field(serialization_alias="id")
+    name: str
+    location: str
+    start_date: date
+    end_date: date
+    description: str
+    conference_logo: str | None = "None"
+    timezone: str | None = "None"
+    registration_link: str | None = "None"
+    conference_banner_url: str | None = "None"
+    information_guide: str
     sessions: list[Session] = []
     settings: list[Settings] = []
-    client_id: Optional[Any] = Field(None, exclude=True)
     class Config:
         orm_mode = True
+
+    @validator('name')
+    def name_is_not_empty(cls, v):
+        if v is None or v.strip() == "" or v == "string":
+            raise HTTPException(status_code=400, detail="Invalid name")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Name too long")
+        return v
+    
+    @validator('client_id')
+    def client_id_is_not_empty(cls, v):
+        if v is not None:
+            if v.strip() == "" or v == "string":
+                raise HTTPException(status_code=400, detail="Invalid client id")
+            if len(v) > 256:
+                raise HTTPException(status_code=400, detail="Client id too long")
+        return v
+    
+    @validator('location')
+    def location_is_not_empty(cls, v):
+        if v is None or v.strip() == "" or v == "string":
+            raise HTTPException(status_code=400, detail="Invalid location")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Location too long")
+        return v
+
+    @validator('start_date')
+    def start_date_is_not_empty(cls, v):
+        if v is None:
+            raise HTTPException(status_code=400, detail="Invalid start date")
+        return v
+
+    @validator('end_date')
+    def end_date_is_not_empty(cls, v):
+        if v is None:
+            raise HTTPException(status_code=400, detail="Invalid end date")
+        return v  
+
+    @validator('description')
+    def description_is_not_empty(cls, v):
+        if v is not None:
+            if v.strip() == "" or v == "string":
+                raise HTTPException(status_code=400, detail="Invalid description")
+            if len(v) > 256:
+                raise HTTPException(status_code=400, detail="Description too long")
+        return v
+    
+    @validator('timezone')
+    def timezone_is_not_empty(cls, v):
+        if v is not None:
+            if v.strip() == "" or v == "string":
+                raise HTTPException(status_code=400, detail="Invalid timezone")
+            if len(v) > 256:
+                raise HTTPException(status_code=400, detail="Timezone too long")
+        return v
+    
+    @validator('registration_link')
+    def registration_link_is_not_empty(cls, v):
+        if v is not None:
+            if v.strip() == "" or v == "string":
+                raise HTTPException(status_code=400, detail="Invalid registration link")
+            if len(v) > 256:
+                raise HTTPException(status_code=400, detail="Registration link too long")
+        return v
+    
+    @validator('information_guide')
+    def information_guide_is_not_empty(cls, v):
+        if v is not None:
+            if v.strip() == "" or v == "string":
+                raise HTTPException(status_code=400, detail="Invalid information guide")
+            if len(v) > 256:
+                raise HTTPException(status_code=400, detail="Information guide too long")
+        return v
+    
+    @validator('conference_banner_url')
+    def conference_banner_url_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid conference banner url")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Conference banner url too long")
+        return v
+    
+    @validator('information_guide')
+    def information_guide_is_not_empty(cls, v):
+        if v is None or v.strip() == "" or v == "string":
+            raise HTTPException(status_code=400, detail="Invalid information guide")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Information guide too long")
+        return v
+    
+    @validator('conference_banner_url')
+    def conference_banner_url_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid conference banner url")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Conference banner url too long")
+        return v
