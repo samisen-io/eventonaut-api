@@ -211,15 +211,6 @@ class Conference(BaseModel):
             raise HTTPException(status_code=400, detail="Name too long")
         return v
     
-    @validator('client_id')
-    def client_id_is_not_empty(cls, v):
-        if v is not None:
-            if v.strip() == "" or v == "string":
-                raise HTTPException(status_code=400, detail="Invalid client id")
-            if len(v) > 256:
-                raise HTTPException(status_code=400, detail="Client id too long")
-        return v
-    
     @validator('location')
     def location_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
@@ -265,23 +256,6 @@ class Conference(BaseModel):
                 raise HTTPException(status_code=400, detail="Invalid registration link")
             if len(v) > 256:
                 raise HTTPException(status_code=400, detail="Registration link too long")
-        return v
-    
-    @validator('information_guide')
-    def information_guide_is_not_empty(cls, v):
-        if v is not None:
-            if v.strip() == "" or v == "string":
-                raise HTTPException(status_code=400, detail="Invalid information guide")
-            if len(v) > 256:
-                raise HTTPException(status_code=400, detail="Information guide too long")
-        return v
-    
-    @validator('conference_banner_url')
-    def conference_banner_url_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid conference banner url")
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Conference banner url too long")
         return v
     
     @validator('information_guide')
