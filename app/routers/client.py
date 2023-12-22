@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Security
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from sqlalchemy.orm import Session
 from app.oauth2 import get_current_active_user
 from ..schemas import client_schemas as schemas
@@ -11,7 +11,7 @@ from .. import basicauth
 router = APIRouter(tags=["client"])
 
 # create client
-@router.post("/clients", response_model=schemas.Client)
+@router.post("/clients", response_model=schemas.Client, status_code=status.HTTP_201_CREATED)
 def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if current_user.id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user id")
