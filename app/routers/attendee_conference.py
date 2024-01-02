@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Security
+from fastapi import APIRouter, HTTPException, Depends, Security, status
 
 from app.oauth2 import get_current_active_user
 from ..dependencies import get_db
@@ -9,7 +9,7 @@ from app.schemas.user_schemas import UserAuthentication as User
 
 router = APIRouter(tags=["attendee conference"])
 
-@router.post("/attendee/conference")
+@router.post("/attendee/conference", response_model=attendee_conference_schemas.AttendeeConference, status_code=status.HTTP_201_CREATED)
 def create_attendee_conference(attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if not crud.get_attendee_by_id(db, attendee_id=current_user.id):
         raise HTTPException(status_code=400, detail="Attendee not found")
@@ -20,7 +20,7 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
         raise HTTPException(status_code=400, detail="Conference already exists")
     return crud.create_attendee_conference(db=db, attendee_conference=attendee_conference, attendee_id=current_user.id)
 
-@router.post("/attendee/conference-id")
+@router.post("/attendee/conference-id", response_model=attendee_conference_schemas.AttendeeConference, status_code=status.HTTP_201_CREATED)
 def create_attendee_conference_by_id(attendee_conference: attendee_conference_schemas.AttendeeConferenceCreateId, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if not crud.get_attendee_by_id(db, attendee_id=current_user.id):
         raise HTTPException(status_code=400, detail="Attendee not found")

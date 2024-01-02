@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Header, Security
+from fastapi import APIRouter, HTTPException, Depends, Header, Security, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
@@ -16,7 +16,7 @@ import json
 router = APIRouter(tags=["conferences"])
 
 # create conference
-@router.post("/conferences", response_model=schemas.Conference)
+@router.post("/conferences", response_model=schemas.Conference, status_code=status.HTTP_201_CREATED)
 def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if current_user.id <= 0:
         raise HTTPException(status_code=400, detail="Invalid user id")

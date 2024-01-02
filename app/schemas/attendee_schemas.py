@@ -4,14 +4,14 @@ from fastapi import HTTPException
 #pydantic model for attendeebase
 class AttendeeBase(BaseModel):
     email: str
-    first_name: str | None = None
-    last_name: str | None = None
-    title: str | None = None
-    company: str | None = None
-    bio: str | None = None
-    share_my_profile: bool | None = None
-    share_my_agenda: bool | None = None
-    profile_image_url: str | None = None
+    first_name: str = "None"
+    last_name: str = "None"
+    title: str = "None"
+    company: str = "None"
+    bio: str = "None"
+    share_my_profile: bool = "None"
+    share_my_agenda: bool = "None"
+    profile_image_url: str = "None"
     
     @validator('email')
     def email_is_not_empty(cls, v):
