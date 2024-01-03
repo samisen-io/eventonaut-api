@@ -19,8 +19,8 @@ def generate_otp():
     otp = ''.join(random.choice(string.digits) for _ in range(6))
     return otp
 
-def validate_otp(gen_otp:str, rec_otp: str, gen_time:datetime, rec_time:datetime):
-    if gen_otp == rec_otp and (rec_time - gen_time).total_seconds() <= default_time_limit:
+def validate_otp(gen_otp:str, rec_otp: str):
+    if gen_otp == rec_otp:
         return True
     return False
 
