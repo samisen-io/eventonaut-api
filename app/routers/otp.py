@@ -75,3 +75,8 @@ async def password_reset(email: str, password: str, db: Session = Depends(get_db
         return {"msg": "Password updated successfully"}
     else:
         raise HTTPException(status_code=400, detail="OTP not verified")
+    
+@router.put('/otp/password-reset-attendee')
+async def password_reset_attendee(otp:str, email: str, password: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    await verify_otp(email=email,otp=otp)
+    return await password_reset(email=email,password=password,db=db)
