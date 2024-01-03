@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
+from fastapi import APIRouter, Depends, HTTPException, status
 import logging
 from ..dependencies import get_db
 from ..crud import users_crud as crud
@@ -20,7 +20,7 @@ router = APIRouter(tags=['OTP'])
 cache = TTLCache(maxsize=1024, ttl=default_time_limit)
 
 @router.post('/otp')
-async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+async def send_otp(email: str, email_subject: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     global cache
     try:
         valid = validate_email(email)
