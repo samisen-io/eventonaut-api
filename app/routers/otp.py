@@ -19,22 +19,6 @@ default_time_limit = int(os.getenv("OTP_EXPIRE"))
 router = APIRouter(tags=['OTP'])
 cache = TTLCache(maxsize=1024, ttl=default_time_limit)
 
-# class OTPManager:
-#     def __init__(self):
-#         self.otp_db = {}
-
-# otp_manager = OTPManager()
-
-# def get_otp_manager():
-#     return otp_manager
-
-# def delete_entry(email: str,delay: int,task_timestamp: datetime, otp_manager: OTPManager = Depends(get_otp_manager)):
-#     time.sleep(delay)
-#     otp_db = otp_manager.otp_db
-#     entry_timestamp: datetime = otp_db[email][1]
-#     if email in otp_db.keys() and (entry_timestamp - task_timestamp).total_seconds() == 0:
-#         del otp_db[email]
-
 @router.post('/otp')
 async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     global cache
