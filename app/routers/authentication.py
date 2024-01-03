@@ -38,7 +38,7 @@ def authenticate_user(db: Session, username: str, password: str, token_jti: str)
     db_tokens = logout_token_crud.get_all_jti_in_tokens(db=db)
     if token_jti in db_tokens:
         logging.exception("Token is invalid")
-        raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
     return user
 
 @router.post("/login", response_model=Token)
@@ -103,7 +103,7 @@ async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = D
         return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
     except JWTError:
         logging.exception("Invalid token")
-        raise HTTPException(status_code=400, detail="Invalid token")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
     
 @router.post("/invalidate_refresh_token")
 async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
@@ -115,7 +115,7 @@ async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db), basic_a
         return {"message": "Token invalidated"}
     except JWTError:
         logging.exception("Invalid token")
-        raise HTTPException(status_code=400, detail="Invalid token")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
 
 @router.post("/logout")
 async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"]),db: Session = Depends(get_db)):
@@ -133,7 +133,7 @@ async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Se
             return {"message": "Token invalidated"}
         else:
             logging.exception("Invalid token")
-            raise HTTPException(status_code=400, detail="Invalid token")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
     except JWTError:
         logging.exception("Invalid token")
-        raise HTTPException(status_code=400, detail="Invalid token")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")

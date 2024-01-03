@@ -7,7 +7,7 @@ import re
 
 router = APIRouter(tags=["AI_assistant"])
 
-@router.post("/assistant/create_assistant")
+@router.post("/assistant/create_assistant",status_code=201)
 def create_assistant(schema: schemas.AssistantCreate, basic_auth = Depends(basicauth.basic_auth)):
     try:
         assistant = AI_assitant.create_assistant(schema=schema)

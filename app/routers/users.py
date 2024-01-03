@@ -19,7 +19,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_a
         user.email = valid.normalized.lower()
     except EmailNotValidError as e:
         logging.exception(str(e))
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         logging.exception("Email already registered")
@@ -33,7 +33,7 @@ def get_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = crud.get_users(db, offset=offset, limit=limit)
     if users is None or len(users) == 0:
         logging.exception("Users not found")
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     logging.info("Users retrieved")
     return users
 
@@ -42,7 +42,7 @@ def get_user(db: Session = Depends(get_db), current_user: User = Security(get_cu
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     logging.info("User retrieved: " + db_user.uuid)
     return db_user
 
@@ -51,14 +51,14 @@ def get_user(db: Session = Depends(get_db), current_user: User = Security(get_cu
 def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if all(value is None for value in dict(user).values()):
         logging.exception("Invalid request body")
-        raise HTTPException(status_code=400, detail="Invalid request body")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
     if current_user.id <= 0:
         logging.exception("Invalid user id")
-        raise HTTPException(status_code=400, detail="Invalid user id")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     logging.info("User updated: " + db_user.uuid)
     return crud.update_user(db=db, user=user, user_id=current_user.id)
 
@@ -68,13 +68,13 @@ def update_user_password(user: schemas.UserPasswordUpdate, db: Session = Depends
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if user.old_password == user.new_password:
         logging.exception("New password cannot be same as old password")
-        raise HTTPException(status_code=400, detail="New password cannot be same as old password")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password cannot be same as old password")
     if not crud.get_user_by_email_and_password(db, email=db_user.email, password=user.old_password):
         logging.exception("Invalid old password")
-        raise HTTPException(status_code=400, detail="Invalid old password")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid old password")
     logging.info("User password updated: " + db_user.uuid)
     return crud.update_user_password(db=db, user=user, user_id=current_user.id)
 
@@ -84,6 +84,7 @@ def delete_user(db: Session = Depends(get_db), current_user: User = Security(get
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    deleted_user = crud.delete_user(db=db, user_id=current_user.id)
     logging.info("User deleted: " + db_user.uuid)
-    return crud.delete_user(db=db, user_id=current_user.id)
+    return deleted_user

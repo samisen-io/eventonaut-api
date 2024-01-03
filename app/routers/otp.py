@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, status
 import logging
 from ..dependencies import get_db
 from ..crud import users_crud as crud
@@ -42,15 +42,15 @@ async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, otp_m
         email = valid.email
     except EmailNotValidError as e:
         logging.exception(str(e))
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     user = crud.get_user_by_email(db, email)
     if not user:
         logging.exception("User not found")
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     otp = generate_otp()
     if not send_mail(otp, email_subject, email):
         logging.exception("Email not sent")
-        raise HTTPException(status_code=400, detail="Email not sent")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not sent")
     sent_time = datetime.now()
     otp_db[email] = [otp, sent_time, False]
     bgtask.add_task(delete_entry, email, default_time_limit, sent_time)
@@ -62,17 +62,17 @@ async def verify_otp(email: str, otp: str, otp_manager: OTPManager = Depends(get
     otp_db = otp_manager.otp_db
     if email not in otp_db.keys():
         logging.exception("Email not found")
-        raise HTTPException(status_code=400, detail="Email not verified")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not verified")
     if len(otp) != 6:
         logging.exception("Invalid OTP")
-        raise HTTPException(status_code=400, detail="Invalid OTP")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP")
     valid_otp = validate_otp(otp_db[email][0], otp, otp_db[email][1], datetime.now())
     otp_db[email][2] = valid_otp
     if valid_otp:
         otp_db[email][0] = 0
     else:
         logging.info("OTP not verified for Email")
-        raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP or OTP expired")
     logging.info("OTP verified for Email")
     return {"msg": "OTP verified successfully"}
 
@@ -86,4 +86,4 @@ async def password_reset(email: str, password: str, otp_manager: OTPManager = De
         return {"msg": "Password updated successfully"}
     else:
         logging.exception("OTP not verified")
-        raise HTTPException(status_code=400, detail="OTP not verified")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP not verified")
