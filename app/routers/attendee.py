@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Security
+from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
 from app.oauth2 import get_current_active_user
 from ..dependencies import get_db
@@ -12,7 +12,7 @@ from .. import basicauth
 router = APIRouter(tags=["attendee"])
 
 # create attendee
-@router.post("/attendee/signup")
+@router.post("/attendee/signup", response_model=schemas.Attendee, status_code=status.HTTP_201_CREATED)
 def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:
         valid = validate_email(attendee.email)
@@ -49,7 +49,7 @@ def get_attendee_by_id(db: Session = Depends(get_db), current_user: User = Secur
     return db_attendee
 
 # update attendee by email
-@router.put("/attendee")
+@router.put("/attendee", response_model=schemas.Attendee)
 def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if all(value is None for value in dict(attendee).values()):
         logging.exception("Invalid request body")

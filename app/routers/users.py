@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Security
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 import logging
 from sqlalchemy.orm import Session
 from app.oauth2 import get_current_active_user
@@ -11,7 +11,8 @@ from .. import basicauth
 
 router = APIRouter(tags=["users"])
 
-@router.post("/users", response_model=schemas.User)
+
+@router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:
         valid = validate_email(user.email)
@@ -22,7 +23,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_a
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         logging.exception("Email already registered")
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
     user = crud.create_user(db=db, user=user)
     logging.info("User created: " + user.uuid)
     return user

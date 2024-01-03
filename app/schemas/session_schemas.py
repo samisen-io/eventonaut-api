@@ -10,6 +10,7 @@ class SessionBase(BaseModel):
     description: str 
     date: Date
     location: str
+    session_image_url: str | None = "None"
     speakers: list[str]
     tags: list[str]
 
@@ -55,6 +56,12 @@ class SessionBase(BaseModel):
             raise HTTPException(status_code=400, detail="Location too long")
         return v
     
+    @validator('session_image_url')
+    def session_image_url_must_not_be_empty(cls, v):
+        if v == "" or v == "string":
+            v = "None"
+        return v
+    
     @validator('speakers')
     def speakers_must_not_be_empty(cls, v):
         if v is None or v == "" or len(v) == 0:
@@ -76,7 +83,7 @@ class SessionBase(BaseModel):
             elif len(tag) > 256:
                 raise HTTPException(status_code=400, detail="Tag name too long")
         return v
-    
+
 class SessionCreate(SessionBase):
     conference_id: str
     
@@ -102,6 +109,7 @@ class SessionUpdate(BaseModel):
     description: str | None = None
     date: Date | None = None
     location: str | None = None
+    session_image_url: str | None = None
     speakers: list[str] | None = None
     tags: list[str] | None = None
 
@@ -157,6 +165,12 @@ class SessionUpdate(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid location")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Location too long")
+        return v
+    
+    @validator('session_image_url')
+    def session_image_url_must_not_be_empty(cls, v):
+        if v == "" or v == "string":
+            v = "None"
         return v
     
     @validator('speakers')

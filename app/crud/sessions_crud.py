@@ -22,6 +22,8 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     db_session.conference_id = conference_id
     db_session.speakers = session.speakers
     db_session.tags = session.tags
+    if session.session_image_url is None:
+        db_session.session_image_url = "None"
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
@@ -89,7 +91,8 @@ def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner
         'location': session.location,
         'description': session.description,
         'speakers': speakers,
-        'tags': tags
+        'tags': tags,
+        'session_image_url': session.session_image_url if session.session_image_url is not None else 'None'
     }
     
     for key, value in updates.items():

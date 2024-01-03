@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Security
+from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
@@ -12,7 +12,7 @@ from datetime import date
 router = APIRouter(tags=["sessions"])
 
 # create session by owner id and conference id
-@router.post("/sessions", response_model=schemas.Session)
+@router.post("/sessions", response_model=schemas.Session, status_code=status.HTTP_201_CREATED)
 def create_session_for_conference(
     session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])
 ):

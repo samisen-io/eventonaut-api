@@ -1,4 +1,4 @@
-# Conference Assistant API
+# Eventonaut API
 
 This API is developed to work with Conference Assistant app and Conference Buddy app and provides all the back-end functionality and AI features for those apps
 
@@ -38,7 +38,12 @@ pip install -r requirements.txt
 OPENAI_API_KEY= #Add Open AI key here
 SECRET_KEY = #Add a Secret key for creating access token here
 ALGORITHM = HS256
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+
+ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES = 60
+ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS = 10
+
+ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES = 90
+ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS = 365
 
 DATABASE_URL_ADDRESS = postgresql://username:password@localhost:5432/database_name #Replace username, password and database_name with your actual PostgreSQL username, password and database name for your application
 
@@ -47,7 +52,12 @@ EMAIL_PASSWORD = #Add you email password
 OTP_EXPIRE = 300
 
 REFRESH_TOKEN_SECRET_KEY = #Add a Secret key for creating refresh token here
-REFRESH_TOKEN_EXPIRE_MINUTES = 90
+
+CLIENT_ID = #Add Client ID here
+CLIENT_SECRET = #Add Client Secret here
+
+PINECONE_API_KEY = #Add Pinecone API key here
+PINECONE_API_ENV = #Add Pinecone API environment
 ```
 Replace the appropriate values with the actual values
 

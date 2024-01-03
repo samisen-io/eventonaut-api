@@ -1,43 +1,80 @@
 import ast
-import os
+from datetime import date, datetime, time, timezone
+import json
+import sys
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
+from app.crud.aitokens_crud import insert_aitoken
 from app.file_reader import read_file_return_csv
+from app.pinecone_operations import arranging_ouput_object, create_vector_db, delete_namespace, delete_vector_db
+from app.routers.speakers import create_speaker
+from app.schemas import aitokens_schemas as ait_schemas
 from app.schemas import session_schemas as schemas
+from app.schemas import speaker_schemas as speaker_schemas
 from app.schemas import ai_assistant_schemas as ai_schemas
 from app.dependencies import get_db
-from app.file_upload import file_upload
 from app.oauth2 import get_current_active_user, oauth_2_scheme
 from app.routers.sessions import create_session_for_conference
+from app.schemas.query_schema import QueryInput
 from app.schemas.user_schemas import UserAuthentication as User
-from ..data_ingestion import write_data_to_json
+from ..data_ingestion import add_documents, write_events_to_csv, write_sessions_to_csv, write_speakers_to_csv
 from ..data_query import query_document
-from ..crud import conferences_crud, attendee_crud
+from ..crud import conferences_crud, result_crud
 from sqlalchemy.orm import Session
-from ..AI_assitant import update_assistant, upload_file, delete_file
 from app.schemas.user_schemas import UserAuthentication as User
-from .. import basicauth
 
 router = APIRouter(tags=["ai_models"])
 
-@router.post("/query_document")
-async def query_document_endpoint(question: str, conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
-    conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
+@router.put("/create_vector_db/")
+async def create_index(name:str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+    index_name = create_vector_db(name)   
+    return {'index_name': index_name}
+
+@router.delete("/delete_vector_db/")
+async def delete_index(current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+    status = delete_vector_db()
+    return status
+
+@router.post("/query_the_document/")
+async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+    start_time = datetime.utcnow()
+    conference_id = query_input.conference_id
+    question = query_input.question
+    conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)  
     if not conference:
         logging.exception("Conference not found")
         raise HTTPException(status_code=404, detail="Conference not found")
-    assistant_id = conference.assistant_id
-    thread_id = attendee_crud.get_thread_id_by_attendee_id(db, current_user.id)
-    if not thread_id:
-        logging.exception("Thread not found")
-        raise HTTPException(status_code=404, detail="Thread not found")
-    file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
-    if not file_ids:
-        logging.exception("No files found for this conference")
-        raise HTTPException(status_code=404, detail="No files found for this conference")
-    answer = query_document(question,assistant_id,thread_id, file_ids)
-    logging.info("Answer retrieved")
-    return {"answer": answer}
+    data = query_document(question,conference_id)
+    end_time = datetime.utcnow()
+    # return end_time-start_time
+    processing_time = (end_time - start_time).total_seconds()
+    # return processing_time
+    data = json.loads(data)
+    token_data = {
+        'conference_id' : conference_id,
+        'attendee_id' : current_user.uuid,
+        'successful_requests' : data['usage']['successful_requests'],
+        'total_cost' : data['usage']['total_cost'],
+        'total_tokens' : data['usage']['total_tokens'],
+        'prompt_tokens' : data['usage']['prompt_tokens'],
+        'completion_tokens' : data['usage']['completion_tokens'],
+        'processing_time' : processing_time
+    }
+    data['processing_time']=processing_time
+    objects = result_crud.get_objects(db=db, objects=data['source_list'])
+    objects_dict = [{k: datetime_to_str(v) for k, v in obj.__dict__.items() if not k.startswith('_')} for obj in objects]
+    json_data = json.dumps(objects_dict)
+    final_result = arranging_ouput_object(json_data)
+    final_result = json.loads(final_result)
+    final_result['answer'] = data['answer']
+    final_result['processing_time'] = processing_time
+    final_result['usage'] = data['usage']
+    try:
+        token = ait_schemas.AITokensCreate(**token_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e)+"\n"+str(token_data))
+    insert_aitoken(db,token)
+    return final_result
 
 @router.delete("/delete_file/")
 async def delete_file_from_openai(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
@@ -45,50 +82,13 @@ async def delete_file_from_openai(conference_id: str, current_user: User = Secur
     if not conference:
         logging.exception("Conference not found")
         raise HTTPException(status_code=404, detail="Conference not found")
-    assistant_id = conference.assistant_id
-    file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
-    if not file_ids:
-        logging.exception("No files found for this conference")
-        raise HTTPException(status_code=404, detail="No files found for this conference")
-    file_id = file_ids[0]
-    # delete from openai assistant api and conference_files table
-    try:
-        delete_file(file_id=file_id)
-    except Exception as e:
-        logging.exception(str(e))
-        raise HTTPException(status_code=400, detail=str(e))
-    conferences_crud.delete_file_id(db=db, file_id=file_id, conference_id=conference_id, owner_id=current_user.id)
-    assistant_schema = create_assistant_schema(assistant_id, conference_id, file_id="")
-    update_assistant(assistant_schema)
-    # delete the file from the files folder
-    file_path = os.path.join('app', 'files')
-    file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
-    os.remove(file_path)
-    logging.info("File deleted")
-    return {"success": "Sessions file deleted successfully."}
-
-@router.post("/database_and_repository_synchronization/")
-async def update_conference(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
-    write_data_to_json(conference_id,db)
-    file_ids = conferences_crud.get_file_ids_by_conference_id(db, conference_id)
-    if file_ids:
-        file_id = file_ids[0]
-        # delete from openai assistant api
-        try:
-            delete_file(file_id=file_id)
-        except Exception as e:
-            logging.exception(str(e))
-            raise HTTPException(status_code=400, detail=str(e))
-        conferences_crud.delete_file_id(db=db, file_id=file_id, conference_id=conference_id, owner_id=current_user.id)
-    filename = await upload_session_from_database(conference_id, current_user, db)
-    logging.info("Database and repository synchronized")
-    return filename
+    status = delete_namespace(conference_id)
+    return status
 
 @router.post("/upload_session_file/")
 async def upload_session_file(file: UploadFile,
                               conference_id: str,
                               current_user: User = Security(get_current_active_user, scopes=["organizer"]),
-                              token: str = Depends(oauth_2_scheme),
                               db: Session = Depends(get_db)):
     contents = await file.read()
     filename = file.filename
@@ -123,52 +123,79 @@ async def upload_session_file(file: UploadFile,
         except Exception as e:
             logging.exception(str(e)+"\n"+str(payload))
             raise HTTPException(status_code=400, detail=str(e)+"\n"+str(payload))
+        # upload to database
         create_session_for_conference(session,db,current_user)
-        c=c+1
-        print(c)
-    filename = await upload_session_from_database(conference_id, current_user, db)
-    logging.info("Session file uploaded")
-    return filename
+        loading_chars = ['-', '\\', '|', '/']
+        c = c + 1
+        current_rows = c
+        total_rows = len(reader)
+        percentage_done = (current_rows / total_rows) * 100
+        print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
+        sys.stdout.flush()
+    print()
+    return {'filename': filename}
 
-# @router.post("/upload_sessions_from_database/")
-async def upload_session_from_database(conference_id: str,
-                                       current_user: User = Security(get_current_active_user, scopes=["organizer"]),
-                                       db: Session = Depends(get_db)):
-    write_data_to_json(conference_id,db)
-    # get the file from the files folder
-    file_path = os.path.join('app', 'files')
-    file_path = os.path.join(file_path, 'sessions_'+str(conference_id)+'.json')
-    try:
-        file = upload_file(file_path)
-    except Exception as e:
-        logging.exception(str(e))
-        raise HTTPException(status_code=400, detail=str(e))
-    try:
-        conferences_crud.upload_file_id(db=db, file_id=file.id, conference_id=conference_id, owner_id=current_user.id)
-    except Exception as e:
-        logging.exception(str(e))
-        raise HTTPException(status_code=400, detail=f"Error uploading file: {str(e)}")
-    try:
-        assistant_id = conferences_crud.get_assistant_id_by_conference_id(db, conference_id)
-    except Exception as e:
-        logging.exception(str(e))
-        raise HTTPException(status_code=400, detail=f"Error getting assistant ID: {str(e)}")
-    assistant_schema = create_assistant_schema(assistant_id, conference_id, file.id)
-    update_assistant(assistant_schema)
-    logging.info("Sessions uploaded from database")
-    return {'filename':file.filename}
+@router.post("/upload_speaker_file/")
+async def upload_speaker_file(file: UploadFile,
+                              conference_id: str,
+                              current_user: User = Security(get_current_active_user, scopes=["organizer"]),
+                              db: Session = Depends(get_db)):
+    contents = await file.read()
+    filename = file.filename
+    # read the file and return a csv reader object
+    reader = await read_file_return_csv(contents,filename)
+    headers = reader.fieldnames
+    reader = [{k.lower(): v for k, v in row.items()} for row in reader]
+    my_headers = ['name', 'title', 'bio']
+    if set(headers) != set(my_headers):
+        error_message = {
+            "error": "The attributes(Column Names) provided are not correct.", 
+            "expected attributes(Column Names)": my_headers, 
+            "received attributes(Column Names)": headers
+        }
+        raise HTTPException(status_code=400, detail=error_message)  
+    print(headers)
+    c=0
+    for row in reader:
+        payload = {
+            "name": f"{row['name']}" if row['name'] else None,
+            "title": f"{row['title']}" if row['title'] else None,
+            "conference_id": f"{conference_id}",
+            "bio": f"{row['bio']}" if row['bio'] else None,
+        }
+        try:
+            speaker = speaker_schemas.SpeakerCreate(**payload)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e)+"\n"+str(payload))
+        # upload to database
+        create_speaker(speaker,db,current_user)
+        loading_chars = ['-', '\\', '|', '/']
+        c = c + 1
+        current_rows = c
+        total_rows = len(reader)
+        percentage_done = (current_rows / total_rows) * 100
+        print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
+        sys.stdout.flush()
+    print()
+    return {'filename': filename}
 
-def create_assistant_schema(assistant_id, conference_id, file_id):
-    payload = {
-        "assistant_id": f"{assistant_id}",
-        "model": "gpt-3.5-turbo-1106",
-        "name": f"ca_{conference_id}",
-        "description": "It's a conference assistant. it can help users with their queries related to the sessions of the conference to build their agenda/schedule.",
-        "instructions": "You are conference assistant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.",
-        "tools": [{"type": "code_interpreter"}],
-        "file_ids": [f"{file_id}"],
-        "metadata": {}
-    }
-    assistant = ai_schemas.AssistantUpdate(**payload)
-    logging.info("Assistant schema created")
-    return assistant
+@router.post("/synchronize_database_and_pinecone/")
+async def update_namespace(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+    write_sessions_to_csv(db,conference_id)
+    write_speakers_to_csv(db,conference_id)
+    write_events_to_csv(db,conference_id)
+    status = delete_namespace(conference_id)
+    status = status['status']
+    add_documents(conference_id,'sessions')
+    add_documents(conference_id,'speakers')
+    namespace = add_documents(conference_id,'events')
+    namespace = namespace['namespace']
+    return {'namespace': namespace, 'deletion_status': status}
+
+def datetime_to_str(dt):
+    if isinstance(dt, date):
+        return dt.strftime('%Y-%m-%d')
+    elif isinstance(dt, time):
+        return dt.strftime('%H:%M:%S')
+    else:
+        return dt

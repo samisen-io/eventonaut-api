@@ -8,9 +8,9 @@ class UserBase(BaseModel):
     email: str
     first_name: str
     last_name: str
-    company: str | None = None
+    company: str = "None"
     business_type: str
-    timezone: str | None = None
+    timezone: str = "None"
 
     @validator('email')
     def email_is_valid(cls, v):

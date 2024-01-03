@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Security
+from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
@@ -12,7 +12,7 @@ from ..dependencies import get_db
 router = APIRouter(tags=["settings"])
 
 # create settings by conference id and take body as any valid JSON and convert it to string
-@router.post("/settings", response_model=schemas.Settings)
+@router.post("/settings", response_model=schemas.Settings, status_code=status.HTTP_201_CREATED)
 def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if conferences_crud.get_conference_by_uuid(db, uuid=settings.conference_id,owner_id=current_user.id) is None:
         logging.exception("Conference not found")
