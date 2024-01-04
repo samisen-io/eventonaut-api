@@ -18,6 +18,13 @@ def increment_number(s):
         return str(int(number) + 1) + rest
     else:
         return '1' + s
+    
+def get_matching_namespace(conference_id):
+    namespaces = get_namespaces()
+    for namespace in namespaces:
+        if str(conference_id) in namespace:
+            return namespace
+    return None
 
 def get_namespaces():
     index = pinecone.Index(index_name)
@@ -56,19 +63,6 @@ def delete_vector_db():
     
     else:
         return {'index_name': index_name, 'status': 'not found'}
-    
-# def delete_namespace(conference_id):
-#     # index_name = index_name
-#     index = pinecone.Index(index_name)
-#     if index_name in pinecone.list_indexes():
-#         namespace = 'conf-'+str(conference_id)
-#         # check if the namespace exists
-#         try:
-#             index.delete(delete_all=True, namespace=namespace)
-#             # index.delete_index(index_name = index_name, namespace=namespace)
-#             return {'namespace': namespace, 'status': 'deleted'}
-#         except:
-#             return {'namespace': namespace, 'status': 'not found'}
 
 def delete_namespace(conference_id):
     index = pinecone.Index(index_name)

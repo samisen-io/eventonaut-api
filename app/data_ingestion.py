@@ -10,7 +10,6 @@ from langchain.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 from app.crud.conferences_crud import get_conference_by_conference_uuid
 from app.crud.speakers_crud import get_speakers_by_conference_id
-from app.pinecone_operations import create_namespace
 from app.routers.sessions import get_sessions_by_conference_id
 import pinecone
 
@@ -106,26 +105,6 @@ def write_events_to_csv(db, conference_id):
         conference_dict = filter_fields(conference_dict, fieldnames)
         conference_dict['type'] = 'event/conference'
         writer.writerow(conference_dict)
-
-# def add_documents(conference_id,category):
-#     # get the file path
-#     file_path = file_path_in_files(conference_id,category)
-#     # find the delimiter
-#     delimiter = find_delimiter(file_path)
-#     # split the csv file into chunks
-#     loader = CSVLoader(file_path = file_path, encoding='utf-8',source_column = 'uuid',csv_args = {'delimiter': delimiter})
-#     data = loader.load()
-#     # get the pineone index
-#     namespace = "conf-"+str(conference_id)
-#     index = pinecone.Index(index_name)
-#     vectorstore = Pinecone(index, embedding=embedding_function, text_key = 'csv_text', namespace = namespace)
-#     vectorstore.add_documents(documents = data)
-#     # Delete the file
-#     # try:
-#     #     os.remove(file_path)
-#     # except OSError as e:
-#     #     print(f"Error: {file_path} : {e.strerror}")
-#     return {"namespace":namespace}
 
 def add_documents(namespace,conference_id,category):
     # get the file path

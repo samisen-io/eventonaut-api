@@ -9,7 +9,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.callbacks import get_openai_callback  
 import pinecone
 
-from app.pinecone_operations import get_namespaces
+from app.pinecone_operations import get_matching_namespace, get_namespaces
 
 load_dotenv()
 api_key = os.environ.get("OPENAI_API_KEY")
@@ -28,20 +28,6 @@ embedding_function = OpenAIEmbeddings()
 def handler_to_dict(handler):
     # Convert the handler to a dict or another JSON-serializable type
     return handler.__dict__
-
-def get_matching_namespace(conference_id):
-    namespaces = get_namespaces()
-    for namespace in namespaces:
-        if str(conference_id) in namespace:
-            return namespace
-    return None
-
-# def retrieve_answer(question, conference_id):
-#     vectordb = Pinecone.from_existing_index(index_name=index_name, embedding=embedding_function, namespace='conf-'+conference_id, text_key = 'csv_text')
-#     chain = ConversationalRetrievalChain.from_llm(llm=ChatOpenAI(temperature=0.3, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key),
-#                                                 retriever=vectordb.as_retriever(search_kwargs={'k':10}), return_source_documents=True)
-#     history = []
-#     return chain({"question": question, "chat_history": history})
 
 def retrieve_answer(question, conference_id):
     namespace = get_matching_namespace(conference_id=conference_id)

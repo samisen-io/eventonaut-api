@@ -4,7 +4,6 @@ import json
 import os
 import sys
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
-from app import pinecone_operations
 from app.crud.aitokens_crud import insert_aitoken
 from app.file_reader import read_file_return_csv
 from app.pinecone_operations import arranging_ouput_object, create_namespace, create_vector_db, delete_namespace, delete_vector_db
@@ -183,13 +182,7 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
     namespace = create_namespace(conference_id)
     status = delete_namespace(conference_id)
     status = status['status']
-    # add_documents(conference_id,'sessions')
-    # add_documents(conference_id,'speakers')
-    # namespace = add_documents(conference_id,'events')
-    # namespace = namespace['namespace']
-    print('start adding documents')
     add_documents(namespace,conference_id,'sessions')
-    print('sessions added')
     add_documents(namespace,conference_id,'speakers')
     namespace = add_documents(namespace,conference_id,'events')
     namespace = namespace['namespace']
