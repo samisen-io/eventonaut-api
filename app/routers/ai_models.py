@@ -1,7 +1,6 @@
 import ast
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time
 import json
-import os
 import sys
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile, status
@@ -12,9 +11,8 @@ from app.routers.speakers import create_speaker
 from app.schemas import aitokens_schemas as ait_schemas
 from app.schemas import session_schemas as schemas
 from app.schemas import speaker_schemas as speaker_schemas
-from app.schemas import ai_assistant_schemas as ai_schemas
 from app.dependencies import get_db
-from app.oauth2 import get_current_active_user, oauth_2_scheme
+from app.oauth2 import get_current_active_user
 from app.routers.sessions import create_session_for_conference
 from app.schemas.query_schema import QueryInput
 from app.schemas.user_schemas import UserAuthentication as User
@@ -161,8 +159,7 @@ async def upload_speaker_file(file: UploadFile,
             "received attributes(Column Names)": headers
         }
         logging.exception(error_message)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_message)  
-    print(headers)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_message)
     c=0
     for row in reader:
         payload = {

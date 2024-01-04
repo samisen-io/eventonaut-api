@@ -1,6 +1,5 @@
 import json
 import os
-import chromadb
 from dotenv import load_dotenv
 from langchain.vectorstores import Pinecone
 from langchain.chains import ConversationalRetrievalChain
@@ -9,7 +8,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.callbacks import get_openai_callback  
 import pinecone
 
-from app.pinecone_operations import get_matching_namespace, get_namespaces
+from app.pinecone_operations import get_matching_namespace
 
 load_dotenv()
 api_key = os.environ.get("OPENAI_API_KEY")
