@@ -79,7 +79,7 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     logging.info("Query successfull")
     return final_result
 
-@router.delete("/delete_file/")
+@router.delete("/delete_namespace/")
 async def delete_namespace_from_pinecone(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
