@@ -22,7 +22,7 @@ def create_session_for_conference(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     if session.date < conference.start_date or session.date > conference.end_date or session.date < date.today():
         logging.exception("Invalid date")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid date! Conference date is between {conference.start_date} and {conference.end_date} and today is {date.today()}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid date! Date must fall under Conference date range!!")
     if session.start_time > session.end_time:
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
