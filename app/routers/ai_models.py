@@ -3,7 +3,8 @@ from datetime import date, datetime, time, timezone
 import json
 import os
 import sys
-from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
+import logging
+from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile, status
 from app.crud.aitokens_crud import insert_aitoken
 from app.file_reader import read_file_return_csv
 from app.pinecone_operations import arranging_ouput_object, create_namespace, create_vector_db, delete_namespace, delete_vector_db
@@ -25,14 +26,16 @@ from app.schemas.user_schemas import UserAuthentication as User
 
 router = APIRouter(tags=["ai_models"])
 
-@router.put("/create_vector_db/")
+@router.put("/create_vector_db/", status_code=status.HTTP_201_CREATED)
 async def create_index(name:str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
-    index_name = create_vector_db(name)   
+    index_name = create_vector_db(name) 
+    logging.info("Created index: " + index_name)  
     return {'index_name': index_name}
 
 @router.delete("/delete_vector_db/")
 async def delete_index(current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
     status = delete_vector_db()
+    logging.info("Deleted index: " + status)
     return status
 
 @router.post("/query_the_document/")
@@ -42,7 +45,8 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     question = query_input.question
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)  
     if not conference:
-        raise HTTPException(status_code=404, detail="Conference not found")
+        logging.exception("Conference not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     data = query_document(question,conference_id)
     end_time = datetime.utcnow()
     # return end_time-start_time
@@ -71,17 +75,21 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     try:
         token = ait_schemas.AITokensCreate(**token_data)
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e)+"\n"+str(token_data))
+        logging.exception(str(e)+"\n"+str(token_data))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)+"\n"+str(token_data))
     insert_aitoken(db,token)
+    logging.info("Query successfull")
     return final_result
 
 @router.delete("/delete_file/")
 async def delete_namespace_from_pinecone(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
-        raise HTTPException(status_code=404, detail="Conference not found")
-    status = delete_namespace(conference_id)
-    return status
+        logging.exception("Conference not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
+    stat = delete_namespace(conference_id)
+    logging.info("Namespace deleted")
+    return stat
 
 @router.post("/upload_session_file/")
 async def upload_session_file(file: UploadFile,
@@ -101,7 +109,8 @@ async def upload_session_file(file: UploadFile,
             "expected attributes(Column Names)": my_headers, 
             "received attributes(Column Names)": headers
         }
-        raise HTTPException(status_code=400, detail=error_message)  
+        logging.exception(error_message)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_message)  
     c=0
     for row in reader:
         payload = {
@@ -118,7 +127,8 @@ async def upload_session_file(file: UploadFile,
         try:
             session = schemas.SessionCreate(**payload)
         except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e)+"\n"+str(payload))
+            logging.exception(str(e)+"\n"+str(payload))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)+"\n"+str(payload))
         # upload to database
         create_session_for_conference(session,db,current_user)
         loading_chars = ['-', '\\', '|', '/']
@@ -129,6 +139,7 @@ async def upload_session_file(file: UploadFile,
         print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
         sys.stdout.flush()
     print()
+    logging.info("Session file uploaded successfully")
     return {'filename': filename}
 
 @router.post("/upload_speaker_file/")
@@ -149,7 +160,9 @@ async def upload_speaker_file(file: UploadFile,
             "expected attributes(Column Names)": my_headers, 
             "received attributes(Column Names)": headers
         }
-        raise HTTPException(status_code=400, detail=error_message)  
+        logging.exception(error_message)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_message)  
+    print(headers)
     c=0
     for row in reader:
         payload = {
@@ -161,7 +174,8 @@ async def upload_speaker_file(file: UploadFile,
         try:
             speaker = speaker_schemas.SpeakerCreate(**payload)
         except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e)+"\n"+str(payload))
+            logging.exception(str(e)+"\n"+str(payload))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)+"\n"+str(payload))
         # upload to database
         create_speaker(speaker,db,current_user)
         loading_chars = ['-', '\\', '|', '/']
@@ -172,6 +186,7 @@ async def upload_speaker_file(file: UploadFile,
         print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
         sys.stdout.flush()
     print()
+    logging.info("Speakers file uploaded successfully")
     return {'filename': filename}
 
 @router.post("/synchronize_database_and_pinecone/")
@@ -186,6 +201,7 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
     add_documents(namespace,conference_id,'speakers')
     namespace = add_documents(namespace,conference_id,'events')
     namespace = namespace['namespace']
+    logging.info("Database and Pinecone Synchronized")
     return {'namespace': namespace, 'deletion_status': status}
 
 def datetime_to_str(dt):

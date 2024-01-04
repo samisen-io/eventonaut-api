@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from .. import models
-from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas, session_schemas, conference_schemas
+from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
 from datetime import datetime
 from .. import hashing
 from .. AI_assitant import create_thread, delete_thread
