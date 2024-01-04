@@ -6,6 +6,7 @@ from ..otp_generator import send_mail, generate_otp, validate_otp
 from sqlalchemy.orm import Session
 from datetime import datetime
 from ..crud import users_crud as crud
+from cachetools import TTLCache
 from dotenv import load_dotenv
 import os
 import time
@@ -15,27 +16,27 @@ load_dotenv()
 
 default_time_limit = int(os.getenv("OTP_EXPIRE"))
 router = APIRouter(tags=['OTP'])
+cache = TTLCache(maxsize=1024, ttl=default_time_limit)
 
-class OTPManager:
-    def __init__(self):
-        self.otp_db = {}
+# class OTPManager:
+#     def __init__(self):
+#         self.otp_db = {}
 
-otp_manager = OTPManager()
+# otp_manager = OTPManager()
 
-def get_otp_manager():
-    return otp_manager
+# def get_otp_manager():
+#     return otp_manager
 
-def delete_entry(email: str,delay: int,task_timestamp: datetime, otp_manager: OTPManager = Depends(get_otp_manager)):
-    time.sleep(delay)
-    otp_db = otp_manager.otp_db
-    entry_timestamp: datetime = otp_db[email][1]
-    if email in otp_db.keys() and (entry_timestamp - task_timestamp).total_seconds() == 0:
-        del otp_db[email]
+# def delete_entry(email: str,delay: int,task_timestamp: datetime, otp_manager: OTPManager = Depends(get_otp_manager)):
+#     time.sleep(delay)
+#     otp_db = otp_manager.otp_db
+#     entry_timestamp: datetime = otp_db[email][1]
+#     if email in otp_db.keys() and (entry_timestamp - task_timestamp).total_seconds() == 0:
+#         del otp_db[email]
 
 @router.post('/otp')
-async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, otp_manager: OTPManager = Depends(get_otp_manager), db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
-    global default_time_limit
-    otp_db = otp_manager.otp_db
+async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    global cache
     try:
         valid = validate_email(email)
         email = valid.email
@@ -47,32 +48,35 @@ async def send_otp(bgtask:BackgroundTasks, email: str, email_subject: str, otp_m
     otp = generate_otp()
     if not send_mail(otp, email_subject, email):
         raise HTTPException(status_code=400, detail="Email not sent")
-    sent_time = datetime.now()
-    otp_db[email] = [otp, sent_time, False]
-    bgtask.add_task(delete_entry, email, default_time_limit, sent_time)
+    cache[email] = [otp, False]
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
-async def verify_otp(email: str, otp: str, otp_manager: OTPManager = Depends(get_otp_manager), basic_auth = Depends(basicauth.basic_auth)):
-    otp_db = otp_manager.otp_db
-    if email not in otp_db.keys():
+async def verify_otp(email: str, otp: str, basic_auth = Depends(basicauth.basic_auth)):
+    global cache
+    if email not in cache.keys():
         raise HTTPException(status_code=400, detail="Email not verified")
     if len(otp) != 6:
         raise HTTPException(status_code=400, detail="Invalid OTP")
-    valid_otp = validate_otp(otp_db[email][0], otp, otp_db[email][1], datetime.now())
-    otp_db[email][2] = valid_otp
+    valid_otp = validate_otp(cache[email][0], otp)
+    cache[email][1] = valid_otp
     if valid_otp:
-        otp_db[email][0] = 0
+        cache[email][0] = 0
     else:
         raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
     return {"msg": "OTP verified successfully"}
 
 @router.put('/otp/passwordreset')
-async def password_reset(email: str, password: str, otp_manager: OTPManager = Depends(get_otp_manager), db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
-    otp_db = otp_manager.otp_db
-    if email in otp_db.keys() and otp_db[email][2]:
+async def password_reset(email: str, password: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    global cache
+    if email in cache.keys() and cache[email][1]:
         crud.update_user_password_by_email(db=db, email=email, password=password)
-        del otp_db[email]
+        del cache[email]
         return {"msg": "Password updated successfully"}
     else:
         raise HTTPException(status_code=400, detail="OTP not verified")
+    
+@router.put('/otp/password-reset-attendee')
+async def password_reset_attendee(otp:str, email: str, password: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    await verify_otp(email=email,otp=otp)
+    return await password_reset(email=email,password=password,db=db)
