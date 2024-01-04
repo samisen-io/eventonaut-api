@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from .. import models
-from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas, session_schemas, conference_schemas
+from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
 from datetime import datetime
 from .. import hashing
 from .. AI_assitant import create_thread, delete_thread
@@ -212,7 +212,9 @@ def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str):
     attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
     attendees = []
     for attendee_conference in attendee_conferences:
-        attendee = db.query(models.Attendee).filter(models.Attendee.id == attendee_conference.attendee_id).first()
+        attendee = db.query(models.Attendee).filter(models.Attendee.id == attendee_conference.attendee_id,models.Attendee.share_my_profile == True).first()
+        if attendee is None:
+            continue
         user = db.query(models.User).filter(models.User.id == attendee.user_id).first()
         attendees.append(schemas.Attendee(uuid=attendee.uuid, email=user.email, first_name=user.first_name, last_name=user.last_name, title=attendee.title, company=user.company, bio=attendee.bio, share_my_profile=attendee.share_my_profile, share_my_agenda=attendee.share_my_agenda, profile_image_url=attendee.profile_image_url, thread_id=attendee.thread_id,is_active=user.is_active))
     return attendees

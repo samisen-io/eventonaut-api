@@ -1,4 +1,4 @@
-# Conference Assistant API
+# Eventonaut API
 
 This API is developed to work with Conference Assistant app and Conference Buddy app and provides all the back-end functionality and AI features for those apps
 

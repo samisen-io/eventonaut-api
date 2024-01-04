@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+import logging
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 
@@ -14,25 +15,18 @@ from ..code_generator import generate_unique_string
 # get all conferences ordered by start date in descending order
 def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
     conferences = db.query(models.Conference).offset(offset).limit(limit).all()
-    for conference in conferences:
-        conference.__dict__.pop('client_id')
     return conferences
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
     conferences = db.query(models.Conference).filter(models.Conference.start_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
-    for conference in conferences:
-        conference.__dict__.pop('client_id')
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
     confernces = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
-    for conference in confernces:
-        conference.__dict__.pop('client_id')
     return confernces
 
 def get_conference_by_code(db: Session, code: str):
     conference = db.query(models.Conference).filter(models.Conference.code == code).first()
-    conference.__dict__.pop('client_id')
     return conference
 
 # create conference
@@ -43,12 +37,14 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         db_conference.description = "None"
     if conference.conference_logo is None:
         db_conference.conference_logo = "None"
+    if conference.conference_banner_url is None:
+        db_conference.conference_banner_url = "None"
     if conference.description is None or conference.description.strip() == "" or conference.description == "string" or conference.description == "None":
         db_conference.description = "None"
     if conference.conference_logo is None or conference.conference_logo.strip() == "" or conference.conference_logo == "string" or conference.conference_logo == "None":
         db_conference.conference_logo = "None"
     if client_id is None:
-        db_conference.client_id = "None"
+        db_conference.client_id = None
     else:
         db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == client_id).first().id
     db_conference.created_on = datetime.utcnow()
@@ -67,23 +63,19 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
-    db_conference.__dict__.pop('client_id')
     return db_conference
 
 def get_conf_by_uuid(db:Session, conference_id: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
-    conference.__dict__.pop('client_id')
     return conference
 
 # get conference by uuid and owner id
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
     conference = db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
-    conference.__dict__.pop('client_id')
     return conference
 
 def get_conference_by_conference_uuid(db: Session, uuid: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == uuid).first()
-    conference.__dict__.pop('client_id')
     return conference
 
 # delete conference by conference id
@@ -121,7 +113,8 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         'conference_logo': conference.conference_logo if conference.conference_logo is not None else "None",
         'timezone': conference.timezone,
         'registration_link': conference.registration_link if conference.registration_link is not None else "None",
-        'information_guide': conference.information_guide if conference.information_guide is not None else 'None'
+        'information_guide': conference.information_guide if conference.information_guide is not None else 'None',
+        'conference_banner_url': conference.conference_banner_url if conference.conference_banner_url is not None else "None"
     }
 
     for key, value in updates.items():
@@ -130,9 +123,10 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
 
     if conference.start_date is not None and conference.end_date is not None:
         if conference.start_date > conference.end_date or conference.start_date < date.today():
+            logging.exception("Invalid date range")
             raise HTTPException(status_code=400, detail="Invalid date range")
         
-    attributes = ["description", "conference_logo", "timezone", "registration_link", "client_id", "information_guide"]
+    attributes = ["description", "conference_logo", "timezone", "registration_link", "information_guide", "conference_banner_url"]
 
     for attr in attributes:
         value = getattr(conference, attr)
@@ -147,7 +141,6 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
     db_conference.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_conference)
-    db_conference.__dict__.pop('client_id')
     return db_conference
 
 def upload_file_id(db: Session, file_id: str, conference_id: str, owner_id: int):

@@ -3,6 +3,7 @@ from datetime import datetime, date
 from .. import models
 from ..schemas import session_schemas as schemas
 from fastapi import HTTPException
+import logging
 import uuid
 
 #get all sessions
@@ -21,6 +22,8 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     db_session.conference_id = conference_id
     db_session.speakers = session.speakers
     db_session.tags = session.tags
+    if session.session_image_url is None:
+        db_session.session_image_url = "None"
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
@@ -63,6 +66,7 @@ def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner
     if session.speakers is not None:
         for speaker in session.speakers:
             if speaker is None or speaker == "" or speaker == "string":
+                logging.exception("Invalid speaker")
                 raise HTTPException(status_code=400, detail="Invalid speaker")
             if speaker not in speakers:
                 speakers.append(speaker)
@@ -72,6 +76,7 @@ def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner
     if session.tags is not None:
         for tag in session.tags:
             if tag is None or tag == "" or tag == "string":
+                logging.exception("Invalid tag")
                 raise HTTPException(status_code=400, detail="Invalid tag")
             if tag not in tags:
                 tags.append(tag)
@@ -86,7 +91,8 @@ def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner
         'location': session.location,
         'description': session.description,
         'speakers': speakers,
-        'tags': tags
+        'tags': tags,
+        'session_image_url': session.session_image_url if session.session_image_url is not None else 'None'
     }
     
     for key, value in updates.items():
@@ -95,9 +101,11 @@ def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner
 
 
     if session.date is not None and (session.date < db_session.conference.start_date or session.date > db_session.conference.end_date or session.date < date.today()):
+        logging.exception("Invalid date")
         raise HTTPException(status_code=400, detail="Invalid date")
     
     if session.start_time is not None and session.end_time is not None and session.start_time > session.end_time:
+        logging.exception("Invalid time")
         raise HTTPException(status_code=400, detail="Invalid time")
 
     db_session.updated_on = datetime.utcnow()

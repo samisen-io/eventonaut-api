@@ -1,5 +1,4 @@
 import datetime
-import json
 import os
 import csv
 import csv
@@ -50,6 +49,9 @@ def file_path_in_files_csv(conference_id,category):
     if os.path.isfile(file_path):
         os.remove(file_path)
     return file_path
+
+def filter_fields(dict_obj, accepted_fields):
+    return {k: v for k, v in dict_obj.items() if k in accepted_fields}
     
 def write_sessions_to_csv(db,conference_id):
     file_path = file_path_in_files_csv(conference_id, 'sessions')
@@ -57,15 +59,13 @@ def write_sessions_to_csv(db,conference_id):
     if not result:
         raise HTTPException(status_code=404, detail="No sessions found for this conference_id")
     with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['uuid','name', 'description', 'location', 'date', 'start_time', 'end_time', 'tags', 'speakers','type']
+        fieldnames = ['uuid','name', 'description', 'location', 'date', 'start_time', 'end_time', 'tags', 'speakers', 'type']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for session in result:
             session_dict = session.__dict__
-            discard = ['id', 'conference_id', 'owner_id', 'created_on', 'updated_on','_sa_instance_state']
-            for field in discard:
-                session_dict.pop(field, None)
-            for field in ['end_time', 'date', 'created_on', 'updated_on', 'start_time']:
+            session_dict = filter_fields(session_dict, fieldnames)
+            for field in ['end_time', 'date', 'start_time']:
                 if field in session_dict:
                     if isinstance(session_dict[field], datetime.date):
                         session_dict[field] = session_dict[field].strftime("%Y-%m-%d")
@@ -74,7 +74,7 @@ def write_sessions_to_csv(db,conference_id):
                     elif isinstance(session_dict[field], datetime.datetime):
                         session_dict[field] = session_dict[field].strftime("%Y-%m-%d %H:%M:%S")
             session_dict['type'] = 'session'
-            writer.writerow(session_dict)  
+            writer.writerow(session_dict)
             
 def write_speakers_to_csv(db, conference_id):
     file_path = file_path_in_files_csv(conference_id,'speakers')
@@ -82,14 +82,12 @@ def write_speakers_to_csv(db, conference_id):
     if not result:
         raise HTTPException(status_code=404, detail="No speakers found for this conference_id")
     with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-        filednames = ['uuid','name','conference_id','title','bio', 'type']
-        writer = csv.DictWriter(csvfile, fieldnames=filednames)
+        fieldnames = ['uuid','name','conference_id','title','bio', 'type']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for speaker in result:
             speaker_dict = speaker.__dict__
-            discard = ['id', 'created_on', 'updated_on','_sa_instance_state','profile_image_url']
-            for field in discard:
-                speaker_dict.pop(field, None)
+            speaker_dict = filter_fields(speaker_dict, fieldnames)
             speaker_dict['type'] = 'speaker'
             writer.writerow(speaker_dict)
 
@@ -103,13 +101,11 @@ def write_events_to_csv(db, conference_id):
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         conference_dict = result.__dict__
-        discard = ['id', 'created_on', 'updated_on','_sa_instance_state','owner_id','conferenece_logo','assistant_id','code','timezone','registration_link','client_id', 'conference_logo', 'information_guide']
-        for field in discard:
-            conference_dict.pop(field, None)
-        conference_dict['type'] = 'event'
-        writer.writerow(conference_dict)  
+        conference_dict = filter_fields(conference_dict, fieldnames)
+        conference_dict['type'] = 'event/conference'
+        writer.writerow(conference_dict)
 
-def add_documents(conference_id,category):
+def add_documents(namespace,conference_id,category):
     # get the file path
     file_path = file_path_in_files(conference_id,category)
     # find the delimiter
@@ -118,7 +114,6 @@ def add_documents(conference_id,category):
     loader = CSVLoader(file_path = file_path, encoding='utf-8',source_column = 'uuid',csv_args = {'delimiter': delimiter})
     data = loader.load()
     # get the pineone index
-    namespace = "conf-"+str(conference_id)
     index = pinecone.Index(index_name)
     vectorstore = Pinecone(index, embedding=embedding_function, text_key = 'csv_text', namespace = namespace)
     vectorstore.add_documents(documents = data)

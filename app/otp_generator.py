@@ -1,4 +1,5 @@
 import random
+import logging
 import string
 import smtplib
 from email.mime.text import MIMEText
@@ -19,8 +20,8 @@ def generate_otp():
     otp = ''.join(random.choice(string.digits) for _ in range(6))
     return otp
 
-def validate_otp(gen_otp:str, rec_otp: str, gen_time:datetime, rec_time:datetime):
-    if gen_otp == rec_otp and (rec_time - gen_time).total_seconds() <= default_time_limit:
+def validate_otp(gen_otp:str, rec_otp: str):
+    if gen_otp == rec_otp:
         return True
     return False
 
@@ -52,49 +53,28 @@ def send_mail(otp: str,subject: str, receiver_email:str):
 
         msg.attach(MIMEText(body, "html"))
 
-        print("Connecting to server...")
-        try:
-            server = smtplib.SMTP(smtp_server, smtp_port)
-        except Exception as e:
-            print(e)
-            print("Error: unable to connect to server")
-            return False
-        try:
-            server.starttls()
-        except Exception as e:
-            print(e)
-            print("Error: unable to start tls")
-            return False
-        try:
-            server.login(sender_email, password)
-        except Exception as e:
-            print(e)
-            print("Error: unable to login")
-            return False
-        print("Connected to server")
+        logging.info("Connecting to server")
+        server = smtplib.SMTP(smtp_server, smtp_port)
 
-        try:
-            text = msg.as_string()
-        except Exception as e:
-            print(e)
-            print("Error: unable to convert message to string")
-            return False
-        try:
-            server.sendmail(sender_email, receiver_email, text)
-        except Exception as e:
-            print(e)
-            print("Error: unable to send email")
-            return False
-        print("Email sent successfully")
+        server.starttls()
+
+        server.login(sender_email, password)
+        logging.info("Login successful")
+
+        text = msg.as_string()
+        
+        server.sendmail(sender_email, receiver_email, text)
+        logging.info("Email sent successfully")
+        
         return True
     except Exception as e:
-        print(e)
-        print("Error: unable to send email")
+        logging.exception(str(e))
         return False
+    
     finally:
         try:
             server.quit()
+            logging.info("Server closed")
         except Exception as e:
-            print(e)
-            print("Error: unable to quit server")
+            logging.exception(str(e))
             return False
