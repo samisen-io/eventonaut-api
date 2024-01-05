@@ -1,19 +1,18 @@
 import ast
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time
 import json
 import sys
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile, status
 from app.crud.aitokens_crud import insert_aitoken
 from app.file_reader import read_file_return_csv
-from app.pinecone_operations import arranging_ouput_object, create_vector_db, delete_namespace, delete_vector_db
+from app.pinecone_operations import arranging_ouput_object, create_namespace, create_vector_db, delete_namespace, delete_vector_db
 from app.routers.speakers import create_speaker
 from app.schemas import aitokens_schemas as ait_schemas
 from app.schemas import session_schemas as schemas
 from app.schemas import speaker_schemas as speaker_schemas
-from app.schemas import ai_assistant_schemas as ai_schemas
 from app.dependencies import get_db
-from app.oauth2 import get_current_active_user, oauth_2_scheme
+from app.oauth2 import get_current_active_user
 from app.routers.sessions import create_session_for_conference
 from app.schemas.query_schema import QueryInput
 from app.schemas.user_schemas import UserAuthentication as User
@@ -80,8 +79,8 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     logging.info("Query successfull")
     return final_result
 
-@router.delete("/delete_file/")
-async def delete_file_from_openai(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+@router.delete("/delete_namespace/")
+async def delete_namespace_from_pinecone(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         logging.exception("Conference not found")
@@ -160,8 +159,7 @@ async def upload_speaker_file(file: UploadFile,
             "received attributes(Column Names)": headers
         }
         logging.exception(error_message)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_message)  
-    print(headers)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_message)
     c=0
     for row in reader:
         payload = {
@@ -193,11 +191,12 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
     write_sessions_to_csv(db,conference_id)
     write_speakers_to_csv(db,conference_id)
     write_events_to_csv(db,conference_id)
+    namespace = create_namespace(conference_id)
     status = delete_namespace(conference_id)
     status = status['status']
-    add_documents(conference_id,'sessions')
-    add_documents(conference_id,'speakers')
-    namespace = add_documents(conference_id,'events')
+    add_documents(namespace,conference_id,'sessions')
+    add_documents(namespace,conference_id,'speakers')
+    namespace = add_documents(namespace,conference_id,'events')
     namespace = namespace['namespace']
     logging.info("Database and Pinecone Synchronized")
     return {'namespace': namespace, 'deletion_status': status}
