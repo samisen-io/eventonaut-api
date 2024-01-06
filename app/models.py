@@ -77,6 +77,7 @@ class Conference(Base):
     attendee_conference = relationship("Attendee_Conferences", back_populates="conference")
     aitokens = relationship("AITokens", back_populates="conference")
     speakers = relationship("Speakers", back_populates="conference")
+    promotions = relationship("Promotions", back_populates="conference")
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -244,3 +245,20 @@ class LogoutToken(Base):
     expires_on = Column(DateTime)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
+
+
+class Promotions(Base):
+    __tablename__ = "promotions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    todate = Column(DATE)
+    fromdate = Column(DATE)
+    image_url = Column(String, index=True, default="None")
+    promotion_name = Column(String, index=True, default="None")
+    rank = Column(Integer, default=0)
+
+    conference = relationship("Conference", back_populates="promotions")
