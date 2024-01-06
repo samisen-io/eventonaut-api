@@ -10,6 +10,7 @@ import logging
 class ConferenceCreate(BaseModel):
     name: str
     client_id: str | None = None
+    city: str
     location: str
     start_date: date
     end_date: date
@@ -39,6 +40,16 @@ class ConferenceCreate(BaseModel):
                 raise HTTPException(status_code=400, detail="Client id too long")
         return v
     
+    @validator('city')
+    def city_is_not_empty(cls, v):
+        if v is None or v.strip() == "" or v == "string":
+            logging.exception("Invalid city")
+            raise HTTPException(status_code=400, detail="Invalid city")
+        elif len(v) > 256:
+            logging.exception("City too long")
+            raise HTTPException(status_code=400, detail="City too long")
+        return v
+
     @validator('location')
     def location_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
@@ -110,6 +121,7 @@ class ConferenceUpdate(BaseModel):
     id: str
     name: str | None = None
     client_id: str | None = None
+    city: str | None = None
     location: str | None = None
     start_date: date | None = None
     end_date: date  | None = None
@@ -145,6 +157,17 @@ class ConferenceUpdate(BaseModel):
                 raise HTTPException(status_code=400, detail="Invalid client id")
             if len(v) > 256:
                 raise HTTPException(status_code=400, detail="Client id too long")
+        return v
+    
+    @validator('city')
+    def city_is_not_empty(cls, v):
+        if v is not None:
+            if v.strip() == "" or v == "string":
+                logging.exception("Invalid city")
+                raise HTTPException(status_code=400, detail="Invalid city")
+            if len(v) > 256:
+                logging.exception("City too long")
+                raise HTTPException(status_code=400, detail="City too long")
         return v
     
     @validator('location')
@@ -211,6 +234,7 @@ class ConferenceUpdate(BaseModel):
 class Conference(BaseModel):
     uuid: str = Field(serialization_alias="id")
     name: str
+    city: str
     location: str
     start_date: date
     end_date: date
@@ -233,6 +257,14 @@ class Conference(BaseModel):
             raise HTTPException(status_code=400, detail="Name too long")
         return v
     
+    @validator('city')
+    def city_is_not_empty(cls, v):
+        if v is None or v.strip() == "" or v == "string":
+            raise HTTPException(status_code=400, detail="Invalid city")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="City too long")
+        return v
+
     @validator('location')
     def location_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":

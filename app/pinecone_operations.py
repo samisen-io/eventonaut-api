@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from fastapi import HTTPException
 import pinecone
 
@@ -9,6 +10,38 @@ pinecone.init(
     environment = os.environ.get("PINECONE_API_ENV")
 )
 index_name = os.environ.get("PINECONE_API_INDEX")
+
+def increment_number(s):
+    match = re.match(r'(\d+)(.*)', s)
+    if match:
+        number, rest = match.groups()
+        return str(int(number) + 1) + rest
+    else:
+        return '1' + s
+    
+def get_matching_namespace(conference_id):
+    namespaces = get_namespaces()
+    for namespace in namespaces:
+        if str(conference_id) in namespace:
+            return namespace
+    return None
+
+def get_namespaces():
+    index = pinecone.Index(index_name)
+    data = index.describe_index_stats()
+    namespaces = list(data['namespaces'].keys())
+    return namespaces
+
+def create_namespace(conference_id):
+    namespaces = get_namespaces()
+    incremented_string = conference_id
+    # Iterate over each string in the list
+    for s in namespaces:
+        # If the input string is a substring of the current string, increment the number in front of the string
+        if conference_id in s:
+            incremented_string = increment_number(s)
+            break  # Stop after finding the first match
+    return incremented_string
 
 def create_vector_db(name):
     index_name = name
@@ -30,18 +63,21 @@ def delete_vector_db():
     
     else:
         return {'index_name': index_name, 'status': 'not found'}
-    
+
 def delete_namespace(conference_id):
-    # index_name = index_name
     index = pinecone.Index(index_name)
-    if index_name in pinecone.list_indexes():
-        namespace = 'conf-'+str(conference_id)
-        # check if the namespace exists
-        try:
-            index.delete(delete_all=True, namespace=namespace)
-            return {'namespace': namespace, 'status': 'deleted'}
-        except:
-            return {'namespace': namespace, 'status': 'not found'}
+    print('get_namespaces')
+    namespaces = get_namespaces()
+    print('after get_namespaces')
+    # check if the conference_id is a substring of any namespace
+    for namespace in namespaces:
+        if str(conference_id) in namespace:
+            try:
+                index.delete(delete_all=True, namespace=namespace)
+                return {'namespace': namespace, 'status': 'deleted'}
+            except:
+                return {'namespace': namespace, 'status': 'not found'}
+    return {'status': 'conference_id not in any namespace'}
             
 def arranging_ouput_object(json_data):
     data = json.loads(json_data)

@@ -1,5 +1,4 @@
 import datetime
-import json
 import os
 import csv
 import csv
@@ -65,7 +64,6 @@ def write_sessions_to_csv(db,conference_id):
         writer.writeheader()
         for session in result:
             session_dict = session.__dict__
-            print(session_dict)
             session_dict = filter_fields(session_dict, fieldnames)
             for field in ['end_time', 'date', 'start_time']:
                 if field in session_dict:
@@ -107,7 +105,7 @@ def write_events_to_csv(db, conference_id):
         conference_dict['type'] = 'event/conference'
         writer.writerow(conference_dict)
 
-def add_documents(conference_id,category):
+def add_documents(namespace,conference_id,category):
     # get the file path
     file_path = file_path_in_files(conference_id,category)
     # find the delimiter
@@ -116,7 +114,6 @@ def add_documents(conference_id,category):
     loader = CSVLoader(file_path = file_path, encoding='utf-8',source_column = 'uuid',csv_args = {'delimiter': delimiter})
     data = loader.load()
     # get the pineone index
-    namespace = "conf-"+str(conference_id)
     index = pinecone.Index(index_name)
     vectorstore = Pinecone(index, embedding=embedding_function, text_key = 'csv_text', namespace = namespace)
     vectorstore.add_documents(documents = data)

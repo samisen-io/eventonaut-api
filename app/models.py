@@ -55,6 +55,7 @@ class Conference(Base):
     updated_on = Column(DateTime)
     client_id = Column(Integer, ForeignKey("clients.id"))
     name = Column(String, index=True)
+    city = Column(String, index=True)
     location = Column(String, index=True)
     start_date = Column(DATE, index=True)
     end_date = Column(DATE, index=True)

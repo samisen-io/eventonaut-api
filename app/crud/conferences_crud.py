@@ -106,6 +106,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
 
     updates = {
         'name': conference.name,
+        'city': conference.city,
         'location': conference.location,
         'start_date': conference.start_date,
         'end_date': conference.end_date,
