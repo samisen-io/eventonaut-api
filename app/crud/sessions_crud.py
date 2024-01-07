@@ -13,7 +13,7 @@ def get_sessions(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.Session).offset(offset).limit(limit).all()
 
 def create_conference_session(db: Session, session: schemas.SessionCreate, owner_id: int):
-    db_session = models.Session(name=session.name, start_time=session.start_time, end_time=session.end_time, description=session.description, date=session.date, location=session.location, owner_id=owner_id)
+    db_session = models.Session(name=session.name, start_time=session.start_time, end_time=session.end_time, description=session.description, date=session.date, location=session.location, owner_id=owner_id, session_image_url=session.session_image_url)
     conference_id = db.query(models.Conference).filter(models.Conference.uuid == session.conference_id).first().id
     db_session.created_on = datetime.utcnow()
     db_session.updated_on = datetime.utcnow()
@@ -22,8 +22,6 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     db_session.conference_id = conference_id
     db_session.speakers = session.speakers
     db_session.tags = session.tags
-    if session.session_image_url is None:
-        db_session.session_image_url = "None"
     db.add(db_session)
     db.commit()
     db.refresh(db_session)
@@ -92,13 +90,12 @@ def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner
         'description': session.description,
         'speakers': speakers,
         'tags': tags,
-        'session_image_url': session.session_image_url if session.session_image_url is not None else 'None'
+        'session_image_url': session.session_image_url
     }
     
     for key, value in updates.items():
         if value is not None:
             setattr(db_session, key, value)
-
 
     if session.date is not None and (session.date < db_session.conference.start_date or session.date > db_session.conference.end_date or session.date < date.today()):
         logging.exception("Invalid date")

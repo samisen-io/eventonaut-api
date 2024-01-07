@@ -11,7 +11,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db_user.created_on = datetime.utcnow()
     db_user.updated_on = datetime.utcnow()
-    if user.company is None or user.company == "string" or user.company == "None" or user.company.strip() == "":
+    if user.company is None or user.company == "None":
         db_user.company = "None"
     db_user.uuid = "usr-"+str(uuid.uuid4())
     db_user.role = "organizer"
@@ -59,9 +59,6 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, user_id: int):
     for key, value in updates.items():
         if value is not None:
             setattr(db_user, key, value)
-
-    if user.company is None or user.company == "string" or user.company == "None" or user.company.strip() == "":
-        db_user.company = "None"
 
     db_user.updated_on = datetime.utcnow()
     db.commit()
