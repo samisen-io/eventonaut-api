@@ -25,7 +25,7 @@ def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_
         logging.exception("Email already registered")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
     attendee = crud.create_attendee(db=db, attendee=attendee)
-    logging.info("Attendee created: " + db_attendee.uuid)
+    logging.info("Attendee created: " + attendee.uuid)
     return attendee
 
 # get all attendees

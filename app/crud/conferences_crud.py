@@ -110,12 +110,12 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
         'location': conference.location,
         'start_date': conference.start_date,
         'end_date': conference.end_date,
-        'description': conference.description if conference.description is not None else "None",
-        'conference_logo': conference.conference_logo if conference.conference_logo is not None else "None",
+        'description': conference.description,
+        'conference_logo': conference.conference_logo,
         'timezone': conference.timezone,
-        'registration_link': conference.registration_link if conference.registration_link is not None else "None",
-        'information_guide': conference.information_guide if conference.information_guide is not None else 'None',
-        'conference_banner_url': conference.conference_banner_url if conference.conference_banner_url is not None else "None"
+        'registration_link': conference.registration_link,
+        'information_guide': conference.information_guide,
+        'conference_banner_url': conference.conference_banner_url
     }
 
     for key, value in updates.items():
@@ -127,13 +127,6 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
             logging.exception("Invalid date range")
             raise HTTPException(status_code=400, detail="Invalid date range")
         
-    attributes = ["description", "conference_logo", "timezone", "registration_link", "information_guide", "conference_banner_url"]
-
-    for attr in attributes:
-        value = getattr(conference, attr)
-        if value is None or value.strip() in ("", "string", "None"):
-            setattr(db_conference, attr, "None")
-
     if conference.client_id is not None:
         db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first().id
     else:
