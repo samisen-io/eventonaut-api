@@ -19,8 +19,17 @@ def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session =
     return promotion
 
 @router.get('/promotions', response_model=list[promotion_schemas.Promotion])
+def get_promotions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
+    promotions = promotions_crud.get_promotions(db=db, skip=skip, limit=limit)
+    if promotions is None or len(promotions) == 0:
+        logging.exception("Promotions not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promotions not found")
+    logging.info("Promotions retrieved")
+    return promotions
+
+@router.get('/promotions/get-all', response_model=list[promotion_schemas.Promotion])
 def get_all_promotions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    promotions = promotions_crud.get_promotions(db, skip=skip, limit=limit)
+    promotions = promotions_crud.get_all_promotions(db, skip=skip, limit=limit)
     if promotions is None or len(promotions) == 0:
         logging.exception("Promotions not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promotions not found")
