@@ -1,7 +1,6 @@
 from .. import models
 from ..schemas import promotion_schemas
 from sqlalchemy.orm import Session
-from fastapi import HTTPException
 import uuid
 from datetime import datetime
 
@@ -13,6 +12,9 @@ def get_promotion_by_conference(db: Session, conference_id: str):
     return db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
 
 def get_promotions(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Promotions).order_by(models.Promotions.rank).offset(skip).limit(limit).all()
+
+def get_all_promotions(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Promotions).offset(skip).limit(limit).all()
 
 def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
@@ -27,8 +29,6 @@ def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
 
 def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
     db_promotion = db.query(models.Promotions).filter(models.Promotions.uuid == promotion.id).first()
-    if db_promotion is None:
-        raise HTTPException(status_code=404, detail="Promotion not found")
     promotion: dict = promotion.model_dump()
     promotion_rank = promotion.pop('rank')
     promotion.pop('id')
@@ -48,8 +48,6 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
 
 def delete_promotion(db: Session, promotion_id: str):
     db_promotion = db.query(models.Promotions).filter(models.Promotions.uuid == promotion_id).first()
-    if db_promotion is None:
-        raise HTTPException(status_code=404, detail="Promotion not found")
     db.delete(db_promotion)
     db.commit()
     return True
