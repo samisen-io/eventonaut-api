@@ -33,20 +33,7 @@ def get_conference_by_code(db: Session, code: str):
 def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
     client_id = conference.model_dump().pop("client_id")
     db_conference = models.Conference(**conference.model_dump(), owner_id=user_id)
-    if conference.description is None:
-        db_conference.description = "None"
-    if conference.conference_logo is None:
-        db_conference.conference_logo = "None"
-    if conference.conference_banner_url is None:
-        db_conference.conference_banner_url = "None"
-    if conference.description is None or conference.description.strip() == "" or conference.description == "string" or conference.description == "None":
-        db_conference.description = "None"
-    if conference.conference_logo is None or conference.conference_logo.strip() == "" or conference.conference_logo == "string" or conference.conference_logo == "None":
-        db_conference.conference_logo = "None"
-    if client_id is None:
-        db_conference.client_id = None
-    else:
-        db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == client_id).first().id
+    db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == client_id).first().id if client_id is not None else None
     db_conference.created_on = datetime.utcnow()
     db_conference.updated_on = datetime.utcnow()
     db_conference.uuid = "evt-" + str(uuid.uuid4())
@@ -58,8 +45,9 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
             db_conference.code = generate_unique_string()
             break
         except:
-            print("Duplicate code found")
+            print("Duplicate conference-code found! Attempting to generate new code...")
             continue
+
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
@@ -106,38 +94,28 @@ def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uu
 
     updates = {
         'name': conference.name,
-        'city': conference.city,
         'location': conference.location,
+        'venue_name': conference.venue_name,
+        'venue_location': conference.venue_location,
         'start_date': conference.start_date,
         'end_date': conference.end_date,
-        'description': conference.description if conference.description is not None else "None",
-        'conference_logo': conference.conference_logo if conference.conference_logo is not None else "None",
+        'description': conference.description,
+        'conference_logo': conference.conference_logo,
         'timezone': conference.timezone,
-        'registration_link': conference.registration_link if conference.registration_link is not None else "None",
-        'information_guide': conference.information_guide if conference.information_guide is not None else 'None',
-        'conference_banner_url': conference.conference_banner_url if conference.conference_banner_url is not None else "None"
+        'registration_link': conference.registration_link,
+        'information_guide': conference.information_guide,
+        'conference_banner_url': conference.conference_banner_url
     }
 
     for key, value in updates.items():
         if value is not None:
             setattr(db_conference, key, value)
 
-    if conference.start_date is not None and conference.end_date is not None:
-        if conference.start_date > conference.end_date or conference.start_date < date.today():
-            logging.exception("Invalid date range")
-            raise HTTPException(status_code=400, detail="Invalid date range")
-        
-    attributes = ["description", "conference_logo", "timezone", "registration_link", "information_guide", "conference_banner_url"]
+    if db_conference.start_date > db_conference.end_date or db_conference.start_date < date.today():
+        logging.exception("Invalid date range")
+        raise HTTPException(status_code=400, detail="Invalid date range")
 
-    for attr in attributes:
-        value = getattr(conference, attr)
-        if value is None or value.strip() in ("", "string", "None"):
-            setattr(db_conference, attr, "None")
-
-    if conference.client_id is not None:
-        db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first().id
-    else:
-        db_conference.client_id = None
+    db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first().id if conference.client_id is not None else None
 
     db_conference.updated_on = datetime.utcnow()
     db.commit()
