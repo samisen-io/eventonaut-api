@@ -76,7 +76,9 @@ def get_all_conferences_by_owner_id(db: Session = Depends(get_db), current_user:
 # update conference by conference id
 @router.put("/conferences", response_model=schemas.Conference)
 def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    if all(value is None for value in dict(conference).values()):
+    conference_dict = conference.model_dump()
+    conference_dict.pop("id")
+    if all(value is None for value in conference_dict.values()):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
     db_conference = crud.get_conference_by_uuid(db, uuid=conference.id, owner_id=current_user.id)
