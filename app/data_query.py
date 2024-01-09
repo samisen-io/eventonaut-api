@@ -7,7 +7,6 @@ from langchain.chat_models import ChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings 
 from langchain.callbacks import get_openai_callback  
 import pinecone
-
 from app.pinecone_operations import get_matching_namespace
 
 load_dotenv()
@@ -24,10 +23,6 @@ pinecone.init(
 # initialize embedding function
 embedding_function = OpenAIEmbeddings()
 
-def handler_to_dict(handler):
-    # Convert the handler to a dict or another JSON-serializable type
-    return handler.__dict__
-
 def retrieve_answer(question, conference_id):
     namespace = get_matching_namespace(conference_id=conference_id)
     vectordb = Pinecone.from_existing_index(index_name=index_name, embedding=embedding_function, namespace=namespace, text_key = 'csv_text')
@@ -39,7 +34,9 @@ def retrieve_answer(question, conference_id):
 def query_document(question, conference_id):
     with get_openai_callback() as cb:
         result = retrieve_answer(question, conference_id)
-    usage = json.dumps(cb, default=handler_to_dict, indent=4)
+    cb_dict = {k: cb.__dict__[k] for k in ('total_cost', 'total_tokens', 'prompt_tokens', 'completion_tokens', 'successful_requests')}
+    # convert the dict to a JSON string
+    usage = json.dumps(cb_dict, indent=4)
     # retrieve the answer and source documents
     answer = result['answer']
     docs = result['source_documents']
