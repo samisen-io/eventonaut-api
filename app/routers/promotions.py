@@ -8,7 +8,7 @@ import logging
 
 router = APIRouter(tags=['promotions'])
 
-@router.post('/promotions', response_model=promotion_schemas.Promotion, status_code=201)
+@router.post('/promotions', response_model=promotion_schemas.Promotion, status_code=status.HTTP_201_CREATED)
 def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
     db_promotion = promotions_crud.get_promotion_by_conference(db=db, conference_id=promotion.conference_id)
     if db_promotion:
