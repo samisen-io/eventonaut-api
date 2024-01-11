@@ -80,6 +80,7 @@ class Conference(Base):
     aitokens = relationship("AITokens", back_populates="conference")
     speakers = relationship("Speakers", back_populates="conference")
     promotions = relationship("Promotions", back_populates="conference")
+    sponsors = relationship("Sponsors", back_populates="conference")
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -248,7 +249,6 @@ class LogoutToken(Base):
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
 
-
 class Promotions(Base):
     __tablename__ = "promotions"
 
@@ -264,3 +264,21 @@ class Promotions(Base):
     rank = Column(Integer, default=0)
 
     conference = relationship("Conference", back_populates="promotions")
+
+class Sponsors(Base):
+    __tablename__ = "sponsors"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    name = Column(String, index=True)
+    description = Column(String, index=True)
+    email = Column(String, index=True)
+    contact_name = Column(String, index=True)
+    contact_phone = Column(Integer, index=True)
+    logo_image_url = Column(String, index=True)
+    sponsorship_level = Column(String, index=True)
+
+    conference = relationship("Conference", back_populates="sponsors")
