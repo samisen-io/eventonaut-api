@@ -153,28 +153,20 @@ def delete_attendee_by_uuid(db: Session, attendee_id: int):
     return True
 
 # create attendee conference
-def create_attendee_conference(db: Session, attendee_id: int, attendee_conference):
+def create_attendee_conference(db: Session, attendee_id: int, attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate):
     attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-    try:
-        conference = db.query(models.Conference).filter(models.Conference.code == attendee_conference.conference_code).first()
-    except:
-        conference = db.query(models.Conference).filter(models.Conference.uuid == attendee_conference.conference_id).first()
+    if len(attendee_conference.conference_identifier) == 6:
+        conference = db.query(models.Conference).filter(models.Conference.code == attendee_conference.conference_identifier).first()
+    else:
+        conference = db.query(models.Conference).filter(models.Conference.uuid == attendee_conference.conference_identifier).first()
     db_attendee_conference = models.Attendee_Conferences(attendee_id=attendee.id, conference_id=conference.id)
     db_attendee_conference.uuid = "ate-" + str(uuid.uuid4())
-    db_attendee_conference.created_on = datetime.utcnow()
-    db_attendee_conference.updated_on = datetime.utcnow()
+    db_attendee_conference.created_on = db_attendee_conference.updated_on = datetime.utcnow()
     db.add(db_attendee_conference)
     db.commit()
     db.refresh(db_attendee_conference)
-    conf_schema = {
-        "id":conference.uuid, 
-        "name":conference.name, 
-        "location":conference.location, 
-        "start_date":conference.start_date,
-        "end_date":conference.end_date,
-        "description":conference.description,
-        "conference_logo":conference.conference_logo
-    }
+    db.refresh(conference)
+    conf_schema = attendee_conference_schemas.Conference.model_validate(conference.__dict__)
     attendee_conf = attendee_conference_schemas.AttendeeConference(uuid=db_attendee_conference.uuid, attendee_id=attendee.uuid, conference=conf_schema)
     return attendee_conf
 
@@ -200,10 +192,8 @@ def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, l
     return conferences
 
 # delete attendee conference by attendee id and conference id
-def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, attendee_id: int, conference_code: str):
-    attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-    conference_id = db.query(models.Conference).filter(models.Conference.code == conference_code).first().id
-    db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee.id, models.Attendee_Conferences.conference_id == conference_id).delete()
+def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, attendee_conference: attendee_conference_schemas.AttendeeConference):
+    db.delete(attendee_conference)
     db.commit()
     return True
 
