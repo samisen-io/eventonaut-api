@@ -15,7 +15,10 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
     if not attendee:
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
-    conference = conferences_crud.get_conference_by_code(db=db, code=attendee_conference.conference_code)
+    if len(attendee_conference.conference_identifier) == 6:
+        conference = conferences_crud.get_conference_by_code(db=db, code=attendee_conference.conference_identifier)
+    else:
+        conference = conferences_crud.get_conference_by_conference_uuid(db=db, uuid=attendee_conference.conference_identifier)
     if not conference:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
@@ -23,24 +26,7 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
         logging.exception("Conference already exists")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Conference already exists")
     attendee_conf = crud.create_attendee_conference(db=db, attendee_conference=attendee_conference, attendee_id=current_user.id)
-    logging.info(f"Conference-{conference.uuid} added to attendee-{attendee_conf.uuid}")
-    return attendee_conf
-
-@router.post("/attendee/conference-id", response_model=attendee_conference_schemas.AttendeeConference, status_code=status.HTTP_201_CREATED)
-def create_attendee_conference_by_id(attendee_conference: attendee_conference_schemas.AttendeeConferenceCreateId, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
-    attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)
-    if not attendee:
-        logging.exception("Attendee not found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
-    conference = conferences_crud.get_conf_by_uuid(db=db, conference_id=attendee_conference.conference_id)
-    if not conference:
-        logging.exception("Conference not found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    if crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=current_user.id, conference_id=conference.uuid):
-        logging.exception("Conference already exixts")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Conference already exists")
-    attendee_conf = crud.create_attendee_conference(db=db, attendee_conference=attendee_conference, attendee_id=current_user.id)
-    logging.info(f"Conference-{conference.uuid} added to attendee-{attendee_conf.uuid}")
+    logging.info(f"Conference: {attendee_conf.conference.id} added to attendee: {attendee_conf.attendee_id}")
     return attendee_conf
 
 # get all attendee conferences
@@ -57,20 +43,24 @@ def get_all_attendee_conferences(skip: int = 0, limit: int = 100, db: Session = 
     return attendee_conferences
 
 # delete attendee conference by attendee id and conference id
-@router.delete("/attendee/conference/{conference_code}")
-def delete_attendee_conference_by_attendee_id_and_conference_id(conference_code: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+@router.delete("/attendee/{conference_identifier}")
+def delete_attendee_conference_by_attendee_id_and_conference_id(conference_identifier: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)
     if not attendee:
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
-    conference = conferences_crud.get_conference_by_code(db=db, code = conference_code)
+    if len(conference_identifier) == 6:
+        conference = conferences_crud.get_conference_by_code(db=db, code=conference_identifier)
+    else:
+        conference = conferences_crud.get_conference_by_conference_uuid(db=db, uuid=conference_identifier)
     if not conference:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    if not crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=current_user.id, conference_id=conference.uuid):
+    attendee_conference = crud.get_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=current_user.id, conference_id=conference.uuid)
+    if not attendee_conference:
         logging.exception("No conference found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No conference found")
-    deleted_attendee_conference = crud.delete_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_id=current_user.id, conference_code=conference_code)
+    deleted_attendee_conference = crud.delete_attendee_conference_by_attendee_id_and_conference_id(db=db, attendee_conference = attendee_conference)
     logging.info(f"Conference-{conference.uuid} deleted for attendee-{attendee.uuid}")
     return deleted_attendee_conference
 
