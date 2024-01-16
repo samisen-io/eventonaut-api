@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 import logging
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 from datetime import datetime, date
 
 from app.pinecone_operations import delete_namespace
