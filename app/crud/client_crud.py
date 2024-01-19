@@ -30,6 +30,9 @@ def get_client_by_uuid_and_owner_id(db: Session, client_id: str, owner_id: int):
 def get_all_clients(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.Client).offset(offset).limit(limit).all()
 
+def get_all_clients_by_owner_id(db: Session, owner_id:int, offset: int = 0, limit: int = 100):
+    return db.query(models.Client).filter(models.Client.owner_id == owner_id).offset(offset).limit(limit).all()
+
 def update_client(db: Session, client: schemas.ClientUpdate):
     db_client = db.query(models.Client).filter(models.Client.uuid == client.id).first()
     
