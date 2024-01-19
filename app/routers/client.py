@@ -77,7 +77,7 @@ def update_client(client: schemas.ClientUpdate, db: Session = Depends(get_db), c
         logging.exception("Client not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
     updated_client = crud.update_client(db=db, client=client)
-    logging.info("User updated: " + update_client.uuid)
+    logging.info("User updated: " + updated_client.uuid)
     return updated_client
 
 # delete client by id
