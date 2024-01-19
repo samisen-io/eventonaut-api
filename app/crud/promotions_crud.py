@@ -7,20 +7,25 @@ from datetime import datetime
 def get_promotion(db: Session, promotion_id: str):
     promotion = db.query(models.Promotions).filter(models.Promotions.uuid == promotion_id).first()
     if promotion is not None:
+        promotion.location = db.query(models.Conference).filter(models.Conference.id == promotion.conference_id).first().location
         promotion = add_conference_to_promotion(db, promotion)
     return promotion
 
 def get_promotion_by_conference(db: Session, conference_id: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
-    return db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
+    return None if conference is None else db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
 
 def get_promotions(db: Session, skip: int = 0, limit: int = 100):
     promotions = db.query(models.Promotions).order_by(models.Promotions.rank).offset(skip).limit(limit).all()
+    for promotion in promotions:
+        promotion.location = db.query(models.Conference).filter(models.Conference.id == promotion.conference_id).first().location
     promotions = add_conference_to_promotion(db, promotions)
     return promotions
 
 def get_all_promotions(db: Session, skip: int = 0, limit: int = 100):
     promotions = db.query(models.Promotions).order_by(models.Promotions.rank).offset(skip).limit(limit).all()
+    for promotion in promotions:
+        promotion.location = db.query(models.Conference).filter(models.Conference.id == promotion.conference_id).first().location
     promotions = add_conference_to_promotion(db, promotions)
     return promotions
 
@@ -28,11 +33,13 @@ def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
     db_promotion = models.Promotions(**promotion.model_dump())
     db_promotion.uuid = "pro-" + str(uuid.uuid4())
     db_promotion.created_on = db_promotion.updated_on = datetime.utcnow()
-    db_promotion.conference_id = db.query(models.Conference).filter(models.Conference.uuid == promotion.conference_id).first().id
+    conference = db.query(models.Conference).filter(models.Conference.uuid == promotion.conference_id).first()
+    db_promotion.conference_id = conference.id
     db.add(db_promotion)
     db.commit()
     db.refresh(db_promotion)
     promotion = add_conference_to_promotion(db, db_promotion)
+    promotion.location = conference.location
     return promotion
 
 def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
@@ -51,7 +58,9 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
         db_promotion.rank = promotion_rank
 
     if conference_id is not None:
-        db_promotion.conference_id = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first().id
+        db_conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
+        db_promotion.conference_id = db_conference.id
+        promotion.location = db_conference.location
 
     db_promotion.updated_on = datetime.utcnow()
 

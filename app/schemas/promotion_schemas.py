@@ -23,6 +23,7 @@ class PromotionUpdate(PromotionBase):
 
 class Promotion(PromotionBase):
     uuid: str = Field(serialization_alias='id')
+    location: str
     conference_id: str
     class Config:
         orm_mode = True
