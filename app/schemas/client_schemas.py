@@ -6,6 +6,8 @@ class ClientBase(BaseModel):
     contact_name: str
     contact_email: str
     contact_phone: str
+    address: str
+    status: bool
     profile_image_url: str
 
     @validator('name')
@@ -40,6 +42,14 @@ class ClientBase(BaseModel):
             raise HTTPException(status_code=400, detail="Invalid Phone Number")
         return v
     
+    @validator('address')
+    def address_not_empty(cls, v):
+        if v is None or v.strip() == "" or v == "string":
+            raise HTTPException(status_code=400, detail="Invalid address")
+        elif len(v) > 256:
+            raise HTTPException(status_code=400, detail="Address too long")
+        return v
+    
     @validator('profile_image_url')
     def profile_image_url_is_not_empty(cls, v):
         if v is None or v.strip() == "" or v == "string":
@@ -54,6 +64,9 @@ class ClientUpdate(BaseModel):
     contact_name: str | None = None
     contact_email: str | None = None
     contact_phone: str | None = None
+    status: bool | None = None
+    address: str | None = None
+
     profile_image_url: str | None = None
 
     @validator('id')
@@ -96,6 +109,14 @@ class ClientUpdate(BaseModel):
             raise HTTPException(status_code=400, detail="Contact phone too long")
         return v
     
+    @validator('address')
+    def address_is_not_empty(cls, v):
+        if v is not None and (v.strip() == "" or v == "string"):
+            raise HTTPException(status_code=400, detail="Invalid address")
+        elif len(v) > 15:
+            raise HTTPException(status_code=400, detail="Address too long")
+        return v
+
     @validator('profile_image_url')
     def profile_image_url_is_not_empty(cls, v):
         if v is not None and (v.strip() == "" or v == "string"):
