@@ -40,6 +40,8 @@ class Client(Base):
     contact_name = Column(String, index=True, default="None")
     contact_email = Column(String, index=True, default="None")
     contact_phone = Column(String, index=True, default="None")
+    address = Column(String, index = True)
+    status = Column(Boolean, default=False)
     profile_image_url = Column(String, index=True, default="None")
 
     owner = relationship("User", back_populates="client")

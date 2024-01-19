@@ -38,7 +38,9 @@ def update_client(db: Session, client: schemas.ClientUpdate):
         'contact_name': client.contact_name,
         'contact_email': client.contact_email,
         'contact_phone': client.contact_phone,
-        'profile_image_url': client.profile_image_url
+        'profile_image_url': client.profile_image_url,
+        'address': client.address,
+        'status': client.status
     }
     
     for key, value in updates.items():
