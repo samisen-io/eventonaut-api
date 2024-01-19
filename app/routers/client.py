@@ -29,6 +29,18 @@ def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db), c
     logging.info("Client created: " + client.uuid)
     return client
 
+@router.get("/clients", response_model=list[schemas.Client])
+def get_all_clients_by_owner_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+    if offset < 0 or limit < 0:
+        logging.exception("Invalid query parameters")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid query parameters")
+    clients = crud.get_all_clients_by_owner_id(db=db, offset=offset, limit=limit,owner_id=current_user.id)
+    if clients is None or len(clients) == 0:
+        logging.exception("Client not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
+    logging.info("Clients Retrieved")
+    return clients
+
 # get all clients
 @router.get("/clients/all_clients", response_model=list[schemas.Client])
 def get_all_clients(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
