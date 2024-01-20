@@ -1,77 +1,35 @@
-from pydantic import BaseModel, validator, Field
-from fastapi import HTTPException
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
+from fastapi import HTTPException, status
 from .conference_schemas import Conference
 import logging
 
-#pydantic model user base
 class UserBase(BaseModel):
     email: str
     first_name: str
     last_name: str
-    company: str = "None"
+    company: str | None = None
     business_type: str
-    timezone: str = "None"
+    timezone: str | None = None
 
-    @validator('email')
-    def email_is_valid(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
-            logging.exception("Invalid email")
-            raise HTTPException(status_code=400, detail="Invalid email")
+    @field_validator('email','first_name','last_name','business_type')
+    def field_is_not_empty(cls, v, info: ValidationInfo):
+        if v.strip() == "":
+            logging.exception(f"{info.field_name} cannot be empty")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
         elif len(v) > 256:
-            logging.exception("Email too long")
-            raise HTTPException(status_code=400, detail="Email too long")
-        return v
-
-    @validator('first_name')
-    def first_name_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
-            logging.exception("Invalid first name")
-            raise HTTPException(status_code=400, detail="Invalid first name")
-        elif len(v) > 256:
-            logging.exception("First name too long")
-            raise HTTPException(status_code=400, detail="First name too long")
+            logging.exception(f"{info.field_name} should be less than 256 characters")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be less than 256 characters")
         return v
     
-    @validator('last_name')
-    def last_name_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
-            logging.exception("Invalid last name")
-            raise HTTPException(status_code=400, detail="Invalid last name")
-        elif len(v) > 256:
-            logging.exception("Last name too long")
-            raise HTTPException(status_code=400, detail="Last name too long")
-        return v
-    
-    @validator('company')
-    def company_is_not_empty(cls, v):
+    @field_validator('company','timezone')
+    def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
-            if v.strip() == "" or v == "string":
-                logging.exception("Invalid company")
-                raise HTTPException(status_code=400, detail="Invalid company")
-            elif len(v) > 256:
-                logging.exception("Company too long")
-                raise HTTPException(status_code=400, detail="Company too long")
-        return v
-
-    @validator('business_type')
-    def business_type_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
-            logging.exception("Invalid bussiness type")
-            raise HTTPException(status_code=400, detail="Invalid business type")
-        elif len(v) > 256:
-            logging.exception("Bussiness type too long")
-            raise HTTPException(status_code=400, detail="Business type too long")
-        return v
-    
-    @validator('timezone')
-    def timezone_is_not_empty(cls, v):
-        if v is not None:
-            if v.strip() == "" or v == "string":
-                logging.exception("Invalid timezone")
-                raise HTTPException(status_code=400, detail="Invalid timezone")
-            elif len(v) > 50:
-                logging.exception("Timezone too long")
-                raise HTTPException(status_code=400, detail="Timezone too long")
+            if v.strip() == "":
+                return None
+            max_len = 50 if info.field_name == "timezone" else 256
+            if len(v) > max_len:
+                logging.exception(f"{info.field_name} should be less than {max_len} characters")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be less than {max_len} characters")
         return v
     
 class UserBaseUpdate(BaseModel):
@@ -81,112 +39,53 @@ class UserBaseUpdate(BaseModel):
     business_type: str |None = None
     timezone: str |None = None
 
-    @validator('first_name')
-    def first_name_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            logging.exception("Invalid first name")
-            raise HTTPException(status_code=400, detail="Invalid first name")
-        elif len(v) > 256:
-            logging.exception("First name too long")
-            raise HTTPException(status_code=400, detail="First name too long")
-        return v
-    
-    @validator('last_name')
-    def last_name_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            logging.exception("Invalid last name")
-            raise HTTPException(status_code=400, detail="Invalid last name")
-        elif len(v) > 256:
-            logging.exception("Last name too long")
-            raise HTTPException(status_code=400, detail="Last name too long")
-        return v
-    
-    @validator('company')
-    def company_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            logging.exception("Invalid company")
-            raise HTTPException(status_code=400, detail="Invalid company")
-        elif len(v) > 256:
-            logging.exception("Company too long")
-            raise HTTPException(status_code=400, detail="Company too long")
+    @field_validator('first_name','last_name','company','business_type','timezone')
+    def user_is_not_empty(cls, v, info: ValidationInfo):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            max_len = 50 if info.field_name == "timezone" else 256
+            if len(v) > max_len:
+                logging.exception(f"{info.field_name} should be less than {max_len} characters")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be less than {max_len} characters")
         return v
 
-    @validator('business_type')
-    def business_type_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            logging.exception("Invalid bussiness type")
-            raise HTTPException(status_code=400, detail="Invalid business type")
-        elif len(v) > 256:
-            logging.exception("Bussiness type too long")
-            raise HTTPException(status_code=400, detail="Business type too long")
-        return v
-    
-    @validator('timezone')
-    def timezone_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):    
-            logging.exception("Invalid timezone")
-            raise HTTPException(status_code=400, detail="Invalid timezone")
-        elif len(v) > 50:
-            logging.exception("Timezone too long")
-            raise HTTPException(status_code=400, detail="Timezone too long")
-        return v
-
-#pydantic model for user create
 class UserCreate(UserBase):
     hashed_password: str
 
-    @validator('hashed_password')
+    @field_validator('hashed_password')
     def hashed_password_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
+        if v.strip() == "" or v.__contains__(" "):
             logging.exception("Invalid password")
-            raise HTTPException(status_code=400, detail="Invalid password")
-        elif len(v) < 8:
-            logging.exception("Password too short")
-            raise HTTPException(status_code=400, detail="Password too short")
-        elif len(v) > 16:
-            logging.exception("Password too long")
-            raise HTTPException(status_code=400, detail="Password too long")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid password")
+        if not 8 <= len(v) <= 16:
+            logging.exception("Password should be between 8 and 16 characters")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password should be between 8 and 16 characters")
         return v
 
-#pydantic model for user password
 class UserPasswordUpdate(BaseModel):
     old_password: str
     new_password: str
 
-    @validator('old_password')
-    def old_password_validator(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
-            logging.exception("Invalid old password")
-            raise HTTPException(status_code=400, detail="Invalid old password")
-        if len(v) < 8:
-            logging.exception("Old password too short")
-            raise HTTPException(status_code=400, detail="Old password too short")
-        elif len(v) > 16:
-            logging.exception("Old password too long")
-            raise HTTPException(status_code=400, detail="Old password too long")
+    @field_validator('old_password','new_password')
+    def password_is_not_empty(cls, v, info: ValidationInfo):
+        if v.strip() == "" or v.__contains__(" "):
+            logging.exception(f"Invalid {info.field_name}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {info.field_name}")
+        if not 8 <= len(v) <= 16:
+            logging.exception(f"{info.field_name} should be between 8 and 16 characters")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be between 8 and 16 characters")
         return v
 
-    @validator('new_password')
-    def new_password_validator(cls, v):
-        if v is None or v.strip() == "" or v == "string" or v.__contains__(" "):
-            logging.exception("Invalid new password")
-            raise HTTPException(status_code=400, detail="Invalid new password")
-        if len(v) < 8:
-            logging.exception("New password too short")
-            raise HTTPException(status_code=400, detail="New password too short")
-        elif len(v) > 16:
-            logging.exception("New password too long")
-            raise HTTPException(status_code=400, detail="New password too long")
-        return v
-
-#pydantic model for user
 class User(UserBase):
     uuid: str = Field(serialization_alias="id")
+    company: str | None = None
+    timezone: str | None = None
     conferences: list[Conference] = []
     is_active: bool
+
     class Config:
         orm_mode = True
         
 class UserAuthentication(User):
     role: str
-        
