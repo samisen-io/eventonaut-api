@@ -5,6 +5,7 @@ from datetime import datetime
 from .. import hashing
 from .. AI_assitant import create_thread, delete_thread
 import uuid
+from ..crud import conferences_crud
 
 # create attendee
 def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
@@ -188,6 +189,7 @@ def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, l
     for attendee_conference in attendee_conferences:
         conference = db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id).first()
         conference.__dict__.pop('client_id')
+        conferences_crud.add_client_details_to_conference(db=db, conference=conference)
         conferences.append(conference)
     return conferences
 
