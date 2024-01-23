@@ -1,6 +1,4 @@
 from typing import Callable
-from starlette.types import ASGIApp
-from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Depends, FastAPI, Request, Response, APIRouter
 from fastapi.routing import APIRoute
 from app.oauth2 import get_current_active_user
@@ -39,14 +37,6 @@ class CORSHandler(APIRoute):
 
 options_router = APIRouter(route_class=CORSHandler)
 
-class LoggingMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        logging.info(f"Request: {request.method} {request.url} {request.headers}")
-        response = await call_next(request)
-        logging.info(f"Response: {response.status_code} {response.headers}")
-        return response
-
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -54,9 +44,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.add_middleware(LoggingMiddleware)
-
 
 # Add the routers to the application with authentication middleware
 app.include_router(options_router)
