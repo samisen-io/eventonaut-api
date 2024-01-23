@@ -110,9 +110,14 @@ class ConferenceUpdate(BaseModel):
                 raise HTTPException(status_code=400, detail=f"{info.field_name} must not be longer than 50 characters")
         return v
 
+class ClientDetails(BaseModel):
+    id: str
+    name: str
+
 #pydantic model for conference
 class Conference(ConferenceBase):
     uuid: str = Field(serialization_alias="id")
+    client_details: ClientDetails | None
     sessions: list[Session] = []
     settings: list[Settings] = []
     
