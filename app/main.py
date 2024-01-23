@@ -1,4 +1,6 @@
 from typing import Callable
+from starlette.types import ASGIApp
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi import Depends, FastAPI, Request, Response, APIRouter
 from fastapi.routing import APIRoute
 from app.oauth2 import get_current_active_user
@@ -22,17 +24,28 @@ class CORSHandler(APIRoute):
         original_route_handler = super().get_route_handler()
 
         async def preflight_handler(request: Request) -> Response:
+            logging.info(f"Request header: {request.headers}")
             if request.method == 'OPTIONS':
+                logging.info("Entered into OPTIONS")
                 response = Response()
                 response.headers['Access-Control-Allow-Origin'] = '*'
                 response.headers['Access-Control-Allow-Methods'] = 'POST, GET, DELETE, OPTIONS'
                 response.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
+                logging.info(response)
             else:
                 response = await original_route_handler(request)
 
         return preflight_handler
 
 options_router = APIRouter(route_class=CORSHandler)
+
+class LoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        logging.info(f"Request: {request.method} {request.url} {request.headers}")
+        response = await call_next(request)
+        logging.info(f"Response: {response.status_code} {response.headers}")
+        return response
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,6 +54,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(LoggingMiddleware)
+
 
 # Add the routers to the application with authentication middleware
 app.include_router(options_router)
