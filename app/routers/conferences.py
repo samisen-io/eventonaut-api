@@ -148,7 +148,6 @@ def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_
     logging.info("QR code generated: " + conference.name)
     return StreamingResponse(img_byte_arr, media_type="image/png", headers=headers)
 
-# get conference by conference id
 @router.get("/conferences/{conference_id}", response_model=schemas.Conference)
 def get_conference_by_conference_id(conference_id: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):    
     conference = crud.get_conference_by_conference_uuid(db, uuid=conference_id)
