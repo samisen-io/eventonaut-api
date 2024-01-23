@@ -92,8 +92,6 @@ def delete_conference(db: Session, owner_id: int, uuid: str):
         db.delete(session)
     db.query(models.Settings).filter(models.Settings.conference_id == conference.id, models.Settings.owner_id == owner_id).delete()
     agenda_crud.delete_agenda_by_conference_id(db, conference_id=conference.id)
-    if conference.assistant_id is not None and conference.assistant_id != "None":
-        AI_assitant.delete_assistant(assistant_id=conference.assistant_id)
     db.query(models.Conference_Files).filter(models.Conference_Files.conference_id == conference.id).delete()
     delete_namespace(conference_id=conference.uuid)
     db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).delete()
