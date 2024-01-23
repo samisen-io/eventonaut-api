@@ -66,9 +66,7 @@ def delete_vector_db():
 
 def delete_namespace(conference_id):
     index = pinecone.Index(index_name)
-    print('get_namespaces')
     namespaces = get_namespaces()
-    print('after get_namespaces')
     # check if the conference_id is a substring of any namespace
     for namespace in namespaces:
         if str(conference_id) in namespace:
