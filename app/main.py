@@ -1,4 +1,6 @@
-from fastapi import Depends, FastAPI
+from typing import Callable
+from fastapi import Depends, FastAPI, Request, Response, APIRouter
+from fastapi.routing import APIRoute
 from app.oauth2 import get_current_active_user
 import logging
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
@@ -15,6 +17,26 @@ logging.basicConfig(level=logging.INFO,
 # Start the scheduler
 logout_token_crud.start_scheduler()
 
+class CORSHandler(APIRoute):
+    def get_route_handler(self) -> Callable:
+        original_route_handler = super().get_route_handler()
+
+        async def preflight_handler(request: Request) -> Response:
+            logging.info(f"Request header: {request.headers}")
+            if request.method == 'OPTIONS':
+                logging.info("Entered into OPTIONS")
+                response = Response()
+                response.headers['Access-Control-Allow-Origin'] = '*'
+                response.headers['Access-Control-Allow-Methods'] = 'POST, GET, DELETE, OPTIONS'
+                response.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type'
+                logging.info(response)
+            else:
+                response = await original_route_handler(request)
+
+        return preflight_handler
+
+options_router = APIRouter(route_class=CORSHandler)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,6 +46,7 @@ app.add_middleware(
 )
 
 # Add the routers to the application with authentication middleware
+app.include_router(options_router)
 app.include_router(upload_image.router)
 app.include_router(users.router)
 app.include_router(client.router)
