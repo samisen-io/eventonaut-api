@@ -79,9 +79,6 @@ class UserPasswordUpdate(BaseModel):
 
 class User(UserBase):
     uuid: str = Field(serialization_alias="id")
-    company: str | None = None
-    timezone: str | None = None
-    conferences: list[Conference] = []
     is_active: bool
 
     class Config:
