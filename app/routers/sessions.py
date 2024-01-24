@@ -11,11 +11,8 @@ from datetime import date
 
 router = APIRouter(tags=["sessions"])
 
-# create session by owner id and conference id
 @router.post("/sessions", response_model=schemas.Session, status_code=status.HTTP_201_CREATED)
-def create_session_for_conference(
-    session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])
-):
+def create_session_for_conference(session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     conference=conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id, owner_id=current_user.id)
     if conference is None:
         logging.exception("Conference not found")
@@ -26,15 +23,12 @@ def create_session_for_conference(
     if session.start_time > session.end_time:
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
-    session=crud.create_conference_session(db=db, session=session, owner_id=current_user.id)
-    logging.info("Session created: " + session.name)
+    session=crud.create_conference_session(db=db, session=session, owner_id=current_user.id,conference_id=conference.id)
+    logging.info("Session created: " + session.uuid)
     return session
 
-# create sessions by list of sessions
 @router.post("/sessions/list", response_model=list[schemas.Session])
-def create_sessions_for_conference(
-    sessions: list[schemas.SessionCreate], db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])
-):
+def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if sessions is None or len(sessions) == 0:
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
@@ -52,14 +46,11 @@ def create_sessions_for_conference(
         if session.start_time > session.end_time:
             logging.exception("Invalid time")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
-        
-    for session in sessions:
-        session_list.append(crud.create_conference_session(db=db, session=session, owner_id=current_user.id))
+        session_list.append(crud.create_conference_session(db=db, session=session, owner_id=current_user.id,conference_id=conference.id))
 
     logging.info("Sessions created for conference: " + session.conference_id)
     return session_list
 
-# get all sessions
 @router.get("/sessions/all_sessions", response_model=list[schemas.Session])
 def get_all_sessions(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     if offset < 0 or limit < 0:
@@ -72,7 +63,6 @@ def get_all_sessions(offset: int = 0, limit: int = 100, db: Session = Depends(ge
     logging.info("Sessions retrieved")
     return db_sessions
 
-# get all sessions by conference id
 @router.get("/sessions/{conference_id}", response_model=list[schemas.Session])
 def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_db),basic_auth = Depends(basicauth.basic_auth)):
     if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
@@ -85,10 +75,12 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
     logging.info("Sessions retrieved for conference: " + conference_id)
     return db_sessions
 
-# update session
 @router.put("/sessions", response_model=schemas.Session)
 def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    if session.name is None and session.date is None and session.start_time is None and session.end_time is None and session.description is None and session.speakers is None and session.tags is None and session.location is None:
+    session_dict = session.model_dump()
+    session_dict.pop('id')
+    session_dict.pop('conference_id')
+    if all(value is None for value in session_dict.values()):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
     if conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id,owner_id=current_user.id) is None:
@@ -105,17 +97,16 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
     if session.start_time is not None and session.end_time is not None and session.start_time > session.end_time:
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
-    updated_session = crud.update_session(db=db, session=session, uuid=session.id, owner_id=current_user.id)
-    logging.info("Session updated: " + db_session.name)
+    updated_session = crud.update_session(db=db, session=session, db_session=db_session)
+    logging.info("Session updated: " + updated_session.uuid)
     return updated_session
 
-#delete session
 @router.delete("/sessions/{session_id}")
 def delete_session(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_session = crud.get_session_by_uuid_id(db, uuid=session_id, owner_id=current_user.id)
     if db_session is None:
         logging.exception("Session not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-    session_deleted = crud.delete_session(db=db, uuid=session_id, owner_id=current_user.id)
+    session_deleted = crud.delete_session(db=db, db_session=db_session)
     logging.info("Session deleted: " + db_session.name)
     return session_deleted

@@ -7,7 +7,6 @@ import uuid
 
 # create agenda
 def create_agenda(db: Session, conference_id: str, attendee_id: int, agenda: schemas.AgendaCreate):
-
     session_ids = []
     for session_id in agenda.sessions:
         if session_id not in session_ids:

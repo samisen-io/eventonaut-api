@@ -8,7 +8,7 @@ class AgendaBase(BaseModel):
 
     @validator('name')
     def name_must_contain_space(cls, v):
-        if v is None or v.strip() == '' or v == 'string':
+        if v.strip() == '':
             raise HTTPException(status_code=400, detail="Invalid name")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Name too long")
@@ -20,41 +20,43 @@ class AgendaCreate(AgendaBase):
 
     @validator('sessions')
     def sessions_must_contain_at_least_one_session(cls, v):
-        if v is None or len(v) == 0:
-            raise HTTPException(status_code=400, detail="Invalid sessions")
+        if len(v) == 0:
+            raise HTTPException(status_code=400, detail="Sessions cannot be empty")
+        for session_id in v:
+            if session_id.strip() == '':
+                raise HTTPException(status_code=400, detail="Invalid session id")
         return v
     
     @validator('conference_id')
     def conference_id_must_contain_space(cls, v):
-        if v is None or v.strip() == '' or v == 'string':
+        if v is None or v.strip() == '':
             raise HTTPException(status_code=400, detail="Invalid conference id")
         return v
 
 class AgendaUpdate(AgendaBase):
     conference_id: str
     name: str | None = None
-    sessions: list[str] | None = None
+    sessions: list[str] = []
 
     @validator('conference_id')
     def conference_id_must_contain_space(cls, v):
-        if v is None or v.strip() == '' or v == 'string':
+        if v.strip() == '':
             raise HTTPException(status_code=400, detail="Invalid conference id")
         return v
     
     @validator('name')
     def name_must_contain_space(cls, v):
-        if v.strip() == '' or v == 'string':
-            raise HTTPException(status_code=400, detail="Invalid name")
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Name too long")
+        if v is not None:
+            if v.strip() == '':
+                return None
+            elif len(v) > 256:
+                raise HTTPException(status_code=400, detail="Name too long")
         return v
     
     @validator('sessions')
     def sessions_must_contain_at_least_one_session(cls, v):
-        if v == '':
-            raise HTTPException(status_code=400, detail="Invalid sessions")
         for session_id in v:
-            if session_id.strip() == '' or session_id == 'string':
+            if session_id.strip() == '':
                 raise HTTPException(status_code=400, detail="Invalid session id")
         return v
 

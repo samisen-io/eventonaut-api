@@ -12,7 +12,7 @@ class ClientBase(BaseModel):
 
     @validator('name')
     def name_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
+        if v is None or v.strip() == "":
             raise HTTPException(status_code=400, detail="Invalid name")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Name too long")
@@ -20,7 +20,7 @@ class ClientBase(BaseModel):
     
     @validator('contact_name')
     def contact_name_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
+        if v is None or v.strip() == "":
             raise HTTPException(status_code=400, detail="Invalid contact name")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Contact name too long")
@@ -28,7 +28,7 @@ class ClientBase(BaseModel):
     
     @validator('contact_email')
     def contact_email_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
+        if v is None or v.strip() == "":
             raise HTTPException(status_code=400, detail="Invalid contact email")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Contact email too long")
@@ -36,7 +36,7 @@ class ClientBase(BaseModel):
     
     @validator('contact_phone')
     def contact_phone_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
+        if v is None or v.strip() == "":
             raise HTTPException(status_code=400, detail="Invalid contact phone")
         elif len(v) > 15 or len(v) < 10:
             raise HTTPException(status_code=400, detail="Invalid Phone Number")
@@ -44,7 +44,7 @@ class ClientBase(BaseModel):
     
     @validator('address')
     def address_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
+        if v is None or v.strip() == "":
             raise HTTPException(status_code=400, detail="Invalid address")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Address too long")
@@ -52,7 +52,7 @@ class ClientBase(BaseModel):
     
     @validator('profile_image_url')
     def profile_image_url_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
+        if v is None or v.strip() == "":
             raise HTTPException(status_code=400, detail="Invalid profile image url")
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Profile image url too long")
@@ -66,61 +66,60 @@ class ClientUpdate(BaseModel):
     contact_phone: str | None = None
     status: bool | None = None
     address: str | None = None
-
     profile_image_url: str | None = None
 
     @validator('id')
     def id_is_not_empty(cls, v):
-        if v is None or v.strip() == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid id")
+        if v is None or v.strip() == "":
+            return None
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Id too long")
         return v
 
     @validator('name')
     def name_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid name")
+        if v is not None and v.strip() == "":
+            return None
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Name too long")
         return v
     
     @validator('contact_name')
     def contact_name_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid contact name")
+        if v is not None and v.strip() == "" :
+            return None
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Contact name too long")
         return v
     
     @validator('contact_email')
     def contact_email_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid contact email")
+        if v is not None and v.strip() == "":
+            return None
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Contact email too long")
         return v
     
     @validator('contact_phone')
     def contact_phone_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid contact phone")
+        if v is not None and v.strip() == "":
+            return None
         elif len(v) > 15:
             raise HTTPException(status_code=400, detail="Contact phone too long")
         return v
     
     @validator('address')
     def address_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid address")
+        if v is not None and v.strip() == "":
+            return None
         elif len(v) > 15:
             raise HTTPException(status_code=400, detail="Address too long")
         return v
 
     @validator('profile_image_url')
     def profile_image_url_is_not_empty(cls, v):
-        if v is not None and (v.strip() == "" or v == "string"):
-            raise HTTPException(status_code=400, detail="Invalid profile image url")
+        if v is not None and v.strip() == "":
+            return None
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Profile image url too long")
         return v

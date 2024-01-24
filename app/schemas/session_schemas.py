@@ -1,8 +1,8 @@
-from pydantic import BaseModel, validator, Field
-from fastapi import HTTPException
+from pydantic import BaseModel, validator, Field, field_validator, ValidationInfo
+from fastapi import HTTPException, status
 from datetime import date as Date, time
+import logging
 
-#pydantic model for session create
 class SessionBase(BaseModel):
     name: str
     start_time: time
@@ -10,99 +10,58 @@ class SessionBase(BaseModel):
     description: str 
     date: Date
     location: str
-    session_image_url: str | None = "None"
+    session_image_url: str | None = None
     speakers: list[str]
     tags: list[str]
 
-    @validator('name')
-    def name_must_not_be_empty(cls, v):
-        if v is None or v == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid name")
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Name too long")
+    @field_validator('name','description','location')
+    def values_validation(cls, v, info: ValidationInfo):
+        if v.strip() == "":
+            logging.exception(f"{info.field_name} cannot be empty")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+        max_length = 2048 if info.field_name == "description" else 256
+        if len(v) > max_length:
+            logging.exception(f"{info.field_name} cannot be longer than {max_length} characters")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than {max_length} characters")
+        return v
+
+    @field_validator('session_image_url')
+    def session_image_url_validation(cls, v, info: ValidationInfo):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            elif len(v) > 256:
+                logging.exception(f"{info.field_name} cannot be longer than 256 characters")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than 256 characters") 
         return v
     
-    @validator('start_time')
-    def start_time_must_not_be_empty(cls, v):
-        if v is None or v == "":
-            raise HTTPException(status_code=400, detail="Invalid start time")
-        return v
-    
-    @validator('end_time')
-    def end_time_must_not_be_empty(cls, v):
-        if v is None or v == "":
-            raise HTTPException(status_code=400, detail="Invalid end time")
-        return v
-    
-    @validator('description')
-    def description_must_not_be_empty(cls, v):
-        if v is None or v == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid description")
-        elif len(v) > 2048:
-            raise HTTPException(status_code=400, detail="Description too long")
-        return v
-    
-    @validator('date')
-    def date_must_not_be_empty(cls, v):
-        if v is None or v == "":
-            raise HTTPException(status_code=400, detail="Invalid date")
-        return v
-    
-    @validator('location')
-    def location_must_not_be_empty(cls, v):
-        if v is None or v == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid location")
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Location too long")
-        return v
-    
-    @validator('session_image_url')
-    def session_image_url_must_not_be_empty(cls, v):
-        if v == "" or v == "string":
-            v = "None"
-        return v
-    
-    @validator('speakers')
-    def speakers_must_not_be_empty(cls, v):
-        if v is None or v == "" or len(v) == 0:
-            raise HTTPException(status_code=400, detail="Invalid speakers")
-        for speaker in v:
-            if speaker is None or speaker == "" or speaker == "string":
-                raise HTTPException(status_code=400, detail="Invalid speaker")
-            elif len(speaker) > 256:
-                raise HTTPException(status_code=400, detail="Speaker name too long")
-        return v
-    
-    @validator('tags')
-    def tags_must_not_be_empty(cls, v):
-        if v is None or v == "" or len(v) == 0:
-            raise HTTPException(status_code=400, detail="Invalid tags")
-        for tag in v:
-            if tag is None or tag == "" or tag == "string":
-                raise HTTPException(status_code=400, detail="Invalid tag")
-            elif len(tag) > 256:
-                raise HTTPException(status_code=400, detail="Tag name too long")
+    @field_validator('speakers','tags')
+    def speakers_and_tags_validation(cls, v, info: ValidationInfo):
+        if len(v) == 0:
+            logging.exception(f"{info.field_name} cannot be empty")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=f"{info.field_name} cannot be empty")
+        for val in v:
+            if val.strip() == "":
+                logging.exception(f"{info.field_name} cannot be empty")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail=f"{info.field_name} cannot be empty")
+            elif len(val) > 256:
+                logging.exception(f"{info.field_name} cannot be longer than 256 characters")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than 256 characters") 
         return v
 
 class SessionCreate(SessionBase):
     conference_id: str
     
-    @validator('conference_id')
+    @field_validator('conference_id')
     def conference_id_must_not_be_empty(cls, v):
-        if v is None or v == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid conference id")
+        if v.strip() == "":
+            logging.exception(f"conferece_id cannot be empty")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"conference_id cannot be empty")
         return v
     
-#pydantic model for session
-class Session(SessionBase):
-    uuid: str = Field(serialization_alias="id")
-    class Config:
-        orm_mode = True
-
-#pydantic model for session update
 class SessionUpdate(BaseModel):
-    id: str
     conference_id: str
+    id: str
     name: str | None = None
     start_time: time | None = None
     end_time: time | None = None
@@ -113,87 +72,41 @@ class SessionUpdate(BaseModel):
     speakers: list[str] | None = None
     tags: list[str] | None = None
 
-    @validator('id')
-    def id_must_not_be_empty(cls, v):
-        if v is None or v == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid id")
+    @field_validator('conference_id','id')
+    def conference_id_and_id_validation(cls, v, info: ValidationInfo):
+        if v.strip() == "":
+            logging(f"{info.field_name} cannot be empty")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+        return v
+
+    @field_validator('name','description','location','session_image_url')
+    def values_validation(cls, v, info: ValidationInfo):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            max_length = 2048 if info.field_name == "description" else 256
+            if len(v) > max_length:
+                logging.exception(f"{info.field_name} cannot be longer than {max_length} characters")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than {max_length} characters")
         return v
     
-    @validator('conference_id')
-    def conference_id_must_not_be_empty(cls, v):
-        if v is None or v == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid conference id")
-        return v
-    
-    @validator('name')
-    def name_must_not_be_empty(cls, v):
-        if v == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid name")
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Name too long")
-        return v
-    
-    @validator('start_time')
-    def start_time_must_not_be_empty(cls, v):
-        if v == "":
-            raise HTTPException(status_code=400, detail="Invalid start time")
-        return v
-    
-    @validator('end_time')
-    def end_time_must_not_be_empty(cls, v):
-        if v == "":
-            raise HTTPException(status_code=400, detail="Invalid end time")
-        return v
-    
-    @validator('description')
-    def description_must_not_be_empty(cls, v):
-        if v == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid description")
-        elif len(v) > 2048:
-            raise HTTPException(status_code=400, detail="Description too long")
-        return v
-    
-    @validator('date')
-    def date_must_not_be_empty(cls, v):
-        if v == "":
-            raise HTTPException(status_code=400, detail="Invalid date")
-        return v
-    
-    @validator('location')
-    def location_must_not_be_empty(cls, v):
-        if v == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid location")
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Location too long")
-        return v
-    
-    @validator('session_image_url')
-    def session_image_url_must_not_be_empty(cls, v):
-        if v == "" or v == "string":
-            v = "None"
-        return v
-    
-    @validator('speakers')
-    def speakers_must_not_be_empty(cls, v):
-        if v == "":
-            raise HTTPException(status_code=400, detail="Invalid speakers")
-        for speaker in v:
-            if speaker == "" or speaker == "string":
-                raise HTTPException(status_code=400, detail="Invalid speaker")
-            elif len(speaker) > 256:
-                raise HTTPException(status_code=400, detail="Speaker name too long")
-        return v
-    
-    @validator('tags')
-    def tags_must_not_be_empty(cls, v):
-        if v == "":
-            raise HTTPException(status_code=400, detail="Invalid tags")
-        for tag in v:
-            if tag == "" or tag == "string":
-                raise HTTPException(status_code=400, detail="Invalid tag")
-            elif len(tag) > 256:
-                raise HTTPException(status_code=400, detail="Tag name too long")
-        return v
-    
+    @field_validator('speakers','tags')
+    def speakers_and_tags_validation(cls, v:list, info: ValidationInfo):
+        if v is not None:
+            if len(v) == 0:
+                return None
+            for val in v:
+                if v is None:
+                    logging.exception(f"{info.field_name} cannot be empty")
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+                if len(val) > 256:
+                    logging.exception(f"{info.field_name} cannot be longer than 256 characters")
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than 256 characters") 
+        return v  
+    class Config:
+        orm_mode = True
+
+class Session(SessionBase):
+    uuid: str = Field(serialization_alias="id")
     class Config:
         orm_mode = True

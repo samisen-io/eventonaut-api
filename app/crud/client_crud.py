@@ -36,17 +36,10 @@ def get_all_clients_by_owner_id(db: Session, owner_id:int, offset: int = 0, limi
 def update_client(db: Session, client: schemas.ClientUpdate):
     db_client = db.query(models.Client).filter(models.Client.uuid == client.id).first()
     
-    updates = {
-        'name': client.name,
-        'contact_name': client.contact_name,
-        'contact_email': client.contact_email,
-        'contact_phone': client.contact_phone,
-        'profile_image_url': client.profile_image_url,
-        'address': client.address,
-        'status': client.status
-    }
+    client_dict = client.model_dump()
+    client_dict.pop("id")
     
-    for key, value in updates.items():
+    for key, value in client_dict.items():
         if value is not None:
             setattr(db_client, key, value)
     
