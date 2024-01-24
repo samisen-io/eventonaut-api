@@ -16,9 +16,6 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(db_user)
     return db_user
 
-def get_user_uuid_by_id(db: Session, user_id: int):
-    return db.query(models.User).filter(models.User.id == user_id).first().uuid
-
 def get_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
@@ -37,9 +34,17 @@ def get_users(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.User).offset(offset).limit(limit).all()
 
 def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User):
-    for key, value in user.model_dump().items():
-        setattr(db_user, key, value)
+    user_dict = user.model_dump()
 
+    non_nullable_fields = ['first_name','last_name','business_type']
+
+    for key, value in user_dict.items():
+        if key in non_nullable_fields:
+            if value is not None:
+                setattr(db_user, key, value)
+        else:
+            setattr(db_user, key, value)
+            
     db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
