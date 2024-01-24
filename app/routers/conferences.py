@@ -1,11 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends, Header, Security, status
+from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from ..schemas import conference_schemas as schemas
-from ..schemas import user_schemas as uschemas
 from ..crud import conferences_crud as crud, users_crud, client_crud
 from ..dependencies import get_db
 from .. import basicauth
@@ -16,39 +15,34 @@ import json
 
 router = APIRouter(tags=["conferences"])
 
-# create conference
 @router.post("/conferences", response_model=schemas.Conference, status_code=status.HTTP_201_CREATED)
 def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    if current_user.id <= 0:
-        logging.exception("Invalid user id")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
     if not users_crud.get_user(db, user_id=current_user.id):
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if conference.start_date > conference.end_date or conference.start_date < date.today():
         logging.exception("Invalid date range")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date range")
-    logging.info("Conference created: " + conference.name)
-    return crud.create_user_conference(db=db, conference=conference, user_id=current_user.id)
+    db_conference = crud.create_user_conference(db=db, conference=conference, user_id=current_user.id)
+    logging.info("Conference created: " + db_conference.uuid)
+    return db_conference 
 
-# get all conferences
 @router.get("/conferences/all_conferences", response_model=list[schemas.Conference])
 def get_all_conferences(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     if offset < 0 or limit < 0:
-        logging.exception("Invalid query parameters")
+        logging.exception("Invalid offset or limit")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid query parameters")
     conferences = crud.get_all_conferences(db, offset=offset, limit=limit)
     if conferences is None or len(conferences) == 0:
         logging.exception("No conferences found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    logging.info("Conferences retrieved")
+    logging.info("All Conferences retrieved")
     return conferences
 
-# get all conferences for attendee
 @router.get("/conferences/for_attendee", response_model=list[schemas.Conference])
 def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Session = Depends(get_db),basic_auth = Depends(basicauth.basic_auth)):
     if offset < 0 or limit < 0:
-        logging.exception("Invalid query parameters")
+        logging.exception("Invalid offset or limit")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid query parameters")
     conferences = crud.get_all_conferences_for_attendee(db, offset=offset, limit=limit)
     if conferences is None or len(conferences) == 0:
@@ -57,23 +51,19 @@ def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Sess
     logging.info("Conferences retrieved for attendee")
     return conferences
 
-# get all conferences by owner_id
 @router.get("/conferences", response_model=list[schemas.Conference])
 def get_all_conferences_by_owner_id(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    if current_user.id <= 0:
-        logging.exception("Invalid owner id")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid owner id")
-    if users_crud.get_user(db, user_id=current_user.id) is None:
+    db_user = users_crud.get_user(db, user_id=current_user.id)
+    if db_user is None:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     db_conferences = crud.get_conferences_by_owner_id(db, owner_id=current_user.id)
     if db_conferences is None or len(db_conferences) == 0:
         logging.exception("No conferences found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    logging.info("Conferences retrieved for owner id: " + users_crud.get_user_uuid_by_id(db, user_id=current_user.id))
+    logging.info("Conferences retrieved for owner id: " + db_user.uuid)
     return db_conferences
 
-# update conference by conference id
 @router.put("/conferences", response_model=schemas.Conference)
 def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     conference_dict = conference.model_dump()
@@ -92,16 +82,12 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
     if conference.client_id is not None:
         if not client_crud.get_client_by_uuid(db, client_uuid=conference.client_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-    updated_conference = crud.update_user_conference(db=db, conference=conference, uuid=conference.id, owner_id=current_user.id)
-    logging.info("Conference updated: " + db_conference.name)
+    updated_conference = crud.update_user_conference(db=db, conference=conference, db_conference=db_conference)
+    logging.info("Conference updated: " + updated_conference.uuid)
     return updated_conference
 
-# delete conference
 @router.delete("/conferences/{conference_id}")
 def delete_conference_owner_id_conference_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    if current_user.id <= 0:
-        logging.exception("Invalid id")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid id")
     if not users_crud.get_user(db, user_id=current_user.id):
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -109,11 +95,10 @@ def delete_conference_owner_id_conference_id(conference_id: str, db: Session = D
     if db_conference is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    deleted_conference = crud.delete_conference(db=db, owner_id=current_user.id, uuid=conference_id)
-    logging.info("Conference deleted: " + db_conference.name)
+    deleted_conference = crud.delete_conference(db=db, conference=db_conference)
+    logging.info("Conference deleted: " + db_conference.uuid)
     return deleted_conference
 
-# generate qr code based on conference uuid
 @router.get("/conferences/generate_qr_code/{conference_id}")
 def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     conference = crud.get_conference_by_uuid(db, uuid=conference_id, owner_id=current_user.id)
@@ -154,6 +139,5 @@ def get_conference_by_conference_id(conference_id: str, db: Session = Depends(ge
     if conference is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    logging.info("Conference retrieved: " + conference.name)
-    conference_dict = conference.__dict__
-    return conference_dict
+    logging.info("Conference retrieved: " + conference.uuid)
+    return conference
