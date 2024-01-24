@@ -3,6 +3,7 @@ from ..schemas import promotion_schemas
 from sqlalchemy.orm import Session
 import uuid
 from datetime import datetime
+from fastapi import HTTPException, status
 
 def get_promotion(db: Session, promotion_id: str):
     promotion = db.query(models.Promotions).filter(models.Promotions.uuid == promotion_id).first()
@@ -53,6 +54,9 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
     for key, value in updates.items():
         if value is not None:
             setattr(db_promotion, key, value)
+   
+    if db_promotion.fromdate > db_promotion.todate:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date range")
 
     if promotion_rank != 0:
         db_promotion.rank = promotion_rank
