@@ -14,6 +14,9 @@ def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session =
     if db_promotion:
         logging.exception("Promotion already registered")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Promotion already registered")
+    if promotion.fromdate > promotion.todate:
+        logging.exception("Invalid date range")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date range")
     promotion = promotions_crud.create_promotion(db=db, promotion=promotion)
     logging.info("Promotion created: " + promotion.uuid)
     return promotion
