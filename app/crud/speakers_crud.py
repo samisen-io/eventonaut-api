@@ -39,9 +39,10 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
     conference = db.query(Conference).filter(Conference.uuid == speaker_conference_id).first()
     db_speaker.conference_id = conference.id if conference else None
     speaker_dict.pop("conference_id")
-    for field, value in speaker_dict.items():
+    db_speaker.profile_image_url = speaker_dict.pop("profile_image_url")
+    for key, value in speaker_dict.items():
         if value is not None:
-            setattr(db_speaker, field, value)
+            setattr(db_speaker, key, value)
     db_speaker.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_speaker)
