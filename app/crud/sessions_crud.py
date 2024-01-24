@@ -2,21 +2,16 @@ from sqlalchemy.orm import Session
 from datetime import datetime, date
 from .. import models
 from ..schemas import session_schemas as schemas
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 import logging
 import uuid
 
-#get all sessions
-
-#get all sessions
 def get_sessions(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.Session).offset(offset).limit(limit).all()
 
-def create_conference_session(db: Session, session: schemas.SessionCreate, owner_id: int):
+def create_conference_session(db: Session, session: schemas.SessionCreate, owner_id: int, conference_id: int):
     db_session = models.Session(name=session.name, start_time=session.start_time, end_time=session.end_time, description=session.description, date=session.date, location=session.location, owner_id=owner_id, session_image_url=session.session_image_url)
-    conference_id = db.query(models.Conference).filter(models.Conference.uuid == session.conference_id).first().id
-    db_session.created_on = datetime.utcnow()
-    db_session.updated_on = datetime.utcnow()
+    db_session.created_on = db_session.updated_on = datetime.utcnow()
     db_session.uuid = "ses-" + str(uuid.uuid4())
     db_session.owner_id = owner_id
     db_session.conference_id = conference_id
@@ -27,8 +22,6 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     db.refresh(db_session)
     return db_session
 
-# def create_conference_session_from_csv(db: Session, session: schemas.SessionCreate, owner_id: int):
-
 def get_session_by_conference_uuid_session_uuid(db: Session, session_id: str, conference_id: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
     return db.query(models.Session).filter(models.Session.uuid == session_id, models.Session.conference_id == conference.id).first()
@@ -36,74 +29,55 @@ def get_session_by_conference_uuid_session_uuid(db: Session, session_id: str, co
 def get_session_by_session_uuid(db: Session, uuid: str):
     return db.query(models.Session).filter(models.Session.uuid == uuid).first()
 
-# get sessions by owner id and session id
 def get_session_by_uuid_id(db: Session, uuid: int, owner_id: int):
     return db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.owner_id == owner_id).first()
 
-#get sessions by conference_id
 def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str):
     conference_id = db.query(models.Conference).filter(models.Conference.uuid == conference_uuid).first().id
     db_sessions=db.query(models.Session).filter(models.Session.conference_id == conference_id).all()
     return db_sessions
 
-#delete session
-def delete_session(db: Session, uuid: str, owner_id: int):
-    session = db.query(models.Session).filter(models.Session.uuid == uuid,models.Session.owner_id == owner_id).first()
-    db.query(models.AgendaSession).filter(models.AgendaSession.session_id == session.id).delete()
-    db.delete(session)
+def delete_session(db: Session, db_session: models.Session):
+    db.query(models.AgendaSession).filter(models.AgendaSession.session_id == db_session.id).delete()
+    db.delete(db_session)
     db.commit()
     return True
 
-#update session
-def update_session(db: Session, session: schemas.SessionUpdate, uuid: str, owner_id: int):
-    db_session = db.query(models.Session).filter(models.Session.uuid == uuid,models.Session.owner_id == owner_id).first()
-    
-    speakers:list[str] = []
-    tags:list[str] = []
+def update_session(db: Session, session: schemas.SessionUpdate, db_session: models.Session):
+    session_dict = session.model_dump()
+    session_dict.pop('id')
+    session_dict.pop('conference_id')
 
-    if session.speakers is not None:
+    if session_dict['speakers'] is not None:
+        speakers:list[str] = []
         for speaker in session.speakers:
-            if speaker is None or speaker == "" or speaker == "string":
-                logging.exception("Invalid speaker")
-                raise HTTPException(status_code=400, detail="Invalid speaker")
             if speaker not in speakers:
                 speakers.append(speaker)
-    else:
-        speakers = db_session.speakers
+        session_dict['speakers'] = speakers
     
-    if session.tags is not None:
+    if session_dict['tags'] is not None:
+        tags:list[str] = []
         for tag in session.tags:
-            if tag is None or tag == "" or tag == "string":
-                logging.exception("Invalid tag")
-                raise HTTPException(status_code=400, detail="Invalid tag")
             if tag not in tags:
                 tags.append(tag)
-    else:
-        tags = db_session.tags
+        session_dict['tags'] = tags
 
-    updates = {
-        'name': session.name,
-        'date': session.date,
-        'start_time': session.start_time,
-        'end_time': session.end_time,
-        'location': session.location,
-        'description': session.description,
-        'speakers': speakers,
-        'tags': tags,
-        'session_image_url': session.session_image_url
-    }
+    non_nullable_fields = ['name','date','start_time','end_time','location','description','speakers','tags']
     
-    for key, value in updates.items():
-        if value is not None:
+    for key, value in session_dict.items():
+        if key in non_nullable_fields:
+            if value is not None:
+                setattr(db_session, key, value)
+        else:
             setattr(db_session, key, value)
 
     if session.date is not None and (session.date < db_session.conference.start_date or session.date > db_session.conference.end_date or session.date < date.today()):
         logging.exception("Invalid date")
-        raise HTTPException(status_code=400, detail="Invalid date")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date")
     
     if session.start_time is not None and session.end_time is not None and session.start_time > session.end_time:
         logging.exception("Invalid time")
-        raise HTTPException(status_code=400, detail="Invalid time")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
 
     db_session.updated_on = datetime.utcnow()
     db.commit()
