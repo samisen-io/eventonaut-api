@@ -126,3 +126,20 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     db_conference = add_client_details_to_conference(db=db, conference=db_conference)
     db_conference = add_venue_details_to_conference(db=db, conference=db_conference)
     return db_conference
+
+def get_event_list_summary(db: Session, owner_id: int):
+    total_events = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).count()
+    first_event_start_date = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).order_by(models.Conference.start_date).first().start_date
+    last_event_end_date = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).order_by(models.Conference.end_date.desc()).first().end_date
+    total_clients = db.query(models.Client).filter(models.Client.owner_id == owner_id).count()
+
+    db_conferences = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
+
+    total_sponsors = 0
+    total_attendees = 0
+
+    for conference in db_conferences:
+        total_sponsors += db.query(models.Sponsors).filter(models.Sponsors.conference_id == conference.id).count()
+        total_attendees += db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).count()
+
+    return schemas.ConferenceListSummary(no_of_events=total_events, first_event_start_date=first_event_start_date, last_event_end_date=last_event_end_date, no_of_sponsors=total_sponsors, no_of_clients=total_clients, number_of_attendees=total_attendees)
