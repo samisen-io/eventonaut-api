@@ -16,32 +16,43 @@ def add_client_details_to_conference(db: Session, conference: dict):
     conference.client_details = schema_client
     return conference
 
+def add_venue_details_to_conference(db: Session, conference: dict):
+    db_venue = db.query(models.Venue).filter(models.Venue.id == conference.venue_id).first()
+    conference.venue_name = db_venue.name
+    conference.venue_location = db_venue.location
+    return conference
+
 # get all conferences ordered by start date in descending order
 def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
     conferences = db.query(models.Conference).offset(offset).limit(limit).all()
     for conference in conferences:
         conference = add_client_details_to_conference(db=db, conference=conference)
+        conference = add_venue_details_to_conference(db=db, conference=conference)
     return conferences
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
     conferences = db.query(models.Conference).filter(models.Conference.start_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
     for conference in conferences:
         conference = add_client_details_to_conference(db=db, conference=conference)
+        conference = add_venue_details_to_conference(db=db, conference=conference)
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
     confernces = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
     for conference in confernces:
         conference = add_client_details_to_conference(db=db, conference=conference)
+        conference = add_venue_details_to_conference(db=db, conference=conference)
     return confernces
 
 def get_conference_by_code(db: Session, code: str):
     conference = db.query(models.Conference).filter(models.Conference.code == code).first()
     return conference
 
-def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
-    client_id = conference.model_dump().pop("client_id")
-    db_conference = models.Conference(**conference.model_dump(), owner_id=user_id)
+def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int, venue_id: int):
+    conference_dict = conference.model_dump()
+    client_id = conference_dict.pop("client_id")
+    conference_dict.pop('venue_id')
+    db_conference = models.Conference(**conference_dict, owner_id=user_id, venue_id=venue_id)
     db_client = db.query(models.Client).filter(models.Client.uuid == client_id).first()
     db_conference.client_id = db_client.id if db_client is not None else None
     db_conference.created_on = db_conference.updated_on = datetime.utcnow()
@@ -60,6 +71,7 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db.commit()
     db.refresh(db_conference)
     db_conference = add_client_details_to_conference(db=db, conference=db_conference)
+    db_conference = add_venue_details_to_conference(db=db, conference=db_conference)
     return db_conference
 
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
@@ -69,6 +81,7 @@ def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
 def get_conference_by_conference_uuid(db: Session, uuid: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == uuid).first()
     conference = add_client_details_to_conference(db=db, conference=conference) if conference is not None else None
+    conference = add_venue_details_to_conference(db=db, conference=conference) if conference is not None else None
     return conference
 
 def delete_conference(db: Session, conference: models.Conference):
@@ -89,7 +102,9 @@ def delete_conference(db: Session, conference: models.Conference):
 def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db_conference: models.Conference):
     conference_dict = conference.model_dump()
     conference_dict.pop('id')
-    non_nullable_feilds = ['name','location','venue_name','venue_location','start_date','end_date','information_guide']
+    conference_dict['venue_id'] = db.query(models.Venue).filter(models.Venue.uuid == conference_dict['venue_id']).first().id if conference_dict['venue_id'] is not None else None
+
+    non_nullable_feilds = ['name','location','venue_id','start_date','end_date','information_guide']
 
     for key, value in conference_dict.items():
             if key in non_nullable_feilds:
@@ -109,4 +124,5 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     db.refresh(db_conference)
     # return db_conference
     db_conference = add_client_details_to_conference(db=db, conference=db_conference)
+    db_conference = add_venue_details_to_conference(db=db, conference=db_conference)
     return db_conference
