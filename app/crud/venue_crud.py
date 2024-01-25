@@ -42,28 +42,3 @@ def delete_venue(db: Session, db_venue: models.Venue):
     db.delete(db_venue)
     db.commit()
     return True
-
-def fill_the_db(db: Session):
-    # db_venue_info = db.query(models.Conference.venue_name, models.Conference.venue_location, models.Conference.owner_id, models.Conference.location).filter(or_(models.Conference.venue_name != 'None', models.Conference.venue_location != 'None')).group_by(models.Conference.venue_name, models.Conference.venue_location, models.Conference.owner_id, models.Conference.location).all()
-    # db_venue_info = [{"venue_name": x[0], "venue_location": x[1], "owner_id": x[2], "location": x[3]} for x in db_venue_info]
-
-    # for venue in db_venue_info:
-    #     db_venue = models.Venue(owner_id=venue['owner_id'], name=venue['venue_name'], location=venue['venue_location'], address=venue['location'])
-    #     db_venue.created_on = db_venue.updated_on = datetime.utcnow()
-    #     db_venue.geo_location = None
-    #     db_venue.uuid = 'ven-' + str(uuid.uuid4())
-    #     db.add(db_venue)
-    #     db.commit()
-    #     db.refresh(db_venue)
-
-    db_venues = db.query(models.Venue).all()
-    db_confereces = db.query(models.Conference).all()
-
-    for venue in db_venues:
-        for conference in db_confereces:
-            if conference.venue_name == venue.name and conference.venue_location == venue.location and conference.owner_id == venue.owner_id and conference.location == venue.address:
-                conference.venue_id = venue.id
-                db.commit()
-                db.refresh(conference)
-
-    return True
