@@ -27,6 +27,7 @@ class User(Base):
     sessions = relationship("Session", back_populates="owner")
     settings = relationship("Settings", back_populates="owner")
     client = relationship("Client", back_populates="owner")
+    venues = relationship("Venue", back_populates="owner")
 
 class Client(Base):
     __tablename__ = "clients"
@@ -58,8 +59,7 @@ class Conference(Base):
     client_id = Column(Integer, ForeignKey("clients.id"))
     name = Column(String, index=True)
     location = Column(String, index=True)
-    venue_name = Column(String, index=True)
-    venue_location = Column(String, index=True)
+    venue_id = Column(Integer, ForeignKey("venues.id"))
     start_date = Column(DATE, index=True)
     end_date = Column(DATE, index=True)
     description = Column(String, index=True)
@@ -83,6 +83,7 @@ class Conference(Base):
     speakers = relationship("Speakers", back_populates="conference")
     promotions = relationship("Promotions", back_populates="conference")
     sponsors = relationship("Sponsors", back_populates="conference")
+    venues = relationship("Venue", back_populates="conference")
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -284,3 +285,19 @@ class Sponsors(Base):
     sponsorship_level = Column(String, index=True)
 
     conference = relationship("Conference", back_populates="sponsors")
+
+class Venue(Base):
+    __tablename__ = "venues"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String, index=True)
+    location = Column(String, index=True)
+    address = Column(String, index=True)
+    geo_location = Column(String, index=True)
+
+    owner = relationship("User", back_populates="venues")
+    conference = relationship("Conference", back_populates="venues")
