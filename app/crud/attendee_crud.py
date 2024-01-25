@@ -184,6 +184,7 @@ def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, l
         conference = db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id).first()
         conference.__dict__.pop('client_id')
         conferences_crud.add_client_details_to_conference(db=db, conference=conference)
+        conferences_crud.add_venue_details_to_conference(db=db, conference=conference)
         conferences.append(conference)
     return conferences
 

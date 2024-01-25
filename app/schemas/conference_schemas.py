@@ -8,8 +8,6 @@ import logging
 class ConferenceBase(BaseModel):
     name: str
     location: str
-    venue_name: str
-    venue_location: str
     start_date: date = Field(..., description="Date format: YYYY-MM-DD")
     end_date: date = Field(..., description="Date format: YYYY-MM-DD")
     description: str | None = None
@@ -19,7 +17,7 @@ class ConferenceBase(BaseModel):
     conference_banner_url: str | None = None
     information_guide: str
 
-    @field_validator('name','location','venue_name','venue_location','information_guide')
+    @field_validator('name','location','information_guide')
     def value_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
             logging.exception(f"{info.field_name} cannot be empty")
@@ -43,9 +41,17 @@ class ConferenceBase(BaseModel):
     
 class ConferenceCreate(ConferenceBase):
     client_id: str | None = None
+    venue_id: str
+
+    @field_validator('venue_id')
+    def venue_id_is_not_empty(cls, v, info: ValidationInfo):
+        if v.strip() == "":
+            logging.exception(f"{info.field_name} cannot be empty")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+        return v
 
     @field_validator('client_id')
-    def client_id_is_not_empty(cls, v):
+    def value_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
                 return None
@@ -56,8 +62,7 @@ class ConferenceUpdate(BaseModel):
     client_id: str | None = None
     name: str | None = None
     location: str | None = None
-    venue_name: str | None = None
-    venue_location: str | None = None
+    venue_id: str | None = None
     start_date: date | None = Field(default=None, description="Date format: YYYY-MM-DD")
     end_date: date | None = Field(default=None, description="Date format: YYYY-MM-DD")
     description: str | None = None
@@ -74,7 +79,7 @@ class ConferenceUpdate(BaseModel):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {info.field_name}")
         return v
 
-    @field_validator('name','client_id','location','venue_name','venue_location','description','conference_logo','registration_link','information_guide','conference_banner_url','timezone')
+    @field_validator('name','client_id','location','description','venue_id','conference_logo','registration_link','information_guide','conference_banner_url','timezone')
     def value_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -107,6 +112,8 @@ class ClientDetails(BaseModel):
 class Conference(ConferenceBase):
     uuid: str = Field(serialization_alias="id")
     client_details: ClientDetails | None = None
+    venue_name: str
+    venue_location: str
     
     class Config:
         orm_mode = True

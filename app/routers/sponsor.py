@@ -40,7 +40,7 @@ def get_all_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(ge
     logging.info("Sponsors retrieved")
     return sponsors
 
-@router.get("/sponsors/id/{sponsor_id}", response_model=schemas.Sponsor)
+@router.get("/sponsors/{sponsor_id}", response_model=schemas.Sponsor)
 def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), basic_auth=Depends(basic_auth)):
     sponsor = sponsors_crud.get_sponsor_by_uuid(db=db, uuid=sponsor_id)
     if sponsor is None:

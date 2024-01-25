@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from ..schemas import conference_schemas as schemas
-from ..crud import conferences_crud as crud, users_crud, client_crud
+from ..crud import conferences_crud as crud, users_crud, client_crud, venue_crud
 from ..dependencies import get_db
 from .. import basicauth
 from datetime import date
@@ -20,10 +20,14 @@ def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session
     if not users_crud.get_user(db, user_id=current_user.id):
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    db_venue = venue_crud.get_venue_by_id(db, venue_id=conference.venue_id, owner_id=current_user.id)
+    if db_venue is None:
+        logging.exception("Venue not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Venue not found")
     if conference.start_date > conference.end_date or conference.start_date < date.today():
         logging.exception("Invalid date range")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date range")
-    db_conference = crud.create_user_conference(db=db, conference=conference, user_id=current_user.id)
+    db_conference = crud.create_user_conference(db=db, conference=conference, user_id=current_user.id, venue_id=db_venue.id)
     logging.info("Conference created: " + db_conference.uuid)
     return db_conference 
 
@@ -75,6 +79,10 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
     if db_conference is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
+    db_venue = venue_crud.get_venue_by_id(db, venue_id=conference.venue_id, owner_id=current_user.id)
+    if db_venue is None:
+        logging.exception("Venue not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Venue not found")
     if conference.start_date is not None and conference.end_date is not None:
         if conference.start_date > conference.end_date or conference.start_date < date.today():
             logging.exception("Invalid date range")
@@ -83,7 +91,7 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
         if not client_crud.get_client_by_uuid(db, client_uuid=conference.client_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
     updated_conference = crud.update_user_conference(db=db, conference=conference, db_conference=db_conference)
-    logging.info("Conference updated: " + updated_conference.uuid)
+    # logging.info("Conference updated: " + updated_conference.uuid)
     return updated_conference
 
 @router.delete("/conferences/{conference_id}")

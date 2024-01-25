@@ -1,0 +1,69 @@
+from sqlalchemy.orm import Session
+from sqlalchemy import or_
+from ..schemas import venue_schemas
+from .. import models
+import uuid
+from datetime import datetime
+
+def get_all_venues(db: Session, offset: int, limit: int):
+    return db.query(models.Venue).offset(offset).limit(limit).all()
+
+def get_all_venues_by_owner_id(db: Session, owner_id: int, offset: int, limit: int):
+    return db.query(models.Venue).filter(models.Venue.owner_id == owner_id).offset(offset).limit(limit).all()
+
+def get_venue_by_id(db: Session, venue_id: str, owner_id: int):
+    return db.query(models.Venue).filter(models.Venue.uuid == venue_id, models.Venue.owner_id == owner_id).first()
+
+def create_venue(db: Session, venue: venue_schemas.VenueCreate, owner_id: int):
+    db_venue = models.Venue(**venue.model_dump(), owner_id=owner_id)
+    db_venue.created_on = db_venue.updated_on = datetime.utcnow()
+    db_venue.uuid = 'ven-' + str(uuid.uuid4())
+    db.add(db_venue)
+    db.commit()
+    db.refresh(db_venue)
+    return db_venue
+
+def update_venue(db: Session, venue: venue_schemas.VenueUpdate, db_venue: models.Venue):
+    venue_dict = venue.model_dump()
+    db_venue.geo_location = venue_dict.pop('geo_location')
+    venue_dict.pop('id')
+
+    for key, value in venue_dict.items():
+        if value is not None:
+            setattr(db_venue, key, value)
+
+    db_venue.updated_on = datetime.utcnow()
+
+    db.commit()
+    db.refresh(db_venue)
+    return db_venue
+
+def delete_venue(db: Session, db_venue: models.Venue):
+    db.delete(db_venue)
+    db.commit()
+    return True
+
+def fill_the_db(db: Session):
+    # db_venue_info = db.query(models.Conference.venue_name, models.Conference.venue_location, models.Conference.owner_id, models.Conference.location).filter(or_(models.Conference.venue_name != 'None', models.Conference.venue_location != 'None')).group_by(models.Conference.venue_name, models.Conference.venue_location, models.Conference.owner_id, models.Conference.location).all()
+    # db_venue_info = [{"venue_name": x[0], "venue_location": x[1], "owner_id": x[2], "location": x[3]} for x in db_venue_info]
+
+    # for venue in db_venue_info:
+    #     db_venue = models.Venue(owner_id=venue['owner_id'], name=venue['venue_name'], location=venue['venue_location'], address=venue['location'])
+    #     db_venue.created_on = db_venue.updated_on = datetime.utcnow()
+    #     db_venue.geo_location = None
+    #     db_venue.uuid = 'ven-' + str(uuid.uuid4())
+    #     db.add(db_venue)
+    #     db.commit()
+    #     db.refresh(db_venue)
+
+    db_venues = db.query(models.Venue).all()
+    db_confereces = db.query(models.Conference).all()
+
+    for venue in db_venues:
+        for conference in db_confereces:
+            if conference.venue_name == venue.name and conference.venue_location == venue.location and conference.owner_id == venue.owner_id and conference.location == venue.address:
+                conference.venue_id = venue.id
+                db.commit()
+                db.refresh(conference)
+
+    return True
