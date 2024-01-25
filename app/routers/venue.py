@@ -66,8 +66,3 @@ def delete_venue(venue_id: str, db: Session = Depends(get_db), current_user: Use
     db_venue = crud.delete_venue(db, db_venue)
     logging.info(f"Venue deleted successfully: {venue_id}")
     return db_venue
-
-@router.post("/venues/fill the db")
-def fill_the_db(db: Session = Depends(get_db)):
-    updated = crud.fill_the_db(db)
-    return {"message": f"DB filled successfully - {updated}"}

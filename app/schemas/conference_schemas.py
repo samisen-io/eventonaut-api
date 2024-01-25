@@ -117,3 +117,12 @@ class Conference(ConferenceBase):
     
     class Config:
         orm_mode = True
+
+class ConferenceListSummary(BaseModel):
+    no_of_events: int
+    first_event_start_date: date
+    last_event_end_date: date
+    no_of_sponsors: int
+    no_of_clients: int
+    number_of_attendees: int
+    

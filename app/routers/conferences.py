@@ -149,3 +149,9 @@ def get_conference_by_conference_id(conference_id: str, db: Session = Depends(ge
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     logging.info("Conference retrieved: " + conference.uuid)
     return conference
+
+@router.get("/event-list-summary", response_model=schemas.ConferenceListSummary)
+def get_conference_list_summary(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+    conference_list_summary = crud.get_event_list_summary(db, current_user.id)
+    logging.info("Conference list summary retrieved for owner id: " + current_user.uuid)
+    return conference_list_summary

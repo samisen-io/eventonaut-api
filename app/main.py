@@ -47,11 +47,11 @@ app.add_middleware(
 
 # Add the routers to the application with authentication middleware
 app.include_router(options_router)
-app.include_router(venue.router)
 app.include_router(upload_image.router)
 app.include_router(users.router)
 app.include_router(client.router)
 app.include_router(conferences.router)
+app.include_router(venue.router)
 app.include_router(speakers.router)
 app.include_router(promotions.router)
 app.include_router(sponsor.router)
