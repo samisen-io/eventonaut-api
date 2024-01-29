@@ -51,7 +51,7 @@ class ConferenceCreate(ConferenceBase):
         return v
 
     @field_validator('client_id')
-    def value_not_empty(cls, v, info: ValidationInfo):
+    def client_id_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
                 return None
