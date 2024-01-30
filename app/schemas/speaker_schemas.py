@@ -19,7 +19,7 @@ class SpeakerBase(BaseModel):
     def validate_bio(cls, bio):
         if bio.strip() == "":
             raise HTTPException(status_code=400, detail="Invalid bio")
-        elif len(bio) > 2000:
+        elif len(bio) > 2048:
             raise HTTPException(status_code=400, detail="Bio too long")
         return bio
     
@@ -73,7 +73,7 @@ class SpeakerUpdate(BaseModel):
         if v is not None:
             if v.strip() == "":
                 return None
-            max_length = 2040 if info.field_name == "bio" else 256
+            max_length = 2048 if info.field_name == "bio" else 256
             if len(v) > max_length:
                 raise HTTPException(status_code=400, detail=f"{info.field_name} must be less than {max_length} characters")
         return v
