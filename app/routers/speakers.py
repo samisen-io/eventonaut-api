@@ -81,7 +81,3 @@ def delete_speaker(speaker_id: str, db: Session = Depends(get_db), current_user:
     deleted_speaker = crud.delete_speaker(db=db, speaker_id=speaker_id)
     logging.info("Speaker deleted: " + speaker_id)
     return deleted_speaker
-
-# @router.post("/fill_db")
-# def fill_the_db(db: Session = Depends(get_db)):
-#     return crud.fill_the_db(db)
