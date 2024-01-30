@@ -20,7 +20,7 @@ router = APIRouter(tags=['OTP'])
 cache = TTLCache(maxsize=1024, ttl=default_time_limit)
 
 @router.post('/otp')
-async def send_otp(email: str, email_subject: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+async def send_otp(email: str, email_subject: str, role: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     global cache
     try:
         valid = validate_email(email)
@@ -32,20 +32,26 @@ async def send_otp(email: str, email_subject: str, db: Session = Depends(get_db)
     if not user:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    elif user.role != role:
+        logging.exception("Email not found")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not found")
     otp = generate_otp()
     if not send_mail(otp, email_subject, email):
         logging.exception("Email not sent")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not sent")
-    cache[email] = [otp, False]
+    cache[email] = [otp, False, user.role]
     logging.info("OTP sent to Email")
     return {"msg": "OTP sent successfully"}
 
 @router.post('/otp/verify')
-async def verify_otp(email: str, otp: str, basic_auth = Depends(basicauth.basic_auth)):
+async def verify_otp(email: str, otp: str, role: str, basic_auth = Depends(basicauth.basic_auth)):
     global cache
     if email not in cache.keys():
-        logging.exception("Email not found")
+        logging.exception("Email not verified")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not verified")
+    elif cache[email][2] != role:
+        logging.exception("Email not found")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not found")
     if len(otp) != 6:
         logging.exception("Invalid OTP")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP")
@@ -60,9 +66,12 @@ async def verify_otp(email: str, otp: str, basic_auth = Depends(basicauth.basic_
     return {"msg": "OTP verified successfully"}
 
 @router.put('/otp/passwordreset')
-async def password_reset(email: str, password: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+async def password_reset(email: str, password: str, role: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     global cache
-    if email in cache.keys() and cache[email][1]:
+    if email not in cache.keys() or cache[email][2] != role:
+        logging.exception("Email not found")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not found")
+    elif email in cache.keys() and cache[email][1]:
         crud.update_user_password_by_email(db=db, email=email, password=password)
         del cache[email]
         logging.info("Password updated for Email")
@@ -72,6 +81,6 @@ async def password_reset(email: str, password: str, db: Session = Depends(get_db
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP not verified")
     
 @router.put('/otp/password-reset-attendee')
-async def password_reset_attendee(otp:str, email: str, password: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
-    await verify_otp(email=email,otp=otp)
-    return await password_reset(email=email,password=password,db=db)
+async def password_reset_attendee(otp:str, email: str, password: str, role: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    await verify_otp(email=email,otp=otp,role=role)
+    return await password_reset(email=email,password=password,db=db,role=role)
