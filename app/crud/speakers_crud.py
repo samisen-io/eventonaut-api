@@ -6,8 +6,8 @@ from .. import models
 from datetime import datetime
 import random
 
-def get_speaker_by_name(db: Session, name: str):
-    return db.query(Speakers).filter(Speakers.name.ilike(name)).first()
+def get_speaker_by_email(db: Session, email: str, owner_id: int):
+    return db.query(Speakers).filter(Speakers.email.ilike(email), Speakers.owner_id == owner_id).first()
 
 def get_speaker_by_uuid(db: Session, uuid: str, owner_id: int):
     return db.query(Speakers).filter(Speakers.uuid == uuid, Speakers.owner_id == owner_id).first()
