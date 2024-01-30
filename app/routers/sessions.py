@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from ..schemas import session_schemas as schemas
-from ..crud import sessions_crud as crud, conferences_crud
+from ..crud import sessions_crud as crud, conferences_crud, speakers_crud
 from ..dependencies import get_db
 from .. import basicauth
 from datetime import date
@@ -23,7 +23,14 @@ def create_session_for_conference(session: schemas.SessionCreate, db: Session = 
     if session.start_time > session.end_time:
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
-    session=crud.create_conference_session(db=db, session=session, owner_id=current_user.id,conference_id=conference.id)
+    session_speaker_ids = []
+    for speaker_id in session.speakers:
+        speaker = speakers_crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
+        if speaker is None:
+            logging.exception("Speaker not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
+        session_speaker_ids.append(speaker.id)
+    session=crud.create_conference_session(db=db, session=session, owner_id=current_user.id,conference_id=conference.id, speaker_ids=session_speaker_ids)
     logging.info("Session created: " + session.uuid)
     return session
 
@@ -46,7 +53,14 @@ def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Se
         if session.start_time > session.end_time:
             logging.exception("Invalid time")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
-        session_list.append(crud.create_conference_session(db=db, session=session, owner_id=current_user.id,conference_id=conference.id))
+        session_speaker_ids = []
+        for speaker_id in session.speakers:
+            speaker = speakers_crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
+            if speaker is None:
+                logging.exception("Speaker not found")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
+            session_speaker_ids.append(speaker.id)
+        session_list.append(crud.create_conference_session(db=db, session=session, owner_id=current_user.id,conference_id=conference.id, speaker_ids=session_speaker_ids))
 
     logging.info("Sessions created for conference: " + session.conference_id)
     return session_list
@@ -97,7 +111,14 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
     if session.start_time is not None and session.end_time is not None and session.start_time > session.end_time:
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
-    updated_session = crud.update_session(db=db, session=session, db_session=db_session)
+    session_speaker_ids = []
+    for speaker_id in session.speakers:
+        speaker = speakers_crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
+        if speaker is None:
+            logging.exception("Speaker not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
+        session_speaker_ids.append(speaker.id)
+    updated_session = crud.update_session(db=db, session=session, db_session=db_session, speaker_ids=session_speaker_ids)
     logging.info("Session updated: " + updated_session.uuid)
     return updated_session
 
