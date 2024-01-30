@@ -107,6 +107,7 @@ class Speakers(Base):
     updated_on = Column(DateTime)
     owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
+    email = Column(String, index=True, unique=True)
     title = Column(String, index=True)
     bio = Column(String, index=True)
     profile_image_url = Column(String, index=True)
