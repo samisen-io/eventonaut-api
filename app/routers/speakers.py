@@ -19,13 +19,31 @@ def create_speaker(speaker: schemas.SpeakerCreate, db: Session = Depends(get_db)
     logging.info("Speaker created: " + speaker.uuid)
     return speaker
 
-@router.get("/speakers", response_model=list[schemas.Speaker])
+@router.get("/speakers/get-all-speakers", response_model=list[schemas.Speaker])
 def get_all_speakers(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     speakers = crud.get_all_speakers(db, offset=offset, limit=limit)
     if speakers is None or len(speakers) == 0:
         logging.exception("Speaker not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
     logging.info("All speakers got retrieved")
+    return speakers
+
+@router.get("/speakers/conference/{conference_id}", response_model=list[schemas.Speaker])
+def get_speakers_by_conference_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+    speakers = crud.get_speakers_by_conference_id_owner_id(db=db, conference_id=conference_id, owner_id=current_user.id)
+    if speakers is None or len(speakers) == 0:
+        logging.exception("Speaker not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
+    logging.info("Speakers retrieved for conference: " + conference_id)
+    return speakers
+
+@router.get("/speakers", response_model=list[schemas.Speaker])
+def get_speakers_by_owner_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+    speakers = crud.get_speakers_by_owner_id(db=db, owner_id=current_user.id, offset=offset, limit=limit)
+    if speakers is None or len(speakers) == 0:
+        logging.exception("Speaker not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
+    logging.info("Speakers retrieved for owner: " + str(current_user.id))
     return speakers
 
 @router.get("/speakers/{speaker_id}", response_model=schemas.Speaker)
@@ -63,3 +81,7 @@ def delete_speaker(speaker_id: str, db: Session = Depends(get_db), current_user:
     deleted_speaker = crud.delete_speaker(db=db, speaker_id=speaker_id)
     logging.info("Speaker deleted: " + speaker_id)
     return deleted_speaker
+
+# @router.post("/fill_db")
+# def fill_the_db(db: Session = Depends(get_db)):
+#     return crud.fill_the_db(db)
