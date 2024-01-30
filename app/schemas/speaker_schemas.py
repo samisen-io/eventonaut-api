@@ -1,45 +1,32 @@
 from pydantic import BaseModel, validator, Field, field_validator, ValidationInfo
-from fastapi import HTTPException
+from fastapi import HTTPException, status
+import logging
 
 class SpeakerBase(BaseModel):
     name: str
+    email: str
     title: str
     bio: str
     profile_image_url: str | None = None
 
-    @validator('name')
-    def validate_name(cls, v):
+    @field_validator('name','email','title','bio')
+    def validate_fields(cls, v, info: ValidationInfo):
         if v.strip() == "":
-            raise HTTPException(status_code=400, detail="Invalid name")
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Name too long")
+            logging.exception(f"{info.field_name} cannot be empty")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+        max_length = 2048 if info.field_name == "bio" else 256
+        if len(v) > max_length:
+            raise HTTPException(status_code=400, detail=f"{info.field_name} must be less than {max_length} characters")
         return v
-
-    @validator('bio')
-    def validate_bio(cls, bio):
-        if bio.strip() == "":
-            raise HTTPException(status_code=400, detail="Invalid bio")
-        elif len(bio) > 2048:
-            raise HTTPException(status_code=400, detail="Bio too long")
-        return bio
     
-    @validator('title')
-    def validate_title(cls, title):
-        if title.strip() == "":
-            raise HTTPException(status_code=400, detail="Invalid title")
-        elif len(title) > 256:
-            raise HTTPException(status_code=400, detail="Title too long")
-        return title
-    
-    @validator('profile_image_url')
-    def validate_profile_image_url(cls, v):
+    @field_validator('profile_image_url')
+    def validate_profile_image_url(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
                 return None
             elif len(v) > 256:
-                raise HTTPException(status_code=400, detail="Profile image url too long")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Profile image url too long")
         return v
-
 
 class SpeakerCreate(SpeakerBase):
     conference_id: str
