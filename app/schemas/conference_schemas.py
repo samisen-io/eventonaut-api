@@ -1,8 +1,7 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from fastapi import HTTPException, status
 from datetime import date
-from .settings_schemas import Settings
-from .session_schemas import Session
+from ..schemas.venue_schemas import Venue
 import logging
 
 class ConferenceBase(BaseModel):
@@ -112,8 +111,7 @@ class ClientDetails(BaseModel):
 class Conference(ConferenceBase):
     uuid: str = Field(serialization_alias="id")
     client_details: ClientDetails | None = None
-    venue_name: str
-    venue_location: str
+    venue_details: Venue | None
     
     class Config:
         orm_mode = True

@@ -18,8 +18,7 @@ def add_client_details_to_conference(db: Session, conference: dict):
 
 def add_venue_details_to_conference(db: Session, conference: dict):
     db_venue = db.query(models.Venue).filter(models.Venue.id == conference.venue_id).first()
-    conference.venue_name = db_venue.name
-    conference.venue_location = db_venue.location
+    conference.venue_details = None if db_venue is None else db_venue
     return conference
 
 # get all conferences ordered by start date in descending order

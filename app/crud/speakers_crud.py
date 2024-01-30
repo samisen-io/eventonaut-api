@@ -2,10 +2,18 @@ from sqlalchemy.orm import Session
 from ..models import Speakers, Conference
 from ..schemas import speaker_schemas as schemas
 import uuid
+from .. import models
 from datetime import datetime
+import random
 
-def get_speaker_by_name(db: Session, name: str):
-    return db.query(Speakers).filter(Speakers.name.ilike(name)).first()
+def get_speaker_by_email(db: Session, email: str, owner_id: int):
+    return db.query(Speakers).filter(Speakers.email.ilike(email), Speakers.owner_id == owner_id).first()
+
+def get_speaker_by_uuid(db: Session, uuid: str, owner_id: int):
+    return db.query(Speakers).filter(Speakers.uuid == uuid, Speakers.owner_id == owner_id).first()
+
+def get_speakers_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 100):
+    return db.query(Speakers).filter(Speakers.owner_id == owner_id).offset(offset).limit(limit).all()
 
 def create_speaker(db: Session, speaker: schemas.SpeakerCreate):
     conference = db.query(Conference).filter(Conference.uuid == speaker.conference_id).first()
@@ -25,6 +33,13 @@ def get_all_speakers(db: Session, offset: int = 0, limit: int = 100):
 
 def get_speaker(db: Session, speaker_id: uuid):
     return db.query(Speakers).filter(Speakers.uuid == speaker_id).first()
+
+def get_speakers_by_conference_id_owner_id(db: Session, conference_id: str, owner_id: int):
+    conference = db.query(Conference).filter(Conference.uuid == conference_id).first()
+    conference_id = conference.id if conference else None
+    speaker_ids = [speaker.speaker_id for speaker in db.query(models.SessionSpeakers).filter(models.SessionSpeakers.conference_id == conference_id).all()]
+    db_speakers = db.query(Speakers).filter(Speakers.id.in_(speaker_ids)).all()
+    return db_speakers
 
 def get_speakers_by_conference_id(db: Session, conference_uuid: str):
     conference = db.query(Conference).filter(Conference.uuid == conference_uuid).first()
@@ -47,7 +62,6 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
     db.commit()
     db.refresh(db_speaker)
     return db_speaker
-
 
 def delete_speaker(db: Session, speaker_id: str):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker_id).first()
