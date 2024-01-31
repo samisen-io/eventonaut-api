@@ -29,6 +29,7 @@ class User(Base):
     client = relationship("Client", back_populates="owner")
     venues = relationship("Venue", back_populates="owner")
     speakers = relationship("Speakers", back_populates="owner")
+    sponsors = relationship("Sponsors", back_populates="owner")
 
 class Client(Base):
     __tablename__ = "clients"
@@ -82,9 +83,9 @@ class Conference(Base):
     attendee_conference = relationship("Attendee_Conferences", back_populates="conference")
     aitokens = relationship("AITokens", back_populates="conference")
     promotions = relationship("Promotions", back_populates="conference")
-    sponsors = relationship("Sponsors", back_populates="conference")
     venues = relationship("Venue", back_populates="conference")
     sessions_speakers = relationship("SessionSpeakers", back_populates="conference")
+    event_sponsors = relationship("EventSponsors", back_populates="conference")
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -293,7 +294,7 @@ class Sponsors(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
     description = Column(String, index=True)
     email = Column(String, index=True)
@@ -302,7 +303,21 @@ class Sponsors(Base):
     logo_image_url = Column(String, index=True)
     sponsorship_level = Column(String, index=True)
 
-    conference = relationship("Conference", back_populates="sponsors")
+    owner = relationship("User", back_populates="sponsors")
+    event_sponsors = relationship("EventSponsors", back_populates="sponsors")
+
+class EventSponsors(Base):
+    __tablename__ = "event_sponsors"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    sponsor_id = Column(Integer, ForeignKey("sponsors.id"))
+
+    conference = relationship("Conference", back_populates="event_sponsors")
+    sponsors = relationship("Sponsors", back_populates="event_sponsors")
 
 class Venue(Base):
     __tablename__ = "venues"
