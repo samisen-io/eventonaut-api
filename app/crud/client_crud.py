@@ -38,6 +38,7 @@ def update_client(db: Session, client: schemas.ClientUpdate):
     
     client_dict = client.model_dump()
     client_dict.pop("id")
+    db_client.profile_image_url = client_dict.pop("profile_image_url")
     
     for key, value in client_dict.items():
         if value is not None:
