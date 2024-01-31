@@ -4,6 +4,7 @@ import json
 import sys
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile, status
+from fastapi.responses import StreamingResponse
 from app.crud.aitokens_crud import insert_aitoken
 from app.file_reader import read_file_return_csv
 from app.pinecone_operations import arranging_ouput_object, create_namespace, create_vector_db, delete_namespace, delete_vector_db
@@ -17,7 +18,7 @@ from app.routers.sessions import create_session_for_conference
 from app.schemas.query_schema import QueryInput
 from app.schemas.user_schemas import UserAuthentication as User
 from ..data_ingestion import add_documents, write_events_to_csv, write_sessions_to_csv, write_speakers_to_csv
-from ..data_query import query_document
+from ..data_query import query_document, retrieve_answer_stream
 from ..crud import conferences_crud, result_crud
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
@@ -36,6 +37,28 @@ async def delete_index(current_user: User = Security(get_current_active_user, sc
     logging.info("Deleted index: " + status)
     return status
 
+@router.post("/query_the_document_stream/")
+async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+    conference_id = query_input.conference_id
+    question = query_input.question
+    conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)  
+    if not conference:
+        logging.exception("Conference not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
+    async def event_stream():
+        async for chunk in retrieve_answer_stream(question,conference_id):
+            if isinstance(chunk, list):
+                source = chunk
+                continue
+            yield(chunk)
+        yield ' #@!SAMISEN!@# '
+        objects = result_crud.get_objects(db=db, objects=source)
+        objects_dict = [{k: datetime_to_str(v) for k, v in obj.__dict__.items() if not k.startswith('_')} for obj in objects]
+        json_data = json.dumps(objects_dict)
+        final_result = arranging_ouput_object(json_data)
+        yield final_result
+    return StreamingResponse(event_stream())
+    
 @router.post("/query_the_document/")
 async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     start_time = datetime.utcnow()
