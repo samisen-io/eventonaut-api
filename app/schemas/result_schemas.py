@@ -20,9 +20,9 @@ class Event(BaseModel):
     start_date: date
     end_date: date
     description: str
-    conference_logo: str
-    timezone: str
-    registration_link: str
+    conference_logo: str | None = None
+    timezone: str | None = None
+    registration_link: str | None = None
     information_guide: str
     rank: int
 
