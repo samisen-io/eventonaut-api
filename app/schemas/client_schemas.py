@@ -1,5 +1,5 @@
-from pydantic import BaseModel, validator, Field
-from fastapi import HTTPException
+from pydantic import BaseModel, field_validator, validator, Field, ValidationInfo
+from fastapi import HTTPException, status
 
 class ClientBase(BaseModel):
     name: str
@@ -52,10 +52,11 @@ class ClientBase(BaseModel):
     
     @validator('profile_image_url')
     def profile_image_url_is_not_empty(cls, v):
-        if v.strip() == "":
-            return None
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Profile image url too long")
+        if v is not None:
+            if v.strip() == "":
+                return None
+            elif len(v) > 256:
+                raise HTTPException(status_code=400, detail="Profile image url too long")
         return v
 
 class ClientUpdate(BaseModel):
@@ -68,60 +69,22 @@ class ClientUpdate(BaseModel):
     address: str | None = None
     profile_image_url: str | None = None
 
-    @validator('id')
-    def id_is_not_empty(cls, v):
-        if v is None or v.strip() == "":
-            return None
+    @field_validator('id')
+    def id_is_not_empty(cls, v, info: ValidationInfo):
+        if v == "":
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
         elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Id too long")
-        return v
-
-    @validator('name')
-    def name_is_not_empty(cls, v):
-        if v is not None and v.strip() == "":
-            return None
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Name too long")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than 256 characters")
         return v
     
-    @validator('contact_name')
-    def contact_name_is_not_empty(cls, v):
-        if v is not None and v.strip() == "" :
-            return None
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Contact name too long")
-        return v
-    
-    @validator('contact_email')
-    def contact_email_is_not_empty(cls, v):
-        if v is not None and v.strip() == "":
-            return None
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Contact email too long")
-        return v
-    
-    @validator('contact_phone')
-    def contact_phone_is_not_empty(cls, v):
-        if v is not None and v.strip() == "":
-            return None
-        elif len(v) > 15:
-            raise HTTPException(status_code=400, detail="Contact phone too long")
-        return v
-    
-    @validator('address')
-    def address_is_not_empty(cls, v):
-        if v is not None and v.strip() == "":
-            return None
-        elif len(v) > 15:
-            raise HTTPException(status_code=400, detail="Address too long")
-        return v
-
-    @validator('profile_image_url')
-    def profile_image_url_is_not_empty(cls, v):
-        if v is not None and v.strip() == "":
-            return None
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Profile image url too long")
+    @field_validator('contact_phone', 'contact_email', 'contact_name', 'name', 'address', 'profile_image_url')
+    def check_empty_string(cls, v, info: ValidationInfo):
+        if v is not None:
+            if v == "":
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+            max_length = 15 if info.field_name == 'contact_phone' or info.field_name == 'address' else 256
+            if len(v) > max_length:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than {max_length} characters")
         return v
 
 class ClientCreate(ClientBase):
