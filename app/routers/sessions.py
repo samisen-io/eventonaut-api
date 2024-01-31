@@ -6,7 +6,6 @@ from app.oauth2 import get_current_active_user
 from ..schemas import session_schemas as schemas
 from ..crud import sessions_crud as crud, conferences_crud, speakers_crud
 from ..dependencies import get_db
-from .. import basicauth
 from datetime import date
 
 router = APIRouter(tags=["sessions"])
@@ -80,11 +79,11 @@ def get_all_sessions(offset: int = 0, limit: int = 100, db: Session = Depends(ge
     return db_sessions
 
 @router.get("/sessions/{conference_id}", response_model=list[schemas.Session])
-def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_db),basic_auth = Depends(basicauth.basic_auth)):
-    if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
+def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+    if conferences_crud.get_conference_by_uuid(db, uuid=conference_id, owner_id=current_user.id) is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    db_sessions = crud.get_all_sessions_by_uuid_id(db, conference_uuid=conference_id)
+    db_sessions = crud.get_all_sessions_by_uuid_id(db, conference_uuid=conference_id, owner_id=current_user.id)
     if db_sessions is None or len(db_sessions) == 0:
         logging.exception("No sessions found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
