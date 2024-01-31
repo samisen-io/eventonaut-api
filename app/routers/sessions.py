@@ -29,7 +29,8 @@ def create_session_for_conference(session: schemas.SessionCreate, db: Session = 
         if speaker is None:
             logging.exception("Speaker not found")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
-        session_speaker_ids.append(speaker.id)
+        if speaker.id not in session_speaker_ids:
+            session_speaker_ids.append(speaker.id)
     session=crud.create_conference_session(db=db, session=session, owner_id=current_user.id,conference_id=conference.id, speaker_ids=session_speaker_ids)
     logging.info("Session created: " + session.uuid)
     return session
@@ -59,7 +60,8 @@ def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Se
             if speaker is None:
                 logging.exception("Speaker not found")
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
-            session_speaker_ids.append(speaker.id)
+            if speaker.id not in session_speaker_ids:
+                session_speaker_ids.append(speaker.id)
         session_list.append(crud.create_conference_session(db=db, session=session, owner_id=current_user.id,conference_id=conference.id, speaker_ids=session_speaker_ids))
 
     logging.info("Sessions created for conference: " + session.conference_id)
@@ -117,7 +119,8 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
         if speaker is None:
             logging.exception("Speaker not found")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
-        session_speaker_ids.append(speaker.id)
+        if speaker.id not in session_speaker_ids:
+            session_speaker_ids.append(speaker.id)
     updated_session = crud.update_session(db=db, session=session, db_session=db_session, speaker_ids=session_speaker_ids)
     logging.info("Session updated: " + updated_session.uuid)
     return updated_session
