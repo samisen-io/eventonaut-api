@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from ..schemas import conference_schemas as schemas
-from ..crud import conferences_crud as crud, users_crud, client_crud, venue_crud
+from ..crud import conferences_crud as crud, users_crud, client_crud, venue_crud, sponsors_crud
 from ..dependencies import get_db
 from .. import basicauth
 from datetime import date
@@ -27,7 +27,16 @@ def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session
     if conference.start_date > conference.end_date or conference.start_date < date.today():
         logging.exception("Invalid date range")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date range")
-    db_conference = crud.create_user_conference(db=db, conference=conference, user_id=current_user.id, venue_id=db_venue.id)
+    sponsors_ids = []
+    if conference.sponsor_ids is not None and len(conference.sponsor_ids) > 0:
+        for sponsor_id in conference.sponsor_ids:
+            db_sponsor = sponsors_crud.get_sponsor_by_uuid(db, uuid=sponsor_id, owner_id=current_user.id)
+            if not db_sponsor:
+                logging.exception("Sponsor not found")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsor not found")
+            if db_sponsor.id not in sponsors_ids:
+                sponsors_ids.append(db_sponsor.id)
+    db_conference = crud.create_user_conference(db=db, conference=conference, user_id=current_user.id, venue_id=db_venue.id, sponsor_ids=sponsors_ids)
     logging.info("Conference created: " + db_conference.uuid)
     return db_conference 
 
@@ -79,10 +88,11 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
     if db_conference is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    db_venue = venue_crud.get_venue_by_id(db, venue_id=conference.venue_id, owner_id=current_user.id)
-    if db_venue is None:
-        logging.exception("Venue not found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Venue not found")
+    if conference.venue_id is not None:
+        db_venue = venue_crud.get_venue_by_id(db, venue_id=conference.venue_id, owner_id=current_user.id)
+        if db_venue is None:
+            logging.exception("Venue not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Venue not found")
     if conference.start_date is not None and conference.end_date is not None:
         if conference.start_date > conference.end_date or conference.start_date < date.today():
             logging.exception("Invalid date range")
@@ -90,8 +100,17 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
     if conference.client_id is not None:
         if not client_crud.get_client_by_uuid(db, client_uuid=conference.client_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-    updated_conference = crud.update_user_conference(db=db, conference=conference, db_conference=db_conference)
-    # logging.info("Conference updated: " + updated_conference.uuid)
+    sponsors_ids = []
+    if conference.sponsor_ids is not None and len(conference.sponsor_ids) > 0:
+        for sponsor_id in conference.sponsor_ids:
+            db_sponsor = sponsors_crud.get_sponsor_by_uuid(db, uuid=sponsor_id, owner_id=current_user.id)
+            if not db_sponsor:
+                logging.exception("Sponsor not found")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsor not found")
+            if db_sponsor.id not in sponsors_ids:
+                sponsors_ids.append(db_sponsor.id)
+    updated_conference = crud.update_user_conference(db=db, conference=conference, db_conference=db_conference, sponsor_ids=sponsors_ids)
+    logging.info("Conference updated: " + updated_conference.uuid)
     return updated_conference
 
 @router.delete("/conferences/{conference_id}")
