@@ -28,6 +28,7 @@ class User(Base):
     settings = relationship("Settings", back_populates="owner")
     client = relationship("Client", back_populates="owner")
     venues = relationship("Venue", back_populates="owner")
+    speakers = relationship("Speakers", back_populates="owner")
 
 class Client(Base):
     __tablename__ = "clients"
@@ -80,10 +81,10 @@ class Conference(Base):
     conference_files = relationship("Conference_Files", back_populates="conference")
     attendee_conference = relationship("Attendee_Conferences", back_populates="conference")
     aitokens = relationship("AITokens", back_populates="conference")
-    speakers = relationship("Speakers", back_populates="conference")
     promotions = relationship("Promotions", back_populates="conference")
     sponsors = relationship("Sponsors", back_populates="conference")
     venues = relationship("Venue", back_populates="conference")
+    sessions_speakers = relationship("SessionSpeakers", back_populates="conference")
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -104,13 +105,30 @@ class Speakers(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
+    email = Column(String, index=True, unique=True)
     title = Column(String, index=True)
     bio = Column(String, index=True)
     profile_image_url = Column(String, index=True)
 
-    conference = relationship("Conference", back_populates="speakers")
+    sessions_speakers = relationship("SessionSpeakers", back_populates="speaker")
+    owner = relationship("User", back_populates="speakers")
+
+class SessionSpeakers(Base):
+    __tablename__ = "session_speakers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    session_id = Column(Integer, ForeignKey("sessions.id"))
+    speaker_id = Column(Integer, ForeignKey("speakers.id"))
+
+    session = relationship("Session", back_populates="sessions_speakers")
+    speaker = relationship("Speakers", back_populates="sessions_speakers")
+    conference = relationship("Conference", back_populates="sessions_speakers")
 
 # class to define session table
 class Session(Base):
@@ -127,7 +145,6 @@ class Session(Base):
     date = Column(DATE, index=True) 
     location = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
-    speakers = Column(ARRAY(String), index=True)
     tags = Column(ARRAY(String), index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
     session_image_url = Column(String, index=True)
@@ -135,6 +152,7 @@ class Session(Base):
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
     agenda_session = relationship("AgendaSession", back_populates="session")
+    sessions_speakers = relationship("SessionSpeakers", back_populates="session")
 
 #class to define settings table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class Settings(Base):

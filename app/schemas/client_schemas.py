@@ -8,7 +8,7 @@ class ClientBase(BaseModel):
     contact_phone: str
     address: str
     status: bool
-    profile_image_url: str
+    profile_image_url: str | None = None
 
     @validator('name')
     def name_is_not_empty(cls, v):
@@ -52,8 +52,8 @@ class ClientBase(BaseModel):
     
     @validator('profile_image_url')
     def profile_image_url_is_not_empty(cls, v):
-        if v is None or v.strip() == "":
-            raise HTTPException(status_code=400, detail="Invalid profile image url")
+        if v.strip() == "":
+            return None
         elif len(v) > 256:
             raise HTTPException(status_code=400, detail="Profile image url too long")
         return v
