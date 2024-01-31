@@ -10,10 +10,16 @@ from .. import AI_assitant
 import uuid
 from ..code_generator import generate_unique_string
 
+def add_sponsor_details_to_conference(db: Session, conference: dict):
+    event_sponsors = db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == conference.id).all()
+    conference.sponsor_details = []
+    for event_sponsor in event_sponsors:
+        sponsor = db.query(models.Sponsors).filter(models.Sponsors.id == event_sponsor.sponsor_id).first()
+        conference.sponsor_details.append(sponsor)
+    return conference
+
 def add_client_details_to_conference(db: Session, conference: dict):
-    db_client = db.query(models.Client).filter(models.Client.id == conference.client_id).first()
-    schema_client = None if db_client is None else schemas.ClientDetails(id=db_client.uuid, name=db_client.name)
-    conference.client_details = schema_client
+    conference.client_details = db.query(models.Client).filter(models.Client.id == conference.client_id).first()
     return conference
 
 def add_venue_details_to_conference(db: Session, conference: dict):
@@ -27,6 +33,7 @@ def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
     for conference in conferences:
         conference = add_client_details_to_conference(db=db, conference=conference)
         conference = add_venue_details_to_conference(db=db, conference=conference)
+        conference = add_sponsor_details_to_conference(db=db, conference=conference)
     return conferences
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
@@ -34,6 +41,7 @@ def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 
     for conference in conferences:
         conference = add_client_details_to_conference(db=db, conference=conference)
         conference = add_venue_details_to_conference(db=db, conference=conference)
+        conference = add_sponsor_details_to_conference(db=db, conference=conference)
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
@@ -41,16 +49,18 @@ def get_conferences_by_owner_id(db: Session, owner_id: int):
     for conference in confernces:
         conference = add_client_details_to_conference(db=db, conference=conference)
         conference = add_venue_details_to_conference(db=db, conference=conference)
+        conference = add_sponsor_details_to_conference(db=db, conference=conference)
     return confernces
 
 def get_conference_by_code(db: Session, code: str):
     conference = db.query(models.Conference).filter(models.Conference.code == code).first()
     return conference
 
-def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int, venue_id: int):
+def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int, venue_id: int, sponsor_ids: list[int]):
     conference_dict = conference.model_dump()
     client_id = conference_dict.pop("client_id")
     conference_dict.pop('venue_id')
+    conference_dict.pop('sponsor_ids')
     db_conference = models.Conference(**conference_dict, owner_id=user_id, venue_id=venue_id)
     db_client = db.query(models.Client).filter(models.Client.uuid == client_id).first()
     db_conference.client_id = db_client.id if db_client is not None else None
@@ -69,8 +79,19 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
+
+    if len(sponsor_ids) > 0 and sponsor_ids is not None:
+        for sponsor_id in sponsor_ids:
+            db_event_sponsor = models.EventSponsors(conference_id=db_conference.id, sponsor_id=sponsor_id)
+            db_event_sponsor.created_on = db_event_sponsor.updated_on = datetime.utcnow()
+            db_event_sponsor.uuid = "esp-" + str(uuid.uuid4())
+            db.add(db_event_sponsor)
+            db.commit()
+            db.refresh(db_event_sponsor)
+    
     db_conference = add_client_details_to_conference(db=db, conference=db_conference)
     db_conference = add_venue_details_to_conference(db=db, conference=db_conference)
+    db_conference = add_sponsor_details_to_conference(db=db, conference=db_conference)
     return db_conference
 
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
@@ -81,6 +102,7 @@ def get_conference_by_conference_uuid(db: Session, uuid: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == uuid).first()
     conference = add_client_details_to_conference(db=db, conference=conference) if conference is not None else None
     conference = add_venue_details_to_conference(db=db, conference=conference) if conference is not None else None
+    conference = add_sponsor_details_to_conference(db=db, conference=conference) if conference is not None else None
     return conference
 
 def delete_conference(db: Session, conference: models.Conference):
@@ -98,9 +120,10 @@ def delete_conference(db: Session, conference: models.Conference):
     db.commit()
     return True
 
-def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db_conference: models.Conference):
+def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db_conference: models.Conference, sponsor_ids: list[int]):
     conference_dict = conference.model_dump()
     conference_dict.pop('id')
+    conference_dict.pop('sponsor_ids')
     conference_dict['venue_id'] = db.query(models.Venue).filter(models.Venue.uuid == conference_dict['venue_id']).first().id if conference_dict['venue_id'] is not None else None
 
     non_nullable_feilds = ['name','location','venue_id','start_date','end_date','information_guide']
@@ -121,9 +144,20 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     db_conference.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_conference)
-    # return db_conference
+
+    db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == db_conference.id).delete()
+    if len(sponsor_ids) > 0 and sponsor_ids is not None:
+        for sponsor_id in sponsor_ids:
+            db_event_sponsor = models.EventSponsors(conference_id=db_conference.id, sponsor_id=sponsor_id)
+            db_event_sponsor.created_on = db_event_sponsor.updated_on = datetime.utcnow()
+            db_event_sponsor.uuid = "esp-" + str(uuid.uuid4())
+            db.add(db_event_sponsor)
+            db.commit()
+            db.refresh(db_event_sponsor)
+
     db_conference = add_client_details_to_conference(db=db, conference=db_conference)
     db_conference = add_venue_details_to_conference(db=db, conference=db_conference)
+    db_conference = add_sponsor_details_to_conference(db=db, conference=db_conference)
     return db_conference
 
 def get_event_list_summary(db: Session, owner_id: int):
@@ -138,7 +172,9 @@ def get_event_list_summary(db: Session, owner_id: int):
     total_attendees = 0
 
     for conference in db_conferences:
-        total_sponsors += db.query(models.Sponsors).filter(models.Sponsors.conference_id == conference.id).count()
+        db_event_sponsors_ids = db.query(models.EventSponsors.sponsor_id).filter(models.EventSponsors.conference_id == conference.id).all()
+        db_event_sponsors_ids = set([sponsor_id[0] for sponsor_id in db_event_sponsors_ids])
+        total_sponsors += len(db_event_sponsors_ids)
         total_attendees += db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).count()
 
     return schemas.ConferenceListSummary(no_of_events=total_events, first_event_start_date=first_event_start_date, last_event_end_date=last_event_end_date, no_of_sponsors=total_sponsors, no_of_clients=total_clients, number_of_attendees=total_attendees)
