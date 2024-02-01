@@ -21,6 +21,7 @@ class User(Base):
     role = Column(String, index=True)
     timezone = Column(String, index=True)
     is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
 
     attendees = relationship("Attendee", back_populates="user")
     conferences = relationship("Conference", back_populates="owner")
