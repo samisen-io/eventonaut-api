@@ -7,6 +7,9 @@ from datetime import datetime
 def get_all_sponsors(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.Sponsors).offset(offset).limit(limit).all()
 
+def get_all_sponsors_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 100):
+    return db.query(models.Sponsors).filter(models.Sponsors.owner_id == owner_id).offset(offset).limit(limit).all()
+
 def get_sponsor_by_uuid(db: Session, uuid: str, owner_id: int):
     return db.query(models.Sponsors).filter(models.Sponsors.uuid == uuid, models.Sponsors.owner_id == owner_id).first()
 

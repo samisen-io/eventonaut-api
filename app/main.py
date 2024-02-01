@@ -5,14 +5,12 @@ from app.oauth2 import get_current_active_user
 import logging
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference, client, speakers, promotions,sponsor, venue
+from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference, client, speakers, promotions,sponsor, venue, static_organizer, static_client, static_event, static_session, static_attendee
 from . import upload_image
 from .crud import logout_token_crud
 
 app = FastAPI()
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Start the scheduler
 logout_token_crud.start_scheduler()
@@ -65,6 +63,11 @@ app.include_router(agenda.router)
 app.include_router(assistant.router)
 app.include_router(otp.router)
 app.include_router(authentication.router)
+app.include_router(static_organizer.router)
+app.include_router(static_client.router)
+app.include_router(static_event.router)
+app.include_router(static_session.router)
+app.include_router(static_attendee.router)
 
 @app.get("/")
 async def root():
