@@ -25,9 +25,18 @@ def create_sponsor(sponsor: schemas.SponsorCreate, db: Session = Depends(get_db)
     logging.info(f"Sponsor created with id {sponsor.uuid}")
     return sponsor
 
-@router.get("/sponsors", response_model=list[schemas.Sponsor])
+@router.get("/sponsors/get-all-sponsors", response_model=list[schemas.Sponsor])
 def get_all_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db)):
     sponsors = sponsors_crud.get_all_sponsors(db=db, limit=limit, offset=offset)
+    if sponsors is None or len(sponsors) == 0:
+        logging.exception("Sponsors not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsors not found")
+    logging.info("Sponsors retrieved")
+    return sponsors
+
+@router.get("/sponsors", response_model=list[schemas.Sponsor])
+def get_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
+    sponsors = sponsors_crud.get_all_sponsors_by_owner_id(db=db, owner_id=current_user.id, limit=limit, offset=offset)
     if sponsors is None or len(sponsors) == 0:
         logging.exception("Sponsors not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsors not found")
@@ -43,7 +52,6 @@ def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), current_us
     logging.info(f"Sponsor retrieved with id {sponsor.uuid}")
     return sponsor
 
-  #Need to change the code fit with new event sponsors table
 @router.get("/sponsors/{conference_id}", response_model=list[schemas.Sponsor])
 def get_sponsors_by_conference_id(conference_id: str, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
     conference = conferences_crud.get_conference_by_uuid(db=db, uuid=conference_id, owner_id=current_user.id)
