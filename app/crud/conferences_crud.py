@@ -9,6 +9,8 @@ from . import agenda_crud
 from .. import AI_assitant
 import uuid
 from ..code_generator import generate_unique_string
+from .client_crud import get_client
+from ..static_enums import event
 
 def add_sponsor_details_to_conference(db: Session, conference: dict):
     event_sponsors = db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == conference.id).all()
@@ -19,7 +21,7 @@ def add_sponsor_details_to_conference(db: Session, conference: dict):
     return conference
 
 def add_client_details_to_conference(db: Session, conference: dict):
-    conference.client_details = db.query(models.Client).filter(models.Client.id == conference.client_id).first()
+    conference.client_details = get_client(db=db, client_id=conference.client_id) if conference.client_id is not None else None
     return conference
 
 def add_venue_details_to_conference(db: Session, conference: dict):
@@ -34,6 +36,7 @@ def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
         conference = add_client_details_to_conference(db=db, conference=conference)
         conference = add_venue_details_to_conference(db=db, conference=conference)
         conference = add_sponsor_details_to_conference(db=db, conference=conference)
+        conference.status = event.EventEnum(conference.conference_status_id).name
     return conferences
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
@@ -42,6 +45,7 @@ def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 
         conference = add_client_details_to_conference(db=db, conference=conference)
         conference = add_venue_details_to_conference(db=db, conference=conference)
         conference = add_sponsor_details_to_conference(db=db, conference=conference)
+        conference.status = event.EventEnum(conference.conference_status_id).name
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
@@ -50,6 +54,7 @@ def get_conferences_by_owner_id(db: Session, owner_id: int):
         conference = add_client_details_to_conference(db=db, conference=conference)
         conference = add_venue_details_to_conference(db=db, conference=conference)
         conference = add_sponsor_details_to_conference(db=db, conference=conference)
+        conference.status = event.EventEnum(conference.conference_status_id).name
     return confernces
 
 def get_conference_by_code(db: Session, code: str):
@@ -61,7 +66,9 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     client_id = conference_dict.pop("client_id")
     conference_dict.pop('venue_id')
     conference_dict.pop('sponsor_ids')
+    conference_status = conference_dict.pop("status")
     db_conference = models.Conference(**conference_dict, owner_id=user_id, venue_id=venue_id)
+    db_conference.conference_status_id = event.EventEnum[conference_status.upper()].value
     db_client = db.query(models.Client).filter(models.Client.uuid == client_id).first()
     db_conference.client_id = db_client.id if db_client is not None else None
     db_conference.created_on = db_conference.updated_on = datetime.utcnow()
@@ -92,6 +99,7 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db_conference = add_client_details_to_conference(db=db, conference=db_conference)
     db_conference = add_venue_details_to_conference(db=db, conference=db_conference)
     db_conference = add_sponsor_details_to_conference(db=db, conference=db_conference)
+    db_conference.status = event.EventEnum(db_conference.conference_status_id).name
     return db_conference
 
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
@@ -103,6 +111,7 @@ def get_conference_by_conference_uuid(db: Session, uuid: str):
     conference = add_client_details_to_conference(db=db, conference=conference) if conference is not None else None
     conference = add_venue_details_to_conference(db=db, conference=conference) if conference is not None else None
     conference = add_sponsor_details_to_conference(db=db, conference=conference) if conference is not None else None
+    conference.status = event.EventEnum(conference.conference_status_id).name if conference is not None else None
     return conference
 
 def delete_conference(db: Session, conference: models.Conference):
@@ -124,9 +133,13 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     conference_dict = conference.model_dump()
     conference_dict.pop('id')
     conference_dict.pop('sponsor_ids')
+    conference_status = conference_dict.pop("status")
     conference_dict['venue_id'] = db.query(models.Venue).filter(models.Venue.uuid == conference_dict['venue_id']).first().id if conference_dict['venue_id'] is not None else None
 
     non_nullable_feilds = ['name','location','venue_id','start_date','end_date','information_guide']
+
+    if conference_status is not None:
+        db_conference.conference_status_id = event.EventEnum[conference_status.upper()].value
 
     for key, value in conference_dict.items():
             if key in non_nullable_feilds:
@@ -158,6 +171,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     db_conference = add_client_details_to_conference(db=db, conference=db_conference)
     db_conference = add_venue_details_to_conference(db=db, conference=db_conference)
     db_conference = add_sponsor_details_to_conference(db=db, conference=db_conference)
+    db_conference.status = event.EventEnum(db_conference.conference_status_id).name
     return db_conference
 
 def get_event_list_summary(db: Session, owner_id: int):
