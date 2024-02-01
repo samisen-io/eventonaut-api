@@ -335,3 +335,48 @@ class Venue(Base):
 
     owner = relationship("User", back_populates="venues")
     conference = relationship("Conference", back_populates="venues")
+    
+class StaticOrganizer(Base):
+    __tablename__ = "static_organizers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
+
+class StaticClient(Base):
+    __tablename__ = "static_clients"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
+    
+class StaticEvent(Base):
+    __tablename__ = "static_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
+    
+class StaticSession(Base):
+    __tablename__ = "static_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
+    
+class StaticAttendee(Base):
+    __tablename__ = "static_attendees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
