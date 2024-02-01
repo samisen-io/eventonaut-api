@@ -1,5 +1,6 @@
 from pydantic import BaseModel, validator, Field, field_validator, ValidationInfo
 from fastapi import HTTPException, status
+from ..static_enums import attendee
 
 #pydantic model for attendeebase
 class AttendeeBase(BaseModel):
@@ -12,6 +13,7 @@ class AttendeeBase(BaseModel):
     share_my_profile: bool | None = None
     share_my_agenda: bool | None = None
     profile_image_url: str | None = None
+    status: str | None = None
     
     @validator('email')
     def email_is_not_empty(cls, v):
@@ -28,6 +30,16 @@ class AttendeeBase(BaseModel):
                 return None
             elif len(v) > 256:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} must be less than 256 characters")
+        return v
+    
+    @field_validator("status")
+    def check_status(cls, v):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            v = v.upper()
+            if v not in list(attendee.AttendeeEnum.__members__):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
     
 #pydantic model for attendee create
@@ -87,6 +99,7 @@ class AttendeeUpdate(BaseModel):
     share_my_profile: bool | None = None
     share_my_agenda: bool | None = None
     profile_image_url: str | None = None
+    status: str | None = None
 
     @field_validator('first_name','last_name','title','company','bio','profile_image_url')
     def field_is_not_empty(cls, v, info: ValidationInfo):
@@ -97,10 +110,21 @@ class AttendeeUpdate(BaseModel):
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} must be less than 256 characters")
         return v
     
+    @field_validator("status")
+    def check_status(cls, v):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            v = v.upper()
+            if v not in list(attendee.AttendeeEnum.__members__):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+        return v
+    
 
 #pydantic model for attendee
 class Attendee(AttendeeBase):
     uuid: str = Field(serialization_alias="id")
     is_active: bool
+    
     class Config:
         orm_mode = True

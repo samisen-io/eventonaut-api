@@ -6,16 +6,21 @@ from .. import hashing
 from .. AI_assitant import create_thread, delete_thread
 import uuid
 from ..crud import conferences_crud
+from ..static_enums import event
+from ..static_enums import attendee as attendee_enum
 
 # create attendee
 def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
-    db_user = models.User(**attendee.model_dump())
+    attendee_dict = attendee.model_dump()
+    attendee_status = attendee_dict.pop("status", None)
+    db_user = models.User(**attendee_dict)
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db_user.created_on = datetime.utcnow()
     db_user.updated_on = datetime.utcnow()
     db_user.uuid = "usr-" + str(uuid.uuid4())
     db_user.role = "attendee"
     db_user.is_active = True
+    db_user.user_status_id = attendee_enum.AttendeeEnum[attendee_status.upper()].value if attendee_status is not None else attendee_enum.AttendeeEnum.INACTIVE.value
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
@@ -31,6 +36,7 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.refresh(db_attendee)
 
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
     return attendee
 
 def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
@@ -49,6 +55,7 @@ def get_attendees(db: Session, skip: int = 0, limit: int = 100):
         user = db.query(models.User).filter(models.User.id == db_attendee.user_id).first()
         if user is not None:
             attendees.append(schemas.Attendee(uuid=db_attendee.uuid, email=user.email, first_name=user.first_name, last_name=user.last_name, title=db_attendee.title, company=user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=user.is_active))
+            attendees[-1].status = attendee_enum.AttendeeEnum(user.user_status_id).name
     return attendees
 
 # get attendee by email
@@ -74,6 +81,7 @@ def get_attendee_by_id(db: Session, attendee_id: int):
     if db_user is None:
         return None
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
     return attendee
 
 # update attendee by id
@@ -101,6 +109,9 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
 
     for key, value in updates_attendee.items():
         setattr(db_attendee, key, value)
+        
+    if attendee.status is not None:
+        db_user.user_status_id = attendee_enum.AttendeeEnum[attendee.status.upper()].value
 
     db_attendee.updated_on = datetime.utcnow()
     db_user.updated_on = datetime.utcnow()
@@ -108,6 +119,7 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
     db.refresh(db_attendee)
     db.refresh(db_user)
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
     return attendee
 
 def update_attendee_image_url(db: Session, attendee_id: int, image_url: str):
@@ -131,6 +143,7 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: sc
     db.commit()
     db.refresh(db_user)
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
     return attendee
 
 # delete attendee by id
@@ -186,6 +199,7 @@ def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, l
         conferences_crud.add_client_details_to_conference(db=db, conference=conference)
         conferences_crud.add_venue_details_to_conference(db=db, conference=conference)
         conferences_crud.add_sponsor_details_to_conference(db=db, conference=conference)
+        conference.status = event.EventEnum(conference.conference_status_id).name
         conferences.append(conference)
     return conferences
 

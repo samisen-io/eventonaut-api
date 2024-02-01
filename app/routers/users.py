@@ -50,7 +50,7 @@ def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), cur
     if all(value is None for value in dict(user).values()):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
-    db_user = crud.get_user(db, user_id=current_user.id)
+    db_user = crud.get_db_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -60,7 +60,7 @@ def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), cur
 
 @router.put("/users/password", response_model=schemas.User)
 def update_user_password(user: schemas.UserPasswordUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    db_user = crud.get_user(db, user_id=current_user.id)
+    db_user = crud.get_db_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")

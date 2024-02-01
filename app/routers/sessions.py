@@ -113,13 +113,14 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
     session_speaker_ids = []
-    for speaker_id in session.speakers:
-        speaker = speakers_crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
-        if speaker is None:
-            logging.exception("Speaker not found")
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
-        if speaker.id not in session_speaker_ids:
-            session_speaker_ids.append(speaker.id)
+    if session.speakers is not None and len(session.speakers) > 0:
+        for speaker_id in session.speakers:
+            speaker = speakers_crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
+            if speaker is None:
+                logging.exception("Speaker not found")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
+            if speaker.id not in session_speaker_ids:
+                session_speaker_ids.append(speaker.id)
     updated_session = crud.update_session(db=db, session=session, db_session=db_session, speaker_ids=session_speaker_ids)
     logging.info("Session updated: " + updated_session.uuid)
     return updated_session

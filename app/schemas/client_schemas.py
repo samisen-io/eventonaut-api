@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator, validator, Field, ValidationInfo
 from fastapi import HTTPException, status
+from ..static_enums import client
 
 class ClientBase(BaseModel):
     name: str
@@ -7,8 +8,8 @@ class ClientBase(BaseModel):
     contact_email: str
     contact_phone: str
     address: str
-    status: bool
     profile_image_url: str | None = None
+    status: str
 
     @validator('name')
     def name_is_not_empty(cls, v):
@@ -58,6 +59,13 @@ class ClientBase(BaseModel):
             elif len(v) > 256:
                 raise HTTPException(status_code=400, detail="Profile image url too long")
         return v
+    
+    @field_validator("status")
+    def check_status(cls, v):
+        v = v.upper()
+        if v not in list(client.ClientEnum.__members__):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+        return v
 
 class ClientUpdate(BaseModel):
     id: str
@@ -65,7 +73,7 @@ class ClientUpdate(BaseModel):
     contact_name: str | None = None
     contact_email: str | None = None
     contact_phone: str | None = None
-    status: bool | None = None
+    status: str | None = None
     address: str | None = None
     profile_image_url: str | None = None
 
@@ -77,14 +85,33 @@ class ClientUpdate(BaseModel):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than 256 characters")
         return v
     
-    @field_validator('contact_phone', 'contact_email', 'contact_name', 'name', 'address', 'profile_image_url')
+    @field_validator('contact_email', 'contact_name', 'name', 'address', 'profile_image_url')
     def check_empty_string(cls, v, info: ValidationInfo):
         if v is not None:
             if v == "":
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
-            max_length = 15 if info.field_name == 'contact_phone' or info.field_name == 'address' else 256
+                return None
+            max_length = 15 if info.field_name == 'address' else 256
             if len(v) > max_length:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than {max_length} characters")
+        return v
+    
+    @field_validator('contact_phone')
+    def contact_phone_is_not_empty(cls, v):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            elif len(v) > 15 or len(v) < 10:
+                raise HTTPException(status_code=400, detail="Invalid Phone Number")
+        return v
+    
+    @field_validator("status")
+    def check_status(cls, v):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            v = v.upper()
+            if v not in list(client.ClientEnum.__members__):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
 
 class ClientCreate(ClientBase):
