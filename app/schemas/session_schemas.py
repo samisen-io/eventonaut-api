@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from datetime import date as Date, time
 import logging
 from ..schemas.speaker_schemas import Speaker
+from ..static_enums import session
 
 class SessionBase(BaseModel):
     name: str
@@ -13,6 +14,7 @@ class SessionBase(BaseModel):
     location: str
     session_image_url: str | None = None
     tags: list[str]
+    status: str
 
     @field_validator('name','description','location')
     def values_validation(cls, v, info: ValidationInfo):
@@ -47,6 +49,13 @@ class SessionBase(BaseModel):
             elif len(val) > 256:
                 logging.exception(f"{info.field_name} cannot be longer than 256 characters")
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than 256 characters") 
+        return v
+    
+    @field_validator("status")
+    def check_status(cls, v):
+        v = v.upper()
+        if v not in list(session.SessionEnum.__members__):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
 
 class SessionCreate(SessionBase):
@@ -86,6 +95,7 @@ class SessionUpdate(BaseModel):
     session_image_url: str | None = None
     speakers: list[str] | None = None
     tags: list[str] | None = None
+    status: str | None = None
 
     @field_validator('conference_id','id')
     def conference_id_and_id_validation(cls, v, info: ValidationInfo):
@@ -118,6 +128,17 @@ class SessionUpdate(BaseModel):
                     logging.exception(f"{info.field_name} cannot be longer than 256 characters")
                     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than 256 characters") 
         return v  
+    
+    @field_validator("status")
+    def check_status(cls, v):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            v = v.upper()
+            if v not in list(session.SessionEnum.__members__):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+        return v
+    
     class Config:
         orm_mode = True
 
