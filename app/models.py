@@ -312,7 +312,7 @@ class Sponsors(Base):
     description = Column(String, index=True)
     email = Column(String, index=True)
     contact_name = Column(String, index=True)
-    contact_phone = Column(Integer, index=True)
+    contact_phone = Column(String, index=True)
     logo_image_url = Column(String, index=True)
     sponsorship_level = Column(String, index=True)
     isarchived = Column(Boolean, default=False)
