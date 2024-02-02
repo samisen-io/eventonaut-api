@@ -7,7 +7,7 @@ class SponsorBase(BaseModel):
     name: str
     description: str
     contact_name: str
-    contact_phone: int
+    contact_phone: str
     logo_image_url: str
     sponsorship_level: str
 
@@ -25,8 +25,8 @@ class SponsorBase(BaseModel):
         return v
 
     @field_validator('contact_phone')
-    def check_phone_number(cls, v, info: ValidationInfo):
-        if len(str(v)) != 10:
+    def check_phone_number(cls, v: str, info: ValidationInfo):
+        if len(v) != 10 or not v.isdigit():
             logging.info(f"Invalid {info.field_name}")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {info.field_name}")
         return v
@@ -39,7 +39,7 @@ class SponsorUpdate(BaseModel):
     name: str | None = None
     description: str | None = None
     contact_name: str | None = None
-    contact_phone: int | None = None
+    contact_phone: str | None = None
     logo_image_url: str | None = None
     sponsorship_level: str | None = None
 
@@ -57,10 +57,11 @@ class SponsorUpdate(BaseModel):
         return v
         
     @field_validator('contact_phone')
-    def check_phone_number(cls, v, info: ValidationInfo):
-        if v is not None and len(str(v)) != 10:
-            logging.info(f"Invalid {info.field_name}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {info.field_name}")
+    def check_phone_number(cls, v: str, info: ValidationInfo):
+        if v is not None:
+            if len(v) != 10 or not v.isdigit():
+                logging.info(f"Invalid {info.field_name}")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {info.field_name}")
         return v
         
     @field_validator('name','description','contact_name','logo_image_url','sponsorship_level')
