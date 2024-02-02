@@ -7,10 +7,9 @@ from ..crud import users_crud as crud
 from ..dependencies import get_db
 from email_validator import validate_email, EmailNotValidError
 from app.schemas.user_schemas import UserAuthentication as User
-from .. import basicauth
+from .. import basicauth, hashing
 
 router = APIRouter(tags=["users"])
-
 
 @router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
@@ -29,11 +28,11 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_a
     return user
 
 @router.get("/users/all_users", response_model=list[schemas.User])
-def get_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = crud.get_users(db, offset=offset, limit=limit)
     if users is None or len(users) == 0:
-        logging.exception("Users not found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        logging.exception("No user found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No user found")
     logging.info("Users retrieved")
     return users
 
@@ -46,45 +45,41 @@ def get_user(db: Session = Depends(get_db), current_user: User = Security(get_cu
     logging.info("User retrieved: " + db_user.uuid)
     return db_user
 
-#update user by user id and check if email is already registered
 @router.put("/users", response_model=schemas.User)
 def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if all(value is None for value in dict(user).values()):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
-    if current_user.id <= 0:
-        logging.exception("Invalid user id")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user id")
-    db_user = crud.get_user(db, user_id=current_user.id)
+    db_user = crud.get_db_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    logging.info("User updated: " + db_user.uuid)
-    return crud.update_user(db=db, user=user, user_id=current_user.id)
+    updated_user = crud.update_user(db=db, user=user, db_user=db_user)
+    logging.info("User updated: " + updated_user.uuid)
+    return updated_user
 
-# upddate password by user id
 @router.put("/users/password", response_model=schemas.User)
 def update_user_password(user: schemas.UserPasswordUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    db_user = crud.get_user(db, user_id=current_user.id)
+    db_user = crud.get_db_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     if user.old_password == user.new_password:
         logging.exception("New password cannot be same as old password")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password cannot be same as old password")
-    if not crud.get_user_by_email_and_password(db, email=db_user.email, password=user.old_password):
-        logging.exception("Invalid old password")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid old password")
-    logging.info("User password updated: " + db_user.uuid)
-    return crud.update_user_password(db=db, user=user, user_id=current_user.id)
+    if not hashing.verify_password(user.old_password, db_user.hashed_password):
+        logging.exception("Incorrect old password")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect old password")
+    updated_user = crud.update_user_password(db=db, user=user, db_user=db_user)
+    logging.info("User password updated: " + updated_user.uuid)
+    return updated_user
 
-#delete user
 @router.delete("/users")
 def delete_user(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    deleted_user = crud.delete_user(db=db, user_id=current_user.id)
+    deleted_user = crud.delete_user(db=db, user=db_user)
     logging.info("User deleted: " + db_user.uuid)
     return deleted_user

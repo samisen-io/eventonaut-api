@@ -1,21 +1,32 @@
 from fastapi import HTTPException
 import logging
-from sqlalchemy.orm import Session, load_only
+from sqlalchemy.orm import Session
 from datetime import datetime, date
-
 from app.pinecone_operations import delete_namespace
-
 from .. import models
 from ..schemas import conference_schemas as schemas, ai_assistant_schemas as assistant_schemas
 from . import agenda_crud
 from .. import AI_assitant
 import uuid
 from ..code_generator import generate_unique_string
+from .client_crud import get_client
+from ..static_enums import event
+
+def add_sponsor_details_to_conference(db: Session, conference: dict):
+    event_sponsors = db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == conference.id).all()
+    conference.sponsor_details = []
+    for event_sponsor in event_sponsors:
+        sponsor = db.query(models.Sponsors).filter(models.Sponsors.id == event_sponsor.sponsor_id).first()
+        conference.sponsor_details.append(sponsor)
+    return conference
 
 def add_client_details_to_conference(db: Session, conference: dict):
-    db_client = db.query(models.Client).filter(models.Client.id == conference.client_id).first()
-    schema_client = None if db_client is None else schemas.ClientDetails(id=db_client.uuid, name=db_client.name)
-    conference.client_details = schema_client
+    conference.client_details = get_client(db=db, client_id=conference.client_id) if conference.client_id is not None else None
+    return conference
+
+def add_venue_details_to_conference(db: Session, conference: dict):
+    db_venue = db.query(models.Venue).filter(models.Venue.id == conference.venue_id).first()
+    conference.venue_details = None if db_venue is None else db_venue
     return conference
 
 # get all conferences ordered by start date in descending order
@@ -23,145 +34,161 @@ def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
     conferences = db.query(models.Conference).offset(offset).limit(limit).all()
     for conference in conferences:
         conference = add_client_details_to_conference(db=db, conference=conference)
+        conference = add_venue_details_to_conference(db=db, conference=conference)
+        conference = add_sponsor_details_to_conference(db=db, conference=conference)
+        conference.status = event.EventEnum(conference.conference_status_id).name
     return conferences
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
     conferences = db.query(models.Conference).filter(models.Conference.start_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
     for conference in conferences:
         conference = add_client_details_to_conference(db=db, conference=conference)
+        conference = add_venue_details_to_conference(db=db, conference=conference)
+        conference = add_sponsor_details_to_conference(db=db, conference=conference)
+        conference.status = event.EventEnum(conference.conference_status_id).name
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int):
     confernces = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
     for conference in confernces:
         conference = add_client_details_to_conference(db=db, conference=conference)
+        conference = add_venue_details_to_conference(db=db, conference=conference)
+        conference = add_sponsor_details_to_conference(db=db, conference=conference)
+        conference.status = event.EventEnum(conference.conference_status_id).name
     return confernces
 
 def get_conference_by_code(db: Session, code: str):
     conference = db.query(models.Conference).filter(models.Conference.code == code).first()
     return conference
 
-# create conference
-def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int):
-    client_id = conference.model_dump().pop("client_id")
-    db_conference = models.Conference(**conference.model_dump(), owner_id=user_id)
-    db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == client_id).first().id if client_id is not None else None
-    db_conference.created_on = datetime.utcnow()
-    db_conference.updated_on = datetime.utcnow()
+def create_user_conference(db: Session, conference: schemas.ConferenceCreate, user_id: int, venue_id: int, sponsor_ids: list[int]):
+    conference_dict = conference.model_dump()
+    client_id = conference_dict.pop("client_id")
+    conference_dict.pop('venue_id')
+    conference_dict.pop('sponsor_ids')
+    conference_status = conference_dict.pop("status")
+    db_conference = models.Conference(**conference_dict, owner_id=user_id, venue_id=venue_id)
+    db_conference.conference_status_id = event.EventEnum[conference_status.upper()].value
+    db_client = db.query(models.Client).filter(models.Client.uuid == client_id).first()
+    db_conference.client_id = db_client.id if db_client is not None else None
+    db_conference.created_on = db_conference.updated_on = datetime.utcnow()
     db_conference.uuid = "evt-" + str(uuid.uuid4())
     assistant = assistant_schemas.AssistantCreate(model="gpt-3.5-turbo-1106", name=f"ca_{db_conference.uuid}", description="Conference Assistant", instructions="You are conference assitant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.", tools=[{"type": "code_interpreter"}])
     db_conference.assistant_id = AI_assitant.create_assistant(schema=assistant).id
-    
+
     while True:
         try:
             db_conference.code = generate_unique_string()
             break
         except:
             print("Duplicate conference-code found! Attempting to generate new code...")
-            continue
 
     db.add(db_conference)
     db.commit()
     db.refresh(db_conference)
+
+    if len(sponsor_ids) > 0 and sponsor_ids is not None:
+        for sponsor_id in sponsor_ids:
+            db_event_sponsor = models.EventSponsors(conference_id=db_conference.id, sponsor_id=sponsor_id)
+            db_event_sponsor.created_on = db_event_sponsor.updated_on = datetime.utcnow()
+            db_event_sponsor.uuid = "esp-" + str(uuid.uuid4())
+            db.add(db_event_sponsor)
+            db.commit()
+            db.refresh(db_event_sponsor)
+    
     db_conference = add_client_details_to_conference(db=db, conference=db_conference)
+    db_conference = add_venue_details_to_conference(db=db, conference=db_conference)
+    db_conference = add_sponsor_details_to_conference(db=db, conference=db_conference)
+    db_conference.status = event.EventEnum(db_conference.conference_status_id).name
     return db_conference
 
-def get_conf_by_uuid(db:Session, conference_id: str):
-    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
-    return conference
-
-# get conference by uuid and owner id
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
     conference = db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
     return conference
 
 def get_conference_by_conference_uuid(db: Session, uuid: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == uuid).first()
-    conference = add_client_details_to_conference(db=db, conference=conference)
+    conference = add_client_details_to_conference(db=db, conference=conference) if conference is not None else None
+    conference = add_venue_details_to_conference(db=db, conference=conference) if conference is not None else None
+    conference = add_sponsor_details_to_conference(db=db, conference=conference) if conference is not None else None
+    conference.status = event.EventEnum(conference.conference_status_id).name if conference is not None else None
     return conference
 
-# delete conference by conference id
-def delete_conference(db: Session, owner_id: int, uuid: str):
-    conference = db.query(models.Conference).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id).first()
-    if conference is None:
-        return False
-    sessions = db.query(models.Session).filter(models.Session.conference_id == conference.id, models.Session.owner_id == owner_id)
+def delete_conference(db: Session, conference: models.Conference):
+    sessions = db.query(models.Session).filter(models.Session.conference_id == conference.id, models.Session.owner_id == conference.owner_id)
     if sessions is None:
         return False
     for session in sessions:
         db.delete(session)
-    db.query(models.Settings).filter(models.Settings.conference_id == conference.id, models.Settings.owner_id == owner_id).delete()
+    db.query(models.Settings).filter(models.Settings.conference_id == conference.id, models.Settings.owner_id == conference.owner_id).delete()
     agenda_crud.delete_agenda_by_conference_id(db, conference_id=conference.id)
     db.query(models.Conference_Files).filter(models.Conference_Files.conference_id == conference.id).delete()
     delete_namespace(conference_id=conference.uuid)
     db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).delete()
     db.delete(conference)
     db.commit()
-    
     return True
 
-# update conference by conference id
-def update_user_conference(db: Session, conference: schemas.ConferenceCreate, uuid: str, owner_id:int):
-    db_conference = db.query(models.Conference).filter(models.Conference.uuid == uuid,models.Conference.owner_id == owner_id).first()
+def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db_conference: models.Conference, sponsor_ids: list[int]):
+    conference_dict = conference.model_dump()
+    conference_dict.pop('id')
+    conference_dict.pop('sponsor_ids')
+    conference_status = conference_dict.pop("status")
+    conference_dict['venue_id'] = db.query(models.Venue).filter(models.Venue.uuid == conference_dict['venue_id']).first().id if conference_dict['venue_id'] is not None else None
 
-    updates = {
-        'name': conference.name,
-        'location': conference.location,
-        'venue_name': conference.venue_name,
-        'venue_location': conference.venue_location,
-        'start_date': conference.start_date,
-        'end_date': conference.end_date,
-        'description': conference.description,
-        'conference_logo': conference.conference_logo,
-        'timezone': conference.timezone,
-        'registration_link': conference.registration_link,
-        'information_guide': conference.information_guide,
-        'conference_banner_url': conference.conference_banner_url
-    }
+    non_nullable_feilds = ['name','location','venue_id','start_date','end_date','information_guide']
 
-    for key, value in updates.items():
-        if value is not None:
-            setattr(db_conference, key, value)
+    if conference_status is not None:
+        db_conference.conference_status_id = event.EventEnum[conference_status.upper()].value
+
+    for key, value in conference_dict.items():
+            if key in non_nullable_feilds:
+                if value is not None:
+                    setattr(db_conference,key,value)
+            else:
+                setattr(db_conference,key,value)
 
     if db_conference.start_date > db_conference.end_date or db_conference.start_date < date.today():
         logging.exception("Invalid date range")
         raise HTTPException(status_code=400, detail="Invalid date range")
-
-    db_conference.client_id = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first().id if conference.client_id is not None else None
-
+    
+    db_client = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first()
+    db_conference.client_id = db_client.id if db_client is not None else None
     db_conference.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_conference)
-    # return db_conference
+
+    db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == db_conference.id).delete()
+    if len(sponsor_ids) > 0 and sponsor_ids is not None:
+        for sponsor_id in sponsor_ids:
+            db_event_sponsor = models.EventSponsors(conference_id=db_conference.id, sponsor_id=sponsor_id)
+            db_event_sponsor.created_on = db_event_sponsor.updated_on = datetime.utcnow()
+            db_event_sponsor.uuid = "esp-" + str(uuid.uuid4())
+            db.add(db_event_sponsor)
+            db.commit()
+            db.refresh(db_event_sponsor)
+
     db_conference = add_client_details_to_conference(db=db, conference=db_conference)
+    db_conference = add_venue_details_to_conference(db=db, conference=db_conference)
+    db_conference = add_sponsor_details_to_conference(db=db, conference=db_conference)
+    db_conference.status = event.EventEnum(db_conference.conference_status_id).name
     return db_conference
 
-def upload_file_id(db: Session, file_id: str, conference_id: str, owner_id: int):
-    conference = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.uuid == conference_id).first()
-    db_file = models.Conference_Files(file_id = file_id, conference_id = conference.id)
-    db_file.created_on = datetime.utcnow()
-    db_file.updated_on = datetime.utcnow()
-    db_file.uuid = "cnf-" + str(uuid.uuid4())
-    db.add(db_file)
-    db.commit()
-    db.refresh(db_file)
-    print(f"File_Id - {file_id} uploaded to DB")
-    return True
+def get_event_list_summary(db: Session, owner_id: int):
+    total_events = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).count()
+    first_event_start_date = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).order_by(models.Conference.start_date).first().start_date
+    last_event_end_date = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).order_by(models.Conference.end_date.desc()).first().end_date
+    total_clients = db.query(models.Client).filter(models.Client.owner_id == owner_id).count()
 
-def delete_file_id(db: Session, file_id: str, conference_id: str, owner_id: int):
-    conference = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.uuid == conference_id).first()
-    db_file = db.query(models.Conference_Files).filter(models.Conference_Files.file_id == file_id, models.Conference_Files.conference_id == conference.id).first()
-    db.delete(db_file)
-    db.commit()
-    print(f"File_Id - {file_id} Deleted from DB")
-    return True
+    db_conferences = db.query(models.Conference).filter(models.Conference.owner_id == owner_id).all()
 
-def get_file_ids_by_conference_id(db, conference_id):
-    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
-    files = db.query(models.Conference_Files).filter(models.Conference_Files.conference_id == conference.id).all()
-    file_ids = [file.file_id for file in files]
-    return file_ids
+    total_sponsors = 0
+    total_attendees = 0
 
-def get_assistant_id_by_conference_id(db, conference_id):
-    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
-    return conference.assistant_id
+    for conference in db_conferences:
+        db_event_sponsors_ids = db.query(models.EventSponsors.sponsor_id).filter(models.EventSponsors.conference_id == conference.id).all()
+        db_event_sponsors_ids = set([sponsor_id[0] for sponsor_id in db_event_sponsors_ids])
+        total_sponsors += len(db_event_sponsors_ids)
+        total_attendees += db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).count()
+
+    return schemas.ConferenceListSummary(no_of_events=total_events, first_event_start_date=first_event_start_date, last_event_end_date=last_event_end_date, no_of_sponsors=total_sponsors, no_of_clients=total_clients, number_of_attendees=total_attendees)

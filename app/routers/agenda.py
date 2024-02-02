@@ -14,7 +14,8 @@ router = APIRouter(tags=["agenda"])
 # create agenda
 @router.post("/agenda", response_model=schemas.Agenda, status_code=status.HTTP_201_CREATED)
 def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
-    if attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id) is None:
+    db_attendee = attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id)
+    if db_attendee is None:
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
     if attendee_crud.get_attendee_conference_by_attendee_id_and_conference_id(db, attendee_id=current_user.id, conference_id=agenda.conference_id) is None:
@@ -43,7 +44,7 @@ def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), c
         }
         logging.exception("Found conflict with a session")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error":"found conflict with a session", "session": session})
-    logging.info("Agenda created for: " + db_agenda.attendee_id)
+    logging.info("Agenda created for: " + db_attendee.uuid)
     return created_agenda
 
 # get all agenda
@@ -89,7 +90,8 @@ def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), c
     if agenda.name is None and (agenda.sessions is None or len(agenda.sessions) == 0):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
-    if attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id) is None:
+    db_attendee = attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id)
+    if db_attendee is None:
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
     if conferences_crud.get_conference_by_conference_uuid(db, uuid=agenda.conference_id) is None:
@@ -119,7 +121,7 @@ def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), c
         }
         logging.exception("Found conflict with a session")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error":"found conflict with a session", "session": session})
-    logging.info("Agenda updated for: " + db_agenda.attendee_id)
+    logging.info("Agenda updated for: " + db_attendee.uuid)
     return updated_agenda
 
 # delete agenda by conference id and attendee id

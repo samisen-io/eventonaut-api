@@ -23,4 +23,4 @@ qrcode
 azure-storage-blob
 azure-identity
 apscheduler
-pinecone-client
+pinecone-client==2.2.4

@@ -13,20 +13,26 @@ class User(Base):
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     email = Column(String, index=True, unique=True)
-    first_name = Column(String, index=True, default="None")
-    last_name = Column(String, index=True, default="None")
-    company = Column(String, index=True, default="None")
-    business_type = Column(String, index=True, default="None")
+    first_name = Column(String, index=True)
+    last_name = Column(String, index=True)
+    company = Column(String, index=True)
+    business_type = Column(String, index=True)
     hashed_password = Column(String)
-    role = Column(String, index=True, default="None")
-    timezone = Column(String, index=True, default="None")
+    role = Column(String, index=True)
+    timezone = Column(String, index=True)
     is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
+    user_status_id = Column(Integer, ForeignKey("static_organizers.id"))
 
     attendees = relationship("Attendee", back_populates="user")
     conferences = relationship("Conference", back_populates="owner")
     sessions = relationship("Session", back_populates="owner")
     settings = relationship("Settings", back_populates="owner")
     client = relationship("Client", back_populates="owner")
+    venues = relationship("Venue", back_populates="owner")
+    speakers = relationship("Speakers", back_populates="owner")
+    sponsors = relationship("Sponsors", back_populates="owner")
+    static_organizer = relationship("StaticOrganizer", back_populates="user")
 
 class Client(Base):
     __tablename__ = "clients"
@@ -37,15 +43,16 @@ class Client(Base):
     updated_on = Column(DateTime)
     owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
-    contact_name = Column(String, index=True, default="None")
-    contact_email = Column(String, index=True, default="None")
-    contact_phone = Column(String, index=True, default="None")
+    contact_name = Column(String, index=True)
+    contact_email = Column(String, index=True)
+    contact_phone = Column(String, index=True)
     address = Column(String, index = True)
-    status = Column(Boolean, default=False)
-    profile_image_url = Column(String, index=True, default="None")
+    profile_image_url = Column(String, index=True)
+    client_status_id = Column(Integer, ForeignKey("static_clients.id"))
 
     owner = relationship("User", back_populates="client")
     conferences = relationship("Conference", back_populates="client")
+    static_client = relationship("StaticClient", back_populates="client")
   
 #class to create conference table and add relationship to session table
 class Conference(Base):
@@ -58,19 +65,19 @@ class Conference(Base):
     client_id = Column(Integer, ForeignKey("clients.id"))
     name = Column(String, index=True)
     location = Column(String, index=True)
-    venue_name = Column(String, index=True)
-    venue_location = Column(String, index=True)
+    venue_id = Column(Integer, ForeignKey("venues.id"))
     start_date = Column(DATE, index=True)
     end_date = Column(DATE, index=True)
-    description = Column(String, index=True, default="None")
+    description = Column(String, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
-    conference_logo = Column(String, index=True, default="None")
-    conference_banner_url = Column(String, index=True, default="None")
-    assistant_id = Column(String, index=True, default="None")
-    code = Column(String, index=True, default="None")
-    timezone = Column(String, index=True, default="None")
-    registration_link = Column(String, index=True, default="None")
-    information_guide = Column(String, index=True, default="None")
+    conference_logo = Column(String, index=True)
+    conference_banner_url = Column(String, index=True)
+    assistant_id = Column(String, index=True)
+    code = Column(String, index=True)
+    timezone = Column(String, index=True)
+    registration_link = Column(String, index=True)
+    information_guide = Column(String, index=True)
+    conference_status_id = Column(Integer, ForeignKey("static_events.id"))
 
     client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")
@@ -80,9 +87,11 @@ class Conference(Base):
     conference_files = relationship("Conference_Files", back_populates="conference")
     attendee_conference = relationship("Attendee_Conferences", back_populates="conference")
     aitokens = relationship("AITokens", back_populates="conference")
-    speakers = relationship("Speakers", back_populates="conference")
     promotions = relationship("Promotions", back_populates="conference")
-    sponsors = relationship("Sponsors", back_populates="conference")
+    venues = relationship("Venue", back_populates="conference")
+    sessions_speakers = relationship("SessionSpeakers", back_populates="conference")
+    event_sponsors = relationship("EventSponsors", back_populates="conference")
+    static_event = relationship("StaticEvent", back_populates="conference")
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -92,7 +101,7 @@ class Conference_Files(Base):
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
-    file_id = Column(String, index=True, default="None")
+    file_id = Column(String, index=True)
 
     conference = relationship("Conference", back_populates="conference_files")
 
@@ -103,13 +112,30 @@ class Speakers(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    conference_id = Column(Integer, ForeignKey("conferences.id"))
-    name = Column(String, index=True, default="None")
-    title = Column(String, index=True, default="None")
-    bio = Column(String, index=True, default="None")
-    profile_image_url = Column(String, index=True, default="None")
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String, index=True)
+    email = Column(String, index=True, unique=True)
+    title = Column(String, index=True)
+    bio = Column(String, index=True)
+    profile_image_url = Column(String, index=True)
 
-    conference = relationship("Conference", back_populates="speakers")
+    sessions_speakers = relationship("SessionSpeakers", back_populates="speaker")
+    owner = relationship("User", back_populates="speakers")
+
+class SessionSpeakers(Base):
+    __tablename__ = "session_speakers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    session_id = Column(Integer, ForeignKey("sessions.id"))
+    speaker_id = Column(Integer, ForeignKey("speakers.id"))
+
+    session = relationship("Session", back_populates="sessions_speakers")
+    speaker = relationship("Speakers", back_populates="sessions_speakers")
+    conference = relationship("Conference", back_populates="sessions_speakers")
 
 # class to define session table
 class Session(Base):
@@ -126,14 +152,16 @@ class Session(Base):
     date = Column(DATE, index=True) 
     location = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
-    speakers = Column(ARRAY(String), index=True)
     tags = Column(ARRAY(String), index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
-    session_image_url = Column(String, index=True, default="None")
+    session_image_url = Column(String, index=True)
+    session_status_id = Column(Integer, ForeignKey("static_sessions.id"))
 
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
     agenda_session = relationship("AgendaSession", back_populates="session")
+    sessions_speakers = relationship("SessionSpeakers", back_populates="session")
+    static_session = relationship("StaticSession", back_populates="session")
 
 #class to define settings table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class Settings(Base):
@@ -159,12 +187,12 @@ class Attendee(Base):
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     user_id = Column(Integer, ForeignKey("users.id"))
-    title = Column(String, index=True, default="None")
-    bio = Column(String, index=True, default="None")
+    title = Column(String, index=True)
+    bio = Column(String, index=True)
     share_my_profile = Column(Boolean, default=False)
     share_my_agenda = Column(Boolean, default=False)
-    profile_image_url = Column(String, index=True, default="None")
-    thread_id = Column(String, index=True, default="None")
+    profile_image_url = Column(String, index=True)
+    thread_id = Column(String, index=True)
 
     user = relationship("User", back_populates="attendees")
     agenda = relationship("Agenda", back_populates="attendees")
@@ -261,8 +289,8 @@ class Promotions(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     todate = Column(DATE)
     fromdate = Column(DATE)
-    image_url = Column(String, index=True, default="None")
-    promotion_name = Column(String, index=True, default="None")
+    image_url = Column(String, index=True)
+    promotion_name = Column(String, index=True)
     rank = Column(Integer, default=0)
 
     conference = relationship("Conference", back_populates="promotions")
@@ -274,7 +302,7 @@ class Sponsors(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
     description = Column(String, index=True)
     email = Column(String, index=True)
@@ -283,4 +311,87 @@ class Sponsors(Base):
     logo_image_url = Column(String, index=True)
     sponsorship_level = Column(String, index=True)
 
-    conference = relationship("Conference", back_populates="sponsors")
+    owner = relationship("User", back_populates="sponsors")
+    event_sponsors = relationship("EventSponsors", back_populates="sponsors")
+
+class EventSponsors(Base):
+    __tablename__ = "event_sponsors"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    sponsor_id = Column(Integer, ForeignKey("sponsors.id"))
+
+    conference = relationship("Conference", back_populates="event_sponsors")
+    sponsors = relationship("Sponsors", back_populates="event_sponsors")
+
+class Venue(Base):
+    __tablename__ = "venues"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    name = Column(String, index=True)
+    location = Column(String, index=True)
+    address = Column(String, index=True)
+    geo_location = Column(String, index=True)
+
+    owner = relationship("User", back_populates="venues")
+    conference = relationship("Conference", back_populates="venues")
+    
+class StaticOrganizer(Base):
+    __tablename__ = "static_organizers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
+    
+    user = relationship("User", back_populates="static_organizer")
+
+class StaticClient(Base):
+    __tablename__ = "static_clients"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
+    
+    client = relationship("Client", back_populates="static_client")
+    
+class StaticEvent(Base):
+    __tablename__ = "static_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
+    
+    conference = relationship("Conference", back_populates="static_event")
+    
+class StaticSession(Base):
+    __tablename__ = "static_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
+    
+    session = relationship("Session", back_populates="static_session")
+    
+class StaticAttendee(Base):
+    __tablename__ = "static_attendees"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
