@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from datetime import date
 from ..schemas import venue_schemas, client_schemas, sponsor_schemas
 import logging
+from ..static_enums import event
 
 class ConferenceBase(BaseModel):
     name: str
@@ -15,6 +16,7 @@ class ConferenceBase(BaseModel):
     registration_link: str | None = None
     conference_banner_url: str | None = None
     information_guide: str
+    status: str 
 
     @field_validator('name','location','information_guide')
     def value_not_empty(cls, v, info: ValidationInfo):
@@ -36,6 +38,13 @@ class ConferenceBase(BaseModel):
                 print(v,"Longest Desc")
                 logging.exception(f"{info.field_name} must not be longer than {max_length} characters")
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} must not be longer than {max_length} characters")
+        return v
+    
+    @field_validator("status")
+    def check_status(cls, v):
+        v = v.upper()
+        if v not in list(event.EventEnum.__members__):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
     
 class ConferenceCreate(ConferenceBase):
@@ -86,6 +95,7 @@ class ConferenceUpdate(BaseModel):
     registration_link: str | None = None
     conference_banner_url: str | None = None
     information_guide: str | None = None
+    status: str | None = None
 
     @field_validator('id')
     def id_is_not_empty(cls, v, info: ValidationInfo):
@@ -131,6 +141,16 @@ class ConferenceUpdate(BaseModel):
                 elif len(sponsor_id) > 256:
                     logging.exception(f"{info.field_name} must not be longer than 256 characters")
                     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} must not be longer than 256 characters")
+        return v
+    
+    @field_validator("status")
+    def check_status(cls, v):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            v = v.upper()
+            if v not in list(event.EventEnum.__members__):
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
 
 #pydantic model for conference
