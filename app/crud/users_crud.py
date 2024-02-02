@@ -2,7 +2,6 @@ from sqlalchemy.orm import Session
 from .. import models, hashing
 from ..schemas import user_schemas as schemas
 from datetime import datetime
-from . import agenda_crud
 import uuid
 from ..static_enums import organizer
 
@@ -22,18 +21,18 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 def get_user(db: Session, user_id: int):
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    user = db.query(models.User).filter(models.User.id == user_id, models.User.isarchived == False).first()
     user.status = organizer.OrganizerEnum(user.user_status_id).name
     return user
 
 def get_db_user(db: Session, user_id: int):
-    return db.query(models.User).filter(models.User.id == user_id).first()
+    return db.query(models.User).filter(models.User.id == user_id, models.User.isarchived == False).first()
 
 def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email.ilike(email)).first()
+    return db.query(models.User).filter(models.User.email.ilike(email), models.User.isarchived == False).first()
 
 def get_user_by_email_and_password(db: Session, email: str, password: str):
-    user = db.query(models.User).filter(models.User.email.ilike(email)).first()
+    user = db.query(models.User).filter(models.User.email.ilike(email), models.User.isarchived == False).first()
     if user is None:
         return False
     if hashing.verify_password(password, user.hashed_password):
@@ -86,12 +85,14 @@ def update_user_password_by_email(db: Session, email: str, password: str):
     return db_user
 
 def delete_user(db: Session, user: models.User):
-    db.query(models.Session).filter(models.Session.owner_id == user.id).delete()
-    db.query(models.Settings).filter(models.Settings.owner_id == user.id).delete()
+    db_session = db.query(models.Session).filter(models.Session.owner_id == user.id).all()
+    for session in db_session:
+        session.isarchived = True
+        
     conference = db.query(models.Conference).filter(models.Conference.owner_id == user.id).all()
     for c in conference:
-        agenda_crud.delete_agenda_by_conference_id(db, conference_id=c.id)
-    db.query(models.Conference).filter(models.Conference.owner_id == user.id).delete()
-    db.delete(user)
+        c.isarchived = True
+
+    user.isarchived = True
     db.commit()
     return True

@@ -7,13 +7,13 @@ from datetime import datetime
 import random
 
 def get_speaker_by_email(db: Session, email: str, owner_id: int):
-    return db.query(Speakers).filter(Speakers.email.ilike(email), Speakers.owner_id == owner_id).first()
+    return db.query(Speakers).filter(Speakers.email.ilike(email), Speakers.owner_id == owner_id, Speakers.isarchived == False).first()
 
 def get_speaker_by_uuid(db: Session, uuid: str, owner_id: int):
-    return db.query(Speakers).filter(Speakers.uuid == uuid, Speakers.owner_id == owner_id).first()
+    return db.query(Speakers).filter(Speakers.uuid == uuid, Speakers.owner_id == owner_id, Speakers.isarchived == False).first()
 
 def get_speakers_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 100):
-    return db.query(Speakers).filter(Speakers.owner_id == owner_id).offset(offset).limit(limit).all()
+    return db.query(Speakers).filter(Speakers.owner_id == owner_id, Speakers.isarchived == False).offset(offset).limit(limit).all()
 
 def create_speaker(db: Session, speaker: schemas.SpeakerCreate):
     conference = db.query(Conference).filter(Conference.uuid == speaker.conference_id).first()
@@ -32,10 +32,12 @@ def get_all_speakers(db: Session, offset: int = 0, limit: int = 100):
     return db.query(Speakers).offset(offset).limit(limit).all()
 
 def get_speaker(db: Session, speaker_id: uuid):
-    return db.query(Speakers).filter(Speakers.uuid == speaker_id).first()
+    return db.query(Speakers).filter(Speakers.uuid == speaker_id, Speakers.isarchived == False).first()
 
 def get_speakers_by_conference_id_owner_id(db: Session, conference_id: str, owner_id: int):
-    conference = db.query(Conference).filter(Conference.uuid == conference_id).first()
+    conference = db.query(Conference).filter(Conference.uuid == conference_id, Conference.owner_id == owner_id, Conference.isarchived == False).first()
+    if conference is None:
+        return None
     conference_id = conference.id if conference else None
     speaker_ids = [speaker.speaker_id for speaker in db.query(models.SessionSpeakers).filter(models.SessionSpeakers.conference_id == conference_id).all()]
     db_speakers = db.query(Speakers).filter(Speakers.id.in_(speaker_ids)).all()
@@ -65,6 +67,6 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
 
 def delete_speaker(db: Session, speaker_id: str):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker_id).first()
-    db.delete(db_speaker)
+    db_speaker.isarchived = True
     db.commit()
     return True

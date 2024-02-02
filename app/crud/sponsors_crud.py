@@ -8,16 +8,18 @@ def get_all_sponsors(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.Sponsors).offset(offset).limit(limit).all()
 
 def get_all_sponsors_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 100):
-    return db.query(models.Sponsors).filter(models.Sponsors.owner_id == owner_id).offset(offset).limit(limit).all()
+    return db.query(models.Sponsors).filter(models.Sponsors.owner_id == owner_id, models.Sponsors.isarchived == False).offset(offset).limit(limit).all()
 
 def get_sponsor_by_uuid(db: Session, uuid: str, owner_id: int):
-    return db.query(models.Sponsors).filter(models.Sponsors.uuid == uuid, models.Sponsors.owner_id == owner_id).first()
+    return db.query(models.Sponsors).filter(models.Sponsors.uuid == uuid, models.Sponsors.owner_id == owner_id, models.Sponsors.isarchived == False).first()
 
 def get_sponsor_by_email(db: Session, email: str, owner_id: int):
-    return db.query(models.Sponsors).filter(models.Sponsors.email == email, models.Sponsors.owner_id == owner_id).first()
+    return db.query(models.Sponsors).filter(models.Sponsors.email == email, models.Sponsors.owner_id == owner_id, models.Sponsors.isarchived == False).first()
 
 def get_sponsors_by_conference_id(db: Session, conference_id: int, offset: int = 0, limit: int = 100):
-    event_sponsors =  db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == conference_id).all()
+    event_sponsors =  db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == conference_id, models.EventSponsors.isarchived == False).offset(offset).limit(limit).all()
+    if not event_sponsors:
+        return None
     sponsors = []
     for event_sponsor in event_sponsors:
         if event_sponsor not in sponsors:
@@ -46,6 +48,6 @@ def update_sponsor(db: Session, sponsor: sponsor_schemas.SponsorUpdate, db_spons
     return db_sponsor
 
 def delete_sponsor(db: Session, db_sponsor: models.Sponsors):
-    db.delete(db_sponsor)
+    db_sponsor.isarchived = True
     db.commit()
     return True
