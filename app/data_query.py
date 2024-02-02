@@ -12,6 +12,7 @@ from app.custom_manager import custom_get_openai_callback
 from app.pinecone_operations import get_matching_namespace
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain.prompts import PromptTemplate
 
 load_dotenv()
 api_key = os.environ.get("OPENAI_API_KEY")
@@ -27,13 +28,30 @@ pinecone.init(
 # initialize embedding function
 embedding_function = OpenAIEmbeddings()
 
+template = """
+You are a helpful assistant for a conference. \
+The conferene is contains speakers and sessions on a variety of topics. \
+You are helping a participant to query about the conference. \
+If you dont know the answer, you can say "I don't know" and suggest to access the other conferences/events to get the correct answers. \
+and answer the question based only on the following context : \
+{context}
+
+current conversation: 
+{history}
+
+Question: {input}
+"""
+prompt = ChatPromptTemplate.from_template(template)
+
 def retrieve_answer(question, conference_id):
     namespace = get_matching_namespace(conference_id=conference_id)
     vectordb = Pinecone.from_existing_index(index_name=index_name, embedding=embedding_function, namespace=namespace, text_key = 'csv_text')
     chain = ConversationalRetrievalChain.from_llm(llm=ChatOpenAI(temperature=0.3, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key),
-                                                retriever=vectordb.as_retriever(search_kwargs={'k':10}), return_source_documents=True)
+                                                retriever=vectordb.as_retriever(search_kwargs={'k':10}), return_source_documents=True,
+                                                combine_docs_chain_kwargs={'prompt':prompt},
+                                                get_chat_history = lambda h : h)
     history = []
-    return chain({"question": question, "chat_history": history})
+    return chain({"question": question, "history": history})
 
 def query_document(question, conference_id):
     with get_openai_callback() as cb:
@@ -60,20 +78,6 @@ async def retrieve_answer_stream(question, conference_id):
     namespace = get_matching_namespace(conference_id=conference_id)
     vectordb = Pinecone.from_existing_index(index_name=index_name, embedding=embedding_function, namespace=namespace, text_key = 'csv_text')
     retriever=vectordb.as_retriever(search_kwargs={'k': 8})
-    template = """
-    You are a helpful assistant for a conference. \
-    The conferene is contains speakers and sessions on a variety of topics. \
-    You are helping a participant to query about the conference. \
-    If you dont know the answer, you can say "I don't know" and suggest to access the other conferences/events to get the correct answers. \
-    and answer the question based only on the following context : \
-    {context}
-
-    current conversation: 
-    {history}
-
-    Question: {input}
-    """
-    prompt = ChatPromptTemplate.from_template(template)
     model = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key)
     docs = retriever.get_relevant_documents(question)
     source_list = []
