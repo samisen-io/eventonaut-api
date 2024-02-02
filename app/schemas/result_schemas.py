@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from datetime import date, time
-from typing import List
+from typing import List, Optional
 
 class User(BaseModel):
     uuid: str = Field(serialization_alias="id")
@@ -26,6 +26,14 @@ class Event(BaseModel):
     information_guide: str
     rank: int
 
+class Speakers(BaseModel):
+    uuid: str = Field(serialization_alias="id")
+    name: str
+    title: str
+    bio: str
+    profile_image_url: str | None = None
+    rank: int
+
 class Session(BaseModel):
     uuid: str = Field(serialization_alias="id")
     name: str
@@ -34,7 +42,7 @@ class Session(BaseModel):
     description: str
     date: date
     location: str
-    speakers: list[str]
+    speakers: list[str] | None = None
     tags: list[str]
     rank: int
 
@@ -81,14 +89,6 @@ class Client(BaseModel):
     contact_name: str
     contact_email: str
     contact_phone: str
-    profile_image_url: str
-    rank: int
-
-class Speakers(BaseModel):
-    uuid: str = Field(serialization_alias="id")
-    name: str
-    title: str
-    bio: str
     profile_image_url: str
     rank: int
 

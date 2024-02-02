@@ -28,7 +28,7 @@ pinecone.init(
 # initialize embedding function
 embedding_function = OpenAIEmbeddings()
 
-template = """
+template_for_streaming = """
 You are a helpful assistant for a conference. \
 The conferene is contains speakers and sessions on a variety of topics. \
 You are helping a participant to query about the conference. \
@@ -41,6 +41,21 @@ current conversation:
 
 Question: {input}
 """
+prompt_for_streaming = ChatPromptTemplate.from_template(template_for_streaming)
+
+template = """
+You are a helpful assistant for a conference. \
+The conferene is contains speakers and sessions on a variety of topics. \
+You are helping a participant to query about the conference. \
+If you dont know the answer, you can say "I don't know" and suggest to access the other conferences/events to get the correct answers. \
+and answer the question based only on the following context : \
+{context}
+
+current conversation: 
+{chat_history}
+
+Question: {question}
+"""
 prompt = ChatPromptTemplate.from_template(template)
 
 def retrieve_answer(question, conference_id):
@@ -51,7 +66,7 @@ def retrieve_answer(question, conference_id):
                                                 combine_docs_chain_kwargs={'prompt':prompt},
                                                 get_chat_history = lambda h : h)
     history = []
-    return chain({"question": question, "history": history})
+    return chain({"question": question, "chat_history": history})
 
 def query_document(question, conference_id):
     with get_openai_callback() as cb:
@@ -92,7 +107,7 @@ async def retrieve_answer_stream(question, conference_id):
                 "input": itemgetter("input"),
                 "history": itemgetter("history"),
             }
-            | prompt
+            | prompt_for_streaming
             | model
         )
         yield source_list
