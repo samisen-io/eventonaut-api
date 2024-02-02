@@ -27,7 +27,6 @@ def create_speaker(speaker: schemas.SpeakerCreate, db: Session = Depends(get_db)
     if conferences_crud.get_conference_by_uuid(db=db,uuid=speaker.conference_id,owner_id=current_user.id) is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    speaker = crud.get(db=db, name=speaker.name)
     speaker = crud.create_speaker(db=db, speaker=speaker)
     logging.info("Speaker created: " + speaker.uuid)
     return speaker

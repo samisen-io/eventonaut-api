@@ -48,7 +48,7 @@ def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), c
     return created_agenda
 
 # get all agenda
-@router.get("/agenda", response_model=list[schemas.Agenda])
+@router.get("/agenda/get-all-agenda", response_model=list[schemas.Agenda])
 def get_all_agenda(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     agenda=crud.get_all_agenda(db, offset=offset, limit=limit)
     if agenda is None or len(agenda) == 0:
@@ -73,7 +73,7 @@ def get_agenda_by_conference_id_attendee_id(conference_id: str, db: Session = De
     logging.info("Agenda retrieved for conference:" + conference_id)
     return agenda
 
-@router.get("/agenda/attendee/{attendee_id}/conference/{conference_id}", response_model=schemas.Agenda)
+@router.get("/agenda/attendee/{attendee_id}/conference/{conference_id}")
 def get_agenda_by_conference_id_attendee_id(conference_id: str, attendee_id: str, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
     if attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id) is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
