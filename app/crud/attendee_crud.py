@@ -1,3 +1,4 @@
+import os
 from sqlalchemy.orm import Session
 from .. import models
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
@@ -8,6 +9,10 @@ import uuid
 from ..crud import conferences_crud
 from ..static_enums import event
 from ..static_enums import attendee as attendee_enum
+from urllib.parse import urlparse
+from ..routers import upload_image
+from fastapi import HTTPException, status
+import logging
 
 # create attendee
 def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
@@ -35,7 +40,7 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.commit()
     db.refresh(db_attendee)
 
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
     return attendee
 
@@ -54,7 +59,7 @@ def get_attendees(db: Session, skip: int = 0, limit: int = 100):
     for db_attendee in db_attendees:
         user = db.query(models.User).filter(models.User.id == db_attendee.user_id).first()
         if user is not None:
-            attendees.append(schemas.Attendee(uuid=db_attendee.uuid, email=user.email, first_name=user.first_name, last_name=user.last_name, title=db_attendee.title, company=user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=user.is_active))
+            attendees.append(schemas.Attendee(uuid=db_attendee.uuid, email=user.email, first_name=user.first_name, last_name=user.last_name, title=db_attendee.title, company=user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=user.profile_image_url, thread_id=db_attendee.thread_id,is_active=user.is_active))
             attendees[-1].status = attendee_enum.AttendeeEnum(user.user_status_id).name
     return attendees
 
@@ -70,7 +75,7 @@ def get_attendee_by_uuid(db: Session, attendee_id: str):
     db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.isarchived == False).first()
     if db_user is None:
         return None
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     return attendee
 
 def get_attendee_by_id(db: Session, attendee_id: int):
@@ -80,7 +85,7 @@ def get_attendee_by_id(db: Session, attendee_id: int):
     db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.isarchived == False).first()
     if db_user is None:
         return None
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
     return attendee
 
@@ -101,7 +106,6 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
         'bio': attendee.bio,
         'share_my_profile': attendee.share_my_profile,
         'share_my_agenda': attendee.share_my_agenda,
-        'profile_image_url': attendee.profile_image_url
     }
 
     for key, value in updates_user.items():
@@ -113,22 +117,41 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
     if attendee.status is not None:
         db_user.user_status_id = attendee_enum.AttendeeEnum[attendee.status.upper()].value
 
+    if attendee.profile_image_url is not None:
+        parsed_url = urlparse(attendee.profile_image_url)
+        path = parsed_url.path
+        filename_with_ext = os.path.basename(path)
+        _, extension = os.path.splitext(filename_with_ext)
+
+        if extension not in ['.jpg', '.jpeg', '.png']:
+            logging.exception("Invalid image file format")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
+        
+        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="attende-profile-images", old_blob_name=filename_with_ext, new_blob_name=f"profile-{db_attendee.uuid}" + extension)
+
+    db_user.profile_image_url = image_url
     db_attendee.updated_on = datetime.utcnow()
     db_user.updated_on = datetime.utcnow()
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        if attendee.profile_image_url is not None:
+            upload_image.delete_blob("attende-profile-images", f"profile-{db_attendee.uuid}" + extension)
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_attendee)
     db.refresh(db_user)
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
     return attendee
 
-def update_attendee_image_url(db: Session, attendee_id: int, image_url: str):
-    db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-    db_attendee.profile_image_url = image_url
-    db_attendee.updated_on = datetime.utcnow()
-    db.commit()
-    db.refresh(db_attendee)
-    return db_attendee
+# def update_attendee_image_url(db: Session, attendee_id: int, image_url: str):
+#     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
+#     db_attendee.profile_image_url = image_url
+#     db_attendee.updated_on = datetime.utcnow()
+#     db.commit()
+#     db.refresh(db_attendee)
+#     return db_attendee
 
 # update attendee password by id
 def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendePassword):
@@ -142,7 +165,7 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: sc
     db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_attendee.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
     return attendee
 
@@ -217,5 +240,5 @@ def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str):
         if attendee is None:
             continue
         user = db.query(models.User).filter(models.User.id == attendee.user_id).first()
-        attendees.append(schemas.Attendee(uuid=attendee.uuid, email=user.email, first_name=user.first_name, last_name=user.last_name, title=attendee.title, company=user.company, bio=attendee.bio, share_my_profile=attendee.share_my_profile, share_my_agenda=attendee.share_my_agenda, profile_image_url=attendee.profile_image_url, thread_id=attendee.thread_id,is_active=user.is_active))
+        attendees.append(schemas.Attendee(uuid=attendee.uuid, email=user.email, first_name=user.first_name, last_name=user.last_name, title=attendee.title, company=user.company, bio=attendee.bio, share_my_profile=attendee.share_my_profile, share_my_agenda=attendee.share_my_agenda, profile_image_url=user.profile_image_url, thread_id=attendee.thread_id,is_active=user.is_active))
     return attendees
