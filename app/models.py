@@ -24,6 +24,7 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     user_status_id = Column(Integer, ForeignKey("static_organizers.id"))
     isarchived = Column(Boolean, default=False)
+    profile_image_url = Column(String, index=True)
 
     attendees = relationship("Attendee", back_populates="user")
     conferences = relationship("Conference", back_populates="owner")
@@ -196,7 +197,6 @@ class Attendee(Base):
     bio = Column(String, index=True)
     share_my_profile = Column(Boolean, default=False)
     share_my_agenda = Column(Boolean, default=False)
-    profile_image_url = Column(String, index=True)
     thread_id = Column(String, index=True)
 
     user = relationship("User", back_populates="attendees")
