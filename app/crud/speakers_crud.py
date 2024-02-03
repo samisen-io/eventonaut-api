@@ -1,4 +1,10 @@
+import logging
+import os
+from urllib.parse import urlparse
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+
+from app.routers import upload_image
 from ..models import Speakers, Conference
 from ..schemas import speaker_schemas as schemas
 import uuid
@@ -17,14 +23,33 @@ def get_speakers_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit:
 
 def create_speaker(db: Session, speaker: schemas.SpeakerCreate):
     conference = db.query(Conference).filter(Conference.uuid == speaker.conference_id).first()
-    speaker.model_dump().pop("conference_id")
     db_speaker = Speakers(**speaker.model_dump())
     db_speaker.uuid = "spk-" + str(uuid.uuid4())
     db_speaker.created_on = datetime.utcnow()
     db_speaker.updated_on = datetime.utcnow()
     db_speaker.conference_id = conference.id
+    
+    if speaker.profile_image_url is not None:
+        parsed_url = parsed_url = urlparse(speaker.profile_image_url)
+        path = parsed_url.path
+        filename_with_ext = os.path.basename(path)
+        _, extension = os.path.splitext(filename_with_ext)
+
+        if extension not in ['.jpg', '.jpeg', '.png']:
+            logging.exception("Invalid image file format")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
+        
+        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="speaker-images", old_blob_name=filename_with_ext, new_blob_name=f"speaker-{db_speaker.uuid}" + extension)
+    
+    db_speaker.profile_image_url = image_url
+    
     db.add(db_speaker)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        upload_image.delete_blob("speaker-images", f"speaker-{db_speaker.uuid}" + extension)
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_speaker)
     return db_speaker
 
@@ -56,12 +81,31 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
     conference = db.query(Conference).filter(Conference.uuid == speaker_conference_id).first()
     db_speaker.conference_id = conference.id if conference else None
     speaker_dict.pop("conference_id")
-    db_speaker.profile_image_url = speaker_dict.pop("profile_image_url")
     for key, value in speaker_dict.items():
         if value is not None:
             setattr(db_speaker, key, value)
+            
+    if speaker.profile_image_url is not None:
+        parsed_url = parsed_url = urlparse(speaker.profile_image_url)
+        path = parsed_url.path
+        filename_with_ext = os.path.basename(path)
+        _, extension = os.path.splitext(filename_with_ext)
+
+        if extension not in ['.jpg', '.jpeg', '.png']:
+            logging.exception("Invalid image file format")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
+        
+        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="speaker-images", old_blob_name=filename_with_ext, new_blob_name=f"speaker-{db_speaker.uuid}" + extension)
+        db_speaker.profile_image_url = image_url
+    
     db_speaker.updated_on = datetime.utcnow()
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        if speaker.profile_image_url is not None:
+            upload_image.delete_blob("speaker-images", f"speaker-{db_speaker.uuid}" + extension)
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_speaker)
     return db_speaker
 

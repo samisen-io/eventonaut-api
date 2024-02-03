@@ -1,8 +1,11 @@
+import os
+from urllib.parse import urlparse
 from fastapi import HTTPException
 import logging
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 from app.pinecone_operations import delete_namespace
+from app.routers import upload_image
 from .. import models
 from ..schemas import conference_schemas as schemas, ai_assistant_schemas as assistant_schemas
 from . import agenda_crud
@@ -66,6 +69,8 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     client_id = conference_dict.pop("client_id")
     conference_dict.pop('venue_id')
     conference_dict.pop('sponsor_ids')
+    conference_logo = conference_dict.pop("conference_logo")
+    conference_banner_url = conference_dict.pop("conference_banner_url")
     conference_status = conference_dict.pop("status")
     db_conference = models.Conference(**conference_dict, owner_id=user_id, venue_id=venue_id)
     db_conference.conference_status_id = event.EventEnum[conference_status.upper()].value
@@ -83,8 +88,41 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         except:
             print("Duplicate conference-code found! Attempting to generate new code...")
 
+    if conference_logo is not None:
+        parsed_url = urlparse(conference_logo)
+        path = parsed_url.path
+        filename_with_ext = os.path.basename(path)
+        _, extension = os.path.splitext(filename_with_ext)
+
+        if extension not in ['.jpg', '.jpeg', '.png']:
+            logging.exception("Invalid image file format")
+            raise HTTPException(status_code=400, detail="Invalid image file format")
+        
+        conference_logo_image = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="event-logos", old_blob_name=filename_with_ext, new_blob_name=f"event-logo-{db_conference.uuid}" + extension)
+
+    if conference_banner_url is not None:
+        parsed_url = urlparse(conference_banner_url)
+        path = parsed_url.path
+        filename_with_ext = os.path.basename(path)
+        _, extension = os.path.splitext(filename_with_ext)
+
+        if extension not in ['.jpg', '.jpeg', '.png']:
+            logging.exception("Invalid image file format")
+            raise HTTPException(status_code=400, detail="Invalid image file format")
+        
+        conference_banner_image = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="event-banners", old_blob_name=filename_with_ext, new_blob_name=f"event-banner-{db_conference.uuid}" + extension)
+        
+    db_conference.conference_logo = conference_logo_image
+    db_conference.conference_banner_url = conference_banner_image
+
     db.add(db_conference)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        upload_image.delete_blob("event-logos", f"conference-logo-{db_conference.uuid}" + extension)
+        upload_image.delete_blob("event-banners", f"conference-banner-{db_conference.uuid}" + extension)
+        logging.exception(str(e))
+        raise HTTPException(status_code=400, detail=str(e))
     db.refresh(db_conference)
 
     if len(sponsor_ids) > 0 and sponsor_ids is not None:
@@ -131,6 +169,8 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     conference_dict.pop('id')
     conference_dict.pop('sponsor_ids')
     conference_status = conference_dict.pop("status")
+    conference_logo = conference_dict.pop("conference_logo")
+    conference_banner_url = conference_dict.pop("conference_banner_url")
     conference_dict['venue_id'] = db.query(models.Venue).filter(models.Venue.uuid == conference_dict['venue_id']).first().id if conference_dict['venue_id'] is not None else None
 
     non_nullable_feilds = ['name','location','venue_id','start_date','end_date','information_guide']
@@ -151,8 +191,44 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     
     db_client = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first()
     db_conference.client_id = db_client.id if db_client is not None else None
+    
+    if conference_logo is not None:
+        parsed_url = urlparse(conference_logo)
+        path = parsed_url.path
+        filename_with_ext = os.path.basename(path)
+        _, extension = os.path.splitext(filename_with_ext)
+
+        if extension not in ['.jpg', '.jpeg', '.png']:
+            logging.exception("Invalid image file format")
+            raise HTTPException(status_code=400, detail="Invalid image file format")
+        
+        conference_logo_image = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="event-logos", old_blob_name=filename_with_ext, new_blob_name=f"event-logo-{db_conference.uuid}" + extension)
+        
+    if conference_banner_url is not None:
+        parsed_url = urlparse(conference_banner_url)
+        path = parsed_url.path
+        filename_with_ext = os.path.basename(path)
+        _, extension = os.path.splitext(filename_with_ext)
+
+        if extension not in ['.jpg', '.jpeg', '.png']:
+            logging.exception("Invalid image file format")
+            raise HTTPException(status_code=400, detail="Invalid image file format")
+        
+        conference_banner_image = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="event-banners", old_blob_name=filename_with_ext, new_blob_name=f"event-banner-{db_conference.uuid}" + extension)
+        
+    db_conference.conference_logo = conference_logo_image
+    db_conference.conference_banner_url = conference_banner_image    
+    
     db_conference.updated_on = datetime.utcnow()
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        if conference_logo is not None:
+            upload_image.delete_blob("event-logos", f"event-logo-{db_conference.uuid}" + extension)
+        if conference_banner_url is not None:
+            upload_image.delete_blob("event-banners", f"event-banner-{db_conference.uuid}" + extension)
+        logging.exception(str(e))
+        raise HTTPException(status_code=400, detail=str(e))
     db.refresh(db_conference)
 
     db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == db_conference.id).delete()
