@@ -1,20 +1,17 @@
 from azure.storage.blob import BlobServiceClient,ContentSettings
-from fastapi import APIRouter, File, UploadFile, Depends, Security, HTTPException, status
-from sqlalchemy.orm import Session
-from ..dependencies import get_db
-from app.oauth2 import get_current_active_user
-from ..schemas.user_schemas import UserAuthentication as User
-from ..crud import attendee_crud as crud
+from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, status
 from dotenv import load_dotenv
 import logging
 import os
+from ..basicauth import basic_auth
+from uuid import uuid4
 
 router = APIRouter(tags=["upload"])
 
 load_dotenv()
 
 @router.post("/upload_file", status_code=201)
-def upload_file(container_name: str, file: UploadFile = File(...), current_user: User = Security(get_current_active_user, scopes=["attendee", "organizer"])):
+def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
     try:
         # Check file size
         file_size = len(file.file.read())
@@ -28,26 +25,14 @@ def upload_file(container_name: str, file: UploadFile = File(...), current_user:
 
         connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-        containers = blob_service_client.list_containers()
-        public_containers = [container.name for container in containers if container.public_access is not None]
-        if container_name not in public_containers:
-            logging.exception(f"Invalid container name: {container_name}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid container name: {container_name}")
-        container_client = blob_service_client.get_container_client(container_name)
 
-        # # Create the container if it doesn't exist
-        # try: 
-        #     container_client.create_container()
-        # except:
-        #     pass  # The container already exists
-
-        file_extension = file.filename.split(".")[-1]  # Get the file extension
+        file_extension = file.filename.split(".")[-1]
 
         if file_extension not in ["jpg", "jpeg", "png"]: 
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type. Only jpg, jpeg, and png are allowed.")
 
-        blob_name = f"profile-{current_user.uuid}.{file_extension}"  # Append the file extension to the blob name
-        blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+        blob_name = f"dyn-{uuid4()}.{file_extension}"
+        blob_client = blob_service_client.get_blob_client("temporary-images", blob_name)
 
         content_settings = ContentSettings(content_type=f'image/{file_extension}')
 
@@ -65,7 +50,7 @@ def upload_file(container_name: str, file: UploadFile = File(...), current_user:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
     
 @router.get("/get-containers")
-def get_containers(current_user: User = Security(get_current_active_user, scopes=["attendee", "organizer"])):
+def get_containers(basic_auth = Depends(basic_auth)):
     try:
         connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
@@ -74,3 +59,25 @@ def get_containers(current_user: User = Security(get_current_active_user, scopes
         return {"containers": public_containers}
     except Exception as ex:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
+    
+def move_file_from_temporary_to_permanent_container(source_container_name, dest_container_name, old_blob_name, new_blob_name):
+    try:
+        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        source_blob_client = blob_service_client.get_blob_client(source_container_name, old_blob_name)
+        dest_blob_client = blob_service_client.get_blob_client(dest_container_name, new_blob_name)
+        dest_blob_client.start_copy_from_url(source_blob_client.url)
+        source_blob_client.delete_blob()
+        
+        return dest_blob_client.url
+    except Exception as ex:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
+    
+def delete_blob(container_name, blob_name):
+    try:
+        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+        blob_client.delete_blob()
+    except Exception as ex:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))    
