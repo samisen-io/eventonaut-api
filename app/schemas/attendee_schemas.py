@@ -1,5 +1,5 @@
 from pydantic import BaseModel, validator, Field, field_validator, ValidationInfo
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
 from ..static_enums import attendee
 
 #pydantic model for attendeebase
@@ -119,7 +119,6 @@ class AttendeeUpdate(BaseModel):
             if v not in list(attendee.AttendeeEnum.__members__):
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
-    
 
 #pydantic model for attendee
 class Attendee(AttendeeBase):
