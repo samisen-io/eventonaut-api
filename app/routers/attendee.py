@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Security, status
+from fastapi import APIRouter, Body, Form, HTTPException, Depends, Security, UploadFile, status, File
 import logging
 from app.oauth2 import get_current_active_user
 from ..dependencies import get_db
@@ -8,6 +8,7 @@ from ..crud import attendee_crud as crud
 from email_validator import validate_email, EmailNotValidError
 from app.schemas.user_schemas import UserAuthentication as User
 from .. import basicauth
+from .. import models
 
 router = APIRouter(tags=["attendee"])
 
@@ -49,7 +50,7 @@ def get_attendee_by_id(db: Session = Depends(get_db), current_user: User = Secur
     return db_attendee
 
 # update attendee by email
-@router.put("/attendee", response_model=schemas.Attendee)
+@router.put("/attendee")
 def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if all(value is None for value in dict(attendee).values()):
         logging.exception("Invalid request body")
@@ -87,3 +88,16 @@ def delete_attendee_by_id(db: Session = Depends(get_db), current_user: User = Se
     deleted_attendee = crud.delete_attendee_by_uuid(db, attendee_id=current_user.id)
     logging.info("Attendee deleted: " + db_attendee.uuid)
     return deleted_attendee
+
+@router.get("/attendee/fill the db")
+def fill_the_db(db: Session = Depends(get_db)):
+    db_users = db.query(models.User).filter(models.User.role == 'attendee').all()
+    db_attendees = db.query(models.Attendee).all()
+    
+    for user in db_users:
+        for attendee in db_attendees:
+            if user.id == attendee.user_id:
+                user.profile_image_url = attendee.profile_image_url
+                break
+    db.commit()
+    return {"message": "DB filled"}
