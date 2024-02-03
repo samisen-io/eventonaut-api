@@ -1,5 +1,9 @@
+import os
+from urllib.parse import urlparse
 from sqlalchemy.orm import Session
 from datetime import datetime, date
+
+from app.routers import upload_image
 from .. import models
 from ..schemas import session_schemas as schemas
 from fastapi import HTTPException, status
@@ -39,7 +43,27 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
         session_speaker.uuid = "ssp-" + str(uuid.uuid4())
         session_speaker.created_on = session_speaker.updated_on = datetime.utcnow()
         db.add(session_speaker)
-    db.commit()
+    
+    if session.profile_image_url is not None:
+        parsed_url = urlparse(session.profile_image_url)
+        path = parsed_url.path
+        filename_with_ext = os.path.basename(path)
+        _, extension = os.path.splitext(filename_with_ext)
+
+        if extension not in ['.jpg', '.jpeg', '.png']:
+            logging.exception("Invalid image file format")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
+        
+        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="session-images", old_blob_name=filename_with_ext, new_blob_name=f"session-{db_session.uuid}" + extension)
+    
+    db_session.session_image_url = image_url
+    
+    try:
+        db.commit()
+    except Exception as e:
+        upload_image.delete_blob("session-images", f"session-{db_session.uuid}" + extension)
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_session)
     db_session = add_speakers_to_session(db, db_session)
     db_session.status = session_enum.SessionEnum(db_session.session_status_id).name
@@ -85,6 +109,7 @@ def update_session(db: Session, session: schemas.SessionUpdate, db_session: mode
     session_dict.pop('id')
     session_dict.pop('conference_id')
     session_status = session_dict.pop("status")
+    session_image_url = session_dict.pop("session_image_url")
     
     if session_status is not None:
         db_session.session_status_id = session_enum.SessionEnum[session_status.upper()].value
@@ -113,8 +138,28 @@ def update_session(db: Session, session: schemas.SessionUpdate, db_session: mode
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
 
+    if session_image_url is not None:
+        parsed_url = urlparse(session_image_url)
+        path = parsed_url.path
+        filename_with_ext = os.path.basename(path)
+        _, extension = os.path.splitext(filename_with_ext)
+
+        if extension not in ['.jpg', '.jpeg', '.png']:
+            logging.exception("Invalid image file format")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
+        
+        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="session-images", old_blob_name=filename_with_ext, new_blob_name=f"session-{db_session.uuid}" + extension)
+    
+    db_session.session_image_url = image_url
+
     db_session.updated_on = datetime.utcnow()
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        if session_image_url is not None:
+            upload_image.delete_blob("session-images", f"session-{db_session.uuid}" + extension)
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_session)
     db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == db_session.id).delete()
     db.commit()
