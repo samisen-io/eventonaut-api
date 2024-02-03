@@ -11,6 +11,7 @@ class UserBase(BaseModel):
     business_type: str
     timezone: str | None = None
     status: str
+    profile_image_url: str | None = None
 
     @field_validator('email','first_name','last_name','business_type')
     def field_is_not_empty(cls, v, info: ValidationInfo):
@@ -29,7 +30,7 @@ class UserBase(BaseModel):
             raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
     
-    @field_validator('company','timezone')
+    @field_validator('company','timezone','profile_image_url')
     def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -47,8 +48,9 @@ class UserBaseUpdate(BaseModel):
     business_type: str |None = None
     timezone: str |None = None
     status: str |None = None
+    profile_image_url: str |None = None
 
-    @field_validator('first_name','last_name','company','business_type','timezone')
+    @field_validator('first_name','last_name','company','business_type','timezone','profile_image_url')
     def user_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
