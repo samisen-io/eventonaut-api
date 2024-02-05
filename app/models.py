@@ -51,6 +51,16 @@ class User(Base):
     speakers = relationship("Speakers", back_populates="owner")
     sponsors = relationship("Sponsors", back_populates="owner")
     static_organizer = relationship("StaticOrganizer", back_populates="user")
+    
+class Role(Base):
+    __tablename__ = "role"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    name = Column(String, index=True)
+    description = Column(String, index=True)
 
 class Client(Base):
     __tablename__ = "clients"
