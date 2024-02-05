@@ -3,6 +3,8 @@ from fastapi import Depends, FastAPI, Request, Response, APIRouter
 from fastapi.routing import APIRoute
 from app.oauth2 import get_current_active_user
 import logging
+
+from app.routers import organization
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference, client, speakers, promotions,sponsor, venue, static_organizer, static_client, static_event, static_session, static_attendee, upload_image
@@ -67,6 +69,7 @@ app.include_router(static_client.router)
 app.include_router(static_event.router)
 app.include_router(static_session.router)
 app.include_router(static_attendee.router)
+app.include_router(organization.router)
 
 @app.get("/")
 async def root():
