@@ -39,24 +39,17 @@ def create_sponsor(db: Session, sponsor: sponsor_schemas.SponsorCreate, owner_id
     db_sponsor.created_on = db_sponsor.updated_on = datetime.now()
     db_sponsor.uuid = 'spn-' + str(uuid.uuid4())
     
-    parsed_url = parsed_url = urlparse(sponsor.profile_image_url)
-    path = parsed_url.path
-    filename_with_ext = os.path.basename(path)
-    _, extension = os.path.splitext(filename_with_ext)
-
-    if extension not in ['.jpg', '.jpeg', '.png']:
-        logging.exception("Invalid image file format")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-    
-    image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="sponsor-images", old_blob_name=filename_with_ext, new_blob_name=f"sponsor-{db_sponsor.uuid}" + extension)
-    
-    db_sponsor.profile_image_url = image_url
+    try:
+        db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor.logo_image_url, new_blob_container="sponsor-logos", new_blob_name=f"sponsor-{db_sponsor.uuid}") 
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
     db.add(db_sponsor)
     try:
         db.commit()
     except Exception as e:
-        upload_image.delete_blob("sponsor-images", f"sponsor-{db_sponsor.uuid}" + extension)
+        upload_image.delete_blob_by_url(db_sponsor.logo_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_sponsor)
@@ -72,22 +65,13 @@ def update_sponsor(db: Session, sponsor: sponsor_schemas.SponsorUpdate, db_spons
     db_sponsor.updated_on = datetime.now()
     
     if sponsor_image_url is not None:
-        parsed_url = urlparse(sponsor_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-        
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="sponsor-images", old_blob_name=filename_with_ext, new_blob_name=f"sponsor-{db_sponsor.uuid}" + extension)
+        db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor_image_url, new_blob_container="sponsor-logos", new_blob_name=f"sponsor-{db_sponsor.uuid}")
     
     try:
         db.commit()
     except Exception as e:
         if sponsor_image_url is not None:
-            upload_image.delete_blob("sponsor-images", f"sponsor-{db_sponsor.uuid}" + extension)
+            upload_image.delete_blob_by_url(db_sponsor.logo_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_sponsor)

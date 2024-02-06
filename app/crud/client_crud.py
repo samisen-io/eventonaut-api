@@ -22,25 +22,13 @@ def create_client(db: Session, client: schemas.ClientCreate, user_id: int):
     db_client.uuid = "cli-" + str(uuid.uuid4())
     db_client.owner_id = user_id
     
-    if client_profile_image_url is not None:
-        parsed_url = urlparse(client_profile_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-        
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="client-logos", old_blob_name=filename_with_ext, new_blob_name=f"profile-{db_client.uuid}" + extension)
-    
-    db_client.profile_image_url = image_url
+    db_client.profile_image_url = upload_image.get_actual_url(image_url=client_profile_image_url, new_blob_container="client-logos", new_blob_name=f"profile-{db_client.uuid}") if client_profile_image_url is not None else None
     
     db.add(db_client)
     try:
         db.commit()
     except Exception as e:
-        upload_image.delete_blob("client-logos", f"profile-{db_client.uuid}" + extension)
+        upload_image.delete_blob_by_url(db_client.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_client)
@@ -82,7 +70,6 @@ def update_client(db: Session, client: schemas.ClientUpdate):
     client_dict.pop("id")
     client_status = client_dict.pop("status")
     client_profile_image_url = client_dict.pop("profile_image_url")
-    db_client.profile_image_url = client_dict.pop("profile_image_url")
     
     if client_status is not None:
         db_client.client_status_id = client_enum.ClientEnum[client_status.upper()].value
@@ -91,26 +78,20 @@ def update_client(db: Session, client: schemas.ClientUpdate):
         if value is not None:
             setattr(db_client, key, value)
     
-    if client_profile_image_url is not None:
-        parsed_url = urlparse(client_profile_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-        
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="client-logos", old_blob_name=filename_with_ext, new_blob_name=f"profile-{db_client.uuid}" + extension)
+    image_url = None
     
-    db_client.profile_image_url = image_url
+    if client_profile_image_url is not None:
+        db_client.profile_image_url = upload_image.get_actual_url(image_url=client_profile_image_url, new_blob_container="client-logos", new_blob_name=f"client-profile-{db_client.uuid}")
+    elif client_profile_image_url is None and db_client.profile_image_url is not None:
+        upload_image.delete_blob_by_url(db_client.profile_image_url)
+        db_client.profile_image_url = None
     
     db_client.updated_on = datetime.utcnow()
     try:
         db.commit()
     except Exception as e:
         if client_profile_image_url is not None:
-            upload_image.delete_blob("client-logos", f"profile-{db_client.uuid}" + extension)
+            upload_image.delete_blob_by_url(db_client.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_client)

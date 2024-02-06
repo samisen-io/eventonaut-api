@@ -88,39 +88,19 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         except:
             print("Duplicate conference-code found! Attempting to generate new code...")
 
-    if conference_logo is not None:
-        parsed_url = urlparse(conference_logo)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
+    conference_logo_image = None
+    conference_banner_image = None
+    
+    db_conference.conference_logo = upload_image.get_actual_url(image_url=conference_logo, new_blob_container="event-logos", new_blob_name=f"event-logo-{db_conference.uuid}") if conference_logo is not None else None
 
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=400, detail="Invalid image file format")
-        
-        conference_logo_image = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="event-logos", old_blob_name=filename_with_ext, new_blob_name=f"event-logo-{db_conference.uuid}" + extension)
-
-    if conference_banner_url is not None:
-        parsed_url = urlparse(conference_banner_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=400, detail="Invalid image file format")
-        
-        conference_banner_image = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="event-banners", old_blob_name=filename_with_ext, new_blob_name=f"event-banner-{db_conference.uuid}" + extension)
-        
-    db_conference.conference_logo = conference_logo_image
-    db_conference.conference_banner_url = conference_banner_image
+    db_conference.conference_banner_url = upload_image.get_actual_url(image_url=conference_banner_url, new_blob_container="event-banners", new_blob_name=f"event-banner-{db_conference.uuid}") if conference_banner_url is not None else None
 
     db.add(db_conference)
     try:
         db.commit()
     except Exception as e:
-        upload_image.delete_blob("event-logos", f"conference-logo-{db_conference.uuid}" + extension)
-        upload_image.delete_blob("event-banners", f"conference-banner-{db_conference.uuid}" + extension)
+        upload_image.delete_blob_by_url(db_conference.conference_logo)
+        upload_image.delete_blob_by_url(db_conference.conference_banner_url)
         logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
     db.refresh(db_conference)
@@ -193,40 +173,25 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     db_conference.client_id = db_client.id if db_client is not None else None
     
     if conference_logo is not None:
-        parsed_url = urlparse(conference_logo)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=400, detail="Invalid image file format")
-        
-        conference_logo_image = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="event-logos", old_blob_name=filename_with_ext, new_blob_name=f"event-logo-{db_conference.uuid}" + extension)
+        db_conference.conference_logo = upload_image.get_actual_url(image_url=conference_logo, new_blob_container="event-logos", new_blob_name=f"event-logo-{db_conference.uuid}")
+    elif conference_logo is None and db_conference.conference_logo is not None:
+        upload_image.delete_blob_by_url(db_conference.conference_logo)
+        db_conference.conference_logo = None
         
     if conference_banner_url is not None:
-        parsed_url = urlparse(conference_banner_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=400, detail="Invalid image file format")
-        
-        conference_banner_image = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="event-banners", old_blob_name=filename_with_ext, new_blob_name=f"event-banner-{db_conference.uuid}" + extension)
-        
-    db_conference.conference_logo = conference_logo_image
-    db_conference.conference_banner_url = conference_banner_image    
+        db_conference.conference_banner_url = upload_image.get_actual_url(image_url=conference_banner_url, new_blob_container="event-banners", new_blob_name=f"event-banner-{db_conference.uuid}")
+    elif conference_banner_url is None and db_conference.conference_banner_url is not None:
+        upload_image.delete_blob_by_url(db_conference.conference_banner_url)
+        db_conference.conference_banner_url = None 
     
     db_conference.updated_on = datetime.utcnow()
     try:
         db.commit()
     except Exception as e:
         if conference_logo is not None:
-            upload_image.delete_blob("event-logos", f"event-logo-{db_conference.uuid}" + extension)
+            upload_image.delete_blob_by_url(db_conference.conference_logo)
         if conference_banner_url is not None:
-            upload_image.delete_blob("event-banners", f"event-banner-{db_conference.uuid}" + extension)
+            upload_image.delete_blob_by_url(db_conference.conference_banner_url)
         logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
     db.refresh(db_conference)

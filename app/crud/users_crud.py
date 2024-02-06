@@ -9,6 +9,7 @@ from datetime import datetime
 import uuid
 from ..static_enums import organizer
 from ..routers import upload_image
+from ..routers import upload_image
 
 def create_user(db: Session, user: schemas.UserCreate):
     user_dict = user.model_dump()
@@ -20,25 +21,15 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.created_on = db_user.updated_on = datetime.utcnow()
     db_user.uuid = "usr-"+str(uuid.uuid4())
     db_user.role = "organizer"
-    
-    if user_profile_image_url is not None:
-        parsed_url = urlparse(user_profile_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
 
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
+    db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container="profile-images", new_blob_name=f"profile-{db_user.uuid}") if user_profile_image_url is not None else None
         
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="profile-images", old_blob_name=filename_with_ext, new_blob_name=f"profile-{db_user.uuid}" + extension)
-
-    db_user.profile_image_url = image_url
     db.add(db_user)
     try:
         db.commit()
     except Exception as e:
-        upload_image.delete_blob("profile-images", f"profile-{db_user.uuid}" + extension)
+        if user_profile_image_url is not None:
+            upload_image.delete_blob_by_url(db_user.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_user)
@@ -88,25 +79,17 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User)
             setattr(db_user, key, value)
 
     if user_profile_image_url is not None:
-        parsed_url = urlparse(user_profile_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-        
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="profile-images", old_blob_name=filename_with_ext, new_blob_name=f"profile-{db_user.uuid}" + extension)
-
-    db_user.profile_image_url = image_url
+        db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container="profile-images", new_blob_name=f"profile-{db_user.uuid}")
+    elif user_profile_image_url is None and db_user.profile_image_url is not None:
+        upload_image.delete_blob_by_url(db_user.profile_image_url)
+        db_user.profile_image_url = None
 
     db_user.updated_on = datetime.utcnow()
     try:
         db.commit()
     except Exception as e:
         if user_profile_image_url is not None:
-            upload_image.delete_blob("profile-images", f"profile-{db_user.uuid}" + extension)
+            upload_image.delete_blob_by_url(db_user.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_user)

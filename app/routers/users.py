@@ -47,9 +47,6 @@ def get_user(db: Session = Depends(get_db), current_user: User = Security(get_cu
 
 @router.put("/users", response_model=schemas.User)
 def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    if all(value is None for value in dict(user).values()):
-        logging.exception("Invalid request body")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
     db_user = crud.get_db_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")

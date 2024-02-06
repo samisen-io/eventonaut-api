@@ -1,3 +1,4 @@
+from urllib.parse import urlparse
 from azure.storage.blob import BlobServiceClient,ContentSettings
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, status
 from dotenv import load_dotenv
@@ -60,6 +61,21 @@ def get_containers(basic_auth = Depends(basic_auth)):
     except Exception as ex:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
     
+def  get_actual_url(image_url:str, new_blob_container:str, new_blob_name:str):
+    parsed_url = urlparse(image_url)
+    path = parsed_url.path
+    filename_with_ext = os.path.basename(path)
+    print(filename_with_ext)
+    _, extension = os.path.splitext(filename_with_ext)
+
+    if extension not in ['.jpg', '.jpeg', '.png']:
+        logging.exception("Invalid image file format")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
+    
+    image_url = move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name = new_blob_container, old_blob_name = filename_with_ext, new_blob_name = new_blob_name + extension)
+    
+    return image_url
+    
 def move_file_from_temporary_to_permanent_container(source_container_name, dest_container_name, old_blob_name, new_blob_name):
     try:
         connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
@@ -69,15 +85,24 @@ def move_file_from_temporary_to_permanent_container(source_container_name, dest_
         dest_blob_client.start_copy_from_url(source_blob_client.url)
         source_blob_client.delete_blob()
         
+        logging.info(f"Blob {old_blob_name} moved to {dest_container_name} container successfully")
         return dest_blob_client.url
     except Exception as ex:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
     
-def delete_blob(container_name, blob_name):
+def delete_blob_by_url(blob_url):
     try:
         connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        url = urlparse(blob_url)
+        container_name = url.path.split("/")[1]
+        blob_name = url.path.split("/")[2]
+        
         blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+        
         blob_client.delete_blob()
+        
+        logging.info(f"Blob {blob_name} deleted successfully")
     except Exception as ex:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))    
+        logging.exception(str(ex))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))  
