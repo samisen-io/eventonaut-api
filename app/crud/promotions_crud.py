@@ -42,23 +42,17 @@ def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
     conference = db.query(models.Conference).filter(models.Conference.uuid == promotion.conference_id).first()
     db_promotion.conference_id = conference.id
     
-    parsed_url = parsed_url = urlparse(promotion.image_url)
-    path = parsed_url.path
-    filename_with_ext = os.path.basename(path)
-    _, extension = os.path.splitext(filename_with_ext)
-
-    if extension not in ['.jpg', '.jpeg', '.png']:
-        logging.exception("Invalid image file format")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
+    try:
+        db_promotion.image_url = upload_image.get_actual_url(image_url=promotion.image_url, new_blob_container="promotion-images", new_blob_name=f"promotion-{db_promotion.uuid}")
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
-    image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="promotion-images", old_blob_name=filename_with_ext, new_blob_name=f"promotion-{db_promotion.uuid}" + extension)
-    
-    db_promotion.image_url = image_url
     db.add(db_promotion)
     try:
         db.commit()
     except Exception as e:
-        upload_image.delete_blob("promotion-images", f"promotion-{db_promotion.uuid}" + extension)
+        upload_image.delete_blob_by_url(db_promotion.image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_promotion)
@@ -91,17 +85,7 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
         promotion.location = db_conference.location
 
     if promotion_image_url is not None:
-        parsed_url = urlparse(promotion_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-        
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="promotion-images", old_blob_name=filename_with_ext, new_blob_name=f"promotion-{db_promotion.uuid}" + extension)
-        db_promotion.image_url = image_url
+        db_promotion.image_url = upload_image.get_actual_url(image_url=promotion_image_url, new_blob_container="promotion-images", new_blob_name=f"promotion-{db_promotion.uuid}")
 
     db_promotion.updated_on = datetime.utcnow()
 
@@ -109,7 +93,7 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
         db.commit()
     except Exception as e:
         if promotion_image_url is not None:
-            upload_image.delete_blob("promotion-images", f"promotion-{db_promotion.uuid}" + extension)
+            upload_image.delete_blob_by_url(db_promotion.image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_promotion)
