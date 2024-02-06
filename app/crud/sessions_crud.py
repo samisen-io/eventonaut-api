@@ -78,8 +78,8 @@ def get_session_by_uuid_id(db: Session, uuid: int, owner_id: int):
     db_session = db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.owner_id == owner_id, models.Session.isarchived == False).first()
     return db_session
 
-def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str, owner_id: int):
-    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_uuid, models.Conference.owner_id == owner_id, models.Conference.isarchived == False).first()
+def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str):
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_uuid, models.Conference.isarchived == False).first()
     if conference is None:
         return None
     db_sessions = db.query(models.Session).filter(models.Session.conference_id == conference.id, models.Session.isarchived == False).all()
