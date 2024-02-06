@@ -65,14 +65,14 @@ def get_attendees(db: Session, skip: int = 0, limit: int = 100):
 
 # get attendee by email
 def get_attendee_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email == email, models.User.isarchived == False).first()
+    return db.query(models.User).filter(models.User.email == email, models.User.is_archived == False).first()
 
 # get attendee by id
 def get_attendee_by_uuid(db: Session, attendee_id: str):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
     if db_attendee is None:
         return None
-    db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.isarchived == False).first()
+    db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.is_archived == False).first()
     if db_user is None:
         return None
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
@@ -82,7 +82,7 @@ def get_attendee_by_id(db: Session, attendee_id: int):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     if db_attendee is None:
         return None
-    db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.isarchived == False).first()
+    db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.is_archived == False).first()
     if db_user is None:
         return None
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
@@ -165,8 +165,8 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: sc
 # delete attendee by id
 def delete_attendee_by_uuid(db: Session, attendee_id: int):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-    db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.isarchived == False).first()
-    db_user.isarchived = True
+    db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.is_archived == False).first()
+    db_user.is_archived = True
     db.commit()
     return True
 
@@ -191,7 +191,7 @@ def create_attendee_conference(db: Session, attendee_id: int, attendee_conferenc
 # get attendee conference by attendee id and conference id
 def get_attendee_conference_by_attendee_id_and_conference_id(db: Session, attendee_id: int, conference_id: str):
     attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.isarchived == False).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
     if attendee is None or conference is None:
         return None
     return db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee.id).filter(models.Attendee_Conferences.conference_id == conference.id).first()
@@ -204,7 +204,7 @@ def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, l
         return None
     conferences = []
     for attendee_conference in attendee_conferences:
-        conference = db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id, models.Conference.isarchived == False, models.Conference.end_date >= datetime.utcnow()).first()
+        conference = db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).first()
         if conference is None:
             continue
         conference.__dict__.pop('client_id')
@@ -222,7 +222,7 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, att
     return True
 
 def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str):
-    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.isarchived == False).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
     if conference is None:
         return None
     conference_id = conference.id

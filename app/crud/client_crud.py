@@ -41,15 +41,15 @@ def get_client(db: Session, client_id: int):
     return client
 
 def get_client_by_email(db: Session, email: str):
-    return db.query(models.Client).filter(models.Client.contact_email.ilike(email), models.Client.isarchived == False).first()
+    return db.query(models.Client).filter(models.Client.contact_email.ilike(email), models.Client.is_archived == False).first()
 
 def get_client_by_uuid(db: Session, client_uuid: str):
-    client = db.query(models.Client).filter(models.Client.uuid == client_uuid, models.Client.isarchived == False).first()
+    client = db.query(models.Client).filter(models.Client.uuid == client_uuid, models.Client.is_archived == False).first()
     client.status = client_enum.ClientEnum(client.client_status_id).name
     return client
 
 def get_client_by_uuid_and_owner_id(db: Session, client_id: str, owner_id: int):
-    return db.query(models.Client).filter(models.Client.uuid == client_id, models.Client.owner_id == owner_id, models.Client.isarchived == False).first()
+    return db.query(models.Client).filter(models.Client.uuid == client_id, models.Client.owner_id == owner_id, models.Client.is_archived == False).first()
 
 def get_all_clients(db: Session, offset: int = 0, limit: int = 100):
     clients = db.query(models.Client).offset(offset).limit(limit).all()
@@ -58,7 +58,7 @@ def get_all_clients(db: Session, offset: int = 0, limit: int = 100):
     return clients
 
 def get_all_clients_by_owner_id(db: Session, owner_id:int, offset: int = 0, limit: int = 100):
-    clients = db.query(models.Client).filter(models.Client.owner_id == owner_id, models.Client.isarchived == False).offset(offset).limit(limit).all()
+    clients = db.query(models.Client).filter(models.Client.owner_id == owner_id, models.Client.is_archived == False).offset(offset).limit(limit).all()
     for client in clients:
         client.status = client_enum.ClientEnum(client.client_status_id).name
     return clients
@@ -102,6 +102,6 @@ def delete_client(db: Session, client_id: str):
     db_client = db.query(models.Client).filter(models.Client.uuid == client_id).first()
     if db_client is None:
         return False
-    db_client.isarchived = True
+    db_client.is_archived = True
     db.commit()
     return True

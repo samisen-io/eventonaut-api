@@ -148,7 +148,7 @@ class Speakers(Base):
     title = Column(String, index=True)
     bio = Column(String, index=True)
     profile_image_url = Column(String, index=True)
-    isarchived = Column(Boolean, default=False)
+    is_archived = Column(Boolean, default=False)
 
     sessions_speakers = relationship("SessionSpeakers", back_populates="speaker")
     owner = relationship("User", back_populates="speakers")
@@ -341,7 +341,7 @@ class Sponsors(Base):
     contact_phone = Column(String, index=True)
     logo_image_url = Column(String, index=True)
     sponsorship_level = Column(String, index=True)
-    isarchived = Column(Boolean, default=False)
+    is_archived = Column(Boolean, default=False)
 
     owner = relationship("User", back_populates="sponsors")
     event_sponsors = relationship("EventSponsors", back_populates="sponsors")
@@ -371,7 +371,7 @@ class Venue(Base):
     location = Column(String, index=True)
     address = Column(String, index=True)
     geo_location = Column(String, index=True)
-    isarchived = Column(Boolean, default=False)
+    is_archived = Column(Boolean, default=False)
 
     owner = relationship("User", back_populates="venues")
     conference = relationship("Conference", back_populates="venues")
