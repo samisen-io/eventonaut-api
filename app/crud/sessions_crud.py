@@ -44,24 +44,13 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
         session_speaker.created_on = session_speaker.updated_on = datetime.utcnow()
         db.add(session_speaker)
     
-    if session.profile_image_url is not None:
-        parsed_url = urlparse(session.profile_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-        
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="session-images", old_blob_name=filename_with_ext, new_blob_name=f"session-{db_session.uuid}" + extension)
     
-    db_session.session_image_url = image_url
+    db_session.session_image_url = upload_image.get_actual_url(image_url=session.session_image_url, new_blob_container="session-images", new_blob_name=f"session-{db_session.uuid}") if session.session_image_url is not None else None
     
     try:
         db.commit()
     except Exception as e:
-        upload_image.delete_blob("session-images", f"session-{db_session.uuid}" + extension)
+        upload_image.delete_blob_by_url(db_session.session_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_session)
@@ -139,25 +128,17 @@ def update_session(db: Session, session: schemas.SessionUpdate, db_session: mode
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
 
     if session_image_url is not None:
-        parsed_url = urlparse(session_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-        
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="session-images", old_blob_name=filename_with_ext, new_blob_name=f"session-{db_session.uuid}" + extension)
-    
-    db_session.session_image_url = image_url
+        db_session.session_image_url = upload_image.get_actual_url(image_url=session_image_url, new_blob_container="session-images", new_blob_name=f"session-{db_session.uuid}") 
+    elif session_image_url is None and db_session.session_image_url is not None:
+        upload_image.delete_blob("session-images", f"session-{db_session.uuid}")
+        db_session.session_image_url = None
 
     db_session.updated_on = datetime.utcnow()
     try:
         db.commit()
     except Exception as e:
         if session_image_url is not None:
-            upload_image.delete_blob("session-images", f"session-{db_session.uuid}" + extension)
+            upload_image.delete_blob_by_url(db_session.session_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_session)
