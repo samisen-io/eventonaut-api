@@ -39,7 +39,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     user_status_id = Column(Integer, ForeignKey("organizer_status.id"))
-    isarchived = Column(Boolean, default=False)
+    is_archived = Column(Boolean, default=False)
     profile_image_url = Column(String, index=True)
 
     attendees = relationship("Attendee", back_populates="user")
@@ -77,7 +77,7 @@ class Client(Base):
     address = Column(String, index = True)
     profile_image_url = Column(String, index=True)
     client_status_id = Column(Integer, ForeignKey("client_status.id"))
-    isarchived = Column(Boolean, default=False)
+    is_archived = Column(Boolean, default=False)
 
     owner = relationship("User", back_populates="client")
     conferences = relationship("Conference", back_populates="client")
@@ -107,7 +107,7 @@ class Conference(Base):
     registration_link = Column(String, index=True)
     information_guide = Column(String, index=True)
     conference_status_id = Column(Integer, ForeignKey("event_status.id"))
-    isarchived = Column(Boolean, default=False)
+    is_archived = Column(Boolean, default=False)
 
     client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")
@@ -187,7 +187,7 @@ class Session(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     session_image_url = Column(String, index=True)
     session_status_id = Column(Integer, ForeignKey("session_status.id"))
-    isarchived = Column(Boolean, default=False)
+    is_archived = Column(Boolean, default=False)
 
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
