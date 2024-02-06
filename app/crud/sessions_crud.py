@@ -59,10 +59,10 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     return db_session
 
 def get_session_by_conference_uuid_session_uuid(db: Session, session_id: str, conference_id: str):
-    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.isarchived == False).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
     if conference is None:
         return None
-    db_session = db.query(models.Session).filter(models.Session.uuid == session_id, models.Session.conference_id == conference.id, models.Session.isarchived == False).first()
+    db_session = db.query(models.Session).filter(models.Session.uuid == session_id, models.Session.conference_id == conference.id, models.Session.is_archived == False).first()
     if db_session is None:
         return None
     db_session = add_speakers_to_session(db, db_session)
@@ -70,26 +70,26 @@ def get_session_by_conference_uuid_session_uuid(db: Session, session_id: str, co
     return db_session
 
 def get_session_by_session_uuid(db: Session, uuid: str):
-    db_session = db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.isarchived == False).first()
+    db_session = db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.is_archived == False).first()
     db_session = add_speakers_to_session(db, db_session)
     return db_session
 
 def get_session_by_uuid_id(db: Session, uuid: int, owner_id: int):
-    db_session = db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.owner_id == owner_id, models.Session.isarchived == False).first()
+    db_session = db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.owner_id == owner_id, models.Session.is_archived == False).first()
     return db_session
 
 def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str, owner_id: int):
-    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_uuid, models.Conference.owner_id == owner_id, models.Conference.isarchived == False).first()
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_uuid, models.Conference.owner_id == owner_id, models.Conference.is_archived == False).first()
     if conference is None:
         return None
-    db_sessions = db.query(models.Session).filter(models.Session.conference_id == conference.id, models.Session.isarchived == False).all()
+    db_sessions = db.query(models.Session).filter(models.Session.conference_id == conference.id, models.Session.is_archived == False).all()
     for db_session in db_sessions:
         db_session = add_speakers_to_session(db, db_session)
         db_session.status = session_enum.SessionEnum(db_session.session_status_id).name
     return db_sessions
 
 def delete_session(db: Session, db_session: models.Session):
-    db_session.isarchived = True
+    db_session.is_archived = True
     db.commit()
     return True
 

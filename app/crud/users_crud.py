@@ -37,18 +37,18 @@ def create_user(db: Session, user: schemas.UserCreate):
     return db_user
 
 def get_user(db: Session, user_id: int):
-    user = db.query(models.User).filter(models.User.id == user_id, models.User.isarchived == False).first()
+    user = db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
     user.status = organizer.OrganizerEnum(user.user_status_id).name
     return user
 
 def get_db_user(db: Session, user_id: int):
-    return db.query(models.User).filter(models.User.id == user_id, models.User.isarchived == False).first()
+    return db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
 
 def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email.ilike(email), models.User.isarchived == False).first()
+    return db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
 
 def get_user_by_email_and_password(db: Session, email: str, password: str):
-    user = db.query(models.User).filter(models.User.email.ilike(email), models.User.isarchived == False).first()
+    user = db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
     if user is None:
         return False
     if hashing.verify_password(password, user.hashed_password):
@@ -116,12 +116,12 @@ def update_user_password_by_email(db: Session, email: str, password: str):
 def delete_user(db: Session, user: models.User):
     db_session = db.query(models.Session).filter(models.Session.owner_id == user.id).all()
     for session in db_session:
-        session.isarchived = True
+        session.is_archived = True
         
     conference = db.query(models.Conference).filter(models.Conference.owner_id == user.id).all()
     for c in conference:
-        c.isarchived = True
+        c.is_archived = True
 
-    user.isarchived = True
+    user.is_archived = True
     db.commit()
     return True
