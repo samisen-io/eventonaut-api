@@ -118,25 +118,18 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
         db_user.user_status_id = attendee_enum.AttendeeEnum[attendee.status.upper()].value
 
     if attendee.profile_image_url is not None:
-        parsed_url = urlparse(attendee.profile_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
+        db_user.profile_image_url = upload_image.get_actual_url(image_url=attendee.profile_image_url, new_blob_container="attende-profile-images", new_blob_name=f"profile-{db_attendee.uuid}")
+    elif attendee.profile_image_url is None and db_user.profile_image_url is not None:
+        upload_image.delete_blob_by_url(db_user.profile_image_url)
+        db_user.profile_image_url = None
 
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-        
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="attende-profile-images", old_blob_name=filename_with_ext, new_blob_name=f"profile-{db_attendee.uuid}" + extension)
-
-    db_user.profile_image_url = image_url
     db_attendee.updated_on = datetime.utcnow()
     db_user.updated_on = datetime.utcnow()
     try:
         db.commit()
     except Exception as e:
         if attendee.profile_image_url is not None:
-            upload_image.delete_blob("attende-profile-images", f"profile-{db_attendee.uuid}" + extension)
+            upload_image.delete_blob_by_url(db_user.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_attendee)
