@@ -90,9 +90,8 @@ class ClientUpdate(BaseModel):
         if v is not None:
             if v == "":
                 return None
-            max_length = 15 if info.field_name == 'address' else 256
-            if len(v) > max_length:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than {max_length} characters")
+            if len(v) > 256:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than 256 characters")
         return v
     
     @field_validator('contact_phone')
