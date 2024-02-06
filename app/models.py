@@ -38,8 +38,8 @@ class User(Base):
     timezone = Column(String, index=True)
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
-    user_status_id = Column(Integer, ForeignKey("static_organizers.id"))
-    is_archived = Column(Boolean, default=False)
+    user_status_id = Column(Integer, ForeignKey("organizer_status.id"))
+    isarchived = Column(Boolean, default=False)
     profile_image_url = Column(String, index=True)
 
     attendees = relationship("Attendee", back_populates="user")
@@ -50,7 +50,7 @@ class User(Base):
     venues = relationship("Venue", back_populates="owner")
     speakers = relationship("Speakers", back_populates="owner")
     sponsors = relationship("Sponsors", back_populates="owner")
-    static_organizer = relationship("StaticOrganizer", back_populates="user")
+    organizer_status = relationship("OrganizerStatus", back_populates="user")
     
 class Role(Base):
     __tablename__ = "role"
@@ -76,12 +76,12 @@ class Client(Base):
     contact_phone = Column(String, index=True)
     address = Column(String, index = True)
     profile_image_url = Column(String, index=True)
-    client_status_id = Column(Integer, ForeignKey("static_clients.id"))
-    is_archived = Column(Boolean, default=False)
+    client_status_id = Column(Integer, ForeignKey("client_status.id"))
+    isarchived = Column(Boolean, default=False)
 
     owner = relationship("User", back_populates="client")
     conferences = relationship("Conference", back_populates="client")
-    static_client = relationship("StaticClient", back_populates="client")
+    client_status = relationship("ClientStatus", back_populates="client")
   
 #class to create conference table and add relationship to session table
 class Conference(Base):
@@ -106,8 +106,8 @@ class Conference(Base):
     timezone = Column(String, index=True)
     registration_link = Column(String, index=True)
     information_guide = Column(String, index=True)
-    conference_status_id = Column(Integer, ForeignKey("static_events.id"))
-    is_archived = Column(Boolean, default=False)
+    conference_status_id = Column(Integer, ForeignKey("event_status.id"))
+    isarchived = Column(Boolean, default=False)
 
     client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")
@@ -121,7 +121,7 @@ class Conference(Base):
     venues = relationship("Venue", back_populates="conference")
     sessions_speakers = relationship("SessionSpeakers", back_populates="conference")
     event_sponsors = relationship("EventSponsors", back_populates="conference")
-    static_event = relationship("StaticEvent", back_populates="conference")
+    event_status = relationship("EventStatus", back_populates="conference")
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -186,14 +186,14 @@ class Session(Base):
     tags = Column(ARRAY(String), index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
     session_image_url = Column(String, index=True)
-    session_status_id = Column(Integer, ForeignKey("static_sessions.id"))
-    is_archived = Column(Boolean, default=False)
+    session_status_id = Column(Integer, ForeignKey("session_status.id"))
+    isarchived = Column(Boolean, default=False)
 
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
     agenda_session = relationship("AgendaSession", back_populates="session")
     sessions_speakers = relationship("SessionSpeakers", back_populates="session")
-    static_session = relationship("StaticSession", back_populates="session")
+    session_status = relationship("Sessionstatus", back_populates="session")
 
 #class to define settings table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class Settings(Base):
@@ -376,8 +376,8 @@ class Venue(Base):
     owner = relationship("User", back_populates="venues")
     conference = relationship("Conference", back_populates="venues")
     
-class StaticOrganizer(Base):
-    __tablename__ = "static_organizers"
+class OrganizerStatus(Base):
+    __tablename__ = "organizer_status"
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, unique=True)
@@ -385,21 +385,10 @@ class StaticOrganizer(Base):
     updated_on = Column(DateTime, index=True)
     status = Column(String, index=True, unique=True)
     
-    user = relationship("User", back_populates="static_organizer")
+    user = relationship("User", back_populates="organizer_status")
 
-class StaticClient(Base):
-    __tablename__ = "static_clients"
-
-    id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, unique=True)
-    created_on = Column(DateTime, index=True)
-    updated_on = Column(DateTime, index=True)
-    status = Column(String, index=True, unique=True)
-    
-    client = relationship("Client", back_populates="static_client")
-    
-class StaticEvent(Base):
-    __tablename__ = "static_events"
+class ClientStatus(Base):
+    __tablename__ = "client_status"
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, unique=True)
@@ -407,10 +396,10 @@ class StaticEvent(Base):
     updated_on = Column(DateTime, index=True)
     status = Column(String, index=True, unique=True)
     
-    conference = relationship("Conference", back_populates="static_event")
+    client = relationship("Client", back_populates="client_status")
     
-class StaticSession(Base):
-    __tablename__ = "static_sessions"
+class EventStatus(Base):
+    __tablename__ = "event_status"
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, unique=True)
@@ -418,10 +407,21 @@ class StaticSession(Base):
     updated_on = Column(DateTime, index=True)
     status = Column(String, index=True, unique=True)
     
-    session = relationship("Session", back_populates="static_session")
+    conference = relationship("Conference", back_populates="event_status")
     
-class StaticAttendee(Base):
-    __tablename__ = "static_attendees"
+class Sessionstatus(Base):
+    __tablename__ = "session_status"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    status = Column(String, index=True, unique=True)
+    
+    session = relationship("Session", back_populates="session_status")
+    
+class AttendeeStatus(Base):
+    __tablename__ = "attendee_status"
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, unique=True)
