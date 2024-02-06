@@ -29,25 +29,13 @@ def create_speaker(db: Session, speaker: schemas.SpeakerCreate):
     db_speaker.updated_on = datetime.utcnow()
     db_speaker.conference_id = conference.id
     
-    if speaker.profile_image_url is not None:
-        parsed_url = parsed_url = urlparse(speaker.profile_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-        
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="speaker-images", old_blob_name=filename_with_ext, new_blob_name=f"speaker-{db_speaker.uuid}" + extension)
-    
-    db_speaker.profile_image_url = image_url
+    db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container="speaker-images", new_blob_name=f"speaker-{db_speaker.uuid}") if speaker.profile_image_url is not None else None
     
     db.add(db_speaker)
     try:
         db.commit()
     except Exception as e:
-        upload_image.delete_blob("speaker-images", f"speaker-{db_speaker.uuid}" + extension)
+        upload_image.delete_blob_by_url(db_speaker.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_speaker)
@@ -86,24 +74,17 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
             setattr(db_speaker, key, value)
             
     if speaker.profile_image_url is not None:
-        parsed_url = parsed_url = urlparse(speaker.profile_image_url)
-        path = parsed_url.path
-        filename_with_ext = os.path.basename(path)
-        _, extension = os.path.splitext(filename_with_ext)
-
-        if extension not in ['.jpg', '.jpeg', '.png']:
-            logging.exception("Invalid image file format")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
-        
-        image_url = upload_image.move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name="speaker-images", old_blob_name=filename_with_ext, new_blob_name=f"speaker-{db_speaker.uuid}" + extension)
-        db_speaker.profile_image_url = image_url
+        db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container="speaker-images", new_blob_name=f"speaker-{db_speaker.uuid}")
+    elif speaker.profile_image_url is None and db_speaker.profile_image_url is not None:
+        upload_image.delete_blob_by_url(db_speaker.profile_image_url)
+        db_speaker.profile_image_url = None
     
     db_speaker.updated_on = datetime.utcnow()
     try:
         db.commit()
     except Exception as e:
         if speaker.profile_image_url is not None:
-            upload_image.delete_blob("speaker-images", f"speaker-{db_speaker.uuid}" + extension)
+            upload_image.delete_blob_by_url(db_speaker.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_speaker)
