@@ -157,7 +157,7 @@ class ConferenceUpdate(BaseModel):
 class Conference(ConferenceBase):
     uuid: str = Field(serialization_alias="id")
     client_details: client_schemas.Client | None
-    venue_details: venue_schemas.Venue | None
+    venue_details: venue_schemas.Venue
     sponsor_details: list[sponsor_schemas.Sponsor] | None
     
     class Config:
