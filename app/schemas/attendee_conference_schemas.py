@@ -13,19 +13,10 @@ class AttendeeConferenceCreate(BaseModel):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid conference identifier")
         return v
 
-class Conference(BaseModel):
-    id: str = Field(validation_alias='uuid', serialization_alias='id')
-    name: str | None = None
-    location: str | None = None
-    start_date: date | None = None
-    end_date: date | None = None
-    description: str | None = None
-    conference_logo: str | None = None
-
 class AttendeeConference(BaseModel):
     uuid: str = Field(serialization_alias='id')
     attendee_id: str 
-    conference: Conference
+    conference_id: str
     
     class Config:
         orm_mode = True

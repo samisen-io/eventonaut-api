@@ -1,7 +1,4 @@
 import logging
-import os
-from urllib.parse import urlparse
-
 from app.routers import upload_image
 from .. import models
 from ..schemas import promotion_schemas
@@ -9,6 +6,7 @@ from sqlalchemy.orm import Session
 import uuid
 from datetime import datetime
 from fastapi import HTTPException, status
+from ..static_enums.blob_container_enums import BlobContainer
 
 def get_promotion(db: Session, promotion_id: str):
     promotion = db.query(models.Promotions).filter(models.Promotions.uuid == promotion_id).first()
@@ -43,7 +41,7 @@ def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
     db_promotion.conference_id = conference.id
     
     try:
-        db_promotion.image_url = upload_image.get_actual_url(image_url=promotion.image_url, new_blob_container="promotion-images", new_blob_name=f"promotion-{db_promotion.uuid}")
+        db_promotion.image_url = upload_image.get_actual_url(image_url=promotion.image_url, new_blob_container=BlobContainer.PROMOTION_IMAGES.value, new_blob_name=f"promotion-{db_promotion.uuid}")
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -84,7 +82,7 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
         db_promotion.conference_id = db_conference.id
         promotion.location = db_conference.location
 
-    if promotion_image_url is not None:
+    if promotion_image_url is not None and upload_image.get_actual_url(image_url=promotion_image_url) != db_promotion.image_url:
         db_promotion.image_url = upload_image.get_actual_url(image_url=promotion_image_url, new_blob_container="promotion-images", new_blob_name=f"promotion-{db_promotion.uuid}")
 
     db_promotion.updated_on = datetime.utcnow()

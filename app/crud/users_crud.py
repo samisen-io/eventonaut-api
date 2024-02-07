@@ -9,7 +9,7 @@ from datetime import datetime
 import uuid
 from ..static_enums import organizer
 from ..routers import upload_image
-from ..routers import upload_image
+from ..static_enums.blob_container_enums import BlobContainer
 
 def create_user(db: Session, user: schemas.UserCreate):
     user_dict = user.model_dump()
@@ -22,7 +22,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.uuid = "usr-"+str(uuid.uuid4())
     db_user.role = "organizer"
 
-    db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container="profile-images", new_blob_name=f"profile-{db_user.uuid}") if user_profile_image_url is not None else None
+    db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container=BlobContainer.PROFILE_IMAGES.value, new_blob_name=f"profile-{db_user.uuid}") if user_profile_image_url is not None else None
         
     db.add(db_user)
     try:
@@ -78,8 +78,8 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User)
         else:
             setattr(db_user, key, value)
 
-    if user_profile_image_url is not None:
-        db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container="profile-images", new_blob_name=f"profile-{db_user.uuid}")
+    if user_profile_image_url is not None and upload_image.get_container_name_from_url(user_profile_image_url) != BlobContainer.PROFILE_IMAGES.value:
+        db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container=BlobContainer.PROFILE_IMAGES.value, new_blob_name=f"profile-{db_user.uuid}")
     elif user_profile_image_url is None and db_user.profile_image_url is not None:
         upload_image.delete_blob_by_url(db_user.profile_image_url)
         db_user.profile_image_url = None

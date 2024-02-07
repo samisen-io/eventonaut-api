@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 from ..routers import upload_image
 from fastapi import HTTPException, status
 import logging
+from ..static_enums.blob_container_enums import BlobContainer
 
 # create attendee
 def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
@@ -117,8 +118,8 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
     if attendee.status is not None:
         db_user.user_status_id = attendee_enum.AttendeeEnum[attendee.status.upper()].value
 
-    if attendee.profile_image_url is not None:
-        db_user.profile_image_url = upload_image.get_actual_url(image_url=attendee.profile_image_url, new_blob_container="attende-profile-images", new_blob_name=f"profile-{db_attendee.uuid}")
+    if attendee.profile_image_url is not None and upload_image.get_container_name_from_url(attendee.profile_image_url) != BlobContainer.ATTENDE_PROFILE_IMAGES.value:
+        db_user.profile_image_url = upload_image.get_actual_url(image_url=attendee.profile_image_url, new_blob_container=BlobContainer.ATTENDE_PROFILE_IMAGES.value, new_blob_name=f"profile-{db_attendee.uuid}")
     elif attendee.profile_image_url is None and db_user.profile_image_url is not None:
         upload_image.delete_blob_by_url(db_user.profile_image_url)
         db_user.profile_image_url = None
@@ -137,14 +138,6 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
     attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
     attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
     return attendee
-
-# def update_attendee_image_url(db: Session, attendee_id: int, image_url: str):
-#     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-#     db_attendee.profile_image_url = image_url
-#     db_attendee.updated_on = datetime.utcnow()
-#     db.commit()
-#     db.refresh(db_attendee)
-#     return db_attendee
 
 # update attendee password by id
 def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendePassword):
@@ -184,8 +177,7 @@ def create_attendee_conference(db: Session, attendee_id: int, attendee_conferenc
     db.commit()
     db.refresh(db_attendee_conference)
     db.refresh(conference)
-    conf_schema = attendee_conference_schemas.Conference.model_validate(conference.__dict__)
-    attendee_conf = attendee_conference_schemas.AttendeeConference(uuid=db_attendee_conference.uuid, attendee_id=attendee.uuid, conference=conf_schema)
+    attendee_conf = attendee_conference_schemas.AttendeeConference(uuid=db_attendee_conference.uuid, attendee_id=attendee.uuid, conference_id=conference.uuid)
     return attendee_conf
 
 # get attendee conference by attendee id and conference id
