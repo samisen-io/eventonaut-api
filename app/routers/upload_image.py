@@ -72,9 +72,7 @@ def  get_actual_url(image_url:str, new_blob_container:str, new_blob_name:str):
         logging.exception("Invalid image file format")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
     
-    image_url = move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name = new_blob_container, old_blob_name = filename_with_ext, new_blob_name = new_blob_name + extension)
-    
-    return image_url
+    return move_file_from_temporary_to_permanent_container(source_container_name="temporary-images", dest_container_name = new_blob_container, old_blob_name = filename_with_ext, new_blob_name = new_blob_name + extension)
     
 def move_file_from_temporary_to_permanent_container(source_container_name, dest_container_name, old_blob_name, new_blob_name):
     try:
@@ -89,6 +87,10 @@ def move_file_from_temporary_to_permanent_container(source_container_name, dest_
         return dest_blob_client.url
     except Exception as ex:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
+ 
+def get_container_name_from_url(blob_url):
+    url = urlparse(blob_url)
+    return url.path.split("/")[1]
     
 def delete_blob_by_url(blob_url):
     try:

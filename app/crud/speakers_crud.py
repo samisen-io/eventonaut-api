@@ -1,17 +1,14 @@
 import logging
-import os
-from urllib.parse import urlparse
 from fastapi import HTTPException, status
 from sqlalchemy import String, cast
 from sqlalchemy.orm import Session
-
 from app.routers import upload_image
 from ..models import Speakers, Conference
 from ..schemas import speaker_schemas as schemas
 import uuid
 from .. import models
 from datetime import datetime
-import random
+from ..static_enums.blob_container_enums import BlobContainer
 
 def get_speaker_by_email(db: Session, email: str, owner_id: int):
     return db.query(Speakers).filter(Speakers.email.ilike(email), Speakers.owner_id == owner_id, Speakers.is_archived == False).first()
@@ -30,7 +27,7 @@ def create_speaker(db: Session, speaker: schemas.SpeakerCreate):
     db_speaker.updated_on = datetime.utcnow()
     db_speaker.conference_id = conference.id
     
-    db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container="speaker-images", new_blob_name=f"speaker-{db_speaker.uuid}") if speaker.profile_image_url is not None else None
+    db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container=BlobContainer.SPEAKER_IMAGES.value, new_blob_name=f"speaker-{db_speaker.uuid}") if speaker.profile_image_url is not None else None
     
     db.add(db_speaker)
     try:
@@ -80,8 +77,8 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
         if value is not None:
             setattr(db_speaker, key, value)
             
-    if speaker.profile_image_url is not None:
-        db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container="speaker-images", new_blob_name=f"speaker-{db_speaker.uuid}")
+    if speaker.profile_image_url is not None and upload_image.get_container_name_from_url(db_speaker.profile_image_url) == BlobContainer.SPEAKER_IMAGES.value:
+        db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container=BlobContainer.SPEAKER_IMAGES.value, new_blob_name=f"speaker-{db_speaker.uuid}")
     elif speaker.profile_image_url is None and db_speaker.profile_image_url is not None:
         upload_image.delete_blob_by_url(db_speaker.profile_image_url)
         db_speaker.profile_image_url = None

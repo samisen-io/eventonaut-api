@@ -1,15 +1,12 @@
 import logging
-import os
-from urllib.parse import urlparse
-
 from fastapi import HTTPException, status
-
 from app.routers import upload_image
 from ..import models
 from ..schemas import sponsor_schemas
 from sqlalchemy.orm import Session
 import uuid
 from datetime import datetime
+from ..static_enums.blob_container_enums import BlobContainer
 
 def get_all_sponsors(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.Sponsors).offset(offset).limit(limit).all()
@@ -40,7 +37,7 @@ def create_sponsor(db: Session, sponsor: sponsor_schemas.SponsorCreate, owner_id
     db_sponsor.uuid = 'spn-' + str(uuid.uuid4())
     
     try:
-        db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor.logo_image_url, new_blob_container="sponsor-logos", new_blob_name=f"sponsor-{db_sponsor.uuid}") 
+        db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor.logo_image_url, new_blob_container=BlobContainer.SPONSOR_LOGOS.value, new_blob_name=f"sponsor-{db_sponsor.uuid}")
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
@@ -64,8 +61,8 @@ def update_sponsor(db: Session, sponsor: sponsor_schemas.SponsorUpdate, db_spons
             setattr(db_sponsor, key, value)
     db_sponsor.updated_on = datetime.now()
     
-    if sponsor_image_url is not None:
-        db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor_image_url, new_blob_container="sponsor-logos", new_blob_name=f"sponsor-{db_sponsor.uuid}")
+    if sponsor_image_url is not None and upload_image.get_container_name_from_url(db_sponsor.logo_image_url) == BlobContainer.SPONSOR_LOGOS.value:
+        db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor_image_url, new_blob_container=BlobContainer.SPONSOR_LOGOS.value, new_blob_name=f"sponsor-{db_sponsor.uuid}")
     
     try:
         db.commit()

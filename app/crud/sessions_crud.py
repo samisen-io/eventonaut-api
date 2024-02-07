@@ -2,7 +2,6 @@ import os
 from urllib.parse import urlparse
 from sqlalchemy.orm import Session
 from datetime import datetime, date
-
 from app.routers import upload_image
 from .. import models
 from ..schemas import session_schemas as schemas
@@ -10,6 +9,7 @@ from fastapi import HTTPException, status
 import logging
 import uuid
 from ..static_enums import session as session_enum
+from ..static_enums.blob_container_enums import BlobContainer
 
 def add_speakers_to_session(db: Session, session: models.Session):
     db_session_speakers = db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == session.id).all()
@@ -45,7 +45,7 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
         db.add(session_speaker)
     
     
-    db_session.session_image_url = upload_image.get_actual_url(image_url=session.session_image_url, new_blob_container="session-images", new_blob_name=f"session-{db_session.uuid}") if session.session_image_url is not None else None
+    db_session.session_image_url = upload_image.get_actual_url(image_url=session.session_image_url, new_blob_container=BlobContainer.SESSION_IMAGES.value, new_blob_name=f"session-{db_session.uuid}") if session.session_image_url is not None else None
     
     try:
         db.commit()
@@ -127,8 +127,8 @@ def update_session(db: Session, session: schemas.SessionUpdate, db_session: mode
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
 
-    if session_image_url is not None:
-        db_session.session_image_url = upload_image.get_actual_url(image_url=session_image_url, new_blob_container="session-images", new_blob_name=f"session-{db_session.uuid}") 
+    if session_image_url is not None and upload_image.get_container_name_from_url(session_image_url) != BlobContainer.SESSION_IMAGES.value:
+        db_session.session_image_url = upload_image.get_actual_url(image_url=session_image_url, new_blob_container=BlobContainer.SESSION_IMAGES.value, new_blob_name=f"session-{db_session.uuid}")
     elif session_image_url is None and db_session.session_image_url is not None:
         upload_image.delete_blob("session-images", f"session-{db_session.uuid}")
         db_session.session_image_url = None
