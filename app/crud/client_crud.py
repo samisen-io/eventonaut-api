@@ -10,6 +10,7 @@ from ..schemas import client_schemas as schemas
 from datetime import datetime
 import uuid
 from ..static_enums import client as client_enum
+from ..static_enums.blob_container_enums import BlobContainer
 
 def create_client(db: Session, client: schemas.ClientCreate, user_id: int):
     client_dict = client.model_dump()
@@ -22,7 +23,7 @@ def create_client(db: Session, client: schemas.ClientCreate, user_id: int):
     db_client.uuid = "cli-" + str(uuid.uuid4())
     db_client.owner_id = user_id
     
-    db_client.profile_image_url = upload_image.get_actual_url(image_url=client_profile_image_url, new_blob_container="client-logos", new_blob_name=f"profile-{db_client.uuid}") if client_profile_image_url is not None else None
+    db_client.profile_image_url = upload_image.get_actual_url(image_url=client_profile_image_url, new_blob_container=BlobContainer.CLIENT_LOGOS.value, new_blob_name=f"profile-{db_client.uuid}") if client_profile_image_url is not None else None
     
     db.add(db_client)
     try:
@@ -78,10 +79,8 @@ def update_client(db: Session, client: schemas.ClientUpdate):
         if value is not None:
             setattr(db_client, key, value)
     
-    image_url = None
-    
-    if client_profile_image_url is not None:
-        db_client.profile_image_url = upload_image.get_actual_url(image_url=client_profile_image_url, new_blob_container="client-logos", new_blob_name=f"client-profile-{db_client.uuid}")
+    if client_profile_image_url is not None and upload_image.get_container_name_from_url(client_profile_image_url) != BlobContainer.CLIENT_LOGOS.value:
+        db_client.profile_image_url = upload_image.get_actual_url(image_url=client_profile_image_url, new_blob_container=BlobContainer.CLIENT_LOGOS.value, new_blob_name=f"profile-{db_client.uuid}")
     elif client_profile_image_url is None and db_client.profile_image_url is not None:
         upload_image.delete_blob_by_url(db_client.profile_image_url)
         db_client.profile_image_url = None
