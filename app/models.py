@@ -51,6 +51,7 @@ class User(Base):
     speakers = relationship("Speakers", back_populates="owner")
     sponsors = relationship("Sponsors", back_populates="owner")
     organizer_status = relationship("OrganizerStatus", back_populates="user")
+    user_roles = relationship('User_Role', back_populates='user')
     
 class Role(Base):
     __tablename__ = "role"
@@ -61,6 +62,21 @@ class Role(Base):
     updated_on = Column(DateTime)
     name = Column(String, index=True)
     description = Column(String, index=True)
+    
+    user_roles = relationship('User_Role', back_populates='role')
+    
+class User_Role(Base):
+    __tablename__ = "user_role"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    role_id = Column(Integer, ForeignKey("role.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    
+    user = relationship('User', back_populates='user_roles')
+    role = relationship('Role', back_populates='user_roles')
 
 class Client(Base):
     __tablename__ = "clients"

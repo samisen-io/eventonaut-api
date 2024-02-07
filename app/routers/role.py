@@ -1,5 +1,4 @@
 from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -17,18 +16,24 @@ def create_role(
     db: Session = Depends(get_db),
     basic_auth=Depends(basic_auth),
 ):
-    return crud.create_role(db=db, role=role)
+    try:
+        return crud.create_role(db=db, role=role)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/role", response_model=List[schemas.Role])
+@router.get("/roles", response_model=List[schemas.Role])
 def read_roles(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     basic_auth=Depends(basic_auth),
 ):
-    roles = crud.get_roles(db, skip=skip, limit=limit)
-    return roles
+    try:
+        roles = crud.get_roles(db, skip=skip, limit=limit)
+        return roles
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/role/{role_id}", response_model=schemas.Role)

@@ -16,17 +16,20 @@ def get_roles(db: Session, skip: int = 0, limit: int = 100):
 
 
 def create_role(db: Session, role: schemas.RoleCreate):
-    db_role = models.Role(
-        name=role.name,
-        uuid="rol-" + str(uuid.uuid4()),
-        created_on=datetime.utcnow(),
-        updated_on=datetime.utcnow(),
-        description=role.description,
-    )
-    db.add(db_role)
-    db.commit()
-    db.refresh(db_role)
-    return db_role
+    try:
+        db_role = models.Role(**role.model_dump())
+        db_role.uuid = "rol-" + str(uuid.uuid4())
+        db_role.created_on = db_role.updated_on = datetime.utcnow()
+        db.add(db_role)
+        try:
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            return "Cant create role. Error occurred: " + str(e)
+        db.refresh(db_role)
+        return db_role
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
 
 
 def update_role(db: Session, role: schemas.RoleUpdate):

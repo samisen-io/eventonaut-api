@@ -9,12 +9,14 @@ from datetime import datetime
 import uuid
 from ..static_enums import organizer
 from ..routers import upload_image
+from ..crud import user_role_crud
 from ..static_enums.blob_container_enums import BlobContainer
 
-def create_user(db: Session, user: schemas.UserCreate):
+def create_user(db: Session, user: schemas.UserCreate, role_ids: list[int]):
     user_dict = user.model_dump()
     user_status = user_dict.pop("status")
     user_profile_image_url = user_dict.pop("profile_image_url")
+    user_dict.pop("user_role_ids")
     db_user = models.User(**user_dict)
     db_user.user_status_id = organizer.OrganizerEnum[user_status.upper()].value
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
@@ -27,13 +29,19 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.add(db_user)
     try:
         db.commit()
+        
+        for role_id in role_ids:
+            user_role_crud.create_user_role(db, user_id=db_user.id, role_id=role_id)
+        
+        db.refresh(db_user)
+        
     except Exception as e:
         if user_profile_image_url is not None:
             upload_image.delete_blob_by_url(db_user.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_user)
-    db_user.status = organizer.OrganizerEnum(db_user.user_status_id).name
+    db_user.status = "ACTIVE"
     return db_user
 
 def get_user(db: Session, user_id: int):

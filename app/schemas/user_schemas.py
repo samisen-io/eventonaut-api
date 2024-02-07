@@ -1,3 +1,4 @@
+from typing import List
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from fastapi import HTTPException, status as statuscode
 import logging
@@ -14,6 +15,7 @@ class UserBase(BaseModel):
     profile_image_url: str | None = None
 
     @field_validator('email','first_name','last_name','business_type')
+    @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
             logging.exception(f"{info.field_name} cannot be empty")
@@ -24,6 +26,7 @@ class UserBase(BaseModel):
         return v
     
     @field_validator("status")
+    @classmethod
     def check_status(cls, v):
         v = v.upper()
         if v not in list(organizer.OrganizerEnum.__members__):
@@ -31,6 +34,7 @@ class UserBase(BaseModel):
         return v
     
     @field_validator('company','timezone','profile_image_url')
+    @classmethod
     def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -51,6 +55,7 @@ class UserBaseUpdate(BaseModel):
     profile_image_url: str |None = None
 
     @field_validator('first_name','last_name','company','business_type','timezone','profile_image_url')
+    @classmethod
     def user_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -62,6 +67,7 @@ class UserBaseUpdate(BaseModel):
         return v
     
     @field_validator("status")
+    @classmethod
     def check_status(cls, v):
         if v is not None:
             if v.strip() == "":
@@ -73,8 +79,10 @@ class UserBaseUpdate(BaseModel):
 
 class UserCreate(UserBase):
     hashed_password: str
-
+    user_role_ids: List[str] = []
+    
     @field_validator('hashed_password')
+    @classmethod
     def hashed_password_is_not_empty(cls, v):
         if v.strip() == "" or v.__contains__(" "):
             logging.exception("Invalid password")
@@ -89,6 +97,7 @@ class UserPasswordUpdate(BaseModel):
     new_password: str
 
     @field_validator('old_password','new_password')
+    @classmethod
     def password_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "" or v.__contains__(" "):
             logging.exception(f"Invalid {info.field_name}")
@@ -101,7 +110,7 @@ class UserPasswordUpdate(BaseModel):
 class User(UserBase):
     uuid: str = Field(serialization_alias="id")
     is_active: bool
-
+    
     class Config:
         orm_mode = True
         

@@ -8,8 +8,11 @@ from ..dependencies import get_db
 from email_validator import validate_email, EmailNotValidError
 from app.schemas.user_schemas import UserAuthentication as User
 from .. import basicauth, hashing
+from ..crud import role_crud
 
 router = APIRouter(tags=["users"])
+
+from fastapi import HTTPException, status
 
 @router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
@@ -19,13 +22,24 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_a
     except EmailNotValidError as e:
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    db_user = crud.get_user_by_email(db, email=user.email)
-    if db_user:
-        logging.exception("Email already registered")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
-    user = crud.create_user(db=db, user=user)
-    logging.info("User created: " + user.uuid)
-    return user
+    role_ids = []
+    for role_id in user.user_role_ids:
+        db_role = role_crud.get_role(db, role_id=role_id)
+        if db_role is None:
+            logging.exception("Role not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
+        role_ids.append(db_role.id)
+    try:
+        db_user = crud.get_user_by_email(db, email=user.email)
+        if db_user:
+            logging.exception("Email already registered")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+        user = crud.create_user(db=db, user=user, role_ids=role_ids)
+        logging.info("User created: " + user.uuid)
+        return user
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.get("/users/all_users", response_model=list[schemas.User])
 def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
