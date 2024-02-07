@@ -8,7 +8,7 @@ from langchain.document_loaders.csv_loader import CSVLoader
 from langchain.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 from app.crud.conferences_crud import get_conference_by_conference_uuid
-from app.crud.speakers_crud import get_speakers_by_conference_id
+from app.crud.speakers_crud import get_speakers_by_session_uuid
 from app.routers.sessions import get_sessions_by_conference_id
 import pinecone
 
@@ -74,22 +74,31 @@ def write_sessions_to_csv(db,conference_id):
                     elif isinstance(session_dict[field], datetime.datetime):
                         session_dict[field] = session_dict[field].strftime("%Y-%m-%d %H:%M:%S")
             session_dict['type'] = 'session'
+            speakers = get_speakers_by_session_uuid(db, session_dict['uuid'])
+            # get the speaker names
+            speaker_names = []
+            for speaker in speakers:
+                speaker_names.append(speaker.name)
+            session_dict['speakers'] = speaker_names
             writer.writerow(session_dict)
             
 def write_speakers_to_csv(db, conference_id):
     file_path = file_path_in_files_csv(conference_id,'speakers')
-    result = get_speakers_by_conference_id(db, conference_id)
+    result = get_sessions_by_conference_id(conference_id, db)
     if not result:
-        raise HTTPException(status_code=404, detail="No speakers found for this conference_id")
+        raise HTTPException(status_code=404, detail="No sessions found for this conference_id")
     with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['uuid','name','conference_id','title','bio', 'type']
+        fieldnames = ['uuid','name','conference_id','title','bio', 'type', 'conferene_name']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-        for speaker in result:
-            speaker_dict = speaker.__dict__
-            speaker_dict = filter_fields(speaker_dict, fieldnames)
-            speaker_dict['type'] = 'speaker'
-            writer.writerow(speaker_dict)
+        for session in result:
+            speakers = get_speakers_by_session_uuid(db, session.uuid)
+            for speaker in speakers:
+                speaker_dict = speaker.__dict__
+                speaker_dict = filter_fields(speaker_dict, fieldnames)
+                speaker_dict['type'] = 'speaker' 
+                speaker_dict['conferene_name'] = session.name
+                writer.writerow(speaker_dict)
 
 def write_events_to_csv(db, conference_id):
     file_path = file_path_in_files_csv(conference_id,'events')
