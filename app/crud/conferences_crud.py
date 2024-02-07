@@ -1,5 +1,3 @@
-import os
-from urllib.parse import urlparse
 from fastapi import HTTPException
 import logging
 from sqlalchemy.orm import Session
@@ -8,12 +6,12 @@ from app.pinecone_operations import delete_namespace
 from app.routers import upload_image
 from .. import models
 from ..schemas import conference_schemas as schemas, ai_assistant_schemas as assistant_schemas
-from . import agenda_crud
 from .. import AI_assitant
 import uuid
 from ..code_generator import generate_unique_string
 from .client_crud import get_client
 from ..static_enums import event
+from ..static_enums.blob_container_enums import BlobContainer
 
 def add_sponsor_details_to_conference(db: Session, conference: dict):
     event_sponsors = db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == conference.id).all()
@@ -87,13 +85,10 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
             break
         except:
             print("Duplicate conference-code found! Attempting to generate new code...")
-
-    conference_logo_image = None
-    conference_banner_image = None
     
-    db_conference.conference_logo = upload_image.get_actual_url(image_url=conference_logo, new_blob_container="event-logos", new_blob_name=f"event-logo-{db_conference.uuid}") if conference_logo is not None else None
+    db_conference.conference_logo = upload_image.get_actual_url(image_url=conference_logo, new_blob_container=BlobContainer.EVENT_LOGOS.value, new_blob_name=f"event-logo-{db_conference.uuid}") if conference_logo is not None else None
 
-    db_conference.conference_banner_url = upload_image.get_actual_url(image_url=conference_banner_url, new_blob_container="event-banners", new_blob_name=f"event-banner-{db_conference.uuid}") if conference_banner_url is not None else None
+    db_conference.conference_banner_url = upload_image.get_actual_url(image_url=conference_banner_url, new_blob_container=BlobContainer.EVENT_BANNERS.value, new_blob_name=f"event-banner-{db_conference.uuid}") if conference_banner_url is not None else None
 
     db.add(db_conference)
     try:
@@ -172,14 +167,14 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     db_client = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first()
     db_conference.client_id = db_client.id if db_client is not None else None
     
-    if conference_logo is not None:
-        db_conference.conference_logo = upload_image.get_actual_url(image_url=conference_logo, new_blob_container="event-logos", new_blob_name=f"event-logo-{db_conference.uuid}")
+    if conference_logo is not None and upload_image.get_container_name_from_url(db_conference.conference_logo) != BlobContainer.EVENT_LOGOS.value:
+        db_conference.conference_logo = upload_image.get_actual_url(image_url=conference_logo, new_blob_container=BlobContainer.EVENT_LOGOS.value, new_blob_name=f"event-logo-{db_conference.uuid}")
     elif conference_logo is None and db_conference.conference_logo is not None:
         upload_image.delete_blob_by_url(db_conference.conference_logo)
         db_conference.conference_logo = None
         
-    if conference_banner_url is not None:
-        db_conference.conference_banner_url = upload_image.get_actual_url(image_url=conference_banner_url, new_blob_container="event-banners", new_blob_name=f"event-banner-{db_conference.uuid}")
+    if conference_banner_url is not None and upload_image.get_container_name_from_url(db_conference.conference_banner_url) != BlobContainer.EVENT_BANNERS.value:
+        db_conference.conference_banner_url = upload_image.get_actual_url(image_url=conference_banner_url, new_blob_container=BlobContainer.EVENT_BANNERS.value, new_blob_name=f"event-banner-{db_conference.uuid}")
     elif conference_banner_url is None and db_conference.conference_banner_url is not None:
         upload_image.delete_blob_by_url(db_conference.conference_banner_url)
         db_conference.conference_banner_url = None 
