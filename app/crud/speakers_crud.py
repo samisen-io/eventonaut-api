@@ -2,6 +2,7 @@ import logging
 import os
 from urllib.parse import urlparse
 from fastapi import HTTPException, status
+from sqlalchemy import String, cast
 from sqlalchemy.orm import Session
 
 from app.routers import upload_image
@@ -60,6 +61,12 @@ def get_speakers_by_conference_id(db: Session, conference_uuid: str):
     conference = db.query(Conference).filter(Conference.uuid == conference_uuid).first()
     conference_id = conference.id if conference else None
     return db.query(Speakers).filter(Speakers.conference_id == conference_id).all()
+
+def get_speakers_by_session_uuid(db: Session, session_uuid: str):
+    session = db.query(models.Session).filter(models.Session.uuid == session_uuid).first()
+    session_id = session.id if session else None
+    speaker_ids = [speaker.speaker_id for speaker in db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == session_id).all()]
+    return db.query(Speakers).filter(Speakers.id.in_(speaker_ids)).all()
 
 def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker.id).first()
