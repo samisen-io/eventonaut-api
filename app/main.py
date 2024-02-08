@@ -47,6 +47,7 @@ app.add_middleware(
 # Add the routers to the application with authentication middleware
 app.include_router(options_router)
 app.include_router(upload_image.router)
+app.include_router(organization.router)
 app.include_router(role.router)
 app.include_router(users.router)
 app.include_router(client.router)
@@ -70,7 +71,6 @@ app.include_router(static_client.router)
 app.include_router(static_event.router)
 app.include_router(static_session.router)
 app.include_router(static_attendee.router)
-app.include_router(organization.router)
 
 @app.get("/")
 async def root():

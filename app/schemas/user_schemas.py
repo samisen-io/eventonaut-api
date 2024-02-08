@@ -13,6 +13,7 @@ class UserBase(BaseModel):
     timezone: str | None = None
     status: str
     profile_image_url: str | None = None
+    list_of_roles: List[str] = []
 
     @field_validator('email','first_name','last_name','business_type')
     @classmethod
@@ -53,6 +54,7 @@ class UserBaseUpdate(BaseModel):
     timezone: str |None = None
     status: str |None = None
     profile_image_url: str |None = None
+    list_of_roles: List[str] | None = None
 
     @field_validator('first_name','last_name','company','business_type','timezone','profile_image_url')
     @classmethod
@@ -79,7 +81,6 @@ class UserBaseUpdate(BaseModel):
 
 class UserCreate(UserBase):
     hashed_password: str
-    user_role_ids: List[str] = []
     
     @field_validator('hashed_password')
     @classmethod

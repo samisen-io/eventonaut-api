@@ -2,51 +2,86 @@ from fastapi import APIRouter, Depends, HTTPException, Security, status
 import logging
 from sqlalchemy.orm import Session
 from app.oauth2 import get_current_active_user
+from app.static_enums.role import RoleEnum
 from ..schemas import user_schemas as schemas
 from ..crud import users_crud as crud
 from ..dependencies import get_db
 from email_validator import validate_email, EmailNotValidError
 from app.schemas.user_schemas import UserAuthentication as User
 from .. import basicauth, hashing
-from ..crud import role_crud
+from .. import models
 
 router = APIRouter(tags=["users"])
 
 from fastapi import HTTPException, status
 
-@router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+def validate_user_email(user: schemas.UserCreate):
     try:
         valid = validate_email(user.email)
         user.email = valid.normalized.lower()
     except EmailNotValidError as e:
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return user
+
+def get_role_ids(user: schemas.UserCreate):
     role_ids = []
-    for role_id in user.user_role_ids:
-        db_role = role_crud.get_role(db, role_id=role_id)
-        if db_role is None:
+    for role_name in user.list_of_roles:
+        try:
+            role_id = RoleEnum[role_name.upper()].value
+        except KeyError as exc:
             logging.exception("Role not found")
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found")
-        role_ids.append(db_role.id)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found") from exc
+        role_ids.append(role_id)
+    return role_ids
+
+def check_user_exists(db: Session, user: schemas.UserCreate):
+    db_user = crud.get_user_by_email(db, email=user.email)
+    if db_user:
+        logging.exception("Email already registered")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+
+def get_role_names(user: schemas.User):
+    roles_names = []
+    for user_role in user.user_roles:
+        if user_role.role_id is None:
+            roles_names.append('')
+        else:
+            role_name = RoleEnum(user_role.role_id).name
+            roles_names.append(role_name)
+    roles_names = [role for role in roles_names if role != '']
+    return roles_names
+
+@router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    user = validate_user_email(user)
+    role_ids = get_role_ids(user)
+    check_user_exists(db, user)
     try:
-        db_user = crud.get_user_by_email(db, email=user.email)
-        if db_user:
-            logging.exception("Email already registered")
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
         user = crud.create_user(db=db, user=user, role_ids=role_ids)
+        user.list_of_roles = get_role_names(user)
         logging.info("User created: " + user.uuid)
         return user
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-@router.get("/users/all_users", response_model=list[schemas.User])
-def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    
+def get_users_from_db(db: Session, offset: int, limit: int):
     users = crud.get_users(db, offset=offset, limit=limit)
     if users is None or len(users) == 0:
         logging.exception("No user found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No user found")
+    return users
+
+def assign_role_names_to_users(users):
+    for user in users:
+        user.list_of_roles = get_role_names(user)
+    return users
+
+@router.get("/users/all_users", response_model=list[schemas.User])
+def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    users = get_users_from_db(db, offset, limit)
+    users = assign_role_names_to_users(users)
     logging.info("Users retrieved")
     return users
 
@@ -57,6 +92,7 @@ def get_user(db: Session = Depends(get_db), current_user: User = Security(get_cu
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     logging.info("User retrieved: " + db_user.uuid)
+    db_user.list_of_roles = get_role_names(db_user)
     return db_user
 
 @router.put("/users", response_model=schemas.User)
@@ -69,18 +105,25 @@ def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), cur
     logging.info("User updated: " + updated_user.uuid)
     return updated_user
 
-@router.put("/users/password", response_model=schemas.User)
-def update_user_password(user: schemas.UserPasswordUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    db_user = crud.get_db_user(db, user_id=current_user.id)
+def get_db_user(db: Session, user_id: int):
+    db_user = crud.get_db_user(db, user_id=user_id)
     if db_user is None:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return db_user
+
+def validate_passwords(user: schemas.UserPasswordUpdate, db_user: models.User):
     if user.old_password == user.new_password:
         logging.exception("New password cannot be same as old password")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password cannot be same as old password")
     if not hashing.verify_password(user.old_password, db_user.hashed_password):
         logging.exception("Incorrect old password")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect old password")
+
+@router.put("/users/password", response_model=schemas.User)
+def update_user_password(user: schemas.UserPasswordUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+    db_user = get_db_user(db, current_user.id)
+    validate_passwords(user, db_user)
     updated_user = crud.update_user_password(db=db, user=user, db_user=db_user)
     logging.info("User password updated: " + updated_user.uuid)
     return updated_user

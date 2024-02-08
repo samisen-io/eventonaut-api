@@ -1,8 +1,8 @@
 import logging
-import os
-from urllib.parse import urlparse
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+
+from app.static_enums.role import RoleEnum
 from .. import models, hashing
 from ..schemas import user_schemas as schemas
 from datetime import datetime
@@ -12,35 +12,39 @@ from ..routers import upload_image
 from ..crud import user_role_crud
 from ..static_enums.blob_container_enums import BlobContainer
 
-def create_user(db: Session, user: schemas.UserCreate, role_ids: list[int]):
+def create_db_user(db: Session, user: schemas.UserCreate):
     user_dict = user.model_dump()
     user_status = user_dict.pop("status")
     user_profile_image_url = user_dict.pop("profile_image_url")
-    user_dict.pop("user_role_ids")
+    user_dict.pop("list_of_roles")
     db_user = models.User(**user_dict)
     db_user.user_status_id = organizer.OrganizerEnum[user_status.upper()].value
     db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
     db_user.created_on = db_user.updated_on = datetime.utcnow()
     db_user.uuid = "usr-"+str(uuid.uuid4())
     db_user.role = "organizer"
-
     db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container=BlobContainer.PROFILE_IMAGES.value, new_blob_name=f"profile-{db_user.uuid}") if user_profile_image_url is not None else None
-        
+    return db_user
+
+def add_user_to_db(db: Session, db_user: models.User):
     db.add(db_user)
     try:
         db.commit()
-        
-        for role_id in role_ids:
-            user_role_crud.create_user_role(db, user_id=db_user.id, role_id=role_id)
-        
-        db.refresh(db_user)
-        
     except Exception as e:
-        if user_profile_image_url is not None:
+        if db_user.profile_image_url is not None:
             upload_image.delete_blob_by_url(db_user.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_user)
+
+def assign_roles_to_user(db: Session, db_user: models.User, role_ids: list[int]):
+    for role_id in role_ids:
+        user_role_crud.create_user_role(db, user_id=db_user.id, role_id=role_id)
+
+def create_user(db: Session, user: schemas.UserCreate, role_ids: list[int]):
+    db_user = create_db_user(db, user)
+    add_user_to_db(db, db_user)
+    assign_roles_to_user(db, db_user, role_ids)
     db_user.status = "ACTIVE"
     return db_user
 
@@ -69,16 +73,16 @@ def get_users(db: Session, offset: int = 0, limit: int = 100):
         user.status = organizer.OrganizerEnum(user.user_status_id).name
     return users
 
-def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User):
-    user_dict = user.model_dump()
-    user_status = user_dict.pop("status")
-    user_profile_image_url = user_dict.pop("profile_image_url")
-    
+def update_user_status(user: schemas.UserBaseUpdate, db_user: models.User):
+    user_status = user.status
     if user_status is not None:
         db_user.user_status_id = organizer.OrganizerEnum[user_status.upper()].value
-    
-    non_nullable_fields = ['first_name','last_name','business_type']
 
+def update_user_fields(user: schemas.UserBaseUpdate, db_user: models.User):
+    user_dict = user.model_dump()
+    user_dict.pop("status")
+    user_dict.pop("profile_image_url")
+    non_nullable_fields = ['first_name','last_name','business_type']
     for key, value in user_dict.items():
         if key in non_nullable_fields:
             if value is not None:
@@ -86,17 +90,64 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User)
         else:
             setattr(db_user, key, value)
 
+def update_user_image(user: schemas.UserBaseUpdate, db_user: models.User):
+    user_profile_image_url = user.profile_image_url
     if user_profile_image_url is not None and upload_image.get_container_name_from_url(user_profile_image_url) != BlobContainer.PROFILE_IMAGES.value:
         db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container=BlobContainer.PROFILE_IMAGES.value, new_blob_name=f"profile-{db_user.uuid}")
     elif user_profile_image_url is None and db_user.profile_image_url is not None:
         upload_image.delete_blob_by_url(db_user.profile_image_url)
         db_user.profile_image_url = None
 
+def get_role_names_from_user_roles(user_roles):
+    return [RoleEnum(user_role.role_id).name for user_role in user_roles]
+
+def get_roles_not_in_user(db_user, user):
+    db_user_role_names = get_role_names_from_user_roles(db_user.user_roles)
+    user_role_names = user.list_of_roles
+    roles_not_in_user = [role for role in db_user_role_names if role not in user_role_names]
+    return roles_not_in_user
+
+def get_roles_not_in_db_user(db_user, user):
+    try:
+        db_user_role_names = get_role_names_from_user_roles(db_user.user_roles)
+        user_role_names = user.list_of_roles
+        roles_not_in_db_user = [role for role in user_role_names if role not in db_user_role_names]
+        return roles_not_in_db_user
+    except Exception as e:
+        logging.exception(str(e))
+        print(e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+def delete_roles_not_in_user(db: Session, db_user: models.User, roles_not_in_user: list):
+    for role in roles_not_in_user:
+        role_id = RoleEnum[role.upper()].value
+        user_role_crud.delete_user_role_by_user_and_role(db, user_id=db_user.id, role_id=role_id)
+
+def create_roles_not_in_db_user(db: Session, db_user: models.User, roles_not_in_db_user: list):
+    for role in roles_not_in_db_user:
+        role_id = RoleEnum[role.upper()].value
+        user_role_crud.create_user_role(db, user_id=db_user.id, role_id=role_id)
+
+def update_user_roles(db: Session, user: schemas.UserBaseUpdate, db_user: models.User):
+    if user.list_of_roles is not None:
+        roles_not_in_user = get_roles_not_in_user(db_user, user)
+        if roles_not_in_user:
+            delete_roles_not_in_user(db, db_user, roles_not_in_user)
+                
+        roles_not_in_db_user = get_roles_not_in_db_user(db_user, user)
+        if roles_not_in_db_user:
+            create_roles_not_in_db_user(db, db_user, roles_not_in_db_user)    
+                
+def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User):
+    update_user_status(user, db_user)
+    update_user_fields(user, db_user)
+    update_user_image(user, db_user)
+    update_user_roles(db, user, db_user)
     db_user.updated_on = datetime.utcnow()
     try:
         db.commit()
     except Exception as e:
-        if user_profile_image_url is not None:
+        if user.profile_image_url is not None:
             upload_image.delete_blob_by_url(db_user.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
