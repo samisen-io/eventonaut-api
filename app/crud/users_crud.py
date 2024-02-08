@@ -53,6 +53,13 @@ def get_user(db: Session, user_id: int):
     user.status = organizer.OrganizerEnum(user.user_status_id).name
     return user
 
+def get_user_by_uuid(db: Session, user_uuid: str):
+    user = db.query(models.User).filter(models.User.uuid == user_uuid, models.User.is_archived == False).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.status = organizer.OrganizerEnum(user.user_status_id).name
+    return user
+
 def get_db_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
 

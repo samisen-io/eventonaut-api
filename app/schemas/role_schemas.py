@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from pydantic import BaseModel, Field
 
 # Base properties for Role for API request/response
 

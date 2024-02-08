@@ -20,7 +20,22 @@ class Organization(Base):
     contact_phone = Column(String, index=True)
     logo_image_url = Column(String, index=True)
     website_url = Column(String, index=True)
+    
+    organization_user = relationship("Organization_User", back_populates="organization")
 
+class Organization_User(Base):
+    __tablename__ = "organization_user"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    uuid = Column(String, index=True, unique=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    organization = relationship("Organization", back_populates="organization_user")
+    user = relationship("User", back_populates="organization_user")
+    
 class User(Base):
     __tablename__ = "users"
 
@@ -52,6 +67,7 @@ class User(Base):
     sponsors = relationship("Sponsors", back_populates="owner")
     organizer_status = relationship("OrganizerStatus", back_populates="user")
     user_roles = relationship('User_Role', back_populates='user')
+    organization_user = relationship("Organization_User", back_populates="user")
     
 class Role(Base):
     __tablename__ = "role"

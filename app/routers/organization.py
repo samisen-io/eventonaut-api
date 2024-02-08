@@ -20,12 +20,15 @@ def create_organization(organization: schemas.OrganizationCreate, db: Session = 
     return crud.create_organization(db=db, organization=organization)
 
 @router.get("/organizations/", response_model=List[schemas.Organization])
-def read_organizations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    organizations = crud.get_all_organizations(db, skip, limit)
-    return organizations
-
-@router.get("/organizations/{organization_id}", response_model=schemas.Organization)
-def read_organization(organization_id: str, db: Session = Depends(get_db)):
+def get_organizations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    try:
+        organizations = crud.get_all_organizations(db, skip, limit)
+        return organizations
+    except Exception as exc:
+        raise exc
+    
+@router.get("/organizations/{id}", response_model=schemas.Organization)
+def get_organization(organization_id: str, db: Session = Depends(get_db)):
     db_organization = crud.get_organization_by_id(db, organization_id=organization_id)
     if db_organization is None:
         raise HTTPException(status_code=404, detail="Organization not found")
@@ -38,7 +41,7 @@ def update_organization(organization: schemas.OrganizationUpdate, db: Session = 
         raise HTTPException(status_code=404, detail="Organization not found")
     return crud.update_organization(db=db, organization=organization, db_organization=db_organization)
 
-@router.delete("/organizations/{organization_id}")
+@router.delete("/organizations/{id}")
 def delete_organization(organization_id: str, db: Session = Depends(get_db)):
     db_organization = crud.get_organization_by_id(db, organization_id=organization_id)
     if db_organization is None:

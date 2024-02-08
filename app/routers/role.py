@@ -33,7 +33,7 @@ def read_roles(
     except HTTPException as e:
         raise e
 
-@router.get("/role/{role_name}", response_model=schemas.RoleResponse)
+@router.get("/role/{name}", response_model=schemas.RoleResponse)
 def read_role(
     role_name: str, db: Session = Depends(get_db), basic_auth=Depends(basic_auth)
 ):
@@ -42,7 +42,7 @@ def read_role(
         raise HTTPException(status_code=404, detail="Role not found")
     return db_role
 
-@router.put("/role/{role_name}", response_model=schemas.RoleResponse)
+@router.put("/role/{name}", response_model=schemas.RoleResponse)
 def update_role(
     role: schemas.RoleUpdate,
     db: Session = Depends(get_db),
@@ -53,7 +53,7 @@ def update_role(
         raise HTTPException(status_code=404, detail="Role not found")
     return db_role
 
-@router.delete("/role/{role_name}")
+@router.delete("/role/{name}")
 def delete_role(
     role_name: str, db: Session = Depends(get_db), basic_auth=Depends(basic_auth)
 ):
