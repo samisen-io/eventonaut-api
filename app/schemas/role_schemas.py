@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field
 
 # Base properties for Role for API request/response
 
@@ -19,9 +20,12 @@ class RoleCreate(RoleBase):
 
 
 class RoleUpdate(BaseModel):
-    id: str
     name: str | None = None
     description: str | None = None
+    
+class RoleResponse(RoleBase):
+    class Config:
+        orm_mode = True
 
 class Role(RoleBase):
     uuid: str = Field(serialization_alias="id")

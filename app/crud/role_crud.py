@@ -8,15 +8,15 @@ from .. import models
 from ..schemas import role_schemas as schemas
 
 
-def get_role(db: Session, role_id: str):
-    return db.query(models.Role).filter(models.Role.uuid == role_id).first()
+def get_role(db: Session, role_name: str):
+    return db.query(models.Role).filter(models.Role.name.ilike(role_name)).first()
 
 
 def get_roles(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Role).offset(skip).limit(limit).all()
 
 def is_role_name_unique(db: Session, role_name: str):
-    db_role = db.query(models.Role).filter(models.Role.name == role_name).first()
+    db_role = get_role(db, role_name.upper())
     return db_role is None
 
 def create_role(db: Session, role: schemas.RoleCreate):
@@ -39,23 +39,27 @@ def create_role(db: Session, role: schemas.RoleCreate):
         raise e
 
 
-def update_role(db: Session, role: schemas.RoleUpdate):
-    if role.name is not None and not is_role_name_unique(db, role.name.upper()):
-        raise HTTPException(status_code=400, detail="Role name already exists")
+def update_role(db: Session, role: schemas.RoleUpdate):  
+    if role.name is None:
+        raise HTTPException(status_code=400, detail="Role name cannot be empty")
     
-    db_role = get_role(db, role.id)
-    if role.name is not None:
-        db_role.name = role.name
+    db_role = get_role(db, role.name)
+    if db_role is None:
+        raise HTTPException(status_code=404, detail="Role not found")
+    
     if role.description is not None:
         db_role.description = role.description
+    
     db_role.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_role)
     return db_role
 
 
-def delete_role(db: Session, role_id: str):
-    db_role = get_role(db, role_id)
+def delete_role(db: Session, role_name: str):
+    db_role = get_role(db, role_name)
+    if db_role is None:
+        raise HTTPException(status_code=404, detail="Role not found")
     db.delete(db_role)
     db.commit()
     return {"message": "Role deleted successfully"}
