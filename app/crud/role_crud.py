@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from fastapi import HTTPException, status
 
 from sqlalchemy.orm import Session
 
@@ -14,25 +15,34 @@ def get_role(db: Session, role_id: str):
 def get_roles(db: Session, skip: int = 0, limit: int = 100):
     return db.query(models.Role).offset(skip).limit(limit).all()
 
+def is_role_name_unique(db: Session, role_name: str):
+    db_role = db.query(models.Role).filter(models.Role.name == role_name).first()
+    return db_role is None
 
 def create_role(db: Session, role: schemas.RoleCreate):
     try:
+        if not is_role_name_unique(db, role.name.upper()):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Role name already exists")
+        
         db_role = models.Role(**role.model_dump())
         db_role.uuid = "rol-" + str(uuid.uuid4())
         db_role.created_on = db_role.updated_on = datetime.utcnow()
         db.add(db_role)
         try:
             db.commit()
-        except Exception as e:
+        except HTTPException as e:
             db.rollback()
-            return "Cant create role. Error occurred: " + str(e)
+            raise e
         db.refresh(db_role)
         return db_role
-    except Exception as e:
-        print(f"Error occurred: {str(e)}")
+    except HTTPException as e:
+        raise e
 
 
 def update_role(db: Session, role: schemas.RoleUpdate):
+    if role.name is not None and not is_role_name_unique(db, role.name.upper()):
+        raise HTTPException(status_code=400, detail="Role name already exists")
+    
     db_role = get_role(db, role.id)
     if role.name is not None:
         db_role.name = role.name

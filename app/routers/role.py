@@ -18,8 +18,8 @@ def create_role(
 ):
     try:
         return crud.create_role(db=db, role=role)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException as e:
+        raise e
 
 
 @router.get("/roles", response_model=List[schemas.Role])
@@ -32,8 +32,8 @@ def read_roles(
     try:
         roles = crud.get_roles(db, skip=skip, limit=limit)
         return roles
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException as e:
+        raise e
 
 
 @router.get("/role/{role_id}", response_model=schemas.Role)
