@@ -130,13 +130,19 @@ def create_roles_not_in_db_user(db: Session, db_user: models.User, roles_not_in_
 
 def update_user_roles(db: Session, user: schemas.UserBaseUpdate, db_user: models.User):
     if user.list_of_roles is not None:
+        is_valid_roles(user.list_of_roles)
+        
         roles_not_in_user = get_roles_not_in_user(db_user, user)
         if roles_not_in_user:
             delete_roles_not_in_user(db, db_user, roles_not_in_user)
                 
         roles_not_in_db_user = get_roles_not_in_db_user(db_user, user)
         if roles_not_in_db_user:
-            create_roles_not_in_db_user(db, db_user, roles_not_in_db_user)    
+            create_roles_not_in_db_user(db, db_user, roles_not_in_db_user) 
+
+def is_valid_roles(list_of_roles):
+    if not all(role in RoleEnum.__members__ for role in list_of_roles):
+        raise HTTPException(status_code=400, detail="Invalid role")   
                 
 def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User):
     update_user_status(user, db_user)
