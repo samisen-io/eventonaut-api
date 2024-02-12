@@ -9,7 +9,7 @@ from ..schemas import role_schemas as schemas
 
 router = APIRouter(tags=["role"])
 
-@router.post("/role", response_model=schemas.RoleResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/role", response_model=schemas.RoleResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_role(
     role: schemas.RoleCreate,
     db: Session = Depends(get_db),
@@ -33,7 +33,7 @@ def read_roles(
     except HTTPException as e:
         raise e
 
-@router.get("/role/{name}", response_model=schemas.RoleResponse)
+@router.get("/role/{name}", response_model=schemas.RoleResponse, include_in_schema=False)
 def read_role(
     role_name: str, db: Session = Depends(get_db), basic_auth=Depends(basic_auth)
 ):
@@ -42,7 +42,7 @@ def read_role(
         raise HTTPException(status_code=404, detail="Role not found")
     return db_role
 
-@router.put("/role/{name}", response_model=schemas.RoleResponse)
+@router.put("/role/{name}", response_model=schemas.RoleResponse, include_in_schema=False)
 def update_role(
     role: schemas.RoleUpdate,
     db: Session = Depends(get_db),
@@ -53,7 +53,7 @@ def update_role(
         raise HTTPException(status_code=404, detail="Role not found")
     return db_role
 
-@router.delete("/role/{name}")
+@router.delete("/role/{name}", include_in_schema=False)
 def delete_role(
     role_name: str, db: Session = Depends(get_db), basic_auth=Depends(basic_auth)
 ):
