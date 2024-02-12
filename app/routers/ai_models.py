@@ -6,6 +6,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile, status
 from fastapi.responses import StreamingResponse
 from app.crud.aitokens_crud import insert_aitoken
+from app.crud.speakers_crud import get_speaker_uuid_by_email
 from app.file_reader import read_file_return_csv
 from app.pinecone_operations import arranging_ouput_object, create_namespace, create_vector_db, delete_namespace, delete_vector_db
 from app.routers.speakers import create_speaker
@@ -123,7 +124,7 @@ async def upload_session_file(file: UploadFile,
     reader = await read_file_return_csv(contents,filename)
     headers = reader.fieldnames
     reader = [{k.lower(): v for k, v in row.items()} for row in reader]
-    my_headers = ['name', 'description', 'location', 'date', 'start_time', 'end_time', 'tags', 'speakers']
+    my_headers = ['name', 'description', 'location', 'date', 'start_time', 'end_time', 'tags', 'speakers', 'status']
     if set(headers) != set(my_headers):
         error_message = {
             "error": "The attributes(Column Names) provided are not correct.", 
@@ -134,6 +135,11 @@ async def upload_session_file(file: UploadFile,
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error_message)  
     c=0
     for row in reader:
+        speaker_emails = ast.literal_eval(row['speakers']) if row['speakers'] else None
+        if speaker_emails:
+            speaker_uuids = [get_speaker_uuid_by_email(db, email) for email in speaker_emails]
+        else:
+            speaker_uuids = None
         payload = {
             "name": f"{row['name']}" if row['name'] else None,
             "start_time": f"{row['start_time']}" if row['start_time'] else None,
@@ -142,8 +148,9 @@ async def upload_session_file(file: UploadFile,
             "date": f"{row['date']}" if row['date'] else None,
             "description": f"{row['description']}" if row['description'] else None,
             "conference_id": f"{conference_id}",
-            "speakers": ast.literal_eval(row['speakers']) if row['speakers'] else None,
-            "tags": ast.literal_eval(row['tags']) if row['tags'] else None
+            "speakers": speaker_uuids,
+            "tags": ast.literal_eval(row['tags']) if row['tags'] else None,
+            "status": f"{row['status']}" if row['status'] else None
         }
         try:
             session = schemas.SessionCreate(**payload)
@@ -151,7 +158,7 @@ async def upload_session_file(file: UploadFile,
             logging.exception(str(e)+"\n"+str(payload))
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)+"\n"+str(payload))
         # upload to database
-        create_session_for_conference(session,db,current_user)
+        # create_session_for_conference(session,db,current_user)
         loading_chars = ['-', '\\', '|', '/']
         c = c + 1
         current_rows = c
@@ -160,6 +167,7 @@ async def upload_session_file(file: UploadFile,
         print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
         sys.stdout.flush()
     print()
+    print(session)
     logging.info("Session file uploaded successfully")
     return {'filename': filename}
 
@@ -174,7 +182,7 @@ async def upload_speaker_file(file: UploadFile,
     reader = await read_file_return_csv(contents,filename)
     headers = reader.fieldnames
     reader = [{k.lower(): v for k, v in row.items()} for row in reader]
-    my_headers = ['name', 'title', 'bio']
+    my_headers = ['name', 'title', 'bio','email']
     if set(headers) != set(my_headers):
         error_message = {
             "error": "The attributes(Column Names) provided are not correct.", 
@@ -190,6 +198,7 @@ async def upload_speaker_file(file: UploadFile,
             "title": f"{row['title']}" if row['title'] else None,
             "conference_id": f"{conference_id}",
             "bio": f"{row['bio']}" if row['bio'] else None,
+            "email": f"{row['email']}" if row['email'] else None
         }
         try:
             speaker = speaker_schemas.SpeakerCreate(**payload)
@@ -206,6 +215,7 @@ async def upload_speaker_file(file: UploadFile,
         print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
         sys.stdout.flush()
     print()
+    print(speaker)
     logging.info("Speakers file uploaded successfully")
     return {'filename': filename}
 

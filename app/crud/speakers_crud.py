@@ -65,6 +65,10 @@ def get_speakers_by_session_uuid(db: Session, session_uuid: str):
     speaker_ids = [speaker.speaker_id for speaker in db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == session_id).all()]
     return db.query(Speakers).filter(Speakers.id.in_(speaker_ids)).all()
 
+def get_speaker_uuid_by_email(db: Session, email: str):
+    speaker = db.query(Speakers).filter(Speakers.email == email).first()
+    return speaker.uuid if speaker else None
+
 def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker.id).first()
     speaker_dict = speaker.model_dump()
