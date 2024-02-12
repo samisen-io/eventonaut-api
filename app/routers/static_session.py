@@ -9,13 +9,13 @@ from datetime import datetime
 from .. import models
 from ..static_enums import session
 
-router = APIRouter(tags=["static_session"])
+router = APIRouter(tags=["session_status"])
 
-@router.post("/static_session", response_model=StaticTableOutput, status_code=status.HTTP_201_CREATED)
-def create_static_session(static_session: StaticSession, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
+@router.post("/session_status", response_model=StaticTableOutput, status_code=status.HTTP_201_CREATED)
+def create_session_status(static_session: StaticSession, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
     session_dict = static_session.model_dump()
     session_dict["status"] = session_dict["status"].lower()
-    db_static_session = models.StaticSession(**session_dict)
+    db_static_session = models.Sessionstatus(**session_dict)
     db_static_session.id = session.SessionEnum[db_static_session.status.upper()].value
     db_static_session.created_on = db_static_session.updated_on = datetime.utcnow()
     db_static_session.uuid = str(uuid.uuid4())
@@ -31,18 +31,18 @@ def create_static_session(static_session: StaticSession, db: Session = Depends(g
     logging.info(f"Status created with id {db_static_session.uuid}")
     return db_static_session
 
-@router.get("/static_session", response_model=list[StaticTableOutput])
-def get_static_session(db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_session = db.query(models.StaticSession).all()
+@router.get("/session_status", response_model=list[StaticTableOutput])
+def get_session_status(db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
+    static_session = db.query(models.Sessionstatus).all()
     if static_session is None or len(static_session) == 0:
         logging.exception("no status found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no status found")
     logging.info("session status retrieved")
     return static_session
 
-@router.delete("/static_session/{status_id}", response_model=StaticTableOutput)
-def delete_static_session(status_id: str, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_session = db.query(models.StaticSession).filter(models.StaticSession.uuid == status_id).first()
+@router.delete("/session_status/{status_id}", response_model=StaticTableOutput)
+def delete_session_status(status_id: str, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
+    static_session = db.query(models.Sessionstatus).filter(models.Sessionstatus.uuid == status_id).first()
     if static_session is None:
         logging.exception("status not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="status not found")

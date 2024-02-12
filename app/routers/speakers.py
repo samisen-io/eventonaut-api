@@ -19,14 +19,9 @@ def create_speaker(speaker: schemas.SpeakerCreate, db: Session = Depends(get_db)
     except EmailNotValidError as e:
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    
     if crud.get_speaker_by_email(db=db, email=speaker.email, owner_id=current_user.id) is not None:
         logging.exception("Email already registered")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
-    
-    if conferences_crud.get_conference_by_uuid(db=db,uuid=speaker.conference_id,owner_id=current_user.id) is None:
-        logging.exception("Conference not found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     speaker = crud.create_speaker(db=db, speaker=speaker)
     logging.info("Speaker created: " + speaker.uuid)
     return speaker
@@ -76,10 +71,6 @@ def update_speaker(speaker: schemas.SpeakerUpdate, db: Session = Depends(get_db)
     if db_speaker is None:
         logging.exception("Speaker not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
-    if speaker.conference_id is not None:
-        if conferences_crud.get_conference_by_uuid(db=db,uuid=speaker.conference_id,owner_id=current_user.id) is None:
-            logging.exception("Conference not found")
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     updated_speaker = crud.update_speaker(db=db, speaker=speaker)
     logging.info("Speaker updated: " + updated_speaker.uuid)
     return updated_speaker

@@ -15,7 +15,7 @@ router = APIRouter(tags=["static_organizer"])
 def create_static_organizer(static_organizer: StaticOrganizer, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
     organizer_dict = static_organizer.model_dump()
     organizer_dict["status"] = organizer_dict["status"].lower()
-    db_static_organizer = models.StaticOrganizer(**organizer_dict)
+    db_static_organizer = models.OrganizerStatus(**organizer_dict)
     db_static_organizer.id = organizer.OrganizerEnum[db_static_organizer.status.upper()].value
     db_static_organizer.created_on = db_static_organizer.updated_on = datetime.utcnow()
     db_static_organizer.uuid = str(uuid.uuid4())
@@ -33,7 +33,7 @@ def create_static_organizer(static_organizer: StaticOrganizer, db: Session = Dep
 
 @router.get("/static_organizer", response_model=list[StaticTableOutput])
 def get_static_organizer(db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_organizer = db.query(models.StaticOrganizer).all()
+    static_organizer = db.query(models.OrganizerStatus).all()
     if static_organizer is None or len(static_organizer) == 0:
         logging.exception("no status found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no status found")
@@ -42,7 +42,7 @@ def get_static_organizer(db: Session = Depends(get_db), basic_auth = Depends(bas
 
 @router.delete("/static_organizer/{status_id}", response_model=StaticTableOutput)
 def delete_static_organizer(status_id: str, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_organizer = db.query(models.StaticOrganizer).filter(models.StaticOrganizer.uuid == status_id).first()
+    static_organizer = db.query(models.OrganizerStatus).filter(models.OrganizerStatus.uuid == status_id).first()
     if static_organizer is None:
         logging.exception("status not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="status not found")
