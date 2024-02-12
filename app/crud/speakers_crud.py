@@ -20,12 +20,10 @@ def get_speakers_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit:
     return db.query(Speakers).filter(Speakers.owner_id == owner_id, Speakers.is_archived == False).offset(offset).limit(limit).all()
 
 def create_speaker(db: Session, speaker: schemas.SpeakerCreate):
-    conference = db.query(Conference).filter(Conference.uuid == speaker.conference_id).first()
     db_speaker = Speakers(**speaker.model_dump())
     db_speaker.uuid = "spk-" + str(uuid.uuid4())
     db_speaker.created_on = datetime.utcnow()
     db_speaker.updated_on = datetime.utcnow()
-    db_speaker.conference_id = conference.id
     
     db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container=BlobContainer.SPEAKER_IMAGES.value, new_blob_name=f"speaker-{db_speaker.uuid}") if speaker.profile_image_url is not None else None
     
@@ -54,11 +52,6 @@ def get_speakers_by_conference_id_owner_id(db: Session, conference_id: str, owne
     db_speakers = db.query(Speakers).filter(Speakers.id.in_(speaker_ids)).all()
     return db_speakers
 
-def get_speakers_by_conference_id(db: Session, conference_uuid: str):
-    conference = db.query(Conference).filter(Conference.uuid == conference_uuid).first()
-    conference_id = conference.id if conference else None
-    return db.query(Speakers).filter(Speakers.conference_id == conference_id).all()
-
 def get_speakers_by_session_uuid(db: Session, session_uuid: str):
     session = db.query(models.Session).filter(models.Session.uuid == session_uuid).first()
     session_id = session.id if session else None
@@ -73,9 +66,6 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker.id).first()
     speaker_dict = speaker.model_dump()
     speaker_dict.pop("id")
-    speaker_conference_id = speaker.conference_id or None
-    conference = db.query(Conference).filter(Conference.uuid == speaker_conference_id).first()
-    db_speaker.conference_id = conference.id if conference else None
     speaker_dict.pop("conference_id")
     for key, value in speaker_dict.items():
         if value is not None:

@@ -9,13 +9,13 @@ from datetime import datetime
 from .. import models
 from ..static_enums import attendee
 
-router = APIRouter(tags=["static_attendee"])
+router = APIRouter(tags=["attendee_status"])
 
-@router.post("/static_attendee", response_model=StaticTableOutput, status_code=status.HTTP_201_CREATED)
-def create_static_attendee(static_attendee: StaticAttendee, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
+@router.post("/attendee_status", response_model=StaticTableOutput, status_code=status.HTTP_201_CREATED)
+def create_attendee_status(static_attendee: StaticAttendee, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
     attendee_dict = static_attendee.model_dump()
     attendee_dict["status"] = attendee_dict["status"].lower()
-    db_static_attendee = models.StaticAttendee(**attendee_dict)
+    db_static_attendee = models.AttendeeStatus(**attendee_dict)
     db_static_attendee.id = attendee.AttendeeEnum[db_static_attendee.status.upper()].value
     db_static_attendee.created_on = db_static_attendee.updated_on = datetime.utcnow()
     db_static_attendee.uuid = str(uuid.uuid4())
@@ -31,18 +31,18 @@ def create_static_attendee(static_attendee: StaticAttendee, db: Session = Depend
     logging.info(f"Status created with id {db_static_attendee.uuid}")
     return db_static_attendee
 
-@router.get("/static_attendee", response_model=list[StaticTableOutput])
-def get_static_attendee(db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_attendee = db.query(models.StaticAttendee).all()
+@router.get("/attendee_status", response_model=list[StaticTableOutput])
+def get_attendee_status(db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
+    static_attendee = db.query(models.AttendeeStatus).all()
     if static_attendee is None or len(static_attendee) == 0:
         logging.exception("no status found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no status found")
     logging.info("attendee status retrieved")
     return static_attendee
 
-@router.delete("/static_attendee/{status_id}", response_model=StaticTableOutput)
-def delete_static_attendee(status_id: str, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_attendee = db.query(models.StaticAttendee).filter(models.StaticAttendee.uuid == status_id).first()
+@router.delete("/attendee_status/{status_id}", response_model=StaticTableOutput)
+def delete_attendee_status(status_id: str, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
+    static_attendee = db.query(models.AttendeeStatus).filter(models.AttendeeStatus.uuid == status_id).first()
     if static_attendee is None:
         logging.exception("status not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="status not found")
