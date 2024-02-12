@@ -29,19 +29,10 @@ class SpeakerBase(BaseModel):
         return v
 
 class SpeakerCreate(SpeakerBase):
-    conference_id: str
-
-    @validator('conference_id')
-    def validate_conference_id(cls, v):
-        if v.strip() == "":
-            raise HTTPException(status_code=400, detail="Invalid conference id")
-        elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Conference id too long")
-        return v
+    pass
 
 class SpeakerUpdate(BaseModel):
     id: str
-    conference_id: str | None = None
     name: str | None = None
     title: str | None = None
     bio: str | None = None
@@ -55,7 +46,7 @@ class SpeakerUpdate(BaseModel):
             raise HTTPException(status_code=400, detail="Id too long")
         return v
 
-    @field_validator('conference_id','name','title','bio','profile_image_url')
+    @field_validator('name','title','bio','profile_image_url')
     def validate_update(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
