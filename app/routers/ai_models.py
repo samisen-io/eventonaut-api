@@ -158,7 +158,8 @@ async def upload_session_file(file: UploadFile,
             logging.exception(str(e)+"\n"+str(payload))
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)+"\n"+str(payload))
         # upload to database
-        # create_session_for_conference(session,db,current_user)
+        print(session)
+        create_session_for_conference(session,db,current_user)
         loading_chars = ['-', '\\', '|', '/']
         c = c + 1
         current_rows = c
@@ -167,7 +168,7 @@ async def upload_session_file(file: UploadFile,
         print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
         sys.stdout.flush()
     print()
-    print(session)
+    # print(session)
     logging.info("Session file uploaded successfully")
     return {'filename': filename}
 
