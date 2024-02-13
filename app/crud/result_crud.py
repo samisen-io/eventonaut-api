@@ -1,4 +1,9 @@
+import datetime
 from sqlalchemy.orm import Session
+from app.crud import conferences_crud
+
+from app.crud.conferences_crud import add_venue_details_to_conference
+from app.schemas import conference_schemas, venue_schemas
 from .. import models
 from ..schemas import result_schemas
 
@@ -39,6 +44,16 @@ def get_objects(db: Session, objects: list[str]):
         code = obj[:3]
         if code not in models_table.keys():
             return False
+        elif code == 'evt':
+            db_obj = db.query(models_table[code]).filter(models_table[code].uuid == obj).first()
+            if db_obj is None:
+                return False
+            db_obj = db_obj.__dict__
+            venue_details = {key: value for key, value in db_obj['venue_details'].__dict__.items() if not key.startswith('_sa') and not isinstance(value, datetime.datetime)}
+            db_obj['venue_details'] = venue_schemas.Venue(**venue_details)
+            db_obj['rank'] = rank
+            rank += 1
+            final_objects.append(schemas_table[code](**db_obj))
         else:
             db_obj = db.query(models_table[code]).filter(models_table[code].uuid == obj).first()
             if db_obj is None:

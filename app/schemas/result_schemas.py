@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field
 from datetime import date, time
 from typing import List, Optional
 
+from app.schemas import venue_schemas
+
 class User(BaseModel):
     uuid: str = Field(serialization_alias="id")
     email: str
@@ -24,11 +26,13 @@ class Event(BaseModel):
     timezone: str | None = None
     registration_link: str | None = None
     information_guide: str
+    venue_details: venue_schemas.Venue
     rank: int
 
 class Speakers(BaseModel):
     uuid: str = Field(serialization_alias="id")
     name: str
+    email: str
     title: str
     bio: str
     profile_image_url: str | None = None

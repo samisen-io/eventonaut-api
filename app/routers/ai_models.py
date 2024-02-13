@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 from app.crud.aitokens_crud import insert_aitoken
 from app.crud.speakers_crud import get_speaker_uuid_by_email
 from app.file_reader import read_file_return_csv
+from app.schemas.venue_schemas import Venue
 from app.pinecone_operations import arranging_ouput_object, create_namespace, create_vector_db, delete_namespace, delete_vector_db
 from app.routers.speakers import create_speaker
 from app.schemas import aitokens_schemas as ait_schemas
@@ -71,9 +72,7 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     data = query_document(question,conference_id)
     end_time = datetime.utcnow()
-    # return end_time-start_time
     processing_time = (end_time - start_time).total_seconds()
-    # return processing_time
     data = json.loads(data)
     token_data = {
         'conference_id' : conference_id,
@@ -88,6 +87,9 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     data['processing_time']=processing_time
     objects = result_crud.get_objects(db=db, objects=data['source_list'])
     objects_dict = [{k: datetime_to_str(v) for k, v in obj.__dict__.items() if not k.startswith('_')} for obj in objects]
+    for item in objects_dict:
+        if 'venue_details' in item and isinstance(item['venue_details'], Venue):
+            item['venue_details'] = item['venue_details'].__dict__
     json_data = json.dumps(objects_dict)
     final_result = arranging_ouput_object(json_data)
     final_result = json.loads(final_result)
@@ -120,7 +122,6 @@ async def upload_session_file(file: UploadFile,
                               db: Session = Depends(get_db)):
     contents = await file.read()
     filename = file.filename
-    # read the file and return a csv reader object
     reader = await read_file_return_csv(contents,filename)
     headers = reader.fieldnames
     reader = [{k.lower(): v for k, v in row.items()} for row in reader]
@@ -168,7 +169,6 @@ async def upload_session_file(file: UploadFile,
         print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
         sys.stdout.flush()
     print()
-    # print(session)
     logging.info("Session file uploaded successfully")
     return {'filename': filename}
 
@@ -216,7 +216,6 @@ async def upload_speaker_file(file: UploadFile,
         print('\r' + 'Loading: ' + loading_chars[c % len(loading_chars)] + f' {percentage_done:.2f}% done', end='')
         sys.stdout.flush()
     print()
-    print(speaker)
     logging.info("Speakers file uploaded successfully")
     return {'filename': filename}
 
