@@ -1,9 +1,11 @@
 from typing import Callable
-from fastapi import Depends, FastAPI, Request, Response, APIRouter
+from fastapi import Depends, FastAPI, Request, Response, APIRouter, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.routing import APIRoute
 from app.oauth2 import get_current_active_user
 import logging
-
+from fastapi.exceptions import RequestValidationError
+from starlette.responses import JSONResponse
 from app.routers import organization, role
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +17,13 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # Start the scheduler
 logout_token_crud.start_scheduler()
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": jsonable_encoder(exc.errors())}
+    )
 
 class CORSHandler(APIRoute):
     def get_route_handler(self) -> Callable:
