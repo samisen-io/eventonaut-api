@@ -1,7 +1,5 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from datetime import date
-from fastapi import HTTPException, status
-import logging
 from ..url_validator import check_url
 
 class PromotionBase(BaseModel):
@@ -14,8 +12,7 @@ class PromotionBase(BaseModel):
     @field_validator('promotion_name','image_url')
     def check_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
-            logging.exception(f"{info.field_name} cannot be empty")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+            raise ValueError(f"{info.field_name} cannot be empty")
         return v
 
     @field_validator('image_url')
