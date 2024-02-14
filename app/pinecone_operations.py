@@ -85,7 +85,6 @@ def arranging_ouput_object(json_data):
     # Iterate over the dictionaries in the data
     for obj in data:
         # Rename 'uuid' to 'id'
-        # obj['id'] = obj.pop('uuid')
         rename_uuid_to_id(obj)
         if obj['id'].startswith('spk'):
             speakers.append(obj)

@@ -87,12 +87,10 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     data['processing_time']=processing_time
     objects = result_crud.get_objects(db=db, objects=data['source_list'])
     objects_dict = [{k: datetime_to_str(v) for k, v in obj.__dict__.items() if not k.startswith('_')} for obj in objects]
-    print(objects_dict)
     for item in objects_dict:
         if 'venue_details' in item and isinstance(item['venue_details'], Venue):
             item['venue_details'] = item['venue_details'].__dict__
     json_data = json.dumps(objects_dict)
-    print(json_data)
     final_result = arranging_ouput_object(json_data)
     final_result = json.loads(final_result)
     final_result['answer'] = data['answer']
@@ -161,7 +159,6 @@ async def upload_session_file(file: UploadFile,
             logging.exception(str(e)+"\n"+str(payload))
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)+"\n"+str(payload))
         # upload to database
-        print(session)
         create_session_for_conference(session,db,current_user)
         loading_chars = ['-', '\\', '|', '/']
         c = c + 1
