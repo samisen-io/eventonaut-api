@@ -31,6 +31,8 @@ def add_user_to_db(db: Session, db_user: models.User):
     try:
         db.commit()
     except Exception as e:
+        if 'unique constraint "ix_users_email"' in str(e):
+            raise HTTPException(status_code=400, detail="Email already in use")
         if db_user.profile_image_url is not None:
             upload_image.delete_blob_by_url(db_user.profile_image_url)
         logging.exception(str(e))

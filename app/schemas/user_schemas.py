@@ -6,16 +6,14 @@ from ..static_enums import organizer
 
 class UserBase(BaseModel):
     email: str
-    first_name: str
-    last_name: str
-    company: str | None = None
-    business_type: str
+    first_name: str | None = None
+    last_name: str | None = None
+    status: str | None = None
     timezone: str | None = None
-    status: str
     profile_image_url: str | None = None
     list_of_roles: List[str] = []
 
-    @field_validator('email','first_name','last_name','business_type')
+    @field_validator('email','first_name','last_name')
     @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
@@ -34,7 +32,7 @@ class UserBase(BaseModel):
             raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
     
-    @field_validator('company','timezone','profile_image_url')
+    @field_validator('timezone','profile_image_url')
     @classmethod
     def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
@@ -49,14 +47,12 @@ class UserBase(BaseModel):
 class UserBaseUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
-    company: str |None = None
-    business_type: str |None = None
+    status: str | None = None
     timezone: str |None = None
-    status: str |None = None
     profile_image_url: str |None = None
     list_of_roles: List[str] | None = None
 
-    @field_validator('first_name','last_name','company','business_type','timezone','profile_image_url')
+    @field_validator('first_name','last_name','timezone','profile_image_url')
     @classmethod
     def user_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:

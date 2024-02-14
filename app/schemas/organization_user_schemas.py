@@ -13,6 +13,9 @@ class Organization_UserUpdate(BaseModel):
     user_id: str
     id: str
 
+class Organization_UserCreate(Organization_UserBase):
+    pass
+
 class Organization_User(Organization_UserBase):
     uuid: str = Field(serialization_alias="id")
     

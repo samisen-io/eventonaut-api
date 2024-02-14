@@ -17,9 +17,9 @@ def get_organization_users(db: Session, skip: int = 0, limit: int = 100):
 def get_organization_user_by_organization_id_and_user_id(db: Session, organization_id: int, user_id: int):
     return db.query(models.Organization_User).filter((models.Organization_User.organization_id == organization_id) & (models.Organization_User.user_id == user_id)).first()
 
-def create_organization_user(db: Session, organization_user: schemas.Organization_User):
+def create_organization_user(db: Session, organization_user: schemas.Organization_UserCreate):
     organization = organization_crud.get_organization_by_id(db, organization_user.organization_id)
-    user = users_crud.get_user_by_uuid(db, organization_user.user_id) 
+    user = users_crud.get_user_by_uuid(db, organization_user.user_id)
     
     organization_user_exist = get_organization_user_by_organization_id_and_user_id(db, organization.id, user.id)
     

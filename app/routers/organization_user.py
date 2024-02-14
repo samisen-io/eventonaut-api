@@ -23,7 +23,7 @@ def get_mapped_organization_user_response(organization_user):
     return organization_user
      
 @router.post("/organization_user", response_model=schemas.Organization_User)
-def create_organization_user(organization_user: schemas.Organization_User, db: Session = Depends(get_db)):
+def create_organization_user(organization_user: schemas.Organization_UserCreate, db: Session = Depends(get_db)):
     try:
         new_organization_user = crud.create_organization_user(db ,organization_user)
         return get_mapped_organization_user_response(new_organization_user)

@@ -27,6 +27,8 @@ def create_organization(db: Session, organization: organization_schemas.Organiza
         return db_organization
 
     except Exception as e:
+        if 'unique constraint "ix_organization_name"' in str(e):
+            raise HTTPException(status_code=400, detail="Organization name already in use") from e
         raise e
 
 def update_organization(db: Session, organization: organization_schemas.OrganizationUpdate, db_organization: models.Organization):
