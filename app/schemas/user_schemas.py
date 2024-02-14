@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from fastapi import HTTPException, status as statuscode
 import logging
 from ..static_enums import organizer
+from ..url_validator import check_url
 
 class UserBase(BaseModel):
     email: str
@@ -41,6 +42,26 @@ class UserBase(BaseModel):
                 raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be less than {max_len} characters")
         return v
     
+    @field_validator('profile_image_url')
+    def validate_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
+        return v
+    
+class UserCreate(UserBase):
+    hashed_password: str
+
+    @field_validator('hashed_password')
+    def hashed_password_is_not_empty(cls, v):
+        if v.strip() == "" or v.__contains__(" "):
+            logging.exception("Invalid password")
+            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid password")
+        if not 8 <= len(v) <= 16:
+            logging.exception("Password should be between 8 and 16 characters")
+            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Password should be between 8 and 16 characters")
+        return v
+    
 class UserBaseUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
@@ -70,18 +91,14 @@ class UserBaseUpdate(BaseModel):
             if v not in list(organizer.OrganizerEnum.__members__):
                 raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
-
-class UserCreate(UserBase):
-    hashed_password: str
-
-    @field_validator('hashed_password')
-    def hashed_password_is_not_empty(cls, v):
-        if v.strip() == "" or v.__contains__(" "):
-            logging.exception("Invalid password")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid password")
-        if not 8 <= len(v) <= 16:
-            logging.exception("Password should be between 8 and 16 characters")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Password should be between 8 and 16 characters")
+    
+    @field_validator('profile_image_url')
+    def validate_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
 class UserPasswordUpdate(BaseModel):
