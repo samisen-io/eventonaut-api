@@ -6,9 +6,7 @@ from app.services import signup_service
 
 router = APIRouter(tags=["signup_organizer"])
 
-@router.post("/signup")
-def signup(organizer_signup_request: schemas.SignupOrganizer, db: Session = Depends(get_db)):
-    
+@router.post("/signup", response_model=schemas.SignupOrganizerResponse, status_code=201)
+def signup_organizer(organizer_signup_request: schemas.SignupOrganizerRequest, db: Session = Depends(get_db)):
     response = signup_service.signup_organizer(db=db, organizer_signup_request = organizer_signup_request)
-    
     return response
