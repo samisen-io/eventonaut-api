@@ -25,6 +25,7 @@ def create_speaker(db: Session, speaker: schemas.SpeakerCreate, owner_id: int):
     db_speaker.created_on = datetime.utcnow()
     db_speaker.updated_on = datetime.utcnow()
     db_speaker.owner_id = owner_id
+    
     db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container=BlobContainer.SPEAKER_IMAGES.value, new_blob_name=f"speaker-{db_speaker.uuid}") if speaker.profile_image_url is not None else None
     
     db.add(db_speaker)
@@ -57,6 +58,10 @@ def get_speakers_by_session_uuid(db: Session, session_uuid: str):
     session_id = session.id if session else None
     speaker_ids = [speaker.speaker_id for speaker in db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == session_id).all()]
     return db.query(Speakers).filter(Speakers.id.in_(speaker_ids)).all()
+
+def get_speaker_uuid_by_email(db: Session, email: str):
+    speaker = db.query(Speakers).filter(Speakers.email == email).first()
+    return speaker.uuid if speaker else None
 
 def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker.id).first()
