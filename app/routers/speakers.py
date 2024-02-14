@@ -22,7 +22,7 @@ def create_speaker(speaker: schemas.SpeakerCreate, db: Session = Depends(get_db)
     if crud.get_speaker_by_email(db=db, email=speaker.email, owner_id=current_user.id) is not None:
         logging.exception("Email already registered")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
-    speaker = crud.create_speaker(db=db, speaker=speaker)
+    speaker = crud.create_speaker(db=db, speaker=speaker, owner_id=current_user.id)
     logging.info("Speaker created: " + speaker.uuid)
     return speaker
 
