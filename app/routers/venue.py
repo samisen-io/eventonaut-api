@@ -57,7 +57,7 @@ def update_venue(venue: schemas.VenueUpdate, db: Session = Depends(get_db), curr
     logging.info(f"Venue updated successfully: {venue.id}")
     return db_venue
 
-@router.delete("/venues/{venue_id}", response_model=schemas.Venue)
+@router.delete("/venues/{venue_id}")
 def delete_venue(venue_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_venue = crud.get_venue_by_id(db, venue_id, current_user.id)
     if not db_venue:
