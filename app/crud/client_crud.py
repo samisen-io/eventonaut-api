@@ -17,7 +17,7 @@ def create_client(db: Session, client: schemas.ClientCreate, user_id: int):
     client_status = client_dict.pop("status")
     client_profile_image_url = client_dict.pop("profile_image_url")
     db_client = models.Client(**client_dict)
-    db_client.client_status_id = client_enum.ClientEnum[client_status.upper()].value
+    db_client.client_status_id = client_enum.ClientEnum[client_status].value
     db_client.created_on = datetime.utcnow()
     db_client.updated_on = datetime.utcnow()
     db_client.uuid = "cli-" + str(uuid.uuid4())

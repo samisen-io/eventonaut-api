@@ -1,6 +1,4 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
-from fastapi import HTTPException, status
-import logging
 
 class VenuBase(BaseModel):
     name: str
@@ -11,11 +9,9 @@ class VenuBase(BaseModel):
     @field_validator('name','location','address')
     def check_empty(cls, v: str, info: ValidationInfo):
         if v.strip() == '':
-            logging.exception(f"{info.field_name} cannot be empty")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+            raise ValueError(f"{info.field_name} cannot be empty")
         elif len(v) > 256:
-            logging.exception(f"{info.field_name} cannot be more than 256 characters")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be more than 256 characters")
+            raise ValueError(f"{info.field_name} cannot be more than 256 characters")
         return v
     
     @field_validator('geo_location')
@@ -24,8 +20,7 @@ class VenuBase(BaseModel):
             if v == '':
                 return None
             elif len(v) > 256:
-                logging.exception(f"{info.field_name} cannot be more than 256 characters")
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be more than 256 characters")
+                raise ValueError(f"{info.field_name} cannot be more than 256 characters")
         return v
 
 class VenueCreate(VenuBase):
@@ -40,11 +35,9 @@ class VenueUpdate(VenuBase):
     @field_validator('id')
     def check_id(cls, v: str, info: ValidationInfo):
         if v.strip() == '':
-            logging.exception(f"{info.field_name} cannot be empty")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+            raise ValueError(f"{info.field_name} cannot be empty")
         elif len(v) > 256:
-            logging.exception(f"{info.field_name} cannot be more than 256 characters")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be more than 256 characters")
+            raise ValueError(f"{info.field_name} cannot be more than 256 characters")
         return v
 
     @field_validator('name','location','address')
@@ -53,8 +46,7 @@ class VenueUpdate(VenuBase):
             if v.strip() == '':
                 return None
             elif len(v) > 256:
-                logging.exception(f"{info.field_name} cannot be more than 256 characters")
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be more than 256 characters")
+                raise ValueError(f"{info.field_name} cannot be more than 256 characters")
         return v
     
 class Venue(VenuBase):

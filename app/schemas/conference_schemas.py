@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from datetime import date
 from ..schemas import venue_schemas, client_schemas, sponsor_schemas
-import logging
 from ..static_enums import event
 from ..url_validator import check_url
 
@@ -21,10 +20,8 @@ class ConferenceBase(BaseModel):
     @field_validator('name','location','information_guide')
     def value_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
-            logging.exception(f"{info.field_name} cannot be empty")
             raise ValueError(f"{info.field_name} cannot be empty")
         elif len(v) > 256:
-            logging.exception(f"{info.field_name} must not be longer than 256 characters")
             raise ValueError(f"{info.field_name} must not be longer than 256 characters")
         return v
 
@@ -36,7 +33,6 @@ class ConferenceBase(BaseModel):
             max_length = 50 if info.field_name == "timezone" else 256
             if len(v) > max_length:
                 print(v,"Longest Desc")
-                logging.exception(f"{info.field_name} must not be longer than {max_length} characters")
                 raise ValueError(f"{info.field_name} must not be longer than {max_length} characters")
         return v
     
@@ -62,7 +58,6 @@ class ConferenceCreate(ConferenceBase):
     @field_validator('venue_id')
     def venue_id_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
-            logging.exception(f"{info.field_name} cannot be empty")
             raise ValueError(f"{info.field_name} cannot be empty")
         return v
 
@@ -80,10 +75,8 @@ class ConferenceCreate(ConferenceBase):
                 return None
             for sponsor_id in v:
                 if sponsor_id.strip() == "":
-                    logging.exception(f"{info.field_name} cannot be empty")
                     raise ValueError(f"{info.field_name} cannot be empty")
                 elif len(sponsor_id) > 256:
-                    logging.exception(f"{info.field_name} must not be longer than 256 characters")
                     raise ValueError(f"{info.field_name} must not be longer than 256 characters")
         return v
 
@@ -107,7 +100,6 @@ class ConferenceUpdate(BaseModel):
     @field_validator('id')
     def id_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
-            logging.exception(f"Invalid {info.field_name}")
             raise ValueError(f"Invalid {info.field_name}")
         return v
 
@@ -118,7 +110,6 @@ class ConferenceUpdate(BaseModel):
                 return None
             max_len = 50 if info.field_name == 'timezone' else 256
             if len(v) > max_len:
-                logging.exception(f"{info.field_name} cannot be longer than {max_len} characters")
                 raise ValueError(f"{info.field_name} cannot be longer than {max_len} characters")
         return v
     
@@ -126,13 +117,8 @@ class ConferenceUpdate(BaseModel):
     def timezone_is_valid(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
-                logging.exception(f"{info.field_name} cannot be empty")
-                raise ValueError(f"{info.field_name} cannot be empty")
-            elif v == "string":
-                logging.exception(f"Invalid {info.field_name}")
-                raise ValueError(f"Invalid {info.field_name}")
+                return None
             elif len(v) > 50:
-                logging.exception(f"{info.field_name} must not be longer than 50 characters")
                 raise ValueError(f"{info.field_name} must not be longer than 50 characters")
         return v
     
@@ -143,10 +129,8 @@ class ConferenceUpdate(BaseModel):
                 return None
             for sponsor_id in v:
                 if sponsor_id.strip() == "":
-                    logging.exception(f"{info.field_name} cannot be empty")
                     raise ValueError(f"{info.field_name} cannot be empty")
                 elif len(sponsor_id) > 256:
-                    logging.exception(f"{info.field_name} must not be longer than 256 characters")
                     raise ValueError(f"{info.field_name} must not be longer than 256 characters")
         return v
     
@@ -184,4 +168,3 @@ class ConferenceListSummary(BaseModel):
     no_of_sponsors: int
     no_of_clients: int
     number_of_attendees: int
-    
