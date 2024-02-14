@@ -3,6 +3,7 @@ from datetime import date
 from ..schemas import venue_schemas, client_schemas, sponsor_schemas
 import logging
 from ..static_enums import event
+from ..url_validator import check_url
 
 class ConferenceBase(BaseModel):
     name: str
@@ -44,6 +45,13 @@ class ConferenceBase(BaseModel):
         v = v.upper()
         if v not in list(event.EventEnum.__members__):
             raise ValueError("Invalid status")
+        return v
+    
+    @field_validator('information_guide', 'conference_banner_url', 'registration_link', 'conference_logo')
+    def validate_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
     
 class ConferenceCreate(ConferenceBase):
@@ -118,7 +126,7 @@ class ConferenceUpdate(BaseModel):
     def timezone_is_valid(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
-                return None 
+                return None
             elif len(v) > 50:
                 logging.exception(f"{info.field_name} must not be longer than 50 characters")
                 raise ValueError(f"{info.field_name} must not be longer than 50 characters")
@@ -146,6 +154,13 @@ class ConferenceUpdate(BaseModel):
             v = v.upper()
             if v not in list(event.EventEnum.__members__):
                 raise ValueError("Invalid status")
+        return v
+    
+    @field_validator('information_guide', 'conference_banner_url', 'registration_link', 'conference_logo')
+    def validate_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
 #pydantic model for conference

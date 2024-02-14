@@ -1,6 +1,7 @@
 from pydantic import BaseModel, validator, Field, field_validator, ValidationInfo
-from fastapi import HTTPException, UploadFile, status
+from fastapi import HTTPException, status
 from ..static_enums import attendee
+from ..url_validator import check_url
 
 #pydantic model for attendeebase
 class AttendeeBase(BaseModel):
@@ -40,6 +41,13 @@ class AttendeeBase(BaseModel):
             v = v.upper()
             if v not in list(attendee.AttendeeEnum.__members__):
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+        return v
+    
+    @field_validator('profile_image_url')
+    def validate_profile_image_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
     
 #pydantic model for attendee create
@@ -118,6 +126,13 @@ class AttendeeUpdate(BaseModel):
             v = v.upper()
             if v not in list(attendee.AttendeeEnum.__members__):
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+        return v
+
+    @field_validator('profile_image_url')
+    def validate_profile_image_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
 #pydantic model for attendee

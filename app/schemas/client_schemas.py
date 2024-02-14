@@ -2,6 +2,7 @@ from pydantic import BaseModel, field_validator, validator, Field, ValidationInf
 from fastapi import HTTPException, status
 from ..static_enums import client
 import logging
+from ..url_validator import check_url
 
 class ClientBase(BaseModel):
     name: str
@@ -40,6 +41,8 @@ class ClientBase(BaseModel):
             elif len(v) > 256:
                 logging.exception(f"Profile image url too long")
                 raise ValueError(f"Profile image url too long")
+            if not check_url(v):
+                raise ValueError("Broken profile image url link or invalid url")
         return v
     
     @field_validator("status")
@@ -97,8 +100,14 @@ class ClientUpdate(BaseModel):
                 return None
             v = v.upper()
             if v not in list(client.ClientEnum.__members__):
-                logging.exception("Invalid status")
-                raise ValueError("Invalid status")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+        return v
+
+    @field_validator('profile_image_url')
+    def profile_image_url_is_not_empty(cls, v):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError("Broken profile image url link or invalid url")
         return v
 
 class ClientCreate(ClientBase):

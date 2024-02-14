@@ -1,6 +1,7 @@
 from pydantic import BaseModel, validator, Field, field_validator, ValidationInfo
 from fastapi import HTTPException, status
 import logging
+from ..url_validator import check_url
 
 class SpeakerBase(BaseModel):
     name: str
@@ -26,6 +27,8 @@ class SpeakerBase(BaseModel):
                 return None
             elif len(v) > 256:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Profile image url too long")
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
 class SpeakerCreate(SpeakerBase):
@@ -54,6 +57,13 @@ class SpeakerUpdate(BaseModel):
             max_length = 2048 if info.field_name == "bio" else 256
             if len(v) > max_length:
                 raise HTTPException(status_code=400, detail=f"{info.field_name} must be less than {max_length} characters")
+        return v
+    
+    @field_validator('profile_image_url')
+    def validate_profile_image_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
 class Speaker(SpeakerBase):

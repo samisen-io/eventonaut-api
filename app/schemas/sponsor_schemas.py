@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from fastapi import HTTPException, status
 import logging
+from ..url_validator import check_url
 
 class SponsorBase(BaseModel):
     email: str
@@ -29,6 +30,12 @@ class SponsorBase(BaseModel):
         if not 10 <= len(v) <= 15 :
             logging.exception(f"Invalid {info.field_name}")
             raise ValueError(f"Invalid {info.field_name}")
+        return v
+    
+    @field_validator('logo_image_url')
+    def validate_url(cls, v, info: ValidationInfo):
+        if not check_url(v):
+            raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
 class SponsorCreate(SponsorBase):
@@ -71,6 +78,13 @@ class SponsorUpdate(BaseModel):
             elif len(v) > 256:
                 logging.exception(f"{info.field_name} cannot be longer than 256 characters")
                 raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
+        return v
+    
+    @field_validator('logo_image_url')
+    def validate_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
             
 class Sponsor(SponsorBase):
