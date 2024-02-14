@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Security, status
 import logging
 from sqlalchemy.orm import Session
 from app.oauth2 import get_current_active_user
+from app.static_enums.organizer import OrganizerEnum
 from app.static_enums.role import RoleEnum
 from ..schemas import user_schemas as schemas
 from ..crud import users_crud as crud
@@ -103,7 +104,20 @@ def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), cur
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     updated_user = crud.update_user(db=db, user=user, db_user=db_user)
     logging.info("User updated: " + updated_user.uuid)
-    return updated_user
+    
+    updated_user_response = schemas.User(
+        email=updated_user.email,
+        first_name=updated_user.first_name,
+        last_name=updated_user.last_name,
+        timezone=updated_user.timezone,
+        status= OrganizerEnum(updated_user.user_status_id).name,
+        profile_image_url=updated_user.profile_image_url,
+        list_of_roles= get_role_names(updated_user),
+        is_active=updated_user.is_active,
+        uuid=updated_user.uuid
+    )
+    
+    return updated_user_response
 
 def get_db_user(db: Session, user_id: int):
     db_user = crud.get_db_user(db, user_id=user_id)

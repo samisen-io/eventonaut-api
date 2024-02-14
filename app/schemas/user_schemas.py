@@ -11,9 +11,9 @@ class UserBase(BaseModel):
     status: str | None = None
     timezone: str | None = None
     profile_image_url: str | None = None
-    list_of_roles: List[str] = []
+    list_of_roles: List[str] | None = None
 
-    @field_validator('email','first_name','last_name')
+    @field_validator('email')
     @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
@@ -32,7 +32,7 @@ class UserBase(BaseModel):
             raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
     
-    @field_validator('timezone','profile_image_url')
+    @field_validator('timezone')
     @classmethod
     def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
