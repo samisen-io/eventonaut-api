@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from datetime import date
 from fastapi import HTTPException, status
 import logging
+from ..url_validator import check_url
 
 class PromotionBase(BaseModel):
     todate: date
@@ -15,6 +16,12 @@ class PromotionBase(BaseModel):
         if v.strip() == "":
             logging.exception(f"{info.field_name} cannot be empty")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+        return v
+
+    @field_validator('image_url')
+    def validate_url(cls, v, info: ValidationInfo):
+        if not check_url(v):
+            raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
 class PromotionCreate(PromotionBase):
@@ -33,6 +40,12 @@ class PromotionUpdate(PromotionBase):
     def check_empty(cls, v, info: ValidationInfo):
         if v is not None and v.strip() == "":
             return None
+        return v
+    
+    @field_validator('image_url')
+    def validate_url(cls, v, info: ValidationInfo):
+        if v is not None and not check_url(v):
+            raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
 class Promotion(PromotionBase):

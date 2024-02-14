@@ -1,9 +1,9 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
-from fastapi import HTTPException, status
 from datetime import date
 from ..schemas import venue_schemas, client_schemas, sponsor_schemas
 import logging
 from ..static_enums import event
+from ..url_validator import check_url
 
 class ConferenceBase(BaseModel):
     name: str
@@ -22,10 +22,10 @@ class ConferenceBase(BaseModel):
     def value_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
             logging.exception(f"{info.field_name} cannot be empty")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+            raise ValueError(f"{info.field_name} cannot be empty")
         elif len(v) > 256:
             logging.exception(f"{info.field_name} must not be longer than 256 characters")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} must not be longer than 256 characters")
+            raise ValueError(f"{info.field_name} must not be longer than 256 characters")
         return v
 
     @field_validator('description','conference_logo','registration_link','conference_banner_url','timezone')
@@ -37,14 +37,21 @@ class ConferenceBase(BaseModel):
             if len(v) > max_length:
                 print(v,"Longest Desc")
                 logging.exception(f"{info.field_name} must not be longer than {max_length} characters")
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} must not be longer than {max_length} characters")
+                raise ValueError(f"{info.field_name} must not be longer than {max_length} characters")
         return v
     
     @field_validator("status")
     def check_status(cls, v):
         v = v.upper()
         if v not in list(event.EventEnum.__members__):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+            raise ValueError("Invalid status")
+        return v
+    
+    @field_validator('information_guide', 'conference_banner_url', 'registration_link', 'conference_logo')
+    def validate_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
     
 class ConferenceCreate(ConferenceBase):
@@ -56,7 +63,7 @@ class ConferenceCreate(ConferenceBase):
     def venue_id_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
             logging.exception(f"{info.field_name} cannot be empty")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+            raise ValueError(f"{info.field_name} cannot be empty")
         return v
 
     @field_validator('client_id')
@@ -74,10 +81,10 @@ class ConferenceCreate(ConferenceBase):
             for sponsor_id in v:
                 if sponsor_id.strip() == "":
                     logging.exception(f"{info.field_name} cannot be empty")
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+                    raise ValueError(f"{info.field_name} cannot be empty")
                 elif len(sponsor_id) > 256:
                     logging.exception(f"{info.field_name} must not be longer than 256 characters")
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} must not be longer than 256 characters")
+                    raise ValueError(f"{info.field_name} must not be longer than 256 characters")
         return v
 
 class ConferenceUpdate(BaseModel):
@@ -101,7 +108,7 @@ class ConferenceUpdate(BaseModel):
     def id_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
             logging.exception(f"Invalid {info.field_name}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid {info.field_name}")
+            raise ValueError(f"Invalid {info.field_name}")
         return v
 
     @field_validator('name','client_id','location','description','venue_id','conference_logo','registration_link','information_guide','conference_banner_url','timezone')
@@ -112,7 +119,7 @@ class ConferenceUpdate(BaseModel):
             max_len = 50 if info.field_name == 'timezone' else 256
             if len(v) > max_len:
                 logging.exception(f"{info.field_name} cannot be longer than {max_len} characters")
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than {max_len} characters")
+                raise ValueError(f"{info.field_name} cannot be longer than {max_len} characters")
         return v
     
     @field_validator('timezone')
@@ -120,13 +127,13 @@ class ConferenceUpdate(BaseModel):
         if v is not None:
             if v.strip() == "":
                 logging.exception(f"{info.field_name} cannot be empty")
-                raise HTTPException(status_code=400, detail=f"{info.field_name} cannot be empty")
+                raise ValueError(f"{info.field_name} cannot be empty")
             elif v == "string":
                 logging.exception(f"Invalid {info.field_name}")
-                raise HTTPException(status_code=400, detail=f"Invalid {info.field_name}")
+                raise ValueError(f"Invalid {info.field_name}")
             elif len(v) > 50:
                 logging.exception(f"{info.field_name} must not be longer than 50 characters")
-                raise HTTPException(status_code=400, detail=f"{info.field_name} must not be longer than 50 characters")
+                raise ValueError(f"{info.field_name} must not be longer than 50 characters")
         return v
     
     @field_validator('sponsor_ids')
@@ -137,10 +144,10 @@ class ConferenceUpdate(BaseModel):
             for sponsor_id in v:
                 if sponsor_id.strip() == "":
                     logging.exception(f"{info.field_name} cannot be empty")
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+                    raise ValueError(f"{info.field_name} cannot be empty")
                 elif len(sponsor_id) > 256:
                     logging.exception(f"{info.field_name} must not be longer than 256 characters")
-                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} must not be longer than 256 characters")
+                    raise ValueError(f"{info.field_name} must not be longer than 256 characters")
         return v
     
     @field_validator("status")
@@ -150,7 +157,14 @@ class ConferenceUpdate(BaseModel):
                 return None
             v = v.upper()
             if v not in list(event.EventEnum.__members__):
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+                raise ValueError("Invalid status")
+        return v
+    
+    @field_validator('information_guide', 'conference_banner_url', 'registration_link', 'conference_logo')
+    def validate_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
 #pydantic model for conference

@@ -4,6 +4,7 @@ from datetime import date as Date, time
 import logging
 from ..schemas.speaker_schemas import Speaker
 from ..static_enums import session
+from ..url_validator import check_url
 
 class SessionBase(BaseModel):
     name: str
@@ -35,6 +36,8 @@ class SessionBase(BaseModel):
             elif len(v) > 256:
                 logging.exception(f"{info.field_name} cannot be longer than 256 characters")
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be longer than 256 characters") 
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
     
     @field_validator('tags')
@@ -137,6 +140,13 @@ class SessionUpdate(BaseModel):
             v = v.upper()
             if v not in list(session.SessionEnum.__members__):
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+        return v
+    
+    @field_validator('session_image_url')
+    def session_image_url_validation(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
     
     class Config:

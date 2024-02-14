@@ -12,10 +12,11 @@ from datetime import date
 import qrcode
 import io
 import json
+from ..import url_validator
 
 router = APIRouter(tags=["conferences"])
 
-@router.post("/conferences", response_model=schemas.Conference, status_code=status.HTTP_201_CREATED)
+@router.post("/conferences", status_code=status.HTTP_201_CREATED)
 def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if not users_crud.get_user(db, user_id=current_user.id):
         logging.exception("User not found")

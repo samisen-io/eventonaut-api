@@ -7,7 +7,7 @@ class Token(BaseModel):
     refresh_token: str
     
 class TokenData(BaseModel):
-    username: str or None = None
+    username: str | None = None
     scopes: List[str] = []
     
 class TokenInput(BaseModel):
