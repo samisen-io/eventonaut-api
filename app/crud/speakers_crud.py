@@ -67,7 +67,6 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker.id).first()
     speaker_dict = speaker.model_dump()
     speaker_dict.pop("id")
-    speaker_dict.pop("conference_id")
     for key, value in speaker_dict.items():
         if value is not None:
             setattr(db_speaker, key, value)
