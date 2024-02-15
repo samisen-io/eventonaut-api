@@ -49,8 +49,8 @@ def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 
         conference.status = event.EventEnum(conference.conference_status_id).name
     return conferences
 
-def get_conferences_by_owner_id(db: Session, owner_id: int):
-    confernces = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).all()
+def get_conferences_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 10):
+    confernces = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).offset(offset).limit(limit).all()
     for conference in confernces:
         conference = add_client_details_to_conference(db=db, conference=conference)
         conference = add_venue_details_to_conference(db=db, conference=conference)
