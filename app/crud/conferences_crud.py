@@ -70,8 +70,8 @@ def get_conferences_by_owner_id(db: Session, owner_id: int, offset: int = 0, lim
     
     for conference in conferences:
         conference.status = event.EventEnum(conference.conference_status_id).name
-        if conference.client is not None:
-            conference.client.status = client.ClientEnum(conference.client.client_status_id).name
+        # if conference.client is not None:
+        #     conference.client.status = client.ClientEnum(conference.client.client_status_id).name
     
     # conferences = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).offset(offset).limit(limit).all()
     # logging.info(f"Start - {datetime.now()}")
