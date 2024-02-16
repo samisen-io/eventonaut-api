@@ -154,9 +154,9 @@ class ConferenceUpdate(BaseModel):
 #pydantic model for conference
 class Conference(ConferenceBase):
     uuid: str = Field(serialization_alias="id")
-    client_details: client_schemas.Client | None
-    venue_details: venue_schemas.Venue
-    sponsor_details: list[sponsor_schemas.Sponsor] | None
+    client: client_schemas.Client | None
+    venues: venue_schemas.Venue
+    sponsors: list[sponsor_schemas.Sponsor] | None
     
     class Config:
         orm_mode = True

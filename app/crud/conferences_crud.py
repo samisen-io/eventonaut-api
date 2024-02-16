@@ -10,8 +10,10 @@ from .. import AI_assitant
 import uuid
 from ..code_generator import generate_unique_string
 from .client_crud import get_client
-from ..static_enums import event
+from ..static_enums import event, client
 from ..static_enums.blob_container_enums import BlobContainer
+from sqlalchemy.orm import joinedload
+from datetime import datetime
 
 def add_sponsor_details_to_conference(db: Session, conference: dict):
     event_sponsors = db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == conference.id).all()
@@ -50,13 +52,36 @@ def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 10):
-    confernces = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).offset(offset).limit(limit).all()
-    for conference in confernces:
-        conference = add_client_details_to_conference(db=db, conference=conference)
-        conference = add_venue_details_to_conference(db=db, conference=conference)
-        conference = add_sponsor_details_to_conference(db=db, conference=conference)
+    logging.info(f"Start - {datetime.now()}")
+    conferences = (db.query(models.Conference)
+    .options(
+        joinedload(models.Conference.client),  # Load client status
+        joinedload(models.Conference.venues),
+        joinedload(models.Conference.sponsors),  # Load sponsors
+    )
+    .filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False)
+    .order_by(models.Conference.start_date.desc())
+    .offset(offset)
+    .limit(limit)
+    .all()
+    )
+    
+    # conferences = db.query(models.Conference).options(joinedload(models.Conference.client), joinedload(models.Conference.venues)).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).order_by(models.Conference.start_date.desc()).offset(offset).limit(limit).all()
+    
+    for conference in conferences:
         conference.status = event.EventEnum(conference.conference_status_id).name
-    return confernces
+        if conference.client is not None:
+            conference.client.status = client.ClientEnum(conference.client.client_status_id).name
+    
+    # conferences = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).offset(offset).limit(limit).all()
+    # logging.info(f"Start - {datetime.now()}")
+    # for conference in conferences:
+    #     conference = add_client_details_to_conference(db=db, conference=conference)
+    #     conference = add_venue_details_to_conference(db=db, conference=conference)
+    #     conference = add_sponsor_details_to_conference(db=db, conference=conference)
+    #     conference.status = event.EventEnum(conference.conference_status_id).name
+    logging.info(f"End - {datetime.now()}")
+    return conferences
 
 def get_conference_by_code(db: Session, code: str):
     conference = db.query(models.Conference).filter(models.Conference.code == code, models.Conference.is_archived == False).first()
