@@ -1,12 +1,14 @@
 import os
 from sqlalchemy.orm import Session
+
+from app.static_enums.role import RoleEnum
 from .. import models
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
 from datetime import datetime
 from .. import hashing
 from .. AI_assitant import create_thread, delete_thread
 import uuid
-from ..crud import conferences_crud
+from ..crud import conferences_crud, user_role_crud
 from ..static_enums import event
 from ..static_enums import attendee as attendee_enum
 from urllib.parse import urlparse
@@ -41,7 +43,20 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.commit()
     db.refresh(db_attendee)
 
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
+    user_role_crud.create_user_role(db=db, user_id=db_user.id, role_id=RoleEnum.ATTENDEE.value)
+    
+    attendee = schemas.Attendee(uuid=db_attendee.uuid, 
+                                email=db_user.email,
+                                first_name=db_user.first_name,
+                                last_name=db_user.last_name,
+                                title=db_attendee.title,
+                                company="temp",
+                                bio=db_attendee.bio,
+                                share_my_profile=db_attendee.share_my_profile,
+                                share_my_agenda=db_attendee.share_my_agenda,
+                                profile_image_url=db_user.profile_image_url,
+                                thread_id=db_attendee.thread_id,
+                                is_active=db_user.is_active)
     attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
     return attendee
 
