@@ -13,8 +13,15 @@ def get_all_organizations(db: Session, offset: int, limit: int):
     except Exception as e:
         raise e
 
-def get_organization_by_id(db: Session, organization_id: str):
-    return db.query(models.Organization).filter(models.Organization.uuid == organization_id).first()
+def get_organization_by_uuid(db: Session, organization_uuid: str):
+    return db.query(models.Organization).filter(models.Organization.uuid == organization_uuid).first()
+
+def get_organization_by_id(db: Session, organization_id: int):
+    return db.query(models.Organization).filter(models.Organization.id == organization_id).first()
+
+def get_organization_by_name(db: Session, organization_name: str):
+    return db.query(models.Organization).filter(models.Organization.name == organization_name).first()
+
 
 def create_organization(db: Session, organization: organization_schemas.OrganizationCreate):
     try:

@@ -16,4 +16,3 @@ class SignupOrganizerResponse(SignupUserBase):
     organization_id: str
     user_id: str
     list_of_roles: list[str]
-    
