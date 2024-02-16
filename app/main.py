@@ -13,12 +13,17 @@ from .routers import ai_models, users, conferences, ai_models, sessions, setting
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference, client, speakers, promotions,sponsor, venue, static_organizer, static_client, static_event, static_session, static_attendee, upload_image
 from .crud import logout_token_crud
+from .timeout_middleware import TimeoutMiddleware
+
 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Start the scheduler
 logout_token_crud.start_scheduler()
+
+app.middleware("http")(TimeoutMiddleware(app, 10))
+
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
