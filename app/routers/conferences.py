@@ -12,6 +12,7 @@ from datetime import date
 import qrcode
 import io
 import json
+from ..import url_validator
 
 router = APIRouter(tags=["conferences"])
 
@@ -65,12 +66,12 @@ def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Sess
     return conferences
 
 @router.get("/conferences", response_model=list[schemas.Conference])
-def get_all_conferences_by_owner_id(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def get_all_conferences_by_owner_id(offset: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_user = users_crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    db_conferences = crud.get_conferences_by_owner_id(db, owner_id=current_user.id)
+    db_conferences = crud.get_conferences_by_owner_id(db, owner_id=current_user.id, offset=offset, limit=limit)
     if db_conferences is None or len(db_conferences) == 0:
         logging.exception("No conferences found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")

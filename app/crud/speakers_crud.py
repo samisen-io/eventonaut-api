@@ -19,11 +19,12 @@ def get_speaker_by_uuid(db: Session, uuid: str, owner_id: int):
 def get_speakers_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 100):
     return db.query(Speakers).filter(Speakers.owner_id == owner_id, Speakers.is_archived == False).offset(offset).limit(limit).all()
 
-def create_speaker(db: Session, speaker: schemas.SpeakerCreate):
+def create_speaker(db: Session, speaker: schemas.SpeakerCreate, owner_id: int):
     db_speaker = Speakers(**speaker.model_dump())
     db_speaker.uuid = "spk-" + str(uuid.uuid4())
     db_speaker.created_on = datetime.utcnow()
     db_speaker.updated_on = datetime.utcnow()
+    db_speaker.owner_id = owner_id
     
     db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container=BlobContainer.SPEAKER_IMAGES.value, new_blob_name=f"speaker-{db_speaker.uuid}") if speaker.profile_image_url is not None else None
     
@@ -58,11 +59,14 @@ def get_speakers_by_session_uuid(db: Session, session_uuid: str):
     speaker_ids = [speaker.speaker_id for speaker in db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == session_id).all()]
     return db.query(Speakers).filter(Speakers.id.in_(speaker_ids)).all()
 
+def get_speaker_uuid_by_email(db: Session, email: str):
+    speaker = db.query(Speakers).filter(Speakers.email == email).first()
+    return speaker.uuid if speaker else None
+
 def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker.id).first()
     speaker_dict = speaker.model_dump()
     speaker_dict.pop("id")
-    speaker_dict.pop("conference_id")
     for key, value in speaker_dict.items():
         if value is not None:
             setattr(db_speaker, key, value)

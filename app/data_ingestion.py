@@ -75,7 +75,6 @@ def write_sessions_to_csv(db,conference_id):
                         session_dict[field] = session_dict[field].strftime("%Y-%m-%d %H:%M:%S")
             session_dict['type'] = 'session'
             speakers = get_speakers_by_session_uuid(db, session_dict['uuid'])
-            # get the speaker names
             speaker_names = []
             for speaker in speakers:
                 speaker_names.append(speaker.name)
@@ -106,13 +105,20 @@ def write_events_to_csv(db, conference_id):
     if not result:
         raise HTTPException(status_code=404, detail="Conference not found")
     with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = ['uuid','name', 'description', 'location', 'start_date', 'end_date', 'type']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
+        dict_obj = result.__dict__
+        venue_fields = ['name','location','address']
+        venue = dict_obj['venue_details'].__dict__
+        venue = filter_fields(venue, venue_fields)
+        venue = {'venue_' + key: value for key, value in venue.items()}
+        venue_fields = ['venue_' + field for field in venue_fields]
+        fieldnames = ['uuid','name', 'description', 'location', 'start_date', 'end_date', 'type', 'status']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames + venue_fields)
         conference_dict = result.__dict__
         conference_dict = filter_fields(conference_dict, fieldnames)
         conference_dict['type'] = 'event/conference'
-        writer.writerow(conference_dict)
+        merged_dict = {**conference_dict, **venue}
+        writer.writeheader()
+        writer.writerow(merged_dict)
 
 def add_documents(namespace,conference_id,category):
     # get the file path

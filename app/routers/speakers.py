@@ -22,7 +22,7 @@ def create_speaker(speaker: schemas.SpeakerCreate, db: Session = Depends(get_db)
     if crud.get_speaker_by_email(db=db, email=speaker.email, owner_id=current_user.id) is not None:
         logging.exception("Email already registered")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
-    speaker = crud.create_speaker(db=db, speaker=speaker)
+    speaker = crud.create_speaker(db=db, speaker=speaker, owner_id=current_user.id)
     logging.info("Speaker created: " + speaker.uuid)
     return speaker
 
@@ -55,7 +55,7 @@ def get_speakers_by_owner_id(offset: int = 0, limit: int = 100, db: Session = De
 
 @router.get("/speakers/{speaker_id}", response_model=schemas.Speaker)
 def get_speaker(speaker_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    db_speaker = crud.get_speaker(db, speaker_id=speaker_id)
+    db_speaker = crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
     if db_speaker is None:
         logging.exception("Speaker not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
@@ -67,7 +67,7 @@ def update_speaker(speaker: schemas.SpeakerUpdate, db: Session = Depends(get_db)
     if all(value is None for value in dict(speaker).values()):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
-    db_speaker = crud.get_speaker(db, speaker_id=speaker.id)
+    db_speaker = crud.get_speaker_by_uuid(db, uuid=speaker.id, owner_id=current_user.id)
     if db_speaker is None:
         logging.exception("Speaker not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")

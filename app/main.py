@@ -1,20 +1,60 @@
 from typing import Callable
-from fastapi import Depends, FastAPI, Request, Response, APIRouter
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, APIRouter, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
 from app.oauth2 import get_current_active_user
 import logging
-
+from fastapi.exceptions import RequestValidationError
+from starlette.responses import JSONResponse
 from app.routers import organization, organization_user, role, signup_organizer
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference, client, speakers, promotions,sponsor, venue, static_organizer, static_client, static_event, static_session, static_attendee, upload_image
 from .crud import logout_token_crud
+from .timeout_middleware import TimeoutMiddleware
+
 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Start the scheduler
 logout_token_crud.start_scheduler()
+
+app.middleware("http")(TimeoutMiddleware(app, 10))
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logging.exception(f"RequestValidationError: {exc.errors()}")
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": jsonable_encoder(exc.errors())}
+    )
+    
+# @app.exception_handler(HTTPException)
+# async def http_exception_handler(request: Request, exc: HTTPException):
+#     logging.exception(f"HTTPException: {exc.detail}")
+#     return JSONResponse(
+#         status_code=exc.status_code,
+#         content={"detail": exc.detail}
+#     )
+    
+# @app.exception_handler(Exception)
+# async def exception_handler(request: Request, exc: Exception):
+#     logging.exception(f"Exception: {str(exc)}")
+#     return JSONResponse(
+#         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#         content={"detail": str(exc)}
+#     )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={"detail": jsonable_encoder(exc.errors())}
+    )
 
 class CORSHandler(APIRoute):
     def get_route_handler(self) -> Callable:

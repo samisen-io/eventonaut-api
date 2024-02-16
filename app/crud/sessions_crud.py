@@ -43,7 +43,7 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
         session_speaker.uuid = "ssp-" + str(uuid.uuid4())
         session_speaker.created_on = session_speaker.updated_on = datetime.utcnow()
         db.add(session_speaker)
-    
+    db.commit()
     
     db_session.session_image_url = upload_image.get_actual_url(image_url=session.session_image_url, new_blob_container=BlobContainer.SESSION_IMAGES.value, new_blob_name=f"session-{db_session.uuid}") if session.session_image_url is not None else None
     

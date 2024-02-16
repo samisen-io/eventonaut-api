@@ -26,6 +26,7 @@ def create_session_for_conference(session: schemas.SessionCreate, db: Session = 
     session_speaker_ids = []
     for speaker_id in session.speakers:
         speaker = speakers_crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
+        print(speaker)
         if speaker is None:
             logging.exception("Speaker not found")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")

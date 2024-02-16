@@ -1,6 +1,4 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
-from fastapi import HTTPException, status as statuscode
-import logging
 
 class OrganizationBase(BaseModel):
     name: str
@@ -14,11 +12,9 @@ class OrganizationBase(BaseModel):
     @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
-            logging.exception(f"{info.field_name} cannot be empty")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+            raise ValueError(f"{info.field_name} cannot be empty")
         elif len(v) > 256:
-            logging.exception(f"{info.field_name} should be less than 256 characters")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be less than 256 characters")
+            raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
 
     @field_validator('business_type', 'description', 'address', 'logo_image_url', 'website_url')
@@ -28,8 +24,7 @@ class OrganizationBase(BaseModel):
             if v.strip() == "":
                 return None
             if len(v) > 256:
-                logging.exception(f"{info.field_name} should be less than 256 characters")
-                raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be less than 256 characters")
+                raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
 
 class OrganizationCreate(OrganizationBase):
@@ -51,8 +46,7 @@ class OrganizationUpdate(BaseModel):
             if v.strip() == "":
                 return None
             if len(v) > 256:
-                logging.exception(f"{info.field_name} should be less than 256 characters")
-                raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be less than 256 characters")
+                raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
 
 class Organization(OrganizationBase):
