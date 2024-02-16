@@ -120,7 +120,8 @@ class Conference(Base):
     promotions = relationship("Promotions", back_populates="conference")
     venues = relationship("Venue", back_populates="conference")
     sessions_speakers = relationship("SessionSpeakers", back_populates="conference")
-    event_sponsors = relationship("EventSponsors", back_populates="conference")
+    # event_sponsors = relationship("EventSponsors", back_populates="conference")
+    sponsors = relationship("Sponsors", secondary="event_sponsors", back_populates="conference")
     event_status = relationship("EventStatus", back_populates="conference")
 
 class Conference_Files(Base):
@@ -344,7 +345,8 @@ class Sponsors(Base):
     is_archived = Column(Boolean, default=False)
 
     owner = relationship("User", back_populates="sponsors")
-    event_sponsors = relationship("EventSponsors", back_populates="sponsors")
+    # event_sponsors = relationship("EventSponsors", back_populates="sponsors")
+    conference = relationship("Conference", secondary="event_sponsors", back_populates="sponsors")
 
 class EventSponsors(Base):
     __tablename__ = "event_sponsors"
@@ -356,8 +358,8 @@ class EventSponsors(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     sponsor_id = Column(Integer, ForeignKey("sponsors.id"))
 
-    conference = relationship("Conference", back_populates="event_sponsors")
-    sponsors = relationship("Sponsors", back_populates="event_sponsors")
+    # conference = relationship("Conference", back_populates="event_sponsors")
+    # sponsors = relationship("Sponsors", back_populates="event_sponsors")
 
 class Venue(Base):
     __tablename__ = "venues"
