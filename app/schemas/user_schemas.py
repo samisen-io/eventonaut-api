@@ -46,6 +46,7 @@ class UserBase(BaseModel):
         return v
     
     @field_validator('profile_image_url')
+    @classmethod
     def validate_url(cls, v, info: ValidationInfo):
         if v is not None:
             if not check_url(v):
@@ -56,6 +57,7 @@ class UserCreate(UserBase):
     hashed_password: str
 
     @field_validator('hashed_password')
+    @classmethod
     def hashed_password_is_not_empty(cls, v):
         if v.strip() == "" or v.__contains__(" "):
             logging.exception("Invalid password")
@@ -96,7 +98,8 @@ class UserBaseUpdate(BaseModel):
                 raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
     
-     @field_validator('profile_image_url')
+    @field_validator('profile_image_url')
+    @classmethod
     def validate_url(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -104,22 +107,6 @@ class UserBaseUpdate(BaseModel):
             if not check_url(v):
                 raise ValueError(f"Broken {info.field_name} link or invalid url")
 
-
-class UserCreate(UserBase):
-    hashed_password: str
-
-    @field_validator('hashed_password')
-    @classmethod
-    def hashed_password_is_not_empty(cls, v):
-        if v.strip() == "" or v.__contains__(" "):
-            logging.exception("Invalid password")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid password")
-        if not 8 <= len(v) <= 16:
-            logging.exception("Password should be between 8 and 16 characters")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Password should be between 8 and 16 characters")
-        return v
-    
-    
 
 class UserPasswordUpdate(BaseModel):
     old_password: str
