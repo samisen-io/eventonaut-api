@@ -48,6 +48,17 @@ def get_organization_users(skip: int = 0, limit: int = 100, db: Session = Depend
         return mapped_organization_users
     except Exception as exc:
         raise exc
+    
+@router.get("/organization_user/users/{organization_id}", response_model=schemas.OrganizationUsersResponse)
+def get_users_by_organization_id(organization_id: str, db: Session = Depends(get_db)):
+    response = crud.get_users_by_organization_uuid(db, organization_id)
+    if response is None:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return response
+
+@router.get("/organization_user/organizations/{user_id}", response_model=schemas.UserOrganizationsResponse)
+def get_organizations_by_user_id(user_id: str, db: Session = Depends(get_db)):
+    return crud.get_organizations_by_user_uuid(db, user_id)
 
 @router.put("/organization_user/{id}", response_model=schemas.Organization_UserUpdate)
 def update_organization_user(organization_user: schemas.Organization_UserUpdate, db: Session = Depends(get_db)):
