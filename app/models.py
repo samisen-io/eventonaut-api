@@ -51,6 +51,8 @@ class User(Base):
     user_status_id = Column(Integer, ForeignKey("organizer_status.id"))
     profile_image_url = Column(String, index=True)
     is_archived = Column(Boolean, default=False)
+    company = Column(String, index=True)
+    business_type = Column(String, index=True)
 
     attendees = relationship("Attendee", back_populates="user")
     conferences = relationship("Conference", back_populates="owner")
