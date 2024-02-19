@@ -30,7 +30,7 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
     return attendee_conf
 
 # get all attendee conferences
-@router.get("/attendee/conference", response_model=list[conference_schemas.Conference])
+@router.get("/attendee/conference", response_model=list[conference_schemas.ConferenceResponse])
 def get_all_attendee_conferences(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if not crud.get_attendee_by_id(db, attendee_id=current_user.id):
         logging.exception("Attendee not found")
