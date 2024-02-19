@@ -52,6 +52,10 @@ class User(Base):
     sponsors = relationship("Sponsors", back_populates="owner")
     organizer_status = relationship("OrganizerStatus", back_populates="user")
     
+    @property
+    def status(self):
+        return self.organizer_status.status.upper()
+    
 class Role(Base):
     __tablename__ = "role"
 
@@ -82,6 +86,10 @@ class Client(Base):
     owner = relationship("User", back_populates="client")
     conferences = relationship("Conference", back_populates="client")
     client_status = relationship("ClientStatus", back_populates="client")
+    
+    @property
+    def status(self):
+        return self.client_status.status.upper()
   
 #class to create conference table and add relationship to session table
 class Conference(Base):
@@ -119,9 +127,13 @@ class Conference(Base):
     aitokens = relationship("AITokens", back_populates="conference")
     promotions = relationship("Promotions", back_populates="conference")
     venues = relationship("Venue", back_populates="conference")
-    sessions_speakers = relationship("SessionSpeakers", back_populates="conference")
-    event_sponsors = relationship("EventSponsors", back_populates="conference")
+    # event_sponsors = relationship("EventSponsors", back_populates="conference")
+    sponsors = relationship("Sponsors", secondary="event_sponsors", back_populates="conference")
     event_status = relationship("EventStatus", back_populates="conference")
+    
+    @property
+    def status(self):
+        return self.event_status.status.upper()
 
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -150,7 +162,7 @@ class Speakers(Base):
     profile_image_url = Column(String, index=True)
     is_archived = Column(Boolean, default=False)
 
-    sessions_speakers = relationship("SessionSpeakers", back_populates="speaker")
+    session = relationship("Session", secondary="session_speakers", back_populates="speakers")
     owner = relationship("User", back_populates="speakers")
 
 class SessionSpeakers(Base):
@@ -163,10 +175,6 @@ class SessionSpeakers(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     session_id = Column(Integer, ForeignKey("sessions.id"))
     speaker_id = Column(Integer, ForeignKey("speakers.id"))
-
-    session = relationship("Session", back_populates="sessions_speakers")
-    speaker = relationship("Speakers", back_populates="sessions_speakers")
-    conference = relationship("Conference", back_populates="sessions_speakers")
 
 # class to define session table
 class Session(Base):
@@ -192,9 +200,13 @@ class Session(Base):
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
     agenda_session = relationship("AgendaSession", back_populates="session")
-    sessions_speakers = relationship("SessionSpeakers", back_populates="session")
+    speakers = relationship("Speakers", secondary="session_speakers", back_populates="session")
     session_status = relationship("Sessionstatus", back_populates="session")
 
+    @property
+    def status(self):
+        return self.session_status.status.upper()
+    
 #class to define settings table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class Settings(Base):
     __tablename__ = "settings"
@@ -344,7 +356,8 @@ class Sponsors(Base):
     is_archived = Column(Boolean, default=False)
 
     owner = relationship("User", back_populates="sponsors")
-    event_sponsors = relationship("EventSponsors", back_populates="sponsors")
+    # event_sponsors = relationship("EventSponsors", back_populates="sponsors")
+    conference = relationship("Conference", secondary="event_sponsors", back_populates="sponsors")
 
 class EventSponsors(Base):
     __tablename__ = "event_sponsors"
@@ -356,8 +369,8 @@ class EventSponsors(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     sponsor_id = Column(Integer, ForeignKey("sponsors.id"))
 
-    conference = relationship("Conference", back_populates="event_sponsors")
-    sponsors = relationship("Sponsors", back_populates="event_sponsors")
+    # conference = relationship("Conference", back_populates="event_sponsors")
+    # sponsors = relationship("Sponsors", back_populates="event_sponsors")
 
 class Venue(Base):
     __tablename__ = "venues"
