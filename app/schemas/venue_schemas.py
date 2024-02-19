@@ -49,18 +49,12 @@ class VenueUpdate(VenuBase):
                 raise ValueError(f"{info.field_name} cannot be more than 256 characters")
         return v
     
-class Venue(VenuBase):
+class VenueResponse(BaseModel):
     uuid: str = Field(serialization_alias='id')
-
-    class Config:
-        orm_mode = True
-        
-class VenueWithNoValidation(BaseModel):
     name: str
     location: str
     address: str
     geo_location: str | None = None
-    uuid: str = Field(serialization_alias='id')
     
     class Config:
         orm_mode = True
