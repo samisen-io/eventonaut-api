@@ -161,6 +161,26 @@ class Conference(ConferenceBase):
     class Config:
         orm_mode = True
 
+class ConferenceWithNoValidation(BaseModel):
+    name: str
+    location: str
+    start_date: date = Field(..., description="Date format: YYYY-MM-DD")
+    end_date: date = Field(..., description="Date format: YYYY-MM-DD")
+    description: str | None = None
+    conference_logo: str | None = None
+    timezone: str | None = None
+    registration_link: str | None = None
+    conference_banner_url: str | None = None
+    information_guide: str
+    status: str
+    uuid: str = Field(serialization_alias="id")
+    client: client_schemas.ClientWithNoValidation | None
+    venues: venue_schemas.VenueWithNoValidation
+    sponsors: list[sponsor_schemas.SponsorWithNoValidation] | None
+    
+    class Config:
+        orm_mode = True
+
 class ConferenceListSummary(BaseModel):
     no_of_events: int
     first_event_start_date: date
