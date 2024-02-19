@@ -25,9 +25,7 @@ def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 10):
-    logging.info(f"Start - {datetime.now()}")
-    conferences = (db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venues),joinedload(models.Conference.sponsors)).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).order_by(models.Conference.start_date.desc()).offset(offset).limit(limit).all())
-    logging.info(f"End - {datetime.now()}")
+    conferences = (db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venues),joinedload(models.Conference.sponsors)).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).order_by(models.Conference.start_date).offset(offset).limit(limit).all())
     return conferences
 
 def get_conference_by_code(db: Session, code: str):
