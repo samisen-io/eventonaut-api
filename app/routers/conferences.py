@@ -65,7 +65,7 @@ def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Sess
     logging.info("Conferences retrieved for attendee")
     return conferences
 
-@router.get("/conferences", response_model=list[schemas.Conference])
+@router.get("/conferences", response_model=list[schemas.ConferenceWithNoValidation])
 def get_all_conferences_by_owner_id(offset: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_user = users_crud.get_user(db, user_id=current_user.id)
     if db_user is None:
