@@ -1,8 +1,6 @@
 import datetime
 from sqlalchemy.orm import Session
 from app.crud import conferences_crud
-
-from app.crud.conferences_crud import add_venue_details_to_conference
 from app.schemas import conference_schemas, venue_schemas
 from app.static_enums.session import SessionEnum
 from .. import models
