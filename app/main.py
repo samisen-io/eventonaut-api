@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Start the scheduler
 logout_token_crud.start_scheduler()
 
-app.middleware("http")(TimeoutMiddleware(app, 100))
+# app.middleware("http")(TimeoutMiddleware(app, 100))
 
 
 @app.exception_handler(RequestValidationError)
