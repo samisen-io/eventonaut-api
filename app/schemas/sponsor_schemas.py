@@ -82,3 +82,16 @@ class Sponsor(SponsorBase):
 
     class Config:
         orm_mode = True
+        
+class SponsorWithNoValidation(BaseModel):
+    email: str
+    name: str
+    description: str
+    contact_name: str
+    contact_phone: str
+    logo_image_url: str
+    sponsorship_level: str
+    uuid: str = Field(serialization_alias='id')
+    
+    class Config:
+        orm_mode = True
