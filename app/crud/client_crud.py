@@ -1,9 +1,6 @@
 import logging
-import os
-from urllib.parse import urlparse
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-
 from app.routers import upload_image
 from .. import models
 from ..schemas import client_schemas as schemas
@@ -33,12 +30,10 @@ def create_client(db: Session, client: schemas.ClientCreate, user_id: int):
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_client)
-    db_client.status = client_enum.ClientEnum(db_client.client_status_id).name
     return db_client
 
 def get_client(db: Session, client_id: int):
     client = db.query(models.Client).filter(models.Client.id == client_id).first()
-    client.status = client_enum.ClientEnum(client.client_status_id).name
     return client
 
 def get_client_by_email(db: Session, email: str):
@@ -46,7 +41,6 @@ def get_client_by_email(db: Session, email: str):
 
 def get_client_by_uuid(db: Session, client_uuid: str):
     client = db.query(models.Client).filter(models.Client.uuid == client_uuid, models.Client.is_archived == False).first()
-    client.status = client_enum.ClientEnum(client.client_status_id).name
     return client
 
 def get_client_by_uuid_and_owner_id(db: Session, client_id: str, owner_id: int):
@@ -54,14 +48,10 @@ def get_client_by_uuid_and_owner_id(db: Session, client_id: str, owner_id: int):
 
 def get_all_clients(db: Session, offset: int = 0, limit: int = 100):
     clients = db.query(models.Client).offset(offset).limit(limit).all()
-    for client in clients:
-        client.status = client_enum.ClientEnum(client.client_status_id).name
     return clients
 
 def get_all_clients_by_owner_id(db: Session, owner_id:int, offset: int = 0, limit: int = 100):
     clients = db.query(models.Client).filter(models.Client.owner_id == owner_id, models.Client.is_archived == False).offset(offset).limit(limit).all()
-    for client in clients:
-        client.status = client_enum.ClientEnum(client.client_status_id).name
     return clients
 
 def update_client(db: Session, client: schemas.ClientUpdate):
@@ -94,7 +84,6 @@ def update_client(db: Session, client: schemas.ClientUpdate):
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_client)
-    db_client.status = client_enum.ClientEnum(db_client.client_status_id).name
     return db_client
 
 def delete_client(db: Session, client_id: str):
