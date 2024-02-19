@@ -106,3 +106,16 @@ class Client(ClientCreate):
     
     class Config:
         orm_mode = True
+        
+class ClientWithNoValidation(BaseModel):
+    name: str
+    contact_name: str
+    contact_email: str
+    contact_phone: str
+    address: str
+    profile_image_url: str | None = None
+    status: str
+    uuid: str = Field(serialization_alias="id")
+
+    class Config:
+        orm_mode = True
