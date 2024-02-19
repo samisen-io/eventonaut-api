@@ -54,3 +54,13 @@ class Venue(VenuBase):
 
     class Config:
         orm_mode = True
+        
+class VenueWithNoValidation(BaseModel):
+    name: str
+    location: str
+    address: str
+    geo_location: str | None = None
+    uuid: str = Field(serialization_alias='id')
+    
+    class Config:
+        orm_mode = True
