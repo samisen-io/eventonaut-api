@@ -18,6 +18,7 @@ from .timeout_middleware import TimeoutMiddleware
 
 app = FastAPI()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
 
 # Start the scheduler
 logout_token_crud.start_scheduler()
