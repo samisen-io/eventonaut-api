@@ -9,6 +9,7 @@ class ClientBase(BaseModel):
     contact_phone: str
     address: str
     profile_image_url: str | None = None
+    status: str
 
     @field_validator('name','contact_name','contact_email','address')
     def check_empty(cls, v: str, info: ValidationInfo):
@@ -35,6 +36,13 @@ class ClientBase(BaseModel):
                 raise ValueError(f"Profile image url too long")
             if not check_url(v):
                 raise ValueError("Broken profile image url link or invalid url")
+        return v
+    
+    @field_validator("status")
+    def check_status(cls, v):
+        v = v.upper()
+        if v not in list(client.ClientEnum.__members__):
+            raise ValueError("Invalid status")
         return v
 
 class ClientUpdate(BaseModel):
@@ -91,22 +99,9 @@ class ClientUpdate(BaseModel):
         return v
 
 class ClientCreate(ClientBase):
-    status: str
-
-    @field_validator("status")
-    def check_status(cls, v):
-        v = v.upper()
-        if v not in list(client.ClientEnum.__members__):
-            raise ValueError("Invalid status")
-        return v
+    pass
 
 class Client(ClientCreate):
-    uuid: str = Field(serialization_alias="id")
-    
-    class Config:
-        orm_mode = True
-        
-class ClientTest(ClientBase):
     uuid: str = Field(serialization_alias="id")
     
     class Config:
