@@ -33,12 +33,10 @@ def create_user(db: Session, user: schemas.UserCreate):
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_user)
-    db_user.status = organizer.OrganizerEnum(db_user.user_status_id).name
     return db_user
 
 def get_user(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
-    user.status = organizer.OrganizerEnum(user.user_status_id).name
     return user
 
 def get_db_user(db: Session, user_id: int):
@@ -57,8 +55,6 @@ def get_user_by_email_and_password(db: Session, email: str, password: str):
 
 def get_users(db: Session, offset: int = 0, limit: int = 100):
     users = db.query(models.User).filter(models.User.role == 'organizer').offset(offset).limit(limit).all()
-    for user in users:
-        user.status = organizer.OrganizerEnum(user.user_status_id).name
     return users
 
 def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User):
@@ -93,7 +89,6 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_user)
-    db_user.status = organizer.OrganizerEnum(db_user.user_status_id).name
     return db_user
 
 def update_user_password(db: Session, user: schemas.UserPasswordUpdate, db_user: models.User):
@@ -101,7 +96,6 @@ def update_user_password(db: Session, user: schemas.UserPasswordUpdate, db_user:
     db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
-    db_user.status = organizer.OrganizerEnum(db_user.user_status_id).name
     return db_user
 
 def update_user_password_by_email(db: Session, email: str, password: str):
@@ -110,7 +104,6 @@ def update_user_password_by_email(db: Session, email: str, password: str):
     db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
-    db_user.status = organizer.OrganizerEnum(db_user.user_status_id).name
     return db_user
 
 def delete_user(db: Session, user: models.User):
