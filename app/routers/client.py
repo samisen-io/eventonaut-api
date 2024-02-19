@@ -11,7 +11,7 @@ import logging
 router = APIRouter(tags=["client"])
 
 # create client
-@router.post("/clients", response_model=schemas.Client, status_code=status.HTTP_201_CREATED)
+@router.post("/clients", response_model=schemas.ClientResponse, status_code=status.HTTP_201_CREATED)
 def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if current_user.id <= 0:
         logging.exception("Invalid User Id")
@@ -29,7 +29,7 @@ def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db), c
     logging.info("Client created: " + client.uuid)
     return client
 
-@router.get("/clients", response_model=list[schemas.Client])
+@router.get("/clients", response_model=list[schemas.ClientResponse])
 def get_all_clients_by_owner_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if offset < 0 or limit < 0:
         logging.exception("Invalid query parameters")
@@ -42,7 +42,7 @@ def get_all_clients_by_owner_id(offset: int = 0, limit: int = 100, db: Session =
     return clients
 
 # get all clients
-@router.get("/clients/all_clients", response_model=list[schemas.Client])
+@router.get("/clients/all_clients", response_model=list[schemas.ClientResponse])
 def get_all_clients(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     if offset < 0 or limit < 0:
         logging.exception("Invalid query parameters")
@@ -55,7 +55,7 @@ def get_all_clients(offset: int = 0, limit: int = 100, db: Session = Depends(get
     return clients
 
 # get client by id
-@router.get("/clients/{client_id}", response_model=schemas.Client)
+@router.get("/clients/{client_id}", response_model=schemas.ClientResponse)
 def get_client(client_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_client = crud.get_client_by_uuid(db, client_uuid=client_id)
     if db_client is None:
@@ -65,7 +65,7 @@ def get_client(client_id: str, db: Session = Depends(get_db), current_user: User
     return db_client
 
 # update client by id
-@router.put("/clients", response_model=schemas.Client)
+@router.put("/clients", response_model=schemas.ClientResponse)
 def update_client(client: schemas.ClientUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if all(value is None for value in dict(client).values()):
         logging.exception("Invalid request body")
