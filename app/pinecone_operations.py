@@ -85,7 +85,7 @@ def arranging_ouput_object(json_data):
     # Iterate over the dictionaries in the data
     for obj in data:
         # Rename 'uuid' to 'id'
-        obj['id'] = obj.pop('uuid')
+        rename_uuid_to_id(obj)
         if obj['id'].startswith('spk'):
             speakers.append(obj)
         elif obj['id'].startswith('ses'):
@@ -102,3 +102,13 @@ def arranging_ouput_object(json_data):
     json_str = json.dumps(data_dict, indent=4)
     # Print the JSON string
     return json_str
+
+def rename_uuid_to_id(obj):
+    if isinstance(obj, list):
+        for item in obj:
+            rename_uuid_to_id(item)
+    elif isinstance(obj, dict):
+        if 'uuid' in obj:
+            obj['id'] = obj.pop('uuid')
+        for key, value in obj.items():
+            rename_uuid_to_id(value)
