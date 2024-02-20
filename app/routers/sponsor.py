@@ -52,7 +52,7 @@ def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), current_us
     logging.info(f"Sponsor retrieved with id {sponsor.uuid}")
     return sponsor
 
-@router.get("/sponsors/{conference_id}", response_model=list[schemas.SponsorResponse])
+@router.get("/sponsors/conference/{conference_id}", response_model=list[schemas.SponsorResponse])
 def get_sponsors_by_conference_id(conference_id: str, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
     conference = conferences_crud.get_conference_by_uuid(db=db, uuid=conference_id, owner_id=current_user.id)
     if conference is None:

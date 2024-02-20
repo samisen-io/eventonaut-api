@@ -128,7 +128,7 @@ class Conference(Base):
     promotions = relationship("Promotions", back_populates="conference")
     venues = relationship("Venue", back_populates="conference")
     # event_sponsors = relationship("EventSponsors", back_populates="conference")
-    sponsors = relationship("Sponsors", secondary="event_sponsors", back_populates="conference")
+    sponsors = relationship("Sponsors", secondary="event_sponsors", back_populates="conference", overlaps="event_sponsors")
     event_status = relationship("EventStatus", back_populates="conference")
     
     @property
@@ -356,8 +356,8 @@ class Sponsors(Base):
     is_archived = Column(Boolean, default=False)
 
     owner = relationship("User", back_populates="sponsors")
-    # event_sponsors = relationship("EventSponsors", back_populates="sponsors")
-    conference = relationship("Conference", secondary="event_sponsors", back_populates="sponsors")
+    event_sponsors = relationship("EventSponsors", back_populates="sponsors", overlaps="conference")
+    conference = relationship("Conference", secondary="event_sponsors", back_populates="sponsors", overlaps="event_sponsors")
 
 class EventSponsors(Base):
     __tablename__ = "event_sponsors"
@@ -370,7 +370,14 @@ class EventSponsors(Base):
     sponsor_id = Column(Integer, ForeignKey("sponsors.id"))
 
     # conference = relationship("Conference", back_populates="event_sponsors")
-    # sponsors = relationship("Sponsors", back_populates="event_sponsors")
+    sponsors = relationship("Sponsors", back_populates="event_sponsors", overlaps="conference, sponsors")
+    
+    @property
+    def uuid(self):
+        return self.sponsors.uuid
+    
+    def __getattr__(self, name):
+        return getattr(self.sponsors, name)
 
 class Venue(Base):
     __tablename__ = "venues"
