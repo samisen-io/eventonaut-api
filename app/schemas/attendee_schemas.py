@@ -124,6 +124,7 @@ class AttendeeUpdate(BaseModel):
 class Attendee(AttendeeBase):
     uuid: str = Field(serialization_alias="id")
     is_active: bool
+    status: str = "ACTIVE"
     
     class Config:
         orm_mode = True
