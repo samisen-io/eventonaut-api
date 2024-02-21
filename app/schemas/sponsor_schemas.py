@@ -76,16 +76,24 @@ class SponsorUpdate(BaseModel):
             if not check_url(v):
                 raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
-            
-class SponsorResponse(BaseModel):
-    uuid: str = Field(serialization_alias='id')
+
+class Sponsor(BaseModel):
     email: str
     name: str
     description: str
     contact_name: str
     contact_phone: str
     logo_image_url: str
-    sponsorship_level: str
+    sponsorship_level: str        
+    
+class SponsorResponse(Sponsor):
+    uuid: str = Field(serialization_alias='id')
+    
+    class Config:
+        orm_mode = True
+        
+class SponsorResponseWithConference(Sponsor):
+    spn_uuid: str = Field(serialization_alias='id')
     
     class Config:
         orm_mode = True
