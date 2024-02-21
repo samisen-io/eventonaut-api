@@ -36,9 +36,6 @@ def get_client(db: Session, client_id: int):
     client = db.query(models.Client).filter(models.Client.id == client_id).first()
     return client
 
-def get_client_by_email(db: Session, email: str):
-    return db.query(models.Client).filter(models.Client.contact_email.ilike(email), models.Client.is_archived == False).first()
-
 def get_client_by_uuid(db: Session, client_uuid: str):
     client = db.query(models.Client).filter(models.Client.uuid == client_uuid, models.Client.is_archived == False).first()
     return client
