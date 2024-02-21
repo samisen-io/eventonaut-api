@@ -1,6 +1,6 @@
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
-from .session_schemas import Session
+from .session_speaker_schema import SessionResponse
 
 #pydantic model for agenda create
 class AgendaBase(BaseModel):
@@ -63,7 +63,7 @@ class AgendaUpdate(AgendaBase):
 #pydantic model for agenda
 class Agenda(AgendaBase):
     uuid: str = Field(serialization_alias='id')
-    sessions: list[Session] = []
+    sessions: list[SessionResponse] = []
     
     class Config:
         orm_mode = True
