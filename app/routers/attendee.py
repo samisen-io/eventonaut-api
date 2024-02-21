@@ -50,7 +50,7 @@ def get_attendee_by_id(db: Session = Depends(get_db), current_user: User = Secur
     return db_attendee
 
 # update attendee by email
-@router.put("/attendee")
+@router.put("/attendee", response_model=schemas.Attendee)
 def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     if all(value is None for value in dict(attendee).values()):
         logging.exception("Invalid request body")

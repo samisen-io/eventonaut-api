@@ -230,6 +230,13 @@ class Attendee(Base):
     agenda_session = relationship("AgendaSession", back_populates="attendees")
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
     aitokens = relationship("AITokens", back_populates="attendee")
+    
+    _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "is_active"}
+
+    def __getattr__(self, name):
+        if name in self._user_delegated_attrs:
+            return getattr(self.user, name)
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
 class Attendee_Conferences(Base):
     __tablename__ = "attendee_conferences"

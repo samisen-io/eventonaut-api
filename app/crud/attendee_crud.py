@@ -14,6 +14,7 @@ from ..routers import upload_image
 from fastapi import HTTPException, status
 import logging
 from ..static_enums.blob_container_enums import BlobContainer
+from sqlalchemy.orm import joinedload
 
 # create attendee
 def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
@@ -41,8 +42,7 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.commit()
     db.refresh(db_attendee)
 
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
-    attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
+    attendee = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == db_user.id).first()
     return attendee
 
 def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
@@ -53,16 +53,7 @@ def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
 
 # get all attendees
 def get_attendees(db: Session, skip: int = 0, limit: int = 100):
-    db_attendees = db.query(models.Attendee).offset(skip).limit(limit).all()
-    if db_attendees is None or len(db_attendees) == 0:
-        return None
-    attendees = []
-    for db_attendee in db_attendees:
-        user = db.query(models.User).filter(models.User.id == db_attendee.user_id).first()
-        if user is not None:
-            attendees.append(schemas.Attendee(uuid=db_attendee.uuid, email=user.email, first_name=user.first_name, last_name=user.last_name, title=db_attendee.title, company=user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=user.profile_image_url, thread_id=db_attendee.thread_id,is_active=user.is_active))
-            attendees[-1].status = attendee_enum.AttendeeEnum(user.user_status_id).name
-    return attendees
+    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).offset(skip).limit(limit).all()
 
 # get attendee by email
 def get_attendee_by_email(db: Session, email: str):
@@ -70,25 +61,10 @@ def get_attendee_by_email(db: Session, email: str):
 
 # get attendee by id
 def get_attendee_by_uuid(db: Session, attendee_id: str):
-    db_attendee = db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id).first()
-    if db_attendee is None:
-        return None
-    db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.is_archived == False).first()
-    if db_user is None:
-        return None
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
-    return attendee
+    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.uuid == attendee_id, models.User.is_archived == False).first()
 
 def get_attendee_by_id(db: Session, attendee_id: int):
-    db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-    if db_attendee is None:
-        return None
-    db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.is_archived == False).first()
-    if db_user is None:
-        return None
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
-    attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
-    return attendee
+    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == attendee_id, models.User.is_archived == False).first()
 
 # update attendee by id
 def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendeeUpdate):
@@ -135,8 +111,7 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_attendee)
     db.refresh(db_user)
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
-    attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
+    attendee = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == db_user.id).first()
     return attendee
 
 # update attendee password by id
@@ -151,8 +126,7 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: sc
     db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
-    attendee = schemas.Attendee(uuid=db_attendee.uuid, email=db_user.email, first_name=db_user.first_name, last_name=db_user.last_name, title=db_attendee.title, company=db_user.company, bio=db_attendee.bio, share_my_profile=db_attendee.share_my_profile, share_my_agenda=db_attendee.share_my_agenda, profile_image_url=db_user.profile_image_url, thread_id=db_attendee.thread_id,is_active=db_user.is_active)
-    attendee.status = attendee_enum.AttendeeEnum(db_user.user_status_id).name
+    attendee = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == db_user.id).first()
     return attendee
 
 # delete attendee by id
