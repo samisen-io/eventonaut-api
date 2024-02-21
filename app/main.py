@@ -19,6 +19,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Start the scheduler
 logout_token_crud.start_scheduler()
 
+# app.middleware("http")(TimeoutMiddleware(app, 10))
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logging.exception(f"RequestValidationError: {exc.errors()}")
