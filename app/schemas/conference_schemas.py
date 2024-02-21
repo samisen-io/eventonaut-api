@@ -166,7 +166,7 @@ class ConferenceResponse(BaseModel):
     information_guide: str
     status: str
     client: client_schemas.ClientResponse | None
-    venues: venue_schemas.VenueResponse
+    venue: venue_schemas.VenueResponse
     sponsors: list[sponsor_schemas.SponsorResponse] | None
     
     class Config:
