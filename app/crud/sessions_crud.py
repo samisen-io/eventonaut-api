@@ -10,6 +10,7 @@ import logging
 import uuid
 from ..static_enums import session as session_enum
 from ..static_enums.blob_container_enums import BlobContainer
+from sqlalchemy.orm import joinedload
 
 def add_speakers_to_session(db: Session, session: models.Session):
     db_session_speakers = db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == session.id).all()
@@ -22,11 +23,7 @@ def add_speakers_to_session(db: Session, session: models.Session):
     return session
 
 def get_sessions(db: Session, offset: int = 0, limit: int = 100):
-    sessions = db.query(models.Session).offset(offset).limit(limit).all()
-    for session in sessions:
-        session = add_speakers_to_session(db, session)
-        session.status = session_enum.SessionEnum(session.session_status_id).name
-    return sessions
+    return db.query(models.Session).options(joinedload(models.Session.speakers)).filter(models.Session.is_archived == False).offset(offset).limit(limit).all()
 
 def create_conference_session(db: Session, session: schemas.SessionCreate, owner_id: int, conference_id: int, speaker_ids: list[int]):
     db_session = models.Session(name=session.name, start_time=session.start_time, end_time=session.end_time, description=session.description, date=session.date, location=session.location, owner_id=owner_id, session_image_url=session.session_image_url)
@@ -50,12 +47,12 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     try:
         db.commit()
     except Exception as e:
+        db.delete(db_session)
         upload_image.delete_blob_by_url(db_session.session_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_session)
-    db_session = add_speakers_to_session(db, db_session)
-    db_session.status = session_enum.SessionEnum(db_session.session_status_id).name
+    db_session = db.query(models.Session).options(joinedload(models.Session.speakers)).filter(models.Session.id == db_session.id).first()
     return db_session
 
 def get_session_by_conference_uuid_session_uuid(db: Session, session_id: str, conference_id: str):
@@ -82,10 +79,7 @@ def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_uuid, models.Conference.is_archived == False).first()
     if conference is None:
         return None
-    db_sessions = db.query(models.Session).filter(models.Session.conference_id == conference.id, models.Session.is_archived == False).all()
-    for db_session in db_sessions:
-        db_session = add_speakers_to_session(db, db_session)
-        db_session.status = session_enum.SessionEnum(db_session.session_status_id).name
+    db_sessions = db.query(models.Session).options(joinedload(models.Session.speakers)).filter(models.Session.conference_id == conference.id, models.Session.is_archived == False).all()
     return db_sessions
 
 def delete_session(db: Session, db_session: models.Session):
@@ -97,6 +91,7 @@ def update_session(db: Session, session: schemas.SessionUpdate, db_session: mode
     session_dict = session.model_dump()
     session_dict.pop('id')
     session_dict.pop('conference_id')
+    session_dict.pop('speakers')
     session_status = session_dict.pop("status")
     session_image_url = session_dict.pop("session_image_url")
     
@@ -130,7 +125,7 @@ def update_session(db: Session, session: schemas.SessionUpdate, db_session: mode
     if session_image_url is not None and upload_image.get_container_name_from_url(session_image_url) != BlobContainer.SESSION_IMAGES.value:
         db_session.session_image_url = upload_image.get_actual_url(image_url=session_image_url, new_blob_container=BlobContainer.SESSION_IMAGES.value, new_blob_name=f"session-{db_session.uuid}")
     elif session_image_url is None and db_session.session_image_url is not None:
-        upload_image.delete_blob("session-images", f"session-{db_session.uuid}")
+        upload_image.delete_blob_by_url("session-images", f"session-{db_session.uuid}")
         db_session.session_image_url = None
 
     db_session.updated_on = datetime.utcnow()
@@ -148,9 +143,9 @@ def update_session(db: Session, session: schemas.SessionUpdate, db_session: mode
     for speaker_id in speaker_ids:
         session_speaker = models.SessionSpeakers(session_id=db_session.id, speaker_id=speaker_id, conference_id=db_session.conference_id)
         session_speaker.created_on = session_speaker.updated_on = datetime.utcnow()
+        session_speaker.uuid = "ssp-" + str(uuid.uuid4())
         db.add(session_speaker)
     db.commit()
 
-    db_session = add_speakers_to_session(db, db_session)
-    db_session.status = session_enum.SessionEnum(db_session.session_status_id).name
+    db_session = db.query(models.Session).options(joinedload(models.Session.speakers)).filter(models.Session.id == db_session.id).first()
     return db_session

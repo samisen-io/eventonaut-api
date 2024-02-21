@@ -126,7 +126,7 @@ class Conference(Base):
     attendee_conference = relationship("Attendee_Conferences", back_populates="conference")
     aitokens = relationship("AITokens", back_populates="conference")
     promotions = relationship("Promotions", back_populates="conference")
-    venues = relationship("Venue", back_populates="conference")
+    venue = relationship("Venue", back_populates="conference")
     # event_sponsors = relationship("EventSponsors", back_populates="conference")
     sponsors = relationship("Sponsors", secondary="event_sponsors", back_populates="conference", overlaps="event_sponsors")
     event_status = relationship("EventStatus", back_populates="conference")
@@ -162,7 +162,7 @@ class Speakers(Base):
     profile_image_url = Column(String, index=True)
     is_archived = Column(Boolean, default=False)
 
-    session = relationship("Session", secondary="session_speakers", back_populates="speakers")
+    sessions = relationship("Session", secondary="session_speakers", back_populates="speakers")
     owner = relationship("User", back_populates="speakers")
 
 class SessionSpeakers(Base):
@@ -200,7 +200,7 @@ class Session(Base):
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
     agenda_session = relationship("AgendaSession", back_populates="session")
-    speakers = relationship("Speakers", secondary="session_speakers", back_populates="session")
+    speakers = relationship("Speakers", secondary="session_speakers", back_populates="sessions")
     session_status = relationship("Sessionstatus", back_populates="session")
 
     @property
@@ -242,7 +242,14 @@ class Attendee(Base):
     agenda_session = relationship("AgendaSession", back_populates="attendees")
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
     aitokens = relationship("AITokens", back_populates="attendee")
+    
+    _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "status", "is_active"}
 
+    def __getattr__(self, name):
+        if name in self._user_delegated_attrs:
+            return getattr(self.user, name)
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+    
 class Attendee_Conferences(Base):
     __tablename__ = "attendee_conferences"
 
@@ -371,13 +378,16 @@ class EventSponsors(Base):
 
     # conference = relationship("Conference", back_populates="event_sponsors")
     sponsors = relationship("Sponsors", back_populates="event_sponsors", overlaps="conference, sponsors")
-    
     @property
-    def uuid(self):
+    def spn_uuid(self):
         return self.sponsors.uuid
     
+    _user_delegated_attrs = {"name", "description", "email", "contact_name", "contact_phone", "logo_image_url", "sponsorship_level", "is_archived"}
+    
     def __getattr__(self, name):
-        return getattr(self.sponsors, name)
+        if name in self._user_delegated_attrs:
+            return getattr(self.sponsors, name)
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
 
 class Venue(Base):
     __tablename__ = "venues"
@@ -394,7 +404,7 @@ class Venue(Base):
     is_archived = Column(Boolean, default=False)
 
     owner = relationship("User", back_populates="venues")
-    conference = relationship("Conference", back_populates="venues")
+    conference = relationship("Conference", back_populates="venue")
     
 class OrganizerStatus(Base):
     __tablename__ = "organizer_status"
