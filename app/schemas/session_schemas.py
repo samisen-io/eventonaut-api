@@ -1,6 +1,5 @@
 from pydantic import BaseModel, validator, Field, field_validator, ValidationInfo
 from datetime import date as Date, time
-from ..schemas.speaker_schemas import Speaker
 from ..static_enums import session
 from ..url_validator import check_url
 
@@ -55,7 +54,7 @@ class SessionBase(BaseModel):
 
 class SessionCreate(SessionBase):
     conference_id: str
-    speakers: list[str]
+    speakers: list[str] | None = None
     
     @field_validator('conference_id')
     def conference_id_must_not_be_empty(cls, v):
@@ -65,13 +64,14 @@ class SessionCreate(SessionBase):
     
     @field_validator('speakers')
     def tags_validation(cls, v, info: ValidationInfo):
-        if len(v) == 0:
-            raise ValueError(f"{info.field_name} cannot be empty")
-        for val in v:
-            if val.strip() == "":
-                raise ValueError(f"{info.field_name} cannot be empty")
-            elif len(val) > 256:
-                raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
+        if v is not None:
+            if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
+                return None
+            for val in v:
+                if val.strip() == "":
+                    raise ValueError(f"{info.field_name} cannot be empty")
+                elif len(val) > 256:
+                    raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
         return v
     
 class SessionUpdate(BaseModel):
@@ -107,10 +107,10 @@ class SessionUpdate(BaseModel):
     @field_validator('speakers','tags')
     def speakers_and_tags_validation(cls, v:list, info: ValidationInfo):
         if v is not None:
-            if len(v) == 0:
+            if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
                 return None
             for val in v:
-                if v is None:
+                if v is None or v.strip() == "":
                     raise ValueError(f"{info.field_name} cannot be empty")
                 if len(val) > 256:
                     raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
@@ -136,9 +136,14 @@ class SessionUpdate(BaseModel):
     class Config:
         orm_mode = True
 
-class Session(SessionBase):
+class Session(BaseModel):
     uuid: str = Field(serialization_alias="id")
-    speakers_list: list[Speaker]
-
-    class Config:
-        orm_mode = True
+    name: str
+    start_time: time
+    end_time: time
+    description: str 
+    date: Date = Field(..., description="Date format: YYYY-MM-DD")
+    location: str
+    session_image_url: str | None = None
+    tags: list[str]
+    status: str

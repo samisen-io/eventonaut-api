@@ -29,7 +29,19 @@ class SpeakerBase(BaseModel):
         return v
 
 class SpeakerCreate(SpeakerBase):
-    pass
+    sessions: list[str] | None = None
+    
+    @field_validator('sessions')
+    def tags_validation(cls, v, info: ValidationInfo):
+        if v is not None:
+            if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
+                return None
+            for val in v:
+                if val.strip() == "":
+                    raise ValueError(f"{info.field_name} cannot be empty")
+                elif len(val) > 256:
+                    raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
+        return v
 
 class SpeakerUpdate(BaseModel):
     id: str
@@ -37,6 +49,7 @@ class SpeakerUpdate(BaseModel):
     title: str | None = None
     bio: str | None = None
     profile_image_url: str | None = None
+    sessions: list[str] | None = None
 
     @validator('id')
     def validate_id(cls, v):
@@ -62,9 +75,23 @@ class SpeakerUpdate(BaseModel):
             if not check_url(v):
                 raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
+    
+    @field_validator('sessions')
+    def tags_validation(cls, v, info: ValidationInfo):
+        if v is not None:
+            if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
+                return None
+            for val in v:
+                if val.strip() == "":
+                    raise ValueError(f"{info.field_name} cannot be empty")
+                elif len(val) > 256:
+                    raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
+        return v
 
-class Speaker(SpeakerBase):
+class Speaker(BaseModel):
     uuid: str = Field(serialization_alias="id")
-
-    class Config:
-        orm_mode = True
+    name: str
+    email: str
+    title: str
+    bio: str
+    profile_image_url: str | None = None

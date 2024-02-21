@@ -1,6 +1,5 @@
 import logging
 from fastapi import HTTPException, status
-from sqlalchemy import String, cast
 from sqlalchemy.orm import Session
 from app.routers import upload_image
 from ..models import Speakers, Conference
@@ -9,6 +8,8 @@ import uuid
 from .. import models
 from datetime import datetime
 from ..static_enums.blob_container_enums import BlobContainer
+from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import aliased
 
 def get_speaker_by_email(db: Session, email: str, owner_id: int):
     return db.query(Speakers).filter(Speakers.email.ilike(email), Speakers.owner_id == owner_id, Speakers.is_archived == False).first()
@@ -19,8 +20,10 @@ def get_speaker_by_uuid(db: Session, uuid: str, owner_id: int):
 def get_speakers_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 100):
     return db.query(Speakers).filter(Speakers.owner_id == owner_id, Speakers.is_archived == False).offset(offset).limit(limit).all()
 
-def create_speaker(db: Session, speaker: schemas.SpeakerCreate, owner_id: int):
-    db_speaker = Speakers(**speaker.model_dump())
+def create_speaker(db: Session, speaker: schemas.SpeakerCreate, owner_id: int, session_ids: list[int]):
+    speaker_dict = speaker.model_dump()
+    speaker_dict.pop("sessions")
+    db_speaker = Speakers(**speaker_dict)
     db_speaker.uuid = "spk-" + str(uuid.uuid4())
     db_speaker.created_on = datetime.utcnow()
     db_speaker.updated_on = datetime.utcnow()
@@ -35,23 +38,25 @@ def create_speaker(db: Session, speaker: schemas.SpeakerCreate, owner_id: int):
         upload_image.delete_blob_by_url(db_speaker.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    for session_id in session_ids:
+        conference_id = db.query(models.Session).filter(models.Session.id == session_id).first().conference_id
+        session_speaker = models.SessionSpeakers(session_id=session_id, speaker_id=db_speaker.id, conference_id=conference_id)
+        session_speaker.uuid = "ssp-" + str(uuid.uuid4())
+        session_speaker.created_on = session_speaker.updated_on = datetime.utcnow()
+        db.add(session_speaker)
+    db.commit()
     db.refresh(db_speaker)
     return db_speaker
 
 def get_all_speakers(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(Speakers).offset(offset).limit(limit).all()
+    return db.query(Speakers).options(joinedload(Speakers.sessions)).filter(Speakers.is_archived == False).offset(offset).limit(limit).all()
 
 def get_speaker(db: Session, speaker_id: uuid):
     return db.query(Speakers).filter(Speakers.uuid == speaker_id, Speakers.is_archived == False).first()
 
-def get_speakers_by_conference_id_owner_id(db: Session, conference_id: str, owner_id: int):
-    conference = db.query(Conference).filter(Conference.uuid == conference_id, Conference.owner_id == owner_id, Conference.is_archived == False).first()
-    if conference is None:
-        return None
-    conference_id = conference.id if conference else None
-    speaker_ids = [speaker.speaker_id for speaker in db.query(models.SessionSpeakers).filter(models.SessionSpeakers.conference_id == conference_id).all()]
-    db_speakers = db.query(Speakers).filter(Speakers.id.in_(speaker_ids)).all()
-    return db_speakers
+def get_speakers_by_conference_id_owner_id(db: Session, conference_id: int, owner_id: int):
+    speakers = db.query(Speakers).join(models.SessionSpeakers, models.SessionSpeakers.speaker_id == Speakers.id).filter(models.SessionSpeakers.conference_id == conference_id, Speakers.owner_id == owner_id, Speakers.is_archived == False).all()
+    return speakers
 
 def get_speakers_by_session_uuid(db: Session, session_uuid: str):
     session = db.query(models.Session).filter(models.Session.uuid == session_uuid).first()
@@ -63,10 +68,10 @@ def get_speaker_uuid_by_email(db: Session, email: str):
     speaker = db.query(Speakers).filter(Speakers.email == email).first()
     return speaker.uuid if speaker else None
 
-def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
-    db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker.id).first()
+def update_speaker(db: Session, speaker: schemas.SpeakerUpdate, db_speaker: Speakers, session_ids: list[int]):
     speaker_dict = speaker.model_dump()
     speaker_dict.pop("id")
+    speaker_dict.pop("sessions")
     for key, value in speaker_dict.items():
         if value is not None:
             setattr(db_speaker, key, value)
@@ -85,7 +90,16 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate):
             upload_image.delete_blob_by_url(db_speaker.profile_image_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    db.refresh(db_speaker)
+    db.query(models.SessionSpeakers).filter(models.SessionSpeakers.speaker_id == db_speaker.id).delete()
+    db.commit()
+    for session_id in session_ids:
+        conference_id = db.query(models.Session).filter(models.Session.id == session_id).first().conference_id
+        session_speaker = models.SessionSpeakers(session_id=session_id, speaker_id=db_speaker.id, conference_id=conference_id)
+        session_speaker.uuid = "ssp-" + str(uuid.uuid4())
+        session_speaker.created_on = session_speaker.updated_on = datetime.utcnow()
+        db.add(session_speaker)
+        db.commit()
+        db.refresh(session_speaker)
     return db_speaker
 
 def delete_speaker(db: Session, speaker_id: str):

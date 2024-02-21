@@ -5,7 +5,7 @@ from ..schemas import venue_schemas, conference_schemas, speaker_schemas, sessio
 
 class Event(conference_schemas.ConferenceBase):
     uuid: str = Field(serialization_alias="id")
-    venue_details: venue_schemas.Venue
+    venue_details: venue_schemas.VenueResponse
     rank: int
 
 class Speakers(speaker_schemas.SpeakerBase):

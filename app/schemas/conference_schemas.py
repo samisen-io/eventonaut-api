@@ -152,11 +152,22 @@ class ConferenceUpdate(BaseModel):
         return v
 
 #pydantic model for conference
-class Conference(ConferenceBase):
+class ConferenceResponse(BaseModel):
     uuid: str = Field(serialization_alias="id")
-    client_details: client_schemas.Client | None
-    venue_details: venue_schemas.Venue
-    sponsor_details: list[sponsor_schemas.Sponsor] | None
+    name: str
+    location: str
+    start_date: date = Field(..., description="Date format: YYYY-MM-DD")
+    end_date: date = Field(..., description="Date format: YYYY-MM-DD")
+    description: str | None = None
+    conference_logo: str | None = None
+    timezone: str | None = None
+    registration_link: str | None = None
+    conference_banner_url: str | None = None
+    information_guide: str
+    status: str
+    client: client_schemas.ClientResponse | None
+    venue: venue_schemas.VenueResponse
+    sponsors: list[sponsor_schemas.SponsorResponse] | None
     
     class Config:
         orm_mode = True

@@ -101,8 +101,15 @@ class ClientUpdate(BaseModel):
 class ClientCreate(ClientBase):
     pass
 
-class Client(ClientBase):
+class ClientResponse(BaseModel):
     uuid: str = Field(serialization_alias="id")
+    name: str
+    contact_name: str
+    contact_email: str
+    contact_phone: str
+    address: str
+    profile_image_url: str | None = None
+    status: str
 
     class Config:
         orm_mode = True
