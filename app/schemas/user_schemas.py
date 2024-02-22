@@ -132,3 +132,17 @@ class User(UserBase):
         
 class UserAuthentication(User):
     role: str
+
+class UserAuthorization(BaseModel):
+    id: int
+    uuid: str
+    email: str
+    first_name: str | None = None
+    last_name: str | None = None
+    hashed_password: str
+    is_active: bool
+    is_verified: bool
+    is_archived: bool
+    user_status_id: int | None = None
+    role: List[str] | None = None
+    

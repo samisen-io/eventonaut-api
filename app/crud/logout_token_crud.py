@@ -23,7 +23,7 @@ def insert_token(db: Session, token_jti: str, expire_time: datetime, is_invalida
     return token
 
 def get_all_jti_in_tokens(db: Session):
-    return [token.token_jti for token in db.query(models.LogoutToken).all()]
+     return [token.token_jti for token in db.query(models.LogoutToken).all()]
 
 def delete_data():
     db = SessionLocal()

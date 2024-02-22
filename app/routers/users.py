@@ -87,7 +87,7 @@ def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_d
     return users
 
 @router.get("/users", response_model=schemas.User)
-def get_user(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def get_user(db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
@@ -97,7 +97,7 @@ def get_user(db: Session = Depends(get_db), current_user: User = Security(get_cu
     return db_user
 
 @router.put("/users", response_model=schemas.User)
-def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     db_user = crud.get_db_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
@@ -135,7 +135,7 @@ def validate_passwords(user: schemas.UserPasswordUpdate, db_user: models.User):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect old password")
 
 @router.put("/users/password", response_model=schemas.User)
-def update_user_password(user: schemas.UserPasswordUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def update_user_password(user: schemas.UserPasswordUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     db_user = get_db_user(db, current_user.id)
     validate_passwords(user, db_user)
     updated_user = crud.update_user_password(db=db, user=user, db_user=db_user)
@@ -143,7 +143,7 @@ def update_user_password(user: schemas.UserPasswordUpdate, db: Session = Depends
     return updated_user
 
 @router.delete("/users")
-def delete_user(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def delete_user(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")

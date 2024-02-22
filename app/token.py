@@ -49,7 +49,7 @@ def verify_token(token:str, credentials_exception, db: Session):
             raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
         token_scopes = payload.get("scopes", [])
         
-        token_data = TokenData(username=username, scopes=token_scopes)
+        token_data = TokenData(username=username, scopes=[token_scopes])
         
     except (JWTError, ValidationError):
         raise credentials_exception
@@ -60,13 +60,14 @@ def verify_token_RT(token:str, credentials_exception,db: Session):
     try:
         payload = jwt.decode(token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
+        scopes: str = payload.get("scopes")
         jti: str = payload.get("jti")
         if username is None:
             raise credentials_exception
         db_tokens = logout_token_crud.get_all_jti_in_tokens(db=db)
         if jti and jti in db_tokens:
             raise HTTPException(status_code=401, detail="Token is invalid")
-        token_data = TokenData(username=username)
+        token_data = TokenData(username=username, scopes=[scopes])
     except JWTError:
         raise credentials_exception
     return token_data

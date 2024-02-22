@@ -19,7 +19,9 @@ from ..crud import logout_token_crud
 from datetime import datetime
 # from ..my_token import token_cache
 
-from app.oauth2 import get_current_active_user, get_current_user_RT, oauth_2_scheme
+from app.oauth2 import get_current_active_user, get_current_user_RT, get_token_data, oauth_2_scheme
+
+import app
 
 router = APIRouter(tags=["authentication"])
 
@@ -51,11 +53,11 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     
     validate_user_and_scope(user, scopes)
     
-    token_expirations = get_token_expirations(user.role)
+    token_expirations = get_token_expirations(scopes[0])
     
-    refresh_token = create_refresh_token(data={"sub": user.email, "scopes": [user.role]}, expires_delta=token_expirations['refresh_token_expires'])
+    refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
     rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": [user.role]}, expires_delta=token_expirations['access_token_expires'])
+    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
     
     logging.info("User logged in: " + user.uuid)
     return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
@@ -72,7 +74,7 @@ def validate_user_and_scope(user: User, scopes: List[str]) -> None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
-    if not scopes or user.role not in scopes or len(scopes) != 1:
+    if not scopes or not any(scope in user.role for scope in scopes):
         logging.exception("Incorrect scope")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect scope",
@@ -85,6 +87,9 @@ def get_token_expirations(role: str) -> Dict[str, timedelta]:
     elif role == RoleEnum.ORGANIZATION_ADMIN.name or role == RoleEnum.ORGANIZATION_USER.name:
         return {'access_token_expires': timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES), 
                 'refresh_token_expires': timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)}
+    else:
+        logging.exception("Invalid role")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
 
 @router.get("/print_something_attendee")
 def print_something(current_user: User = Security(get_current_active_user, scopes=["ATTENDEE"])):
@@ -105,15 +110,16 @@ def print_something3(current_user: User = Security(get_current_active_user, scop
 async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:
         jwt_token = token.token
-        # validate refresh token
+        token_data = get_token_data(jwt_token,db)
+        
         current_user: User = get_current_user_RT(jwt_token,db)
         invalidate_refresh_token(jwt_token=jwt_token, db=db)
 
-        token_expirations = get_token_expirations(current_user.role)
+        token_expirations = get_token_expirations(token_data.scopes[0])
         
-        refresh_token = create_refresh_token(data={"sub": current_user.email}, expires_delta=token_expirations['refresh_token_expires'])
+        refresh_token = create_refresh_token(data={"sub": current_user.email, "scopes": token_data.scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
         rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-        access_token = create_access_token(data={"sub": current_user.email, "id":current_user.id, "rt_jti":rt_jti, "scopes": [current_user.role]}, expires_delta=token_expirations['access_token_expires'])
+        access_token = create_access_token(data={"sub": current_user.email, "id":current_user.id, "rt_jti":rt_jti, "scopes": [token_data.scopes[0]]}, expires_delta=token_expirations['access_token_expires'])
         
         logging.info("Refresh token created: " + current_user.uuid)
         return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}

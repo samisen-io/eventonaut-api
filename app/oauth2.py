@@ -41,12 +41,18 @@ async def get_current_active_user(current_user: User = Security(get_current_user
     return current_user
 
 def get_current_user_RT(data: str, db):
-    credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                          detail="Could not validate credentials")
-    token_data = token.verify_token_RT(data, credentials_exception, db)
+    
+    token_data = get_token_data(data,db)
+    
     user = users_crud.get_active_user_by_email(db, email=token_data.username)
     if user is None:
-        raise credentials_exception
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                          detail="Could not validate credentials")
     if user.is_active is False:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
     return user
+
+def get_token_data(data: str, db: Session):
+    credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                          detail="Could not validate credentials")
+    return token.verify_token_RT(data, credentials_exception, db)

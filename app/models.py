@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-
+from sqlalchemy import UniqueConstraint
 from .database import Base
 
 class Organization(Base):
@@ -95,6 +95,8 @@ class User_Role(Base):
     user = relationship('User', back_populates='user_roles')
     role = relationship('Role', back_populates='user_roles')
 
+    __table_args__ = (UniqueConstraint('user_id', 'role_id', name='_user_role_uc'),)
+    
 class Client(Base):
     __tablename__ = "clients"
 

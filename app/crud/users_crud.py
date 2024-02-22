@@ -48,19 +48,16 @@ def create_user(db: Session, user: schemas.UserCreate, role_ids: list[int]):
     db_user = create_db_user(db, user)
     add_user_to_db(db, db_user)
     assign_roles_to_user(db, db_user, role_ids)
-    db_user.status = "ACTIVE"
     return db_user
 
 def get_user(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
-    user.status = organizer.OrganizerEnum(user.user_status_id).name
     return user
 
 def get_user_by_uuid(db: Session, user_uuid: str):
     user = db.query(models.User).filter(models.User.uuid == user_uuid, models.User.is_archived == False).first()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    user.status = organizer.OrganizerEnum(user.user_status_id).name
     return user
 
 def get_db_user(db: Session, user_id: int):
@@ -71,7 +68,7 @@ def get_user_by_email(db: Session, email: str):
 
 def get_active_user_by_email(db: Session, email: str):
     query = text(query_user_by_email_and_archived_status)
-    result = db.execute(query, {'email': email}).first()
+    result = db.execute(query, {'email': email}).fetchall()
     if result is None:
         return None
     user = map_to_user(result)
@@ -79,34 +76,32 @@ def get_active_user_by_email(db: Session, email: str):
 
 def get_user_by_email_and_password(db: Session, email: str, password: str):
     query = text(query_user_by_email_and_archived_status)
-    result = db.execute(query, {'email': email}).first()
+    result = db.execute(query, {'email': email}).fetchall()
     if result is None:
         return False
     user = map_to_user(result)
+    
     if hashing.verify_password(password, user.hashed_password):
         return user
     return False
 
-def map_to_user(result):
-    user = models.User()
-    user.id = result.id
-    user.uuid = result.uuid
-    user.created_on = result.created_on
-    user.updated_on = result.updated_on
-    user.email = result.email
-    user.first_name = result.first_name
-    user.last_name = result.last_name
-    user.company = result.company
-    user.business_type = result.business_type
-    user.hashed_password = result.hashed_password
-    user.is_active = result.is_active
-    user.timezone = result.timezone
-    user.is_verified = result.is_verified
-    user.is_archived = result.is_archived
-    user.profile_image_url = result.profile_image_url
-    user.user_status_id = result.user_status_id
-    user.role = result.role  # This might need to be adjusted
+def map_to_user(results):
+    user = schemas.UserAuthorization(
+        id=results[0].id,
+        uuid=results[0].uuid,
+        email=results[0].email,
+        first_name=results[0].first_name,
+        last_name=results[0].last_name,
+        hashed_password=results[0].hashed_password,
+        is_active=results[0].is_active,
+        is_verified=results[0].is_verified,
+        is_archived=results[0].is_archived,
+        user_status_id=results[0].user_status_id,
+        role=[result.role for result in results]
+    )
     return user
+    
+
 
 def get_users(db: Session, offset: int = 0, limit: int = 100):
     users = db.query(models.User).filter(models.User.role == 'organizer').offset(offset).limit(limit).all()
