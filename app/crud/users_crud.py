@@ -69,6 +69,14 @@ def get_db_user(db: Session, user_id: int):
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
 
+def get_active_user_by_email(db: Session, email: str):
+    query = text(query_user_by_email_and_archived_status)
+    result = db.execute(query, {'email': email}).first()
+    if result is None:
+        return None
+    user = map_to_user(result)
+    return user
+
 def get_user_by_email_and_password(db: Session, email: str, password: str):
     query = text(query_user_by_email_and_archived_status)
     result = db.execute(query, {'email': email}).first()

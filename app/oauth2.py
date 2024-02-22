@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 
 oauth_2_scheme = OAuth2PasswordBearer(
     tokenUrl="login",
-    scopes={"organizer": "organizer", "attendee": "attendee"},
+    scopes={"ATTENDEE": "ATTENDEE", "ORGANIZATION_ADMIN": "ORGANIZATION_ADMIN", "ORGANIZATION_USER": "ORGANIZATION_USER"},
     )
 
 def get_current_user(
@@ -44,7 +44,7 @@ def get_current_user_RT(data: str, db):
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                                           detail="Could not validate credentials")
     token_data = token.verify_token_RT(data, credentials_exception, db)
-    user = users_crud.get_user_by_email(db, email=token_data.username)
+    user = users_crud.get_active_user_by_email(db, email=token_data.username)
     if user is None:
         raise credentials_exception
     if user.is_active is False:

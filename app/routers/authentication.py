@@ -87,12 +87,17 @@ def get_token_expirations(role: str) -> Dict[str, timedelta]:
                 'refresh_token_expires': timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)}
 
 @router.get("/print_something_attendee")
-def print_something(current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def print_something(current_user: User = Security(get_current_active_user, scopes=["ATTENDEE"])):
     logging.info("Attendee logged in: " + current_user.uuid)
     return {"message": "Hello World"}
 
 @router.get("/print_something_organizer")
-def print_something2(current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def print_something2(current_user: User = Security(get_current_active_user, scopes=["ORGANIZATION_ADMIN"])):
+    logging.info("Organizer logged in: " + current_user.uuid)
+    return {"message": "Hello World"}
+
+@router.get("/print_something_organizer")
+def print_something3(current_user: User = Security(get_current_active_user, scopes=["ORGANIZATION_USER"])):
     logging.info("Organizer logged in: " + current_user.uuid)
     return {"message": "Hello World"}
     
@@ -104,17 +109,12 @@ async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = D
         current_user: User = get_current_user_RT(jwt_token,db)
         invalidate_refresh_token(jwt_token=jwt_token, db=db)
 
-        if current_user.role == "organizer":
-            access_token_expires = timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES)
-            refresh_token_expires = timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)
+        token_expirations = get_token_expirations(current_user.role)
         
-        elif current_user.role == "attendee":
-            access_token_expires = timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS)
-            refresh_token_expires = timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)
-
-        refresh_token = create_refresh_token(data={"sub": current_user.email}, expires_delta=refresh_token_expires)
+        refresh_token = create_refresh_token(data={"sub": current_user.email}, expires_delta=token_expirations['refresh_token_expires'])
         rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-        access_token = create_access_token(data={"sub": current_user.email, "id":current_user.id, "rt_jti":rt_jti, "scopes": [current_user.role]}, expires_delta=access_token_expires)
+        access_token = create_access_token(data={"sub": current_user.email, "id":current_user.id, "rt_jti":rt_jti, "scopes": [current_user.role]}, expires_delta=token_expirations['access_token_expires'])
+        
         logging.info("Refresh token created: " + current_user.uuid)
         return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
     except JWTError:
@@ -134,7 +134,7 @@ async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db), basic_a
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
 
 @router.post("/logout")
-async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"]),db: Session = Depends(get_db)):
+async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Security(get_current_active_user, scopes=["ATTENDEE", "ORGANIZATION_ADMIN", "ORGANIZATION_USER"]),db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(jwt_token, SECRET_KEY, algorithms=[ALGORITHM])
         jti = payload.get("jti")
