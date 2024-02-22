@@ -48,9 +48,9 @@ def verify_token(token:str, credentials_exception, db: Session):
         if jti and jti in db_tokens:
             raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
         token_scopes = payload.get("scopes", [])
-        # print(token_scopes)
+        
         token_data = TokenData(username=username, scopes=token_scopes)
-        # print(token_data)
+        
     except (JWTError, ValidationError):
         raise credentials_exception
     return token_data

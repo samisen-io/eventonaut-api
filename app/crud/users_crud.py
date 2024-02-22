@@ -1,7 +1,6 @@
 import logging
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-
+from sqlalchemy.orm import Session, joinedload
 from app.static_enums.role import RoleEnum
 from .. import models, hashing
 from ..schemas import user_schemas as schemas
@@ -11,6 +10,8 @@ from ..static_enums import organizer
 from ..routers import upload_image
 from ..crud import user_role_crud
 from ..static_enums.blob_container_enums import BlobContainer
+from sqlalchemy import text
+from app.sql_queries.users_query import query_user_by_email_and_archived_status
 
 def create_db_user(db: Session, user: schemas.UserCreate):
     user_dict = user.model_dump()
@@ -69,12 +70,35 @@ def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
 
 def get_user_by_email_and_password(db: Session, email: str, password: str):
-    user = db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
-    if user is None:
+    query = text(query_user_by_email_and_archived_status)
+    result = db.execute(query, {'email': email}).first()
+    if result is None:
         return False
+    user = map_to_user(result)
     if hashing.verify_password(password, user.hashed_password):
         return user
     return False
+
+def map_to_user(result):
+    user = models.User()
+    user.id = result.id
+    user.uuid = result.uuid
+    user.created_on = result.created_on
+    user.updated_on = result.updated_on
+    user.email = result.email
+    user.first_name = result.first_name
+    user.last_name = result.last_name
+    user.company = result.company
+    user.business_type = result.business_type
+    user.hashed_password = result.hashed_password
+    user.is_active = result.is_active
+    user.timezone = result.timezone
+    user.is_verified = result.is_verified
+    user.is_archived = result.is_archived
+    user.profile_image_url = result.profile_image_url
+    user.user_status_id = result.user_status_id
+    user.role = result.role  # This might need to be adjusted
+    return user
 
 def get_users(db: Session, offset: int = 0, limit: int = 100):
     users = db.query(models.User).filter(models.User.role == 'organizer').offset(offset).limit(limit).all()

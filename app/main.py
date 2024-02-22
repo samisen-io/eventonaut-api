@@ -46,9 +46,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 #         content={"detail": str(exc)}
 #     )
 
-class CORSHandler(APIRoute):
-    def get_route_handler(self) -> Callable:
-        original_route_handler = super().get_route_handler()
 # class CORSHandler(APIRoute):
 #     def get_route_handler(self) -> Callable:
 #         original_route_handler = super().get_route_handler()

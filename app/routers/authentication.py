@@ -1,11 +1,13 @@
 import os
 from datetime import timedelta
 import logging
+from typing import Dict, List
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.schemas.user_schemas import UserAuthentication as User
 from app.schemas.token_schemas import TokenInput
+from app.static_enums.role import RoleEnum
 from ..crud import users_crud
 from ..dependencies import get_db
 from app.token import Token, create_access_token
@@ -43,9 +45,28 @@ def authenticate_user(db: Session, username: str, password: str, token_jti: str)
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends(), basic_auth = Depends(basicauth.basic_auth)):
-    form_data.username = form_data.username.lower().strip()
-    scopes = form_data.scopes if form_data.scopes else None
+    form_data.username = sanitize_username(form_data.username)
+    scopes = get_scopes(form_data.scopes)
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
+    
+    validate_user_and_scope(user, scopes)
+    
+    token_expirations = get_token_expirations(user.role)
+    
+    refresh_token = create_refresh_token(data={"sub": user.email, "scopes": [user.role]}, expires_delta=token_expirations['refresh_token_expires'])
+    rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": [user.role]}, expires_delta=token_expirations['access_token_expires'])
+    
+    logging.info("User logged in: " + user.uuid)
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+
+def sanitize_username(username: str) -> str:
+    return username.lower().strip()
+
+def get_scopes(scopes: List[str]) -> List[str]:
+    return scopes if scopes else None
+
+def validate_user_and_scope(user: User, scopes: List[str]) -> None:
     if not user:
         logging.exception("Incorrect username or password")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
@@ -56,19 +77,14 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect scope",
                             headers={"WWW-Authenticate": "Bearer"})
-    if user.role == "organizer":
-        access_token_expires = timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES)
-        refresh_token_expires = timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)
 
-    elif user.role == "attendee":
-        access_token_expires = timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS)
-        refresh_token_expires = timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)
-
-    refresh_token = create_refresh_token(data={"sub": user.email, "scopes": [user.role]}, expires_delta=refresh_token_expires)
-    rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": [user.role]}, expires_delta=access_token_expires)
-    logging.info("User logged in: " + user.uuid)
-    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+def get_token_expirations(role: str) -> Dict[str, timedelta]:
+    if role == RoleEnum.ATTENDEE.name:
+        return {'access_token_expires': timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS), 
+                'refresh_token_expires': timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)}
+    elif role == RoleEnum.ORGANIZATION_ADMIN.name or role == RoleEnum.ORGANIZATION_USER.name:
+        return {'access_token_expires': timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES), 
+                'refresh_token_expires': timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)}
 
 @router.get("/print_something_attendee")
 def print_something(current_user: User = Security(get_current_active_user, scopes=["attendee"])):
