@@ -22,9 +22,6 @@ def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db), c
     except EmailNotValidError as e:
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    if crud.get_client_by_email(db, email=client.contact_email) is not None:
-        logging.exception("Email already registered")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
     client = crud.create_client(db=db, client=client, user_id=current_user.id)
     logging.info("Client created: " + client.uuid)
     return client
@@ -80,10 +77,6 @@ def update_client(client: schemas.ClientUpdate, db: Session = Depends(get_db), c
         except EmailNotValidError as e:
             logging.exception(str(e))
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-        db_client = crud.get_client_by_email(db, email=client.contact_email)
-        if db_client is not None and db_client.uuid != client.id:
-            logging.exception("Email already registered")
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
     db_client = crud.get_client_by_uuid_and_owner_id(db, client_id=client.id, owner_id=current_user.id)
     if db_client is None:
         logging.exception("Client not found")

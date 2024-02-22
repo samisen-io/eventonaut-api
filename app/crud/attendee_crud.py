@@ -174,7 +174,7 @@ def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, l
         return None
     conferences = []
     for attendee_conference in attendee_conferences:
-        conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venues),joinedload(models.Conference.sponsors)).filter(models.Conference.id == attendee_conference.conference_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).first()
+        conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.id == attendee_conference.conference_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).first()
         if conference is None:
             continue
         conference.__dict__.pop('client_id')
@@ -193,11 +193,4 @@ def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str):
         return None
     conference_id = conference.id
     attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
-    attendees = []
-    for attendee_conference in attendee_conferences:
-        attendee = db.query(models.Attendee).filter(models.Attendee.id == attendee_conference.attendee_id,models.Attendee.share_my_profile == True).first()
-        if attendee is None:
-            continue
-        user = db.query(models.User).filter(models.User.id == attendee.user_id).first()
-        attendees.append(schemas.Attendee(uuid=attendee.uuid, email=user.email, first_name=user.first_name, last_name=user.last_name, title=attendee.title, company=user.company, bio=attendee.bio, share_my_profile=attendee.share_my_profile, share_my_agenda=attendee.share_my_agenda, profile_image_url=user.profile_image_url, thread_id=attendee.thread_id,is_active=user.is_active))
-    return attendees
+    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()
