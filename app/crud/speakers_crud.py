@@ -76,7 +76,7 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate, db_speaker: Spea
         if value is not None:
             setattr(db_speaker, key, value)
             
-    if speaker.profile_image_url is not None and upload_image.get_container_name_from_url(db_speaker.profile_image_url) == BlobContainer.SPEAKER_IMAGES.value:
+    if speaker.profile_image_url is not None and upload_image.get_container_name_from_url(speaker.profile_image_url) != BlobContainer.SPEAKER_IMAGES.value:
         db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container=BlobContainer.SPEAKER_IMAGES.value, new_blob_name=f"speaker-{db_speaker.uuid}")
     elif speaker.profile_image_url is None and db_speaker.profile_image_url is not None:
         upload_image.delete_blob_by_url(db_speaker.profile_image_url)
