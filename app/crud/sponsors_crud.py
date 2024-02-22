@@ -57,7 +57,7 @@ def update_sponsor(db: Session, sponsor: sponsor_schemas.SponsorUpdate, db_spons
             setattr(db_sponsor, key, value)
     db_sponsor.updated_on = datetime.now()
     
-    if sponsor_image_url is not None and upload_image.get_container_name_from_url(db_sponsor.logo_image_url) == BlobContainer.SPONSOR_LOGOS.value:
+    if sponsor_image_url is not None and upload_image.get_container_name_from_url(sponsor_image_url) != BlobContainer.SPONSOR_LOGOS.value:
         db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor_image_url, new_blob_container=BlobContainer.SPONSOR_LOGOS.value, new_blob_name=f"sponsor-{db_sponsor.uuid}")
     
     try:

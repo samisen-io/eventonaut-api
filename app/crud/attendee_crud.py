@@ -4,7 +4,7 @@ from .. import models
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
 from datetime import datetime
 from .. import hashing
-from .. AI_assitant import create_thread, delete_thread
+from .. AI_assitant import create_thread
 import uuid
 from ..crud import conferences_crud
 from ..static_enums import event

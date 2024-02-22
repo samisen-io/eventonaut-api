@@ -130,13 +130,13 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     db_client = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first()
     db_conference.client_id = db_client.id if db_client is not None else None
     
-    if conference_logo is not None and upload_image.get_container_name_from_url(db_conference.conference_logo) != BlobContainer.EVENT_LOGOS.value:
+    if conference_logo is not None and upload_image.get_container_name_from_url(conference_logo) != BlobContainer.EVENT_LOGOS.value:
         db_conference.conference_logo = upload_image.get_actual_url(image_url=conference_logo, new_blob_container=BlobContainer.EVENT_LOGOS.value, new_blob_name=f"event-logo-{db_conference.uuid}")
     elif conference_logo is None and db_conference.conference_logo is not None:
         upload_image.delete_blob_by_url(db_conference.conference_logo)
         db_conference.conference_logo = None
         
-    if conference_banner_url is not None and upload_image.get_container_name_from_url(db_conference.conference_banner_url) != BlobContainer.EVENT_BANNERS.value:
+    if conference_banner_url is not None and upload_image.get_container_name_from_url(conference_banner_url) != BlobContainer.EVENT_BANNERS.value:
         db_conference.conference_banner_url = upload_image.get_actual_url(image_url=conference_banner_url, new_blob_container=BlobContainer.EVENT_BANNERS.value, new_blob_name=f"event-banner-{db_conference.uuid}")
     elif conference_banner_url is None and db_conference.conference_banner_url is not None:
         upload_image.delete_blob_by_url(db_conference.conference_banner_url)
