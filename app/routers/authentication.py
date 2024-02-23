@@ -92,7 +92,7 @@ def get_token_expirations(role: str) -> Dict[str, timedelta]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
 
 @router.get("/print_something_attendee")
-def print_something(current_user: User = Security(get_current_active_user, scopes=["ATTENDEE"])):
+def print_something(current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     logging.info("Attendee logged in: " + current_user.uuid)
     return {"message": "Hello World"}
 

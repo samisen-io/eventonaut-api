@@ -10,7 +10,7 @@ from app.schemas.user_schemas import UserAuthentication as User
 router = APIRouter(tags=["attendee conference"])
 
 @router.post("/attendee/conference", response_model=attendee_conference_schemas.AttendeeConference, status_code=status.HTTP_201_CREATED)
-def create_attendee_conference(attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def create_attendee_conference(attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)
     if not attendee:
         logging.exception("Attendee not found")
@@ -31,7 +31,7 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
 
 # get all attendee conferences
 @router.get("/attendee/conference", response_model=list[conference_schemas.ConferenceResponse])
-def get_all_attendee_conferences(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def get_all_attendee_conferences(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if not crud.get_attendee_by_id(db, attendee_id=current_user.id):
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
@@ -44,7 +44,7 @@ def get_all_attendee_conferences(skip: int = 0, limit: int = 100, db: Session = 
 
 # delete attendee conference by attendee id and conference id
 @router.delete("/attendee/{conference_identifier}")
-def delete_attendee_conference_by_attendee_id_and_conference_id(conference_identifier: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def delete_attendee_conference_by_attendee_id_and_conference_id(conference_identifier: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)
     if not attendee:
         logging.exception("Attendee not found")
@@ -65,7 +65,7 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(conference_ident
     return deleted_attendee_conference
 
 @router.get("/attendee/profiles", response_model=list[schemas.Attendee])
-def get_attendee_profiles_for_session_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def get_attendee_profiles_for_session_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if not conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id):
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")

@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
+from app.static_enums.role import RoleEnum
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
 from ..schemas import agenda_schemas as schemas
@@ -13,7 +14,7 @@ router = APIRouter(tags=["agenda"])
 
 # create agenda
 @router.post("/agenda", response_model=schemas.Agenda, status_code=status.HTTP_201_CREATED)
-def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     db_attendee = attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id)
     if db_attendee is None:
         logging.exception("Attendee not found")
@@ -59,7 +60,7 @@ def get_all_agenda(offset: int = 0, limit: int = 100, db: Session = Depends(get_
 
 # get agenda by conference id and attendee id
 @router.get("/agenda/{conference_id}", response_model=schemas.Agenda)
-def get_agenda_by_conference_id_attendee_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def get_agenda_by_conference_id_attendee_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id) is None:
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
@@ -86,7 +87,7 @@ def get_agenda_by_conference_id_attendee_id(conference_id: str, attendee_id: str
 
 # update agenda by conference id and attendee id
 @router.put("/agenda", response_model=schemas.Agenda)
-def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if agenda.name is None and (agenda.sessions is None or len(agenda.sessions) == 0):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
@@ -126,7 +127,7 @@ def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), c
 
 # delete agenda by conference id and attendee id
 @router.delete("/agenda/{conference_id}")
-def delete_agenda(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def delete_agenda(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id) is None:
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
