@@ -53,7 +53,7 @@ def get_role_names(user: schemas.User):
     roles_names = [role for role in roles_names if role != '']
     return roles_names
 
-@router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
+@router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     user = validate_user_email(user)
     role_ids = get_role_ids(user)

@@ -28,7 +28,7 @@ class Organization_User(Base):
     updated_on = Column(DateTime)
     uuid = Column(String, index=True, unique=True)
     organization_id = Column(Integer, ForeignKey("organization.id"))
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
 
     organization = relationship("Organization", back_populates="organization_user")
     user = relationship("User", back_populates="organization_user")
