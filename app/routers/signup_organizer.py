@@ -18,9 +18,8 @@ def signup_organization_admin(organizer_signup_request: schemas.SignupOrganizerR
 
 @router.post("/signup_organization_user", response_model=schemas.SignupOrganizerResponse, status_code=201)
 def signup_organization_user(organizer_signup_request: schemas.SignupOrganizerRequest,
-                            current_user: User = Security(get_current_active_user, scopes=["organizer"]), 
-                            db: Session = Depends(get_db),
-                            User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
+                            current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]), 
+                            db: Session = Depends(get_db)):
     organization_admin = users_crud.get_user_by_email(db, current_user.email)
     if not is_list_of_roles_contains_admin(get_user_role_ids(organization_admin)):
         raise HTTPException(status_code=400, detail="Only organization admin can create new users")
