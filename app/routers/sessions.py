@@ -3,6 +3,7 @@ import logging
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
+from app.static_enums.role import RoleEnum
 from ..schemas import session_schemas as schemas
 from ..crud import sessions_crud as crud, conferences_crud, speakers_crud
 from ..dependencies import get_db
@@ -13,7 +14,7 @@ from ..schemas.session_speaker_schema import SessionResponse
 router = APIRouter(tags=["sessions"])
 
 @router.post("/sessions", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
-def create_session_for_conference(session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def create_session_for_conference(session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     conference=conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id, owner_id=current_user.id)
     if conference is None:
         logging.exception("Conference not found")
@@ -39,7 +40,7 @@ def create_session_for_conference(session: schemas.SessionCreate, db: Session = 
     return session
 
 @router.post("/sessions/list", response_model=list[SessionResponse])
-def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     if sessions is None or len(sessions) == 0:
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
@@ -96,7 +97,7 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
     return db_sessions
 
 @router.put("/sessions", response_model=SessionResponse)
-def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     session_dict = session.model_dump()
     session_dict.pop('id')
     session_dict.pop('conference_id')
@@ -131,7 +132,7 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
     return updated_session
 
 @router.delete("/sessions/{session_id}")
-def delete_session(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def delete_session(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     db_session = crud.get_session_by_uuid_id(db, uuid=session_id, owner_id=current_user.id)
     if db_session is None:
         logging.exception("Session not found")

@@ -1,3 +1,4 @@
+from app.static_enums.role import RoleEnum
 from ..schemas import sponsor_schemas as schemas
 from ..crud import sponsors_crud
 from fastapi import HTTPException, status, Depends, APIRouter, Security
@@ -11,7 +12,7 @@ from ..crud import conferences_crud
 router = APIRouter(tags=["sponsors"])
 
 @router.post("/sponsors", status_code=status.HTTP_201_CREATED, response_model=schemas.SponsorResponse)
-def create_sponsor(sponsor: schemas.SponsorCreate, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
+def create_sponsor(sponsor: schemas.SponsorCreate, db: Session = Depends(get_db), current_User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     try:
         valid = email_validator.validate_email(sponsor.email)
         sponsor.email = valid.normalized.lower()
@@ -35,7 +36,7 @@ def get_all_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(ge
     return sponsors
 
 @router.get("/sponsors", response_model=list[schemas.SponsorResponse])
-def get_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
+def get_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db), current_User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     sponsors = sponsors_crud.get_all_sponsors_by_owner_id(db=db, owner_id=current_user.id, limit=limit, offset=offset)
     if sponsors is None or len(sponsors) == 0:
         logging.exception("Sponsors not found")
@@ -44,7 +45,7 @@ def get_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db
     return sponsors
 
 @router.get("/sponsors/{sponsor_id}", response_model=schemas.SponsorResponse)
-def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
+def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), current_User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     sponsor = sponsors_crud.get_sponsor_by_uuid(db=db, uuid=sponsor_id, owner_id=current_user.id)
     if sponsor is None:
         logging.exception("Sponsor not found")
@@ -53,7 +54,7 @@ def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), current_us
     return sponsor
 
 @router.get("/sponsors/conference/{conference_id}", response_model=list[schemas.SponsorResponseWithConference])
-def get_sponsors_by_conference_id(conference_id: str, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
+def get_sponsors_by_conference_id(conference_id: str, db: Session = Depends(get_db), current_User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     conference = conferences_crud.get_conference_by_uuid(db=db, uuid=conference_id, owner_id=current_user.id)
     if conference is None:
         logging.exception("Conference not found")
@@ -66,7 +67,7 @@ def get_sponsors_by_conference_id(conference_id: str, db: Session = Depends(get_
     return sponsors
 
 @router.put("/sponsors", response_model=schemas.SponsorResponse)
-def update_sponsor(sponsor: schemas.SponsorUpdate, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
+def update_sponsor(sponsor: schemas.SponsorUpdate, db: Session = Depends(get_db), current_User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     sponsor_dict = sponsor.model_dump()
     sponsor_dict.pop('id')
     if all(value is None for value in sponsor_dict.values()):
@@ -81,7 +82,7 @@ def update_sponsor(sponsor: schemas.SponsorUpdate, db: Session = Depends(get_db)
     return sponsor
 
 @router.delete("/sponsors/{sponsor_id}")
-def delete_sponsor(sponsor_id: str, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
+def delete_sponsor(sponsor_id: str, db: Session = Depends(get_db), current_User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     sponsor = sponsors_crud.get_sponsor_by_uuid(db=db, uuid=sponsor_id, owner_id=current_user.id)
     if sponsor is None:
         logging.exception("Sponsor not found")
