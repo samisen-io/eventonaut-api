@@ -21,7 +21,7 @@ def create_role(
     except HTTPException as e:
         raise e
 
-@router.get("/roles", response_model=List[schemas.RoleResponse],  basic_auth = Depends(basicauth.basic_auth))
+@router.get("/roles", response_model=List[schemas.RoleResponse])
 def read_roles(
     skip: int = 0,
     limit: int = 100,

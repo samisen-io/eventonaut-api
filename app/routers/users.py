@@ -80,7 +80,7 @@ def assign_role_names_to_users(users):
     return users
 
 @router.get("/users/all_users", response_model=list[schemas.User])
-def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     users = get_users_from_db(db, offset, limit)
     users = assign_role_names_to_users(users)
     logging.info("Users retrieved")
