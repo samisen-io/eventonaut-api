@@ -26,15 +26,15 @@ def validate_user_email(user: schemas.UserCreate):
     return user
 
 def get_role_ids(user: schemas.UserCreate):
-    role_ids = []
+    role_ids = set()
     for role_name in user.list_of_roles:
         try:
             role_id = RoleEnum[role_name.upper()].value
         except KeyError as exc:
             logging.exception("Role not found")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Role not found") from exc
-        role_ids.append(role_id)
-    return role_ids
+        role_ids.add(role_id)
+    return list(role_ids)
 
 def check_user_exists(db: Session, user: schemas.UserCreate):
     db_user = crud.get_user_by_email(db, email=user.email)
