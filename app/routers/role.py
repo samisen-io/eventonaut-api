@@ -6,6 +6,7 @@ from ..basicauth import basic_auth
 from ..crud import role_crud as crud
 from ..dependencies import get_db
 from ..schemas import role_schemas as schemas
+from app import basicauth
 
 router = APIRouter(tags=["role"])
 
@@ -20,7 +21,7 @@ def create_role(
     except HTTPException as e:
         raise e
 
-@router.get("/roles", response_model=List[schemas.RoleResponse])
+@router.get("/roles", response_model=List[schemas.RoleResponse],  basic_auth = Depends(basicauth.basic_auth))
 def read_roles(
     skip: int = 0,
     limit: int = 100,

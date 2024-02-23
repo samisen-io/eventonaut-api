@@ -1,5 +1,9 @@
 from typing import List
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Security
+from app import basicauth
+
+from app.oauth2 import get_current_active_user
+from app.static_enums.role import RoleEnum
 from ..crud import organization_user_crud as crud
 from ..schemas import organization_user_schemas as schemas
 from sqlalchemy.orm import Session
@@ -22,7 +26,7 @@ def get_mapped_organization_user_response(organization_user):
     organization_user.id = organization_user.uuid
     return organization_user
      
-@router.post("/organization_user", response_model=schemas.Organization_User)
+@router.post("/organization_user", response_model=schemas.Organization_User, User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]))
 def create_organization_user(organization_user: schemas.Organization_UserCreate, db: Session = Depends(get_db)):
     try:
         new_organization_user = crud.create_organization_user(db ,organization_user)
@@ -30,7 +34,7 @@ def create_organization_user(organization_user: schemas.Organization_UserCreate,
     except Exception as exc:
         raise exc
 
-@router.get("/organization_user/{id}", response_model=schemas.Organization_User)
+@router.get("/organization_user/{id}", response_model=schemas.Organization_User, basic_auth = Depends(basicauth.basic_auth))
 def get_organization_user(organization_user_id: str, db: Session = Depends(get_db)):
     try:
         organization_user = crud.get_organization_user(db, organization_user_id)
@@ -40,7 +44,7 @@ def get_organization_user(organization_user_id: str, db: Session = Depends(get_d
     except Exception as exc:
         raise exc
 
-@router.get("/organization_users", response_model=List[schemas.Organization_User])
+@router.get("/organization_users", response_model=List[schemas.Organization_User], basic_auth = Depends(basicauth.basic_auth))
 def get_organization_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     try:
         organization_users = crud.get_organization_users(db, skip, limit)
@@ -49,18 +53,18 @@ def get_organization_users(skip: int = 0, limit: int = 100, db: Session = Depend
     except Exception as exc:
         raise exc
     
-@router.get("/organization_user/users/{organization_id}", response_model=schemas.OrganizationUsersResponse)
+@router.get("/organization_user/users/{organization_id}", response_model=schemas.OrganizationUsersResponse, basic_auth = Depends(basicauth.basic_auth))
 def get_users_by_organization_id(organization_id: str, db: Session = Depends(get_db)):
     response = crud.get_users_by_organization_uuid(db, organization_id)
     if response is None:
         raise HTTPException(status_code=404, detail="Organization not found")
     return response
 
-@router.get("/organization_user/organizations/{user_id}", response_model=schemas.UserOrganizationsResponse)
+@router.get("/organization_user/organizations/{user_id}", response_model=schemas.UserOrganizationsResponse, basic_auth = Depends(basicauth.basic_auth))
 def get_organizations_by_user_id(user_id: str, db: Session = Depends(get_db)):
     return crud.get_organizations_by_user_uuid(db, user_id)
 
-@router.put("/organization_user/{id}", response_model=schemas.Organization_UserUpdate)
+@router.put("/organization_user/{id}", response_model=schemas.Organization_UserUpdate, User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]))
 def update_organization_user(organization_user: schemas.Organization_UserUpdate, db: Session = Depends(get_db)):
     try:
         updated_organization_user = crud.update_organization_user(db=db, organization_user=organization_user)
@@ -70,7 +74,7 @@ def update_organization_user(organization_user: schemas.Organization_UserUpdate,
     except Exception as exc:
         raise exc
 
-@router.delete("/organization_user/{id}", response_model=schemas.DeleteResponse)
+@router.delete("/organization_user/{id}", response_model=schemas.DeleteResponse, User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]))
 def delete_organization_user(organization_user_id: str, db: Session = Depends(get_db)):
     try:
         crud.delete_organization_user(db, organization_user_id)
