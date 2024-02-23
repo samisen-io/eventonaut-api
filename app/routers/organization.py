@@ -18,34 +18,34 @@ def get_db():
     finally:
         db.close()
 
-@router.post("/organizations/", response_model=schemas.Organization, User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]))
-def create_organization(organization: schemas.OrganizationCreate, db: Session = Depends(get_db)):
+@router.post("/organizations/", response_model=schemas.Organization)
+def create_organization(organization: schemas.OrganizationCreate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     return crud.create_organization(db=db, organization=organization)
 
-@router.get("/organizations/", response_model=List[schemas.Organization], User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]))
-def get_organizations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+@router.get("/organizations/", response_model=List[schemas.Organization])
+def get_organizations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     try:
         organizations = crud.get_all_organizations(db, skip, limit)
         return organizations
     except Exception as exc:
         raise exc
     
-@router.get("/organizations/{id}", response_model=schemas.Organization, User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]))
-def get_organization(organization_id: str, db: Session = Depends(get_db)):
+@router.get("/organizations/{id}", response_model=schemas.Organization)
+def get_organization(organization_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     db_organization = crud.get_organization_by_uuid(db, organization_uuid=organization_id)
     if db_organization is None:
         raise HTTPException(status_code=404, detail="Organization not found")
     return db_organization
 
-@router.put("/organizations/", response_model=schemas.Organization, User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]))
-def update_organization(organization: schemas.OrganizationUpdate, db: Session = Depends(get_db)):
+@router.put("/organizations/", response_model=schemas.Organization)
+def update_organization(organization: schemas.OrganizationUpdate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     db_organization = crud.get_organization_by_uuid(db, organization_uuid=organization.id)
     if db_organization is None:
         raise HTTPException(status_code=404, detail="Organization not found")
     return crud.update_organization(db=db, organization=organization, db_organization=db_organization)
 
-@router.delete("/organizations/{id}", User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]))
-def delete_organization(organization_id: str, db: Session = Depends(get_db)):
+@router.delete("/organizations/{id}")
+def delete_organization(organization_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     db_organization = crud.get_organization_by_uuid(db, organization_uuid=organization_id)
     if db_organization is None:
         raise HTTPException(status_code=404, detail="Organization not found")

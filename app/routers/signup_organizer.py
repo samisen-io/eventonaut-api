@@ -11,15 +11,16 @@ from app.static_enums.role import RoleEnum
 
 router = APIRouter(tags=["signup_organizer"])
 
-@router.post("/signup_organization_admin", response_model=schemas.SignupOrganizerResponse, status_code=201,  basic_auth = Depends(basicauth.basic_auth))
-def signup_organization_admin(organizer_signup_request: schemas.SignupOrganizerRequest, db: Session = Depends(get_db)):
+@router.post("/signup_organization_admin", response_model=schemas.SignupOrganizerResponse, status_code=201)
+def signup_organization_admin(organizer_signup_request: schemas.SignupOrganizerRequest, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     response = signup_service.signup_organization_admin(db=db, organizer_signup_request = organizer_signup_request)
     return response
 
-@router.post("/signup_organization_user", response_model=schemas.SignupOrganizerResponse, status_code=201, User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]))
+@router.post("/signup_organization_user", response_model=schemas.SignupOrganizerResponse, status_code=201)
 def signup_organization_user(organizer_signup_request: schemas.SignupOrganizerRequest,
                             current_user: User = Security(get_current_active_user, scopes=["organizer"]), 
-                             db: Session = Depends(get_db)):
+                            db: Session = Depends(get_db),
+                            User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     organization_admin = users_crud.get_user_by_email(db, current_user.email)
     if not is_list_of_roles_contains_admin(get_user_role_ids(organization_admin)):
         raise HTTPException(status_code=400, detail="Only organization admin can create new users")
