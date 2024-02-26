@@ -8,7 +8,7 @@ class SettingsBase(BaseModel):
     @validator('body')
     def body_must_not_be_empty(cls, v):
         if v is None or len(v) == 0:
-            raise HTTPException(status_code=400, detail="Body is empty")
+            raise ValueError("body cannot be empty")
         return v
 
 class SettingsCreate(SettingsBase):
@@ -17,7 +17,7 @@ class SettingsCreate(SettingsBase):
     @validator('conference_id')
     def conference_id_must_be_positive(cls, v):
         if v is None or v == "" or v == "string":
-            raise HTTPException(status_code=400, detail="Invalid conference id")
+            raise ValueError("Invalid conference_id")
         return v
     
 #pydantic model for settings

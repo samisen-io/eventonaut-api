@@ -10,7 +10,7 @@ from ..crud import conferences_crud
 
 router = APIRouter(tags=["sponsors"])
 
-@router.post("/sponsors", status_code=status.HTTP_201_CREATED, response_model=schemas.Sponsor)
+@router.post("/sponsors", status_code=status.HTTP_201_CREATED, response_model=schemas.SponsorResponse)
 def create_sponsor(sponsor: schemas.SponsorCreate, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
     try:
         valid = email_validator.validate_email(sponsor.email)
@@ -25,7 +25,7 @@ def create_sponsor(sponsor: schemas.SponsorCreate, db: Session = Depends(get_db)
     logging.info(f"Sponsor created with id {sponsor.uuid}")
     return sponsor
 
-@router.get("/sponsors/get-all-sponsors", response_model=list[schemas.Sponsor])
+@router.get("/sponsors/get-all-sponsors", response_model=list[schemas.SponsorResponse])
 def get_all_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db)):
     sponsors = sponsors_crud.get_all_sponsors(db=db, limit=limit, offset=offset)
     if sponsors is None or len(sponsors) == 0:
@@ -34,7 +34,7 @@ def get_all_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(ge
     logging.info("Sponsors retrieved")
     return sponsors
 
-@router.get("/sponsors", response_model=list[schemas.Sponsor])
+@router.get("/sponsors", response_model=list[schemas.SponsorResponse])
 def get_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
     sponsors = sponsors_crud.get_all_sponsors_by_owner_id(db=db, owner_id=current_user.id, limit=limit, offset=offset)
     if sponsors is None or len(sponsors) == 0:
@@ -43,7 +43,7 @@ def get_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db
     logging.info("Sponsors retrieved")
     return sponsors
 
-@router.get("/sponsors/{sponsor_id}", response_model=schemas.Sponsor)
+@router.get("/sponsors/{sponsor_id}", response_model=schemas.SponsorResponse)
 def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
     sponsor = sponsors_crud.get_sponsor_by_uuid(db=db, uuid=sponsor_id, owner_id=current_user.id)
     if sponsor is None:
@@ -52,7 +52,7 @@ def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), current_us
     logging.info(f"Sponsor retrieved with id {sponsor.uuid}")
     return sponsor
 
-@router.get("/sponsors/{conference_id}", response_model=list[schemas.Sponsor])
+@router.get("/sponsors/conference/{conference_id}", response_model=list[schemas.SponsorResponseWithConference])
 def get_sponsors_by_conference_id(conference_id: str, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
     conference = conferences_crud.get_conference_by_uuid(db=db, uuid=conference_id, owner_id=current_user.id)
     if conference is None:
@@ -65,7 +65,7 @@ def get_sponsors_by_conference_id(conference_id: str, db: Session = Depends(get_
     logging.info(f"Sponsors retrieved for conference id {conference_id}")
     return sponsors
 
-@router.put("/sponsors", response_model=schemas.Sponsor)
+@router.put("/sponsors", response_model=schemas.SponsorResponse)
 def update_sponsor(sponsor: schemas.SponsorUpdate, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=["organizer"])):
     sponsor_dict = sponsor.model_dump()
     sponsor_dict.pop('id')

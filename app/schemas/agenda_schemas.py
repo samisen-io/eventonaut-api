@@ -1,6 +1,6 @@
 from pydantic import BaseModel, validator, Field
 from fastapi import HTTPException
-from .session_schemas import Session
+from .session_speaker_schema import SessionResponse
 
 #pydantic model for agenda create
 class AgendaBase(BaseModel):
@@ -9,9 +9,9 @@ class AgendaBase(BaseModel):
     @validator('name')
     def name_must_contain_space(cls, v):
         if v.strip() == '':
-            raise HTTPException(status_code=400, detail="Invalid name")
+            raise ValueError("Name cannot be empty")
         elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Name too long")
+            raise ValueError("Name must be less than 256 characters")
         return v
 
 class AgendaCreate(AgendaBase):
@@ -21,16 +21,16 @@ class AgendaCreate(AgendaBase):
     @validator('sessions')
     def sessions_must_contain_at_least_one_session(cls, v):
         if len(v) == 0:
-            raise HTTPException(status_code=400, detail="Sessions cannot be empty")
+            raise ValueError("Sessions cannot be empty")
         for session_id in v:
             if session_id.strip() == '':
-                raise HTTPException(status_code=400, detail="Invalid session id")
+                raise ValueError("Invalid session id")
         return v
     
     @validator('conference_id')
     def conference_id_must_contain_space(cls, v):
         if v is None or v.strip() == '':
-            raise HTTPException(status_code=400, detail="Invalid conference id")
+            raise ValueError("Invalid conference id")
         return v
 
 class AgendaUpdate(AgendaBase):
@@ -41,7 +41,7 @@ class AgendaUpdate(AgendaBase):
     @validator('conference_id')
     def conference_id_must_contain_space(cls, v):
         if v.strip() == '':
-            raise HTTPException(status_code=400, detail="Invalid conference id")
+            raise ValueError("Invalid conference id")
         return v
     
     @validator('name')
@@ -50,20 +50,20 @@ class AgendaUpdate(AgendaBase):
             if v.strip() == '':
                 return None
             elif len(v) > 256:
-                raise HTTPException(status_code=400, detail="Name too long")
+                raise ValueError("Name must be less than 256 characters")
         return v
     
     @validator('sessions')
     def sessions_must_contain_at_least_one_session(cls, v):
         for session_id in v:
             if session_id.strip() == '':
-                raise HTTPException(status_code=400, detail="Invalid session id")
+                raise ValueError("Invalid session id")
         return v
 
 #pydantic model for agenda
 class Agenda(AgendaBase):
     uuid: str = Field(serialization_alias='id')
-    sessions: list[Session] = []
+    sessions: list[SessionResponse] = []
     
     class Config:
         orm_mode = True

@@ -15,7 +15,7 @@ import json
 
 router = APIRouter(tags=["conferences"])
 
-@router.post("/conferences", response_model=schemas.Conference, status_code=status.HTTP_201_CREATED)
+@router.post("/conferences", response_model=schemas.ConferenceResponse, status_code=status.HTTP_201_CREATED)
 def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if not users_crud.get_user(db, user_id=current_user.id):
         logging.exception("User not found")
@@ -40,7 +40,7 @@ def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session
     logging.info("Conference created: " + db_conference.uuid)
     return db_conference 
 
-@router.get("/conferences/all_conferences", response_model=list[schemas.Conference])
+@router.get("/conferences/all_conferences", response_model=list[schemas.ConferenceResponse])
 def get_all_conferences(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     if offset < 0 or limit < 0:
         logging.exception("Invalid offset or limit")
@@ -52,7 +52,7 @@ def get_all_conferences(offset: int = 0, limit: int = 100, db: Session = Depends
     logging.info("All Conferences retrieved")
     return conferences
 
-@router.get("/conferences/for_attendee", response_model=list[schemas.Conference])
+@router.get("/conferences/for_attendee", response_model=list[schemas.ConferenceResponse])
 def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Session = Depends(get_db),basic_auth = Depends(basicauth.basic_auth)):
     if offset < 0 or limit < 0:
         logging.exception("Invalid offset or limit")
@@ -64,20 +64,20 @@ def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Sess
     logging.info("Conferences retrieved for attendee")
     return conferences
 
-@router.get("/conferences", response_model=list[schemas.Conference])
-def get_all_conferences_by_owner_id(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+@router.get("/conferences", response_model=list[schemas.ConferenceResponse])
+def get_all_conferences_by_owner_id(offset: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     db_user = users_crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    db_conferences = crud.get_conferences_by_owner_id(db, owner_id=current_user.id)
+    db_conferences = crud.get_conferences_by_owner_id(db, owner_id=current_user.id, offset=offset, limit=limit)
     if db_conferences is None or len(db_conferences) == 0:
         logging.exception("No conferences found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     logging.info("Conferences retrieved for owner id: " + db_user.uuid)
     return db_conferences
 
-@router.put("/conferences", response_model=schemas.Conference)
+@router.put("/conferences", response_model=schemas.ConferenceResponse)
 def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     conference_dict = conference.model_dump()
     conference_dict.pop("id")
@@ -160,7 +160,7 @@ def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_
     logging.info("QR code generated: " + conference.name)
     return StreamingResponse(img_byte_arr, media_type="image/png", headers=headers)
 
-@router.get("/conferences/{conference_id}", response_model=schemas.Conference)
+@router.get("/conferences/{conference_id}", response_model=schemas.ConferenceResponse)
 def get_conference_by_conference_id(conference_id: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):    
     conference = crud.get_conference_by_conference_uuid(db, uuid=conference_id)
     if conference is None:
