@@ -1,6 +1,6 @@
 from pydantic import BaseModel, validator, Field, field_validator, ValidationInfo
-from fastapi import HTTPException, UploadFile, status
 from ..static_enums import attendee
+from ..url_validator import check_url
 
 #pydantic model for attendeebase
 class AttendeeBase(BaseModel):
@@ -18,9 +18,9 @@ class AttendeeBase(BaseModel):
     @validator('email')
     def email_is_not_empty(cls, v):
         if v.strip() == "":
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid email")
+            raise ValueError("Email cannot be empty")
         elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Email too long")
+            raise ValueError("Email must be less than 256 characters")
         return v
 
     @field_validator('first_name','last_name','title','company','bio','profile_image_url')
@@ -29,7 +29,7 @@ class AttendeeBase(BaseModel):
             if v.strip() == "":
                 return None
             elif len(v) > 256:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} must be less than 256 characters")
+                raise ValueError(f"{info.field_name} must be less than 256 characters")
         return v
     
     @field_validator("status")
@@ -39,7 +39,14 @@ class AttendeeBase(BaseModel):
                 return None
             v = v.upper()
             if v not in list(attendee.AttendeeEnum.__members__):
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+                raise ValueError("Invalid status")
+        return v
+    
+    @field_validator('profile_image_url')
+    def validate_profile_image_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
     
 #pydantic model for attendee create
@@ -50,19 +57,19 @@ class AttendeeCreate(BaseModel):
     @validator('email')
     def email_is_not_empty(cls, v):
         if v.strip() == "":
-            raise HTTPException(status_code=400, detail="Invalid email")
+            raise ValueError("Email cannot be empty")
         elif len(v) > 256:
-            raise HTTPException(status_code=400, detail="Email too long")
+            raise ValueError("Email must be less than 256 characters")
         return v
 
     @validator('hashed_password')
     def hashed_password_is_not_empty(cls, v):
         if v.strip() == "" or v.__contains__(" "):
-            raise HTTPException(status_code=400, detail="Invalid password")
+            raise ValueError("Password cannot be empty")
         elif len(v) < 8:
-            raise HTTPException(status_code=400, detail="Password too short")
+            raise ValueError("Password too short")
         elif len(v) > 16:
-            raise HTTPException(status_code=400, detail="Password too long")
+            raise ValueError("Password too long")
         return v
 
 #pydantic model for attendee password
@@ -73,21 +80,21 @@ class AttendePassword(BaseModel):
     @validator('old_password')
     def old_password_is_not_empty(cls, v):
         if v.strip() == "" or v.__contains__(" "):
-            raise HTTPException(status_code=400, detail="Invalid password")
+            raise ValueError("Old password cannot be empty")
         elif len(v) < 8:
-            raise HTTPException(status_code=400, detail="Old password too short")
+            raise ValueError("Old password too short")
         elif len(v) > 16:
-            raise HTTPException(status_code=400, detail="Old password too long")
+            raise ValueError("Old password too long")
         return v
     
     @validator('new_password')
     def new_password_is_not_empty(cls, v):
         if v.strip() == "" or v.__contains__(" "):
-            raise HTTPException(status_code=400, detail="Invalid password")
+            raise ValueError("New password cannot be empty")
         elif len(v) < 8:
-            raise HTTPException(status_code=400, detail="New password too short")
+            raise ValueError("New password too short")
         elif len(v) > 16:
-            raise HTTPException(status_code=400, detail="New password too long")
+            raise ValueError("New password too long")
         return v
 
 class AttendeeUpdate(BaseModel):
@@ -107,7 +114,7 @@ class AttendeeUpdate(BaseModel):
             if v.strip() == "":
                 return None
             elif len(v) > 256:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} must be less than 256 characters")
+                raise ValueError(f"{info.field_name} must be less than 256 characters")
         return v
     
     @field_validator("status")
@@ -117,7 +124,14 @@ class AttendeeUpdate(BaseModel):
                 return None
             v = v.upper()
             if v not in list(attendee.AttendeeEnum.__members__):
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid status")
+                raise ValueError("Invalid status")
+        return v
+
+    @field_validator('profile_image_url')
+    def validate_profile_image_url(cls, v, info: ValidationInfo):
+        if v is not None:
+            if not check_url(v):
+                raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
 #pydantic model for attendee

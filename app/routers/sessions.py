@@ -8,10 +8,11 @@ from ..crud import sessions_crud as crud, conferences_crud, speakers_crud
 from ..dependencies import get_db
 from datetime import date
 from ..basicauth import basic_auth
+from ..schemas.session_speaker_schema import SessionResponse
 
 router = APIRouter(tags=["sessions"])
 
-@router.post("/sessions", response_model=schemas.Session, status_code=status.HTTP_201_CREATED)
+@router.post("/sessions", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 def create_session_for_conference(session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     conference=conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id, owner_id=current_user.id)
     if conference is None:
@@ -24,18 +25,20 @@ def create_session_for_conference(session: schemas.SessionCreate, db: Session = 
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
     session_speaker_ids = []
-    for speaker_id in session.speakers:
-        speaker = speakers_crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
-        if speaker is None:
-            logging.exception("Speaker not found")
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
-        if speaker.id not in session_speaker_ids:
-            session_speaker_ids.append(speaker.id)
+    if session.speakers is not None and len(session.speakers) > 0:
+        for speaker_id in session.speakers:
+            speaker = speakers_crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
+            print(speaker)
+            if speaker is None:
+                logging.exception("Speaker not found")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
+            if speaker.id not in session_speaker_ids:
+                session_speaker_ids.append(speaker.id)
     session=crud.create_conference_session(db=db, session=session, owner_id=current_user.id,conference_id=conference.id, speaker_ids=session_speaker_ids)
     logging.info("Session created: " + session.uuid)
     return session
 
-@router.post("/sessions/list", response_model=list[schemas.Session])
+@router.post("/sessions/list", response_model=list[SessionResponse])
 def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     if sessions is None or len(sessions) == 0:
         logging.exception("Invalid request body")
@@ -55,19 +58,20 @@ def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Se
             logging.exception("Invalid time")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
         session_speaker_ids = []
-        for speaker_id in session.speakers:
-            speaker = speakers_crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
-            if speaker is None:
-                logging.exception("Speaker not found")
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
-            if speaker.id not in session_speaker_ids:
-                session_speaker_ids.append(speaker.id)
+        if session.speakers is not None and len(session.speakers) > 0:
+            for speaker_id in session.speakers:
+                speaker = speakers_crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
+                if speaker is None:
+                    logging.exception("Speaker not found")
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
+                if speaker.id not in session_speaker_ids:
+                    session_speaker_ids.append(speaker.id)
         session_list.append(crud.create_conference_session(db=db, session=session, owner_id=current_user.id,conference_id=conference.id, speaker_ids=session_speaker_ids))
 
     logging.info("Sessions created for conference: " + session.conference_id)
     return session_list
 
-@router.get("/sessions/all_sessions", response_model=list[schemas.Session])
+@router.get("/sessions/all_sessions", response_model=list[SessionResponse])
 def get_all_sessions(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     if offset < 0 or limit < 0:
         logging.exception("Invalid query parameters")
@@ -79,7 +83,7 @@ def get_all_sessions(offset: int = 0, limit: int = 100, db: Session = Depends(ge
     logging.info("Sessions retrieved")
     return db_sessions
 
-@router.get("/sessions/{conference_id}", response_model=list[schemas.Session])
+@router.get("/sessions/{conference_id}", response_model=list[SessionResponse])
 def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
     if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
         logging.exception("Conference not found")
@@ -91,7 +95,7 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
     logging.info("Sessions retrieved for conference: " + conference_id)
     return db_sessions
 
-@router.put("/sessions", response_model=schemas.Session)
+@router.put("/sessions", response_model=SessionResponse)
 def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     session_dict = session.model_dump()
     session_dict.pop('id')
