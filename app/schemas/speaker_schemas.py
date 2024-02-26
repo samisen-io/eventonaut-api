@@ -4,17 +4,26 @@ from ..url_validator import check_url
 class SpeakerBase(BaseModel):
     name: str
     email: str
-    title: str
-    bio: str
+    title: str | None = None
+    bio: str | None = None
     profile_image_url: str | None = None
 
-    @field_validator('name','email','title','bio')
+    @field_validator('name','email')
     def validate_fields(cls, v, info: ValidationInfo):
         if v.strip() == "":
             raise ValueError(f"{info.field_name} cannot be empty")
-        max_length = 2048 if info.field_name == "bio" else 256
-        if len(v) > max_length:
-            raise ValueError(f"{info.field_name} cannot be longer than {max_length} characters")
+        elif len(v) > 256:
+            raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
+        return v
+    
+    @field_validator('title','bio')
+    def validate_optional_fields(cls, v, info: ValidationInfo):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            max_length = 2048 if info.field_name == "bio" else 256
+            if len(v) > max_length:
+                raise ValueError(f"{info.field_name} cannot be longer than {max_length} characters")
         return v
     
     @field_validator('profile_image_url')
@@ -92,6 +101,6 @@ class Speaker(BaseModel):
     uuid: str = Field(serialization_alias="id")
     name: str
     email: str
-    title: str
-    bio: str
+    title: str | None = None
+    bio: str | None = None
     profile_image_url: str | None = None
