@@ -2,6 +2,7 @@ import datetime
 from sqlalchemy.orm import Session
 from app.crud import conferences_crud
 from app.schemas import conference_schemas, venue_schemas
+from app.static_enums.event import EventEnum
 from app.static_enums.session import SessionEnum
 from .. import models
 from ..schemas import result_schemas
@@ -50,16 +51,19 @@ def get_objects(db: Session, objects: list[str]):
             venue = db.query(models.Venue).filter(models.Venue.id == db_obj.venue_id).first()
             db_obj.venue_details = venue.__dict__
             db_obj.rank = rank
+            db_obj = db_obj.__dict__
+            db_obj['status'] = EventEnum(db_obj['conference_status_id']).name 
             rank += 1
-            final_objects.append(schemas_table[code](**db_obj.__dict__))
+            final_objects.append(schemas_table[code](**db_obj))
         elif code == 'ses':
             db_obj = db.query(models_table[code]).filter(models_table[code].uuid == obj).first()
             if db_obj is None:
                 return False
-            db_obj.status = SessionEnum(db_obj.session_status_id).name
             db_obj.rank = rank
+            db_obj = db_obj.__dict__
+            db_obj['status'] = SessionEnum(db_obj['session_status_id']).name
             rank += 1
-            final_objects.append(schemas_table[code](**db_obj.__dict__))
+            final_objects.append(schemas_table[code](**db_obj))
         else:
             db_obj = db.query(models_table[code]).filter(models_table[code].uuid == obj).first()
             if db_obj is None:
