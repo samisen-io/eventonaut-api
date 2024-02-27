@@ -8,11 +8,24 @@ from ..dependencies import get_db
 from email_validator import validate_email, EmailNotValidError
 from app.schemas.user_schemas import UserAuthentication as User
 from .. import basicauth, hashing
+from cachetools import TTLCache
+import os
+from ..otp_generator import send_mail, generate_otp, validate_otp
 
+default_time_limit = int(os.getenv("OTP_EXPIRE"))
 router = APIRouter(tags=["users"])
+cache = TTLCache(maxsize=1024, ttl=default_time_limit)
 
-@router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+async def send_otp(email: str, email_subject: str):
+    otp = generate_otp()
+    if not send_mail(otp, "Email Verification", email):
+        logging.exception("Email not sent")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not sent")
+    return otp
+
+@router.post("/users", status_code=status.HTTP_200_OK)
+async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    global cache
     try:
         valid = validate_email(user.email)
         user.email = valid.normalized.lower()
@@ -23,8 +36,29 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_a
     if db_user:
         logging.exception("Email already registered")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+    crud.validate_image_url(user.profile_image_url)
+    otp = await send_otp(email=user.email, email_subject="Email Verification")
+    cache[user.email] = [otp, False, user]
+    logging.info("OTP sent to Email")
+    return {"msg": "OTP sent successfully"}
+    
+@router.post("/users/verify", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
+async def verify_otp(email: str, otp: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    global cache
+    if email not in cache.keys():
+        logging.exception("Email not verified")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not verified")
+    if len(otp) != 6:
+        logging.exception("Invalid OTP")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP")
+    valid_otp = validate_otp(cache[email][0], otp)
+    if not valid_otp:
+        logging.exception("Invalid OTP")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP")
+    user = cache[email][2]
     user = crud.create_user(db=db, user=user)
     logging.info("User created: " + user.uuid)
+    del cache[email]
     return user
 
 @router.get("/users/all_users", response_model=list[schemas.User])
