@@ -89,7 +89,8 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     objects_dict = [{k: datetime_to_str(v) for k, v in obj.__dict__.items() if not k.startswith('_')} for obj in objects]
     for item in objects_dict:
         if 'venue_details' in item and isinstance(item['venue_details'], VenueResponse):
-            item['venue_details'] = item['venue_details'].__dict__
+            item['venue'] = item['venue_details'].__dict__
+            del item['venue_details']
     json_data = json.dumps(objects_dict)
     final_result = arranging_ouput_object(json_data)
     final_result = json.loads(final_result)
