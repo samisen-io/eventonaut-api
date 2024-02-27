@@ -36,6 +36,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.created_on = db_user.updated_on = datetime.utcnow()
     db_user.uuid = "usr-"+str(uuid.uuid4())
     db_user.role = "organizer"
+    db_user.is_verified = True
 
     db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container=BlobContainer.PROFILE_IMAGES.value, new_blob_name=f"profile-{db_user.uuid}") if user_profile_image_url is not None else None
         
