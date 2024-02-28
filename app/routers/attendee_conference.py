@@ -6,6 +6,8 @@ from sqlalchemy.orm import Session
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, conference_schemas
 from ..crud import attendee_crud as crud, conferences_crud
 from app.schemas.user_schemas import UserAuthentication as User
+from ..queries import attendee_conferences_query as query
+from sqlalchemy import text
 
 router = APIRouter(tags=["attendee conference"])
 
@@ -66,12 +68,16 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(conference_ident
 
 @router.get("/attendee/profiles", response_model=list[schemas.Attendee])
 def get_attendee_profiles_for_session_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
-    if not conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id):
-        logging.exception("Conference not found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    attendees = crud.get_all_attendee_profiles_by_conference_id(db=db, conference_id=conference_id)
-    if not attendees or len(attendees) == 0:
-        logging.exception("No attendees found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No attendees found")
-    logging.info("All attendee profiles retrieved")
-    return attendees
+    sql_query = text(query.query)
+    result = db.execute(sql_query, {"conference_uuid": conference_id})
+    return result.fetchall()
+    
+    # if not conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id):
+    #     logging.exception("Conference not found")
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
+    # attendees = crud.get_all_attendee_profiles_by_conference_id(db=db, conference_id=conference_id)
+    # if not attendees or len(attendees) == 0:
+    #     logging.exception("No attendees found")
+    #     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No attendees found")
+    # logging.info("All attendee profiles retrieved")
+    # return attendees
