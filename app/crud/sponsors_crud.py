@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 import uuid
 from datetime import datetime
 from ..static_enums.blob_container_enums import BlobContainer
+from sqlalchemy.orm import joinedload, Load, defaultload, join, aliased
 
 def get_all_sponsors(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.Sponsors).offset(offset).limit(limit).all()
@@ -21,14 +22,9 @@ def get_sponsor_by_email(db: Session, email: str, owner_id: int):
     return db.query(models.Sponsors).filter(models.Sponsors.email == email, models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).first()
 
 def get_sponsors_by_conference_id(db: Session, conference_id: int, offset: int = 0, limit: int = 100):
-    event_sponsors =  db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == conference_id, models.EventSponsors.is_archived == False).offset(offset).limit(limit).all()
-    if not event_sponsors:
-        return None
-    sponsors = []
-    for event_sponsor in event_sponsors:
-        if event_sponsor not in sponsors:
-            sponsors.append(db.query(models.Sponsors).filter(models.Sponsors.id == event_sponsor.sponsor_id).first())
-    return sponsors
+    SponsorsAlias = aliased(models.Sponsors)
+    sponsors_subquery = db.query(SponsorsAlias).filter(SponsorsAlias.is_archived == False).subquery()
+    return db.query(models.EventSponsors).join(sponsors_subquery, models.EventSponsors.sponsor_id == sponsors_subquery.c.id).filter(models.EventSponsors.conference_id == conference_id).offset(offset).limit(limit).all()
 
 def create_sponsor(db: Session, sponsor: sponsor_schemas.SponsorCreate, owner_id: int):
     sponsor_dict = sponsor.model_dump()
@@ -61,7 +57,7 @@ def update_sponsor(db: Session, sponsor: sponsor_schemas.SponsorUpdate, db_spons
             setattr(db_sponsor, key, value)
     db_sponsor.updated_on = datetime.now()
     
-    if sponsor_image_url is not None and upload_image.get_container_name_from_url(db_sponsor.logo_image_url) == BlobContainer.SPONSOR_LOGOS.value:
+    if sponsor_image_url is not None and upload_image.get_container_name_from_url(sponsor_image_url) != BlobContainer.SPONSOR_LOGOS.value:
         db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor_image_url, new_blob_container=BlobContainer.SPONSOR_LOGOS.value, new_blob_name=f"sponsor-{db_sponsor.uuid}")
     
     try:

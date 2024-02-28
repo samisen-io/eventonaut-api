@@ -27,9 +27,13 @@ def update_venue(db: Session, venue: venue_schemas.VenueUpdate, db_venue: models
     venue_dict = venue.model_dump()
     db_venue.geo_location = venue_dict.pop('geo_location')
     venue_dict.pop('id')
-
+    
+    non_nullable_fields = ['name', 'location']
+    
     for key, value in venue_dict.items():
-        if value is not None:
+        if key in non_nullable_fields and value is not None:
+            setattr(db_venue, key, value)
+        elif key not in non_nullable_fields:
             setattr(db_venue, key, value)
 
     db_venue.updated_on = datetime.utcnow()

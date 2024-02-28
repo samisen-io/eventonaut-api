@@ -4,7 +4,7 @@ from .. import models
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
 from datetime import datetime
 from .. import hashing
-from .. AI_assitant import create_thread, delete_thread
+from .. AI_assitant import create_thread
 import uuid
 from ..crud import conferences_crud
 from ..static_enums import event
@@ -14,6 +14,7 @@ from ..routers import upload_image
 from fastapi import HTTPException, status
 import logging
 from ..static_enums.blob_container_enums import BlobContainer
+from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import joinedload
 
 # create attendee
@@ -41,7 +42,6 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.add(db_attendee)
     db.commit()
     db.refresh(db_attendee)
-
     attendee = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == db_user.id).first()
     return attendee
 
@@ -170,14 +170,10 @@ def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, l
         return None
     conferences = []
     for attendee_conference in attendee_conferences:
-        conference = db.query(models.Conference).filter(models.Conference.id == attendee_conference.conference_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).first()
+        conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.id == attendee_conference.conference_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).first()
         if conference is None:
             continue
         conference.__dict__.pop('client_id')
-        conferences_crud.add_client_details_to_conference(db=db, conference=conference)
-        conferences_crud.add_venue_details_to_conference(db=db, conference=conference)
-        conferences_crud.add_sponsor_details_to_conference(db=db, conference=conference)
-        conference.status = event.EventEnum(conference.conference_status_id).name
         conferences.append(conference)
     return conferences
 
@@ -193,11 +189,4 @@ def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str):
         return None
     conference_id = conference.id
     attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
-    attendees = []
-    for attendee_conference in attendee_conferences:
-        attendee = db.query(models.Attendee).filter(models.Attendee.id == attendee_conference.attendee_id,models.Attendee.share_my_profile == True).first()
-        if attendee is None:
-            continue
-        user = db.query(models.User).filter(models.User.id == attendee.user_id).first()
-        attendees.append(schemas.Attendee(uuid=attendee.uuid, email=user.email, first_name=user.first_name, last_name=user.last_name, title=attendee.title, company=user.company, bio=attendee.bio, share_my_profile=attendee.share_my_profile, share_my_agenda=attendee.share_my_agenda, profile_image_url=user.profile_image_url, thread_id=attendee.thread_id,is_active=user.is_active))
-    return attendees
+    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()

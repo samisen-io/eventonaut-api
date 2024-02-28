@@ -1,6 +1,4 @@
 from pydantic import BaseModel, field_validator, Field
-from fastapi import HTTPException, status
-from datetime import date
 
 class AttendeeConferenceCreate(BaseModel):
     conference_identifier: str
@@ -8,9 +6,9 @@ class AttendeeConferenceCreate(BaseModel):
     @field_validator('conference_identifier')
     def validate_conference_identifier(cls, v):
         if v.strip() == '':
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Conference identifier cannot be empty")
+            raise ValueError("Conference identifier cannot be empty")
         elif len(v) < 6:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid conference identifier")
+            raise ValueError("Conference identifier cannot be less than 6 characters")
         return v
 
 class AttendeeConference(BaseModel):

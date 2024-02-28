@@ -1,5 +1,4 @@
 from pydantic import BaseModel, validator, Field
-from fastapi import HTTPException
 from datetime import timedelta
 
 class AITokensCreate(BaseModel):
@@ -14,20 +13,20 @@ class AITokensCreate(BaseModel):
 
     @validator('conference_id', 'attendee_id')
     def check_id(cls, v):
-        if v == "" or v == "string" or v == "None" or v.strip() == "":
-            raise HTTPException(status_code=400, detail="id cannot be empty")
+        if v == "" or v.strip() == "":
+            raise ValueError("Id cannot be empty")
         return v
 
     @validator('successful_requests', 'total_cost', 'total_tokens', 'prompt_tokens', 'completion_tokens')
     def check_positive(cls, v):
         if v < 0:
-            raise HTTPException(status_code=400, detail="must be positive")
+            raise ValueError("Value must be positive")
         return v
     
     @validator('processing_time')
     def check_processing_time_positive(cls, v: timedelta):
         if v.total_seconds() < 0:
-            raise HTTPException(status_code=400, detail="Processing time must be positive")
+            raise ValueError("Processing time must be positive")
         return v
 
 class AITokens(AITokensCreate):
