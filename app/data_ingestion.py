@@ -107,7 +107,7 @@ def write_events_to_csv(db, conference_id):
     with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
         dict_obj = result.__dict__
         venue_fields = ['name','location','address']
-        venue = dict_obj['venue_details'].__dict__
+        venue = dict_obj['venue'].__dict__
         venue = filter_fields(venue, venue_fields)
         venue = {'venue_' + key: value for key, value in venue.items()}
         venue_fields = ['venue_' + field for field in venue_fields]

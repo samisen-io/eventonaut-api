@@ -37,7 +37,7 @@ def get_objects(db: Session, objects: list[str]):
         'cli': result_schemas.Client,
         'spk': result_schemas.Speakers
     }
-
+    
     final_objects = []
     rank = 1
     for obj in objects:
