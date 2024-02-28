@@ -22,4 +22,5 @@ JOIN
 WHERE 
     c.uuid = :conference_uuid 
     AND a.share_my_profile = true 
-    AND u.is_archived = false"""
+    AND u.is_archived = false
+LIMIT 10"""
