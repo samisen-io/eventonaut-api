@@ -50,7 +50,7 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
     except Exception as ex:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
     
-@router.get("/get-containers")
+@router.get("/get-containers", include_in_schema=False)
 def get_containers(basic_auth = Depends(basic_auth)):
     try:
         connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
@@ -60,12 +60,23 @@ def get_containers(basic_auth = Depends(basic_auth)):
         return {"containers": public_containers}
     except Exception as ex:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
+
+def check_for_blob_in_container(blob_url, container_name):
+    try:
+        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        blob_name = blob_url.split("/")[-1]
+        blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+        if blob_client.exists():
+            return True
+        return False
+    except Exception as ex:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
     
 def  get_actual_url(image_url:str, new_blob_container:str, new_blob_name:str):
     parsed_url = urlparse(image_url)
     path = parsed_url.path
     filename_with_ext = os.path.basename(path)
-    print(filename_with_ext)
     _, extension = os.path.splitext(filename_with_ext)
 
     if extension not in ['.jpg', '.jpeg', '.png']:
