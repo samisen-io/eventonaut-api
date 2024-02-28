@@ -16,6 +16,8 @@ import logging
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import joinedload
+from ..queries import attendee_conferences_query as query
+from sqlalchemy import text
 
 # create attendee
 def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
@@ -184,9 +186,20 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, att
     return True
 
 def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str):
-    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
-    if conference is None:
-        return None
-    conference_id = conference.id
-    attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
-    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()
+    sql_query = text(query.query)
+    result = db.execute(sql_query, {"conference_uuid": conference_id})
+    return result.fetchall()
+    
+    # conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
+    # if conference is None:
+    #     return None
+    
+    # attendees = db.query(models.Attendee).options(joinedload(models.Attendee_Conferences.attendee),joinedload(models.Attendee.user)).filter(models.Attendee_Conferences.conference_id == conference.id).all()
+    
+    # return attendees
+    # conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
+    # if conference is None:
+    #     return None
+    # conference_id = conference.id
+    # attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
+    # return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()
