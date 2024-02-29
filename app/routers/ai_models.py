@@ -55,9 +55,7 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
             yield(chunk)
         yield ' #@!SAMISEN!@# '
         objects = result_crud.get_objects(db=db, objects=source)
-        objects_dict = [{k: datetime_to_str(v) for k, v in obj.__dict__.items() if not k.startswith('_')} for obj in objects]
-        json_data = json.dumps(objects_dict)
-        final_result = arranging_ouput_object(json_data)
+        final_result = arranging_ouput_object(objects)
         yield final_result
     return StreamingResponse(event_stream())
     
