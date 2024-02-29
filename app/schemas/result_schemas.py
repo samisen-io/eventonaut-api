@@ -1,11 +1,11 @@
 from pydantic import BaseModel, Field
 from datetime import date, time
 from typing import List, Optional
-from ..schemas import venue_schemas, conference_schemas, speaker_schemas, session_schemas, attendee_schemas
+from ..schemas import venue_schemas, conference_schemas, speaker_schemas, session_schemas, attendee_schemas, client_schemas
 
-class Event(conference_schemas.ConferenceBase):
+class Conference(conference_schemas.ConferenceBase):
     uuid: str = Field(serialization_alias="id")
-    venue_details: venue_schemas.VenueResponse
+    venue: venue_schemas.VenueResponse = Field(default=None)
     rank: int
 
 class Speakers(speaker_schemas.SpeakerBase):
@@ -14,7 +14,8 @@ class Speakers(speaker_schemas.SpeakerBase):
 
 class Session(session_schemas.SessionBase):
     uuid: str = Field(serialization_alias="id")
-    speakers: list[str] | None = None
+    #speakers: list[str] | None = None
+    speakers: list[speaker_schemas.SpeakerBase]
     rank: int
 
 class Attendee(attendee_schemas.AttendeeBase):
@@ -54,3 +55,11 @@ class AITokens(BaseModel):
     completion_tokens: int
     processing_time: float
     rank: int
+    
+def convert_to_dict(obj):
+    if hasattr(obj, "__dict__"):
+        data = obj.__dict__.copy()
+        data.pop('_sa_instance_state', None)
+        return data
+    else:
+        raise TypeError("Object must be an instance of a SQLAlchemy Model")
