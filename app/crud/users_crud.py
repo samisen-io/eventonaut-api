@@ -2,6 +2,7 @@ import logging
 import os
 from urllib.parse import urlparse
 from fastapi import HTTPException, status
+from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 from .. import models, hashing
 from ..schemas import user_schemas as schemas
@@ -10,6 +11,20 @@ import uuid
 from ..static_enums import organizer
 from ..routers import upload_image
 from ..static_enums.blob_container_enums import BlobContainer
+
+def validate_image_url(image_url: str):
+    parsed_url = urlparse(image_url)
+    path = parsed_url.path
+    filename_with_ext = os.path.basename(path)
+    _, extension = os.path.splitext(filename_with_ext)
+
+    if extension not in ['.jpg', '.jpeg', '.png']:
+        logging.exception("Invalid image file format")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image file format")
+    
+    if not upload_image.check_for_blob_in_container(blob_url=image_url, container_name=BlobContainer.TEMPORARY_IMAGES.value):
+        logging.exception("Invalid image URL")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid image URL")
 
 def create_user(db: Session, user: schemas.UserCreate):
     user_dict = user.model_dump()
@@ -21,6 +36,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     db_user.created_on = db_user.updated_on = datetime.utcnow()
     db_user.uuid = "usr-"+str(uuid.uuid4())
     db_user.role = "organizer"
+    db_user.is_verified = True
 
     db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container=BlobContainer.PROFILE_IMAGES.value, new_blob_name=f"profile-{db_user.uuid}") if user_profile_image_url is not None else None
         
@@ -31,7 +47,7 @@ def create_user(db: Session, user: schemas.UserCreate):
         if user_profile_image_url is not None:
             upload_image.delete_blob_by_url(db_user.profile_image_url)
         logging.exception(str(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=jsonable_encoder(e))
     db.refresh(db_user)
     return db_user
 
