@@ -86,8 +86,6 @@ def get_objects(db: Session, objects: list[str]):
         rank += 1
         final_objects.append(db_obj)
     json_ouput = convert_to_json(final_objects)
-    # print(json_ouput)
-    # return final_objects
     return json_ouput
 
 def convert_to_json(objects):
@@ -95,7 +93,6 @@ def convert_to_json(objects):
     for item in objects_dict:
         if 'venue' in item and isinstance(item['venue'], venue_schemas.VenueResponse):
             item['venue'] = item['venue'].model_dump() # convert VenueResponse to dict
-            # del item['venue_details']
         if 'speakers' in item:
             item['speakers'] = [speaker.dict() for speaker in item['speakers']]  # convert SpeakerBase to dict
     json_data = json.dumps(objects_dict)
