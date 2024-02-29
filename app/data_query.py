@@ -62,7 +62,7 @@ def retrieve_answer(question, conference_id):
     namespace = get_matching_namespace(conference_id=conference_id)
     vectordb = Pinecone.from_existing_index(index_name=index_name, embedding=embedding_function, namespace=namespace, text_key = 'csv_text')
     chain = ConversationalRetrievalChain.from_llm(llm=ChatOpenAI(temperature=0.3, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key),
-                                                retriever=vectordb.as_retriever(search_kwargs={'k':8}), return_source_documents=True,
+                                                retriever=vectordb.as_retriever(search_kwargs={'k':4}), return_source_documents=True,
                                                 combine_docs_chain_kwargs={'prompt':prompt},
                                                 get_chat_history = lambda h : h)
     history = []
