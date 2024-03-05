@@ -57,7 +57,7 @@ def get_session(db:Session, uuid, rank):
     db_obj_dict = db_obj.__dict__.copy()
     db_obj_dict.pop('_sa_instance_state', None)
     db_obj_dict['status'] = SessionEnum(db_obj_dict['session_status_id']).name
-    db_obj_dict['speakers'] = [speaker_schemas.SpeakerBase(**speaker.__dict__) for speaker in db_obj.speakers_list]
+    db_obj_dict['speakers'] = [speaker_schemas.Speaker(**speaker.__dict__) for speaker in db_obj.speakers_list]
     db_obj_dict['rank'] = rank
     session_response = result_schemas.Session(**db_obj_dict)
     return session_response

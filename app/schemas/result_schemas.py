@@ -15,7 +15,7 @@ class Speakers(speaker_schemas.SpeakerBase):
 class Session(session_schemas.SessionBase):
     uuid: str = Field(serialization_alias="id")
     #speakers: list[str] | None = None
-    speakers: list[speaker_schemas.SpeakerBase]
+    speakers: list[speaker_schemas.Speaker]
     rank: int
 
 class Attendee(attendee_schemas.AttendeeBase):
