@@ -51,6 +51,7 @@ class User(Base):
     speakers = relationship("Speakers", back_populates="owner")
     sponsors = relationship("Sponsors", back_populates="owner")
     organizer_status = relationship("OrganizerStatus", back_populates="user")
+    BackdropGallery = relationship("BackdropGallery", back_populates="User")
     
     @property
     def status(self):
@@ -130,6 +131,7 @@ class Conference(Base):
     # event_sponsors = relationship("EventSponsors", back_populates="conference")
     sponsors = relationship("Sponsors", secondary="event_sponsors", back_populates="conference", overlaps="event_sponsors")
     event_status = relationship("EventStatus", back_populates="conference")
+    BackdropGallery = relationship("BackdropGallery", back_populates="Conference")
     
     @property
     def status(self):
