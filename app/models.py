@@ -134,7 +134,22 @@ class Conference(Base):
     @property
     def status(self):
         return self.event_status.status.upper()
-
+    
+class BackdropGallery(Base):
+    _tablename__ = "backdrop_gallery"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    backdrop_url = Column(String, index=True)
+    is_archived = Column(Boolean, default=False)
+    
+    Conference = relationship("Conference", back_populates="backdrop_gallery")
+    User = relationship("User", back_populates="backdrop_gallery")
+    
 class Conference_Files(Base):
     __tablename__ = "conference_files"
 
