@@ -10,7 +10,14 @@ class BackdropGalleryCreate(BaseModel):
 class BackdropGalleryResponse(BaseModel):
     conference_id: str
     backdrop_url: str = Field(..., max_length=256)
-    uuid: str
+    uuid: str = Field(serialization_alias="id")
 
+    class Config:
+        orm_mode = True
+        
+class BackdropGalleryUpdate(BaseModel):
+    backdrop_url: str = Field(..., max_length=256)
+    uuid: str = Field(serialization_alias="id")
+    
     class Config:
         orm_mode = True

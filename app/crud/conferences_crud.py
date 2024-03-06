@@ -83,10 +83,14 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     return db_conference
 
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
-    conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id, models.Conference.is_archived == False).first()
-    if conference is None:
-        raise HTTPException(status_code=404, detail="Conference not found")
-    return conference
+    try:
+        conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id, models.Conference.is_archived == False).first()
+        if conference is None:
+            raise HTTPException(status_code=404, detail="Conference not found")
+        return conference
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 def get_conference_by_conference_uuid(db: Session, uuid: str):
     conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.uuid == uuid, models.Conference.is_archived == False).first()

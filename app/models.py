@@ -51,7 +51,7 @@ class User(Base):
     speakers = relationship("Speakers", back_populates="owner")
     sponsors = relationship("Sponsors", back_populates="owner")
     organizer_status = relationship("OrganizerStatus", back_populates="user")
-    BackdropGallery = relationship("BackdropGallery", back_populates="User")
+    backdrop_gallery = relationship("BackdropGallery", back_populates="User")
     
     @property
     def status(self):
@@ -131,14 +131,14 @@ class Conference(Base):
     # event_sponsors = relationship("EventSponsors", back_populates="conference")
     sponsors = relationship("Sponsors", secondary="event_sponsors", back_populates="conference", overlaps="event_sponsors")
     event_status = relationship("EventStatus", back_populates="conference")
-    BackdropGallery = relationship("BackdropGallery", back_populates="Conference")
+    backdrop_gallery = relationship("BackdropGallery", back_populates="conference")
     
     @property
     def status(self):
         return self.event_status.status.upper()
     
 class BackdropGallery(Base):
-    _tablename__ = "backdrop_gallery"
+    __tablename__ = "backdrop_gallery"
     
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, unique=True)
@@ -149,7 +149,7 @@ class BackdropGallery(Base):
     backdrop_url = Column(String, index=True)
     is_archived = Column(Boolean, default=False)
     
-    Conference = relationship("Conference", back_populates="backdrop_gallery")
+    conference = relationship("Conference", back_populates="backdrop_gallery")
     User = relationship("User", back_populates="backdrop_gallery")
     
 class Conference_Files(Base):
