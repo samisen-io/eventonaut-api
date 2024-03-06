@@ -55,6 +55,12 @@ def get_user(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
     return user
 
+def get_user_by_uuid(db: Session, user_uuid: str):
+    user = db.query(models.User).filter(models.User.uuid == user_uuid, models.User.is_archived == False).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return user
+
 def get_db_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
 
