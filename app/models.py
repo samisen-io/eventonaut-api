@@ -344,6 +344,22 @@ class Promotions(Base):
     rank = Column(Integer, default=0)
 
     conference = relationship("Conference", back_populates="promotions")
+    
+    @property
+    def location(self):
+        return self.conference.location
+    
+    @property
+    def conference_start_date(self):
+        return self.conference.start_date
+    
+    @property
+    def conference_end_date(self):
+        return self.conference.end_date
+    
+    @property
+    def event_id(self):
+        return self.conference.uuid
 
 class Sponsors(Base):
     __tablename__ = "sponsors"

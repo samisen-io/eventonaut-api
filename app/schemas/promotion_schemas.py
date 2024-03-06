@@ -48,6 +48,8 @@ class PromotionUpdate(PromotionBase):
 class Promotion(PromotionBase):
     uuid: str = Field(serialization_alias='id')
     location: str
-    conference_id: str
+    event_id: str = Field(serialization_alias='conference_id')
+    conference_start_date: date
+    conference_end_date: date
     class Config:
         orm_mode = True

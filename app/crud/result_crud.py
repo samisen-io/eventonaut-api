@@ -1,7 +1,6 @@
 from datetime import date, time
 import json
 from typing import List
-from openai import BaseModel
 from sqlalchemy.orm import Session, joinedload
 from app import crud, models
 from app.crud import conferences_crud, sessions_crud, speakers_crud
@@ -97,11 +96,6 @@ def convert_to_json(objects):
             item['speakers'] = [speaker.dict() for speaker in item['speakers']]  # convert SpeakerBase to dict
     json_data = json.dumps(objects_dict)
     return json_data
-    
-def handle_non_serializable(obj):
-    if isinstance(obj, BaseModel):
-        return obj.model_dump()
-    raise TypeError(f"Object of type '{obj.__class__.__name__}' is not JSON serializable")
 
 def datetime_to_str(dt):
     if isinstance(dt, date):
