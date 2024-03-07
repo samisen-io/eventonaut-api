@@ -9,14 +9,18 @@ from app.dependencies import get_db
 
 router = APIRouter(tags=["backdrop"])
 
-@router.get("/backdrop/{backdrop_id}", response_model=schemas.BackdropGalleryResponse)
-def Get_backdrop(backdrop_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=["organizer"])):
+def get_backdrop_by_id(backdrop_id: str, db: Session, User):
     db_backdrop = crud.get_backdrop_by_id(db, backdrop_id=backdrop_id, owner_id=User.id)
     if db_backdrop is None:
         raise HTTPException(status_code=404, detail="Backdrop not found")
+    return db_backdrop
+
+@router.get("/backdrop/{backdrop_id}", response_model=schemas.BackdropGalleryResponse)
+def Get_backdrop(backdrop_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=["organizer"])):
+    db_backdrop = get_backdrop_by_id(backdrop_id, db, User)
     return schemas.BackdropGalleryResponse(conference_id=db_backdrop.conference.uuid, 
-                                                backdrop_url=db_backdrop.backdrop_url, 
-                                                uuid=db_backdrop.uuid)
+                                           backdrop_url=db_backdrop.backdrop_url, 
+                                           uuid=db_backdrop.uuid)
 
 @router.get("/backdrops/{conference_id}", response_model=List[schemas.BackdropGalleryResponse])
 def get_backdrops_by_conferene_id(conference_id: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=["organizer"])):
@@ -29,7 +33,7 @@ def get_backdrops_by_conferene_id(conference_id: str, skip: int = 0, limit: int 
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
-    
+
 @router.post("/backdrop", response_model=schemas.BackdropGalleryResponse)
 def create_backdrop(backdrop: schemas.BackdropGalleryCreate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=["organizer"])):
     try:
@@ -41,22 +45,17 @@ def create_backdrop(backdrop: schemas.BackdropGalleryCreate, db: Session = Depen
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
-    
+
 @router.put("/backdrop/{backdrop_id}", response_model=schemas.BackdropGalleryUpdateResponse)
 def update_backdrop(backdrop: schemas.BackdropGalleryUpdate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=["organizer"])):
-    db_backdrop = crud.get_backdrop_by_id(db, backdrop_id=backdrop.id, owner_id=User.id)
-    if db_backdrop is None:
-        raise HTTPException(status_code=404, detail="Backdrop not found")
+    db_backdrop = get_backdrop_by_id(backdrop.id, db, User)
     updated_backdrop = crud.update_backdrop(db=db, backdrop=backdrop, db_backdrop=db_backdrop)
     response = schemas.BackdropGalleryUpdateResponse(backdrop_url=updated_backdrop.backdrop_url, 
                                                     uuid=updated_backdrop.uuid)
-
     return response
 
 @router.delete("/backdrop/{backdrop_id}")
 def delete_backdrop(backdrop_id: str, db: Session = Depends(get_db),  User = Security(get_current_active_user, scopes=["organizer"])):
-    db_backdrop = crud.get_backdrop_by_id(db, backdrop_id=backdrop_id, owner_id=User.id)
-    if db_backdrop is None:
-        raise HTTPException(status_code=404, detail="Backdrop not found")
+    db_backdrop = get_backdrop_by_id(backdrop_id, db, User)
     crud.delete_backdrop(db=db, db_backdrop=db_backdrop)
     return {"detail": "Backdrop deleted"}
