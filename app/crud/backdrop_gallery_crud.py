@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import joinedload
 from sqlalchemy import text
 
-def get_backdrop_by_id(db: Session, backdrop_id: str, owner_id: str):
+def get_backdrop_by_id(db: Session, backdrop_id: str, owner_id: int):
     backdrop = db.query(models.BackdropGallery).options(
         joinedload(models.BackdropGallery.User),
         joinedload(models.BackdropGallery.conference)
@@ -27,7 +27,7 @@ def get_backdrop_by_id(db: Session, backdrop_id: str, owner_id: str):
 
     return backdrop
 
-def execute_backdrop_query(db: Session, conference_id: str, owner_id: str, skip: int = 0, limit: int = 100):
+def execute_backdrop_query(db: Session, conference_id: str, owner_id: int, skip: int = 0, limit: int = 100):
     result = db.execute(
         text("""
         SELECT 
@@ -111,6 +111,9 @@ def create_backdrop(db: Session, backdrop: schemas.BackdropGalleryCreate, owner_
 
 def update_backdrop(db: Session, backdrop: schemas.BackdropGalleryUpdate, db_backdrop: models.BackdropGallery):
     backdrop_dict = backdrop.model_dump()
+    
+    backdrop_dict.pop('id', None)
+    
     for key, value in backdrop_dict.items():
         setattr(db_backdrop, key, value)
     db_backdrop.updated_on = datetime.utcnow()

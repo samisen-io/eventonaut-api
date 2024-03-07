@@ -1,23 +1,20 @@
 from pydantic import BaseModel, Field
 
-class BackdropGalleryCreate(BaseModel):
-    conference_id: str
+class BackdropGalleryBase(BaseModel):
     backdrop_url: str = Field(..., max_length=256)
 
     class Config:
         orm_mode = True
-        
-class BackdropGalleryResponse(BaseModel):
+
+class BackdropGalleryCreate(BackdropGalleryBase):
     conference_id: str
-    backdrop_url: str = Field(..., max_length=256)
+
+class BackdropGalleryResponse(BackdropGalleryBase):
+    conference_id: str
     uuid: str = Field(serialization_alias="id")
 
-    class Config:
-        orm_mode = True
-        
-class BackdropGalleryUpdate(BaseModel):
-    backdrop_url: str = Field(..., max_length=256)
+class BackdropGalleryUpdate(BackdropGalleryBase):
+    id: str
+
+class BackdropGalleryUpdateResponse(BackdropGalleryBase):
     uuid: str = Field(serialization_alias="id")
-    
-    class Config:
-        orm_mode = True
