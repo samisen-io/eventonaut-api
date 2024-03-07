@@ -7,6 +7,7 @@ from datetime import datetime
 import uuid
 from fastapi import HTTPException
 from sqlalchemy.orm import joinedload
+from sqlalchemy import text
 
 def get_backdrop_by_id(db: Session, backdrop_id: str, owner_id: str):
     backdrop = db.query(models.BackdropGallery).options(
@@ -28,7 +29,7 @@ def get_backdrop_by_id(db: Session, backdrop_id: str, owner_id: str):
 
 def execute_backdrop_query(db: Session, conference_id: str, owner_id: str, skip: int = 0, limit: int = 100):
     result = db.execute(
-        """
+        text("""
         SELECT 
             backdrop_gallery.id as id,
             backdrop_gallery.uuid as uuid,
@@ -52,16 +53,25 @@ def execute_backdrop_query(db: Session, conference_id: str, owner_id: str, skip:
             users.is_archived = false
         OFFSET :skip
         LIMIT :limit
-        """,
+        """),
         {"conference_id": conference_id, "owner_id": owner_id, "skip": skip, "limit": limit}
     ).fetchall()
     return result
 
-def log_result(result):
-    logging.exception(str(result))
-
 def create_backdrop_objects(result):
-    backdrops = [models.BackdropGallery(**dict(row)) for row in result]
+    backdrops = []
+    for row in result:
+        backdrop = models.BackdropGallery(
+            id=row.id,
+            uuid=row.uuid,
+            backdrop_url=row.backdrop_url,
+            created_on=row.created_on,
+            updated_on=row.updated_on,
+            is_archived=row.is_archived,
+            owner_id=row.owner_id,
+            conference_id=row.conference_id
+        )
+        backdrops.append(backdrop)
     return backdrops
 
 def check_backdrops(backdrops):
@@ -70,7 +80,6 @@ def check_backdrops(backdrops):
 
 def get_backdrops_by_conference_id(db: Session, conference_id: str, owner_id: str, skip: int = 0, limit: int = 100):
     result = execute_backdrop_query(db, conference_id, owner_id, skip, limit)
-    log_result(result)
     backdrops = create_backdrop_objects(result)
     check_backdrops(backdrops)
     return backdrops
