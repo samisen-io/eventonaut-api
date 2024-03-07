@@ -55,6 +55,16 @@ def get_user(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
     return user
 
+def get_user_by_uuid(db: Session, user_uuid: str):
+    try:
+        user = db.query(models.User).filter(models.User.uuid == user_uuid, models.User.is_archived == False).first()
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        return user
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
 def get_db_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
 
@@ -62,12 +72,16 @@ def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
 
 def get_user_by_email_and_password(db: Session, email: str, password: str):
-    user = db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
-    if user is None:
+    try:
+        user = db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
+        if user is None:
+            return False
+        if hashing.verify_password(password, user.hashed_password):
+            return user
         return False
-    if hashing.verify_password(password, user.hashed_password):
-        return user
-    return False
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 def get_users(db: Session, offset: int = 0, limit: int = 100):
     users = db.query(models.User).filter(models.User.role == 'organizer').offset(offset).limit(limit).all()
