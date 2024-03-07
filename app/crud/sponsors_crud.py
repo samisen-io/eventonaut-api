@@ -32,11 +32,12 @@ def create_sponsor(db: Session, sponsor: sponsor_schemas.SponsorCreate, owner_id
     db_sponsor.created_on = db_sponsor.updated_on = datetime.now()
     db_sponsor.uuid = 'spn-' + str(uuid.uuid4())
     
-    try:
-        db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor.logo_image_url, new_blob_container=BlobContainer.SPONSOR_LOGOS.value, new_blob_name=f"sponsor-{db_sponsor.uuid}")
-    except Exception as e:
-        logging.exception(str(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    if db_sponsor.logo_image_url is not None:
+        try:
+            db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor.logo_image_url, new_blob_container=BlobContainer.SPONSOR_LOGOS.value, new_blob_name=f"sponsor-{db_sponsor.uuid}")
+        except Exception as e:
+            logging.exception(str(e))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     
     db.add(db_sponsor)
     try:
@@ -51,14 +52,24 @@ def create_sponsor(db: Session, sponsor: sponsor_schemas.SponsorCreate, owner_id
 def update_sponsor(db: Session, sponsor: sponsor_schemas.SponsorUpdate, db_sponsor: models.Sponsors):
     sponsor_dict = sponsor.model_dump()
     sponsor_dict.pop('id')
-    sponsor_image_url = sponsor_dict.pop('profile_image_url')
+    sponsor_image_url = sponsor_dict.pop('logo_image_url')
+    
+    non_nullable_fields = ['email', 'name', 'contact_name', 'contact_phone', 'sponsorship_level']
+    
     for key, value in sponsor_dict.items():
-        if value is not None:
+        if key in non_nullable_fields:
+            if value is not None:
+                setattr(db_sponsor, key, value)
+        else:
             setattr(db_sponsor, key, value)
+    
     db_sponsor.updated_on = datetime.now()
     
     if sponsor_image_url is not None and upload_image.get_container_name_from_url(sponsor_image_url) != BlobContainer.SPONSOR_LOGOS.value:
         db_sponsor.logo_image_url = upload_image.get_actual_url(image_url=sponsor_image_url, new_blob_container=BlobContainer.SPONSOR_LOGOS.value, new_blob_name=f"sponsor-{db_sponsor.uuid}")
+    elif sponsor_image_url is None and db_sponsor.logo_image_url is not None:
+        upload_image.delete_blob_by_url(db_sponsor.logo_image_url)
+        db_sponsor.logo_image_url = None
     
     try:
         db.commit()
