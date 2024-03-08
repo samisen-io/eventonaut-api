@@ -11,7 +11,7 @@ class SessionBase(BaseModel):
     date: Date = Field(..., description="Date format: YYYY-MM-DD")
     location: str
     session_image_url: str | None = None
-    tags: list[str]
+    tags: list[str] | None = None
     status: str
 
     @field_validator('name','description','location')
@@ -145,5 +145,5 @@ class Session(BaseModel):
     date: Date = Field(..., description="Date format: YYYY-MM-DD")
     location: str
     session_image_url: str | None = None
-    tags: list[str]
+    tags: list[str] | None = None
     status: str
