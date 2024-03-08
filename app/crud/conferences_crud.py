@@ -88,6 +88,9 @@ def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
         if conference is None:
             raise HTTPException(status_code=404, detail="Conference not found")
         return conference
+    except HTTPException as e:
+        logging.exception(str(e))
+        raise e
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
