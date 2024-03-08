@@ -220,6 +220,7 @@ class Session(Base):
     agenda_session = relationship("AgendaSession", back_populates="session")
     speakers = relationship("Speakers", secondary="session_speakers", back_populates="sessions")
     session_status = relationship("Sessionstatus", back_populates="session")
+    session_documents = relationship("SessionDocuments", back_populates="session")
 
     @property
     def status(self):
@@ -504,3 +505,15 @@ class EventDocuments(Base):
     document_url = Column(String, index=True)
 
     conference = relationship("Conference", back_populates="event_documents")
+    
+class SessionDocuments(Base):
+    __tablename__ = "session_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    session_id = Column(Integer, ForeignKey("sessions.id"))
+    document_url = Column(String, index=True)
+
+    session = relationship("Session", back_populates="session_documents")
