@@ -132,6 +132,7 @@ class Conference(Base):
     sponsors = relationship("Sponsors", secondary="event_sponsors", back_populates="conference", overlaps="event_sponsors")
     event_status = relationship("EventStatus", back_populates="conference")
     backdrop_gallery = relationship("BackdropGallery", back_populates="conference")
+    event_documents = relationship("EventDocuments", back_populates="conference")
     
     @property
     def status(self):
@@ -491,3 +492,15 @@ class AttendeeStatus(Base):
     created_on = Column(DateTime, index=True)
     updated_on = Column(DateTime, index=True)
     status = Column(String, index=True, unique=True)
+
+class EventDocuments(Base):
+    __tablename__ = "event_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    document_url = Column(String, index=True)
+
+    conference = relationship("Conference", back_populates="event_documents")
