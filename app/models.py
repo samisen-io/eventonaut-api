@@ -521,3 +521,7 @@ class SessionDocuments(Base):
     document_url = Column(String, index=True)
 
     session = relationship("Session", back_populates="session_documents")
+    
+    @property
+    def session_uuid(self):
+        return self.session.uuid
