@@ -1,4 +1,6 @@
 import logging
+
+from sqlalchemy import text
 from app.routers import upload_image
 from .. import models
 from ..schemas import promotion_schemas
@@ -8,6 +10,7 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
+import time
 
 def get_promotion(db: Session, promotion_id: str):
     promotion = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).filter(models.Promotions.uuid == promotion_id).first()
@@ -17,9 +20,48 @@ def get_promotion_by_conference(db: Session, conference_id: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
     return None if conference is None else db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
 
-def get_promotions(db: Session, skip: int = 0, limit: int = 100):
-    promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank).offset(skip).limit(limit).all()
-    return promotions
+def get_promotions(db: Session, skip: int = 0, limit: int = 5):
+    start_time = time.time()
+
+    promotions = db.execute(
+        text("""SELECT 
+                promotions."uuid" as id ,
+                promotions.todate as todate,
+                promotions.fromdate as fromdate,
+                promotions.image_url as image_url,
+                promotions.promotion_name as promotion_name,
+                promotions.rank as rank,
+                conferences."location" as location , 
+                conferences.uuid as conference_id,
+                conferences.start_date as start_date ,
+                conferences.end_date  as end_date
+                FROM promotions 
+                JOIN conferences ON promotions.conference_id = conferences.id 
+                WHERE promotions.rank > 0
+                ORDER BY promotions.rank
+                            OFFSET :skip
+                            LIMIT :limit"""), 
+            {"skip": skip, "limit": limit}
+        ).fetchall()
+
+    promotions_list = [{
+        'uuid': promotion.id,
+        'todate': promotion.todate,
+        'fromdate': promotion.fromdate,
+        'image_url': promotion.image_url,
+        'promotion_name': promotion.promotion_name,
+        'rank': promotion.rank,
+        'location': promotion.location,
+        'event_id': promotion.conference_id,
+        'conference_start_date': promotion.start_date,
+        'conference_end_date': promotion.end_date
+    } for promotion in promotions]
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
+
+    return promotions_list
 
 def get_all_promotions(db: Session, skip: int = 0, limit: int = 100):
     promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank).offset(skip).limit(limit).all()

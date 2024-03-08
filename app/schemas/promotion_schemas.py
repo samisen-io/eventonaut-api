@@ -1,6 +1,9 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from datetime import date
 from ..url_validator import check_url
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
+from datetime import date
+from ..url_validator import check_url
 
 class PromotionBase(BaseModel):
     todate: date
@@ -8,7 +11,10 @@ class PromotionBase(BaseModel):
     image_url: str
     promotion_name: str
     rank: int = Field(gt=0, lt=6)
-    
+
+class PromotionCreate(PromotionBase):
+    conference_id: str
+
     @field_validator('promotion_name','image_url')
     def check_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
@@ -20,6 +26,36 @@ class PromotionBase(BaseModel):
         if not check_url(v):
             raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
+
+class PromotionUpdate(PromotionBase):
+    id: str
+    conference_id: str | None = None
+    todate: date | None = None
+    fromdate: date | None = None
+    image_url: str | None = None
+    promotion_name: str | None = None
+    rank: int = Field(gt=0, lt=6, default=0)
+
+    @field_validator('promotion_name','image_url')
+    def check_empty(cls, v, info: ValidationInfo):
+        if v is not None and v.strip() == "":
+            return None
+        return v
+
+    @field_validator('image_url')
+    def validate_url(cls, v, info: ValidationInfo):
+        if v is not None and not check_url(v):
+            raise ValueError(f"Broken {info.field_name} link or invalid url")
+        return v
+
+class Promotion(PromotionBase):
+    uuid: str = Field(serialization_alias='id')
+    location: str
+    event_id: str = Field(serialization_alias='conference_id')
+    conference_start_date: date
+    conference_end_date: date
+    class Config:
+        orm_mode = True
 
 class PromotionCreate(PromotionBase):
     conference_id: str
@@ -45,11 +81,16 @@ class PromotionUpdate(PromotionBase):
             raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
 
-class Promotion(PromotionBase):
+class Promotion(BaseModel):
     uuid: str = Field(serialization_alias='id')
     location: str
     event_id: str = Field(serialization_alias='conference_id')
     conference_start_date: date
     conference_end_date: date
+    todate: date
+    fromdate: date
+    image_url: str
+    promotion_name: str
+    rank: int = Field(gt=0, lt=6)
     class Config:
         orm_mode = True
