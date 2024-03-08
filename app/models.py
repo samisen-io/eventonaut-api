@@ -506,6 +506,10 @@ class EventDocuments(Base):
 
     conference = relationship("Conference", back_populates="event_documents")
     
+    @property
+    def conference_uuid(self):
+        return self.conference.uuid
+    
 class SessionDocuments(Base):
     __tablename__ = "session_documents"
 
