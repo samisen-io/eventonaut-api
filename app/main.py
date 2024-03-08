@@ -55,8 +55,6 @@ app.add_middleware(
 )
 
 # Add the routers to the application with authentication middleware
-app.include_router(event_documents.router)
-app.include_router(session_documents.router)
 app.include_router(upload_image.router)
 app.include_router(users.router)
 app.include_router(client.router)
@@ -76,6 +74,8 @@ app.include_router(agenda.router)
 app.include_router(assistant.router)
 app.include_router(otp.router)
 app.include_router(authentication.router)
+app.include_router(event_documents.router)
+app.include_router(session_documents.router)
 app.include_router(static_organizer.router)
 app.include_router(static_client.router)
 app.include_router(static_event.router)
