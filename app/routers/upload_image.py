@@ -6,6 +6,7 @@ import logging
 import os
 from ..basicauth import basic_auth
 from uuid import uuid4
+from ..static_enums.blob_container_enums import BlobContainer
 
 router = APIRouter(tags=["upload"])
 
@@ -29,14 +30,34 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
 
         file_extension = file.filename.split(".")[-1]
 
-        if file_extension not in ["jpg", "jpeg", "png"]: 
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type. Only jpg, jpeg, and png are allowed.")
+        executable_extensions = ["exe", "dll", "bat", "sh", "jar", "msi", "bin", "cmd", "apk", "app", "cgi", "com", "gadget", "pif", "wsf"]
+        
+        blob_client = None
+        
+        if file_extension in executable_extensions:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type. Executable files are not allowed.")
 
-        blob_name = f"dyn-{uuid4()}.{file_extension}"
-        blob_client = blob_service_client.get_blob_client("temporary-images", blob_name)
+        elif file_extension in ["jpg", "jpeg", "png"]: 
+            blob_name = f"dyn-{uuid4()}.{file_extension}"
+            blob_client = blob_service_client.get_blob_client("temporary-images", blob_name)
 
-        content_settings = ContentSettings(content_type=f'image/{file_extension}')
+            content_settings = ContentSettings(content_type=f'image/{file_extension}')
 
+        elif file_extension in ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"]:
+            blob_name = file.filename
+            if file.filename[:3] == "evt":
+                blob_client = blob_service_client.get_blob_client(BlobContainer.EVENT_DOCUMENTS.value, blob_name)
+            elif file.filename[:3] == "ses":
+                blob_client = blob_service_client.get_blob_client(BlobContainer.SESSION_DOCUMENTS.value, blob_name)
+            
+            if file_extension in ['txt', 'csv']:
+                content_settings = ContentSettings(content_type=f'text/{file_extension}')
+            else:
+                content_settings = ContentSettings(content_type=f'application/{file_extension}')
+                
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type")
+                                
         # Upload the image
         with file.file as data:
             blob_client.upload_blob(data, content_settings=content_settings, overwrite=True)
@@ -48,7 +69,7 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
     except HTTPException as ex:
         raise HTTPException(status_code=ex.status_code, detail=ex.detail)
     except Exception as ex:
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))   
     
 @router.get("/get-containers", include_in_schema=False)
 def get_containers(basic_auth = Depends(basic_auth)):
@@ -58,6 +79,20 @@ def get_containers(basic_auth = Depends(basic_auth)):
         containers = blob_service_client.list_containers()
         public_containers = [container.name for container in containers if container.public_access is not None]
         return {"containers": public_containers}
+    except Exception as ex:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
+
+def get_blob_by_url(blob_url):
+    try:
+        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        url = urlparse(blob_url)
+        container_name = url.path.split("/")[1]
+        blob_name = url.path.split("/")[2]
+        
+        blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+        
+        return blob_client
     except Exception as ex:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
 
@@ -71,6 +106,7 @@ def check_for_blob_in_container(blob_url, container_name):
             return True
         return False
     except Exception as ex:
+        logging.exception(str(ex))
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
     
 def  get_actual_url(image_url:str, new_blob_container:str, new_blob_name:str):
