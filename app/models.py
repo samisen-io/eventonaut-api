@@ -102,7 +102,6 @@ class Conference(Base):
     updated_on = Column(DateTime)
     client_id = Column(Integer, ForeignKey("clients.id"))
     name = Column(String, index=True)
-    location = Column(String, index=True)
     venue_id = Column(Integer, ForeignKey("venues.id"))
     start_date = Column(DATE, index=True)
     end_date = Column(DATE, index=True)
@@ -137,6 +136,10 @@ class Conference(Base):
     @property
     def status(self):
         return self.event_status.status.upper()
+    
+    @property
+    def location(self):
+        return self.venue.location
     
 class BackdropGallery(Base):
     __tablename__ = "backdrop_gallery"
