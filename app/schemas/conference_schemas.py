@@ -6,7 +6,6 @@ from ..url_validator import check_url
 
 class ConferenceBase(BaseModel):
     name: str
-    location: str
     start_date: date = Field(..., description="Date format: YYYY-MM-DD")
     end_date: date = Field(..., description="Date format: YYYY-MM-DD")
     description: str | None = None
@@ -17,7 +16,7 @@ class ConferenceBase(BaseModel):
     information_guide: str
     status: str 
 
-    @field_validator('name','location','information_guide')
+    @field_validator('name','information_guide')
     def value_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
             raise ValueError(f"{info.field_name} cannot be empty")
@@ -86,7 +85,6 @@ class ConferenceUpdate(BaseModel):
     venue_id: str | None = None
     sponsor_ids: list[str] | None = None
     name: str | None = None
-    location: str | None = None
     start_date: date | None = Field(default=None, description="Date format: YYYY-MM-DD")
     end_date: date | None = Field(default=None, description="Date format: YYYY-MM-DD")
     description: str | None = None
@@ -103,7 +101,7 @@ class ConferenceUpdate(BaseModel):
             raise ValueError(f"Invalid {info.field_name}")
         return v
 
-    @field_validator('name','client_id','location','description','venue_id','conference_logo','registration_link','information_guide','conference_banner_url','timezone')
+    @field_validator('name','client_id','description','venue_id','conference_logo','registration_link','information_guide','conference_banner_url','timezone')
     def value_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
