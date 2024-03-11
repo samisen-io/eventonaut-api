@@ -97,26 +97,46 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
 
 @router.put("/sessions", response_model=SessionResponse)
 def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+    validate_session_update(session)
+    conference = get_conference(session, db, current_user)
+    db_session = get_db_session(session, db, current_user)
+    validate_date_and_time(session, conference)
+    session_speaker_ids = get_speaker_ids(session, db, current_user)
+    updated_session = crud.update_session(db=db, session=session, db_session=db_session, speaker_ids=session_speaker_ids)
+    logging.info("Session updated: " + updated_session.uuid)
+    return updated_session
+
+def validate_session_update(session):
     session_dict = session.model_dump()
     session_dict.pop('id')
     session_dict.pop('conference_id')
     if all(value is None for value in session_dict.values()):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
-    if conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id,owner_id=current_user.id) is None:
+
+def get_conference(session, db, current_user):
+    conference = conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id,owner_id=current_user.id)
+    if conference is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
+    return conference
+
+def get_db_session(session, db, current_user):
     db_session = crud.get_session_by_uuid_id(db, uuid=session.id, owner_id=current_user.id)
     if db_session is None:
         logging.exception("Session not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-    conference=conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id, owner_id=current_user.id)
+    return db_session
+
+def validate_date_and_time(session, conference):
     if session.date is not None and (session.date < conference.start_date or session.date > conference.end_date or session.date < date.today()):
         logging.exception("Invalid date")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date")
     if session.start_time is not None and session.end_time is not None and session.start_time > session.end_time:
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
+
+def get_speaker_ids(session, db, current_user):
     session_speaker_ids = []
     if session.speakers is not None and len(session.speakers) > 0:
         for speaker_id in session.speakers:
@@ -126,9 +146,7 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
             if speaker.id not in session_speaker_ids:
                 session_speaker_ids.append(speaker.id)
-    updated_session = crud.update_session(db=db, session=session, db_session=db_session, speaker_ids=session_speaker_ids)
-    logging.info("Session updated: " + updated_session.uuid)
-    return updated_session
+    return session_speaker_ids
 
 @router.delete("/sessions/{session_id}")
 def delete_session(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
