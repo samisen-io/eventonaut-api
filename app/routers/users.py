@@ -19,6 +19,15 @@ default_time_limit = int(os.getenv("OTP_EXPIRE"))
 router = APIRouter(tags=["users"])
 cache = TTLCache(maxsize=1024, ttl=default_time_limit)
 
+def validate_user_email(user: schemas.UserCreate):
+    try:
+        valid = validate_email(user.email)
+        user.email = valid.normalized.lower()
+    except EmailNotValidError as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    return user
+
 async def send_otp(email: str, email_subject: str):
     otp = generate_otp()
     if not send_mail(otp, "Email Verification", email):
