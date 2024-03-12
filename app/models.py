@@ -65,6 +65,7 @@ class User(Base):
     organizer_status = relationship("OrganizerStatus", back_populates="user")
     user_roles = relationship('User_Role', back_populates='user')
     organization_user = relationship("Organization_User", back_populates="user")
+    backdrop_gallery = relationship("BackdropGallery", back_populates="User")
     
     @property
     def status(self):
@@ -132,7 +133,6 @@ class Conference(Base):
     updated_on = Column(DateTime)
     client_id = Column(Integer, ForeignKey("clients.id"))
     name = Column(String, index=True)
-    location = Column(String, index=True)
     venue_id = Column(Integer, ForeignKey("venues.id"))
     start_date = Column(DATE, index=True)
     end_date = Column(DATE, index=True)
@@ -161,11 +161,32 @@ class Conference(Base):
     # event_sponsors = relationship("EventSponsors", back_populates="conference")
     sponsors = relationship("Sponsors", secondary="event_sponsors", back_populates="conference", overlaps="event_sponsors")
     event_status = relationship("EventStatus", back_populates="conference")
+    backdrop_gallery = relationship("BackdropGallery", back_populates="conference")
+    event_documents = relationship("EventDocuments", back_populates="conference")
     
     @property
     def status(self):
         return self.event_status.status.upper()
-
+    
+    @property
+    def location(self):
+        return self.venue.location
+    
+class BackdropGallery(Base):
+    __tablename__ = "backdrop_gallery"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    owner_id = Column(Integer, ForeignKey("users.id"))
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    backdrop_url = Column(String, index=True)
+    is_archived = Column(Boolean, default=False)
+    
+    conference = relationship("Conference", back_populates="backdrop_gallery")
+    User = relationship("User", back_populates="backdrop_gallery")
+    
 class Conference_Files(Base):
     __tablename__ = "conference_files"
 
@@ -233,6 +254,7 @@ class Session(Base):
     agenda_session = relationship("AgendaSession", back_populates="session")
     speakers = relationship("Speakers", secondary="session_speakers", back_populates="sessions")
     session_status = relationship("Sessionstatus", back_populates="session")
+    session_documents = relationship("SessionDocuments", back_populates="session")
 
     @property
     def status(self):
@@ -375,6 +397,22 @@ class Promotions(Base):
     rank = Column(Integer, default=0)
 
     conference = relationship("Conference", back_populates="promotions")
+    
+    @property
+    def location(self):
+        return self.conference.location
+    
+    @property
+    def conference_start_date(self):
+        return self.conference.start_date
+    
+    @property
+    def conference_end_date(self):
+        return self.conference.end_date
+    
+    @property
+    def event_id(self):
+        return self.conference.uuid
 
 class Sponsors(Base):
     __tablename__ = "sponsors"
@@ -489,3 +527,35 @@ class AttendeeStatus(Base):
     created_on = Column(DateTime, index=True)
     updated_on = Column(DateTime, index=True)
     status = Column(String, index=True, unique=True)
+
+class EventDocuments(Base):
+    __tablename__ = "event_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    document_url = Column(String, index=True)
+
+    conference = relationship("Conference", back_populates="event_documents")
+    
+    @property
+    def conference_uuid(self):
+        return self.conference.uuid
+    
+class SessionDocuments(Base):
+    __tablename__ = "session_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    session_id = Column(Integer, ForeignKey("sessions.id"))
+    document_url = Column(String, index=True)
+
+    session = relationship("Session", back_populates="session_documents")
+    
+    @property
+    def session_uuid(self):
+        return self.session.uuid

@@ -87,65 +87,73 @@ def delete_session(db: Session, db_session: models.Session):
     db.commit()
     return True
 
-def update_session(db: Session, session: schemas.SessionUpdate, db_session: models.Session, speaker_ids: list[int]):
-    session_dict = session.model_dump()
-    session_dict.pop('id')
-    session_dict.pop('conference_id')
-    session_dict.pop('speakers')
-    session_status = session_dict.pop("status")
-    session_image_url = session_dict.pop("session_image_url")
-    
-    if session_status is not None:
+def update_session_status(db_session, session_status):
+    if session_status:
         db_session.session_status_id = session_enum.SessionEnum[session_status.upper()].value
 
-    if session_dict['tags'] is not None:
-        tags:list[str] = []
-        for tag in session.tags:
-            if tag not in tags:
-                tags.append(tag)
-        session_dict['tags'] = tags
+def update_session_tags(session, session_dict):
+    if session_dict.get('tags'):
+        session_dict['tags'] = list(set(session.tags))
 
-    non_nullable_fields = ['name','date','start_time','end_time','location','description','tags']
-    
+def update_session_fields(db_session, session_dict):
+    non_nullable_fields = ['name','date','start_time','end_time','location','description']
     for key, value in session_dict.items():
-        if key in non_nullable_fields:
-            if value is not None:
-                setattr(db_session, key, value)
-        else:
+        if key in non_nullable_fields and value is not None or key not in non_nullable_fields:
             setattr(db_session, key, value)
 
-    if session.date is not None and (session.date < db_session.conference.start_date or session.date > db_session.conference.end_date or session.date < date.today()):
+def validate_session_date(session, db_session):
+    if session.date and (session.date < db_session.conference.start_date or session.date > db_session.conference.end_date or session.date < date.today()):
         logging.exception("Invalid date")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date")
-    
-    if session.start_time is not None and session.end_time is not None and session.start_time > session.end_time:
+
+def validate_session_time(session):
+    if session.start_time and session.end_time and session.start_time > session.end_time:
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
 
-    if session_image_url is not None and upload_image.get_container_name_from_url(session_image_url) != BlobContainer.SESSION_IMAGES.value:
+def update_session_image_url(db_session, session_image_url):
+    if session_image_url and upload_image.get_container_name_from_url(session_image_url) != BlobContainer.SESSION_IMAGES.value:
         db_session.session_image_url = upload_image.get_actual_url(image_url=session_image_url, new_blob_container=BlobContainer.SESSION_IMAGES.value, new_blob_name=f"session-{db_session.uuid}")
-    elif session_image_url is None and db_session.session_image_url is not None:
+    elif session_image_url is None and db_session.session_image_url:
         upload_image.delete_blob_by_url("session-images", f"session-{db_session.uuid}")
         db_session.session_image_url = None
 
-    db_session.updated_on = datetime.utcnow()
-    try:
-        db.commit()
-    except Exception as e:
-        if session_image_url is not None:
-            upload_image.delete_blob_by_url(db_session.session_image_url)
-        logging.exception(str(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    db.refresh(db_session)
+def update_session_speakers(db, db_session, speaker_ids):
     db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == db_session.id).delete()
     db.commit()
-
     for speaker_id in speaker_ids:
         session_speaker = models.SessionSpeakers(session_id=db_session.id, speaker_id=speaker_id, conference_id=db_session.conference_id)
         session_speaker.created_on = session_speaker.updated_on = datetime.utcnow()
         session_speaker.uuid = "ssp-" + str(uuid.uuid4())
         db.add(session_speaker)
     db.commit()
+
+def update_session(db: Session, session: schemas.SessionUpdate, db_session: models.Session, speaker_ids: list[int]):
+    session_dict = session.model_dump()
+    session_status = session_dict.pop("status", None)
+    session_image_url = session_dict.pop("session_image_url", None)
+    session_dict.pop('id', None)
+    session_dict.pop('conference_id', None)
+    session_dict.pop('speakers', None)
+
+    update_session_status(db_session, session_status)
+    update_session_tags(session, session_dict)
+    update_session_fields(db_session, session_dict)
+    validate_session_date(session, db_session)
+    validate_session_time(session)
+    update_session_image_url(db_session, session_image_url)
+
+    db_session.updated_on = datetime.utcnow()
+    try:
+        db.commit()
+    except Exception as e:
+        if session_image_url:
+            upload_image.delete_blob_by_url(db_session.session_image_url)
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    db.refresh(db_session)
+
+    update_session_speakers(db, db_session, speaker_ids)
 
     db_session = db.query(models.Session).options(joinedload(models.Session.speakers)).filter(models.Session.id == db_session.id).first()
     return db_session

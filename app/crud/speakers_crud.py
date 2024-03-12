@@ -72,13 +72,19 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate, db_speaker: Spea
     speaker_dict = speaker.model_dump()
     speaker_dict.pop("id")
     speaker_dict.pop("sessions")
+    profile_image_url = speaker_dict.pop("profile_image_url")
+    
+    non_nullable_fields = ["name", "email"]
+    
     for key, value in speaker_dict.items():
-        if value is not None:
+        if key in non_nullable_fields and value is not None:
+            setattr(db_speaker, key, value)
+        elif key not in non_nullable_fields:
             setattr(db_speaker, key, value)
             
-    if speaker.profile_image_url is not None and upload_image.get_container_name_from_url(db_speaker.profile_image_url) == BlobContainer.SPEAKER_IMAGES.value:
-        db_speaker.profile_image_url = upload_image.get_actual_url(image_url=speaker.profile_image_url, new_blob_container=BlobContainer.SPEAKER_IMAGES.value, new_blob_name=f"speaker-{db_speaker.uuid}")
-    elif speaker.profile_image_url is None and db_speaker.profile_image_url is not None:
+    if profile_image_url is not None and upload_image.get_container_name_from_url(profile_image_url) != BlobContainer.SPEAKER_IMAGES.value:
+        db_speaker.profile_image_url = upload_image.get_actual_url(image_url=profile_image_url, new_blob_container=BlobContainer.SPEAKER_IMAGES.value, new_blob_name=f"speaker-{db_speaker.uuid}")
+    elif profile_image_url is None and db_speaker.profile_image_url is not None:
         upload_image.delete_blob_by_url(db_speaker.profile_image_url)
         db_speaker.profile_image_url = None
     

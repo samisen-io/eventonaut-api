@@ -1,4 +1,6 @@
 import logging
+
+from sqlalchemy import text
 from app.routers import upload_image
 from .. import models
 from ..schemas import promotion_schemas
@@ -7,30 +9,62 @@ import uuid
 from datetime import datetime
 from fastapi import HTTPException, status
 from ..static_enums.blob_container_enums import BlobContainer
+from sqlalchemy.orm import joinedload
+import time
 
 def get_promotion(db: Session, promotion_id: str):
-    promotion = db.query(models.Promotions).filter(models.Promotions.uuid == promotion_id).first()
-    if promotion is not None:
-        promotion.location = db.query(models.Conference).filter(models.Conference.id == promotion.conference_id).first().location
-        promotion = add_conference_to_promotion(db, promotion)
+    promotion = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).filter(models.Promotions.uuid == promotion_id).first()
     return promotion
 
 def get_promotion_by_conference(db: Session, conference_id: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
     return None if conference is None else db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
 
-def get_promotions(db: Session, skip: int = 0, limit: int = 100):
-    promotions = db.query(models.Promotions).order_by(models.Promotions.rank).offset(skip).limit(limit).all()
-    for promotion in promotions:
-        promotion.location = db.query(models.Conference).filter(models.Conference.id == promotion.conference_id).first().location
-    promotions = add_conference_to_promotion(db, promotions)
-    return promotions
+def get_promotions(db: Session, skip: int = 0, limit: int = 5):
+    start_time = time.time()
+
+    promotions = db.execute(
+        text("""SELECT 
+                promotions."uuid" as id ,
+                promotions.todate as todate,
+                promotions.fromdate as fromdate,
+                promotions.image_url as image_url,
+                promotions.promotion_name as promotion_name,
+                promotions.rank as rank,
+                conferences."location" as location , 
+                conferences.uuid as conference_id,
+                conferences.start_date as start_date ,
+                conferences.end_date  as end_date
+                FROM promotions 
+                JOIN conferences ON promotions.conference_id = conferences.id 
+                WHERE promotions.rank > 0
+                ORDER BY promotions.rank
+                            OFFSET :skip
+                            LIMIT :limit"""), 
+            {"skip": skip, "limit": limit}
+        ).fetchall()
+
+    promotions_list = [{
+        'uuid': promotion.id,
+        'todate': promotion.todate,
+        'fromdate': promotion.fromdate,
+        'image_url': promotion.image_url,
+        'promotion_name': promotion.promotion_name,
+        'rank': promotion.rank,
+        'location': promotion.location,
+        'event_id': promotion.conference_id,
+        'conference_start_date': promotion.start_date,
+        'conference_end_date': promotion.end_date
+    } for promotion in promotions]
+
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
+
+    return promotions_list
 
 def get_all_promotions(db: Session, skip: int = 0, limit: int = 100):
-    promotions = db.query(models.Promotions).order_by(models.Promotions.rank).offset(skip).limit(limit).all()
-    for promotion in promotions:
-        promotion.location = db.query(models.Conference).filter(models.Conference.id == promotion.conference_id).first().location
-    promotions = add_conference_to_promotion(db, promotions)
+    promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank).offset(skip).limit(limit).all()
     return promotions
 
 def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
@@ -54,8 +88,7 @@ def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_promotion)
-    promotion = add_conference_to_promotion(db, db_promotion)
-    promotion.location = conference.location
+    promotion = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).filter(models.Promotions.uuid == db_promotion.uuid).first()
     return promotion
 
 def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
@@ -95,7 +128,7 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_promotion)
-    promotion = add_conference_to_promotion(db, db_promotion)
+    promotion = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).filter(models.Promotions.uuid == db_promotion.uuid).first()
     return promotion
 
 def delete_promotion(db: Session, promotion_id: str):
@@ -103,11 +136,3 @@ def delete_promotion(db: Session, promotion_id: str):
     db.delete(db_promotion)
     db.commit()
     return True
-
-def add_conference_to_promotion(db: Session, promotion):
-    if isinstance(promotion,list):
-        for p in promotion:
-            p.conference_id = db.query(models.Conference).filter(models.Conference.id == p.conference_id).first().uuid
-    else:
-        promotion.conference_id = db.query(models.Conference).filter(models.Conference.id == promotion.conference_id).first().uuid
-    return promotion

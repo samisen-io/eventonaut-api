@@ -11,7 +11,7 @@ class SessionBase(BaseModel):
     date: Date = Field(..., description="Date format: YYYY-MM-DD")
     location: str
     session_image_url: str | None = None
-    tags: list[str]
+    tags: list[str] | None = None
     status: str
 
     @field_validator('name','description','location')
@@ -110,7 +110,7 @@ class SessionUpdate(BaseModel):
             if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
                 return None
             for val in v:
-                if v is None or v.strip() == "":
+                if val is None or val.strip() == "":
                     raise ValueError(f"{info.field_name} cannot be empty")
                 if len(val) > 256:
                     raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
@@ -145,5 +145,5 @@ class Session(BaseModel):
     date: Date = Field(..., description="Date format: YYYY-MM-DD")
     location: str
     session_image_url: str | None = None
-    tags: list[str]
+    tags: list[str] | None = None
     status: str

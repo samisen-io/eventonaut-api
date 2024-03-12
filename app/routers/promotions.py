@@ -6,10 +6,11 @@ from ..dependencies import get_db
 from ..basicauth import basic_auth
 import logging
 from urllib.parse import urlparse
+import time
 
 router = APIRouter(tags=['promotions'])
 
-@router.post('/promotions', status_code=status.HTTP_201_CREATED)
+@router.post('/promotions', response_model=promotion_schemas.Promotion, status_code=status.HTTP_201_CREATED)
 def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
     db_promotion = promotions_crud.get_promotion_by_conference(db=db, conference_id=promotion.conference_id)
     if db_promotion:
@@ -24,11 +25,15 @@ def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session =
 
 @router.get('/promotions', response_model=list[promotion_schemas.Promotion])
 def get_promotions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
+    start_time = time.time()
     promotions = promotions_crud.get_promotions(db=db, skip=skip, limit=limit)
     if promotions is None or len(promotions) == 0:
         logging.exception("Promotions not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promotions not found")
     logging.info("Promotions retrieved")
+    end_time = time.time()
+    execution_time = end_time - start_time
+    print(f"Execution time: {execution_time} seconds")
     return promotions
 
 @router.get('/promotions/get-all', response_model=list[promotion_schemas.Promotion])
