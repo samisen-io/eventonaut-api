@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
 from app.oauth2 import get_current_active_user
+from app.static_enums.role import RoleEnum
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, conference_schemas

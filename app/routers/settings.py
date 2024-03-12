@@ -14,7 +14,7 @@ router = APIRouter(tags=["settings"])
 
 # create settings by conference id and take body as any valid JSON and convert it to string
 @router.post("/settings", response_model=schemas.Settings, status_code=status.HTTP_201_CREATED)
-def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if conferences_crud.get_conference_by_uuid(db, uuid=settings.conference_id,owner_id=current_user.id) is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
@@ -54,7 +54,7 @@ def get_settings_by_conference_id(conference_id: str, db: Session = Depends(get_
 
 # update settings by conference id and settings id
 @router.put("/settings", response_model=schemas.Settings)
-def update_settings(settings: schemas.SettingsCreate,db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def update_settings(settings: schemas.SettingsCreate,db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if conferences_crud.get_conference_by_uuid(db, uuid=settings.conference_id,owner_id=current_user.id) is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
@@ -71,7 +71,7 @@ def update_settings(settings: schemas.SettingsCreate,db: Session = Depends(get_d
 
 # delete settings by conference id and settings id
 @router.delete("/settings/{conference_id}")
-def delete_settings(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def delete_settings(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_settings = crud.get_settings_by_conference_uuid(db, conference_uuid=conference_id,owner_id=current_user.id)
     if db_settings is None:
         logging.exception("Settings not found")

@@ -39,10 +39,7 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 def authenticate_user(db: Session, username: str, password: str, token_jti: str):
     user =  users_crud.get_user_by_email_and_password(db=db,email=username, password=password)
-    db_tokens = logout_token_crud.get_all_jti_in_tokens(db=db)
-    if token_jti in db_tokens:
-        logging.exception("Token is invalid")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
+    logout_token_crud.get_all_jti_in_tokens(db=db, token_jti=token_jti)
     return user
 
 @router.post("/login", response_model=Token)
@@ -84,13 +81,23 @@ def get_token_expirations(role: str) -> Dict[str, timedelta]:
     if role == RoleEnum.ATTENDEE.name:
         return {'access_token_expires': timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS), 
                 'refresh_token_expires': timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)}
+        
     elif role == RoleEnum.ORGANIZATION_ADMIN.name or role == RoleEnum.ORGANIZATION_USER.name:
         return {'access_token_expires': timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES), 
                 'refresh_token_expires': timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)}
+    
+    elif role == "organizer":
+         return {'access_token_expires': timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES), 
+                'refresh_token_expires': timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)}
+         
+    elif role == "attendee":
+        return {'access_token_expires': timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS), 
+                'refresh_token_expires': timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)}
+    
     else:
         logging.exception("Invalid role")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
-
+    
 @router.get("/print_something_attendee")
 def print_something(current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     logging.info("Attendee logged in: " + current_user.uuid)

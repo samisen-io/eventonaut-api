@@ -14,7 +14,7 @@ from ..schemas.session_speaker_schema import SessionResponse
 router = APIRouter(tags=["sessions"])
 
 @router.post("/sessions", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
-def create_session_for_conference(session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def create_session_for_conference(session: schemas.SessionCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     conference=conferences_crud.get_conference_by_uuid(db, uuid=session.conference_id, owner_id=current_user.id)
     if conference is None:
         logging.exception("Conference not found")
@@ -40,7 +40,7 @@ def create_session_for_conference(session: schemas.SessionCreate, db: Session = 
     return session
 
 @router.post("/sessions/list", response_model=list[SessionResponse])
-def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if sessions is None or len(sessions) == 0:
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
@@ -97,7 +97,7 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
     return db_sessions
 
 @router.put("/sessions", response_model=SessionResponse)
-def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     validate_session_update(session)
     conference = get_conference(session, db, current_user)
     db_session = get_db_session(session, db, current_user)
@@ -150,7 +150,7 @@ def get_speaker_ids(session, db, current_user):
     return session_speaker_ids
 
 @router.delete("/sessions/{session_id}")
-def delete_session(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def delete_session(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_session = crud.get_session_by_uuid_id(db, uuid=session_id, owner_id=current_user.id)
     if db_session is None:
         logging.exception("Session not found")

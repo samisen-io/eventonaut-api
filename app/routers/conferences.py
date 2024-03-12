@@ -17,7 +17,7 @@ import json
 router = APIRouter(tags=["conferences"])
 
 @router.post("/conferences", response_model=schemas.ConferenceResponse, status_code=status.HTTP_201_CREATED)
-def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name,"organizer"])):
     if not users_crud.get_user(db, user_id=current_user.id):
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -66,7 +66,7 @@ def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Sess
     return conferences
 
 @router.get("/conferences", response_model=list[schemas.ConferenceResponse])
-def get_all_conferences_by_owner_id(offset: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def get_all_conferences_by_owner_id(offset: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name,"organizer"])):
     db_user = users_crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
@@ -79,7 +79,7 @@ def get_all_conferences_by_owner_id(offset: int = 0, limit: int = 10, db: Sessio
     return db_conferences
 
 @router.put("/conferences", response_model=schemas.ConferenceResponse)
-def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     conference_dict = conference.model_dump()
     conference_dict.pop("id")
     if all(value is None for value in conference_dict.values()):
@@ -115,7 +115,7 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
     return updated_conference
 
 @router.delete("/conferences/{conference_id}")
-def delete_conference_owner_id_conference_id(conference_id: str, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def delete_conference_owner_id_conference_id(conference_id: str, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if not users_crud.get_user(db, user_id=current_user.id):
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -128,7 +128,7 @@ def delete_conference_owner_id_conference_id(conference_id: str, db: Session = D
     return deleted_conference
 
 @router.get("/conferences/generate_qr_code/{conference_id}")
-def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     conference = crud.get_conference_by_uuid(db, uuid=conference_id, owner_id=current_user.id)
     if conference is None:
         logging.exception("Conference not found")
@@ -171,7 +171,7 @@ def get_conference_by_conference_id(conference_id: str, db: Session = Depends(ge
     return conference
 
 @router.get("/event-list-summary", response_model=schemas.ConferenceListSummary)
-def get_conference_list_summary(db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def get_conference_list_summary(db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     conference_list_summary = crud.get_event_list_summary(db, current_user.id)
     logging.info("Conference list summary retrieved for owner id: " + current_user.uuid)
     return conference_list_summary

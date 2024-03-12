@@ -28,7 +28,7 @@ def create_organization_user(organization_user: schemas.Organization_UserCreate,
         raise exc
 
 @router.get("/organization_user/{id}", response_model=schemas.Organization_User)
-def get_organization_user(organization_user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name]), basic_auth = Depends(basic_auth)):
+def get_organization_user(organization_user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), basic_auth = Depends(basic_auth)):
     try:
         organization_user = crud.get_organization_user(db, organization_user_id)
         if organization_user is None:
@@ -54,7 +54,7 @@ def get_users_by_organization_id(organization_id: str, db: Session = Depends(get
     return response
 
 @router.get("/organization_user/organizations/{user_id}", response_model=schemas.UserOrganizationsResponse, include_in_schema=False)
-def get_organizations_by_user_id(user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def get_organizations_by_user_id(user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     return crud.get_organizations_by_user_uuid(db, user_id) #TODO: Take the id from the token
 
 @router.put("/organization_user/{id}", response_model=schemas.Organization_UserUpdate)
