@@ -9,6 +9,7 @@ from ..schemas import organization_user_schemas as schemas
 from sqlalchemy.orm import Session
 from ..database import SessionLocal
 from ..dependencies import get_db
+from ..basicauth import basic_auth
 
 router = APIRouter(tags=["organization_user"])
 
@@ -26,8 +27,8 @@ def create_organization_user(organization_user: schemas.Organization_UserCreate,
     except Exception as exc:
         raise exc
 
-@router.get("/organization_user/{id}", response_model=schemas.Organization_User, basic_auth = Depends(basicauth.basic_auth))
-def get_organization_user(organization_user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+@router.get("/organization_user/{id}", response_model=schemas.Organization_User)
+def get_organization_user(organization_user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name]), basic_auth = Depends(basic_auth)):
     try:
         organization_user = crud.get_organization_user(db, organization_user_id)
         if organization_user is None:
@@ -37,7 +38,7 @@ def get_organization_user(organization_user_id: str, db: Session = Depends(get_d
         raise exc
 
 @router.get("/organization_users", response_model=List[schemas.Organization_User])
-def get_organization_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+def get_organization_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
     try:
         organization_users = crud.get_organization_users(db, skip, limit)
         mapped_organization_users = [get_mapped_organization_user_response(organization_user) for organization_user in organization_users]

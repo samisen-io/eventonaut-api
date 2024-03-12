@@ -48,7 +48,7 @@ def get_role_ids(user: schemas.UserCreate):
         role_ids.add(role_id)
     return list(role_ids)
 
-def check_user_exists(db: Session, user: schemas.UserCreate):
+async def check_user_exists(db: Session, user: schemas.UserCreate):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         logging.exception("Email already registered")
@@ -86,15 +86,15 @@ def get_role_names(user: schemas.User):
     return roles_names
 
 @router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED, include_in_schema=False)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     user = validate_user_email(user)
     role_ids = get_role_ids(user)
-    check_user_exists(db, user)
+    await check_user_exists(db, user)
     try:
         user = crud.create_user(db=db, user=user, role_ids=role_ids)
         user.list_of_roles = get_role_names(user)
         logging.info("User created: " + user.uuid)
-    del cache[email]
+        del cache[user.email]
         return user
     except Exception as e:
         logging.exception(str(e))
