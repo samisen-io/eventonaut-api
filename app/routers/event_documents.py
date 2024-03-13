@@ -18,7 +18,7 @@ def create_event_document(conference_id: str, file: UploadFile = File(...), db: 
     file.filename = f"evt-doc-{file.filename}"
     uploaded_file = upload_file(file, db)
     blob_url = uploaded_file["url"]
-    
+
     return crud.insert_event_document(db, conference.id, blob_url)
 
 @router.get("/{conference_id}", response_model=list[EventDocumentResponse])
@@ -31,9 +31,11 @@ def get_all_event_documents(conference_id: str, db: Session = Depends(get_db), c
     return documents
 
 @router.delete("/")
-def delete_event_document(blob_url: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    if not check_for_blob_in_container(blob_url, BlobContainer.EVENT_DOCUMENTS.value):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-    crud.delete_event_document(db, blob_url)
-    delete_blob_by_url(blob_url)
-    return {"message": "Document deleted successfully"}
+def delete_event_document(event_document_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+    try:
+        deleted_event_document = crud.delete_event_document(db, event_document_id)
+        delete_blob_by_url(deleted_event_document.document_url)
+        return {"message": "Document deleted successfully"}
+    except Exception as e:
+        logging.exception(f"Error deleting document: {e}")
+        raise HTTPException(status_code=e.status_code, detail=f"{str(e.detail)}")

@@ -149,9 +149,16 @@ def delete_blob_by_url(blob_url):
         
         blob_client = blob_service_client.get_blob_client(container_name, blob_name)
         
+        if not blob_client.exists():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+        
         blob_client.delete_blob()
         
         logging.info(f"Blob {blob_name} deleted successfully")
     except Exception as ex:
         logging.exception(str(ex))
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))  
+        if hasattr(ex, 'status_code'):
+
+            raise HTTPException(status_code=ex.status_code, detail=str(ex.detail))
+        else:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex))
