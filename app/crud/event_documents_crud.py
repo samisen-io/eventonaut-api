@@ -12,7 +12,7 @@ def insert_event_document(db: Session, request: EventDocumentRequest):
                                        name = request.file_name,
                                        content_type = request.content_type,
                                        size = request.size)
-    db_event_documemt.uuid = str(uuid.uuid4())
+    db_event_documemt.uuid =  "etd-"+ str(uuid.uuid4())
     db_event_documemt.created_on = db_event_documemt.updated_on = datetime.utcnow()
     db.add(db_event_documemt)
     db.commit()

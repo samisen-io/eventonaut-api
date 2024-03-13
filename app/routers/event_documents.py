@@ -31,16 +31,19 @@ def create_event_document(conference_id: str, file: UploadFile = File(...), db: 
         
         response = crud.insert_event_document(db= db, request= request)
         
-        return EventDocumentResponse(uuid=response.uuid, 
+        return map_event_document_response(conference_id, response)
+        
+    except Exception as e:
+        logging.error(f"An error occurred while creating event document: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"{str(e)}")
+
+def map_event_document_response(conference_id, response):
+    return EventDocumentResponse(uuid=response.uuid, 
                                      conference_uuid=conference_id,
                                      document_url=response.document_url, 
                                      name=response.name, 
                                      content_type=response.content_type, 
                                      size=f"{str(response.size)} MB")
-        
-    except Exception as e:
-        logging.error(f"An error occurred while creating event document: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"{str(e)}")
 
 @router.get("/{conference_id}", response_model=list[EventDocumentResponse])
 def get_all_event_documents(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
@@ -49,7 +52,7 @@ def get_all_event_documents(conference_id: str, db: Session = Depends(get_db), c
     if len(documents) == 0:
         logging.exception(f"No documents found for conference with id: {conference_id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No documents found")
-    return documents
+    return [map_event_document_response(conference_id, document) for document in documents]
 
 @router.delete("/")
 def delete_event_document(blob_url: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
