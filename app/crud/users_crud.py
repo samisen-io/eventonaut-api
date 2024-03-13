@@ -1,6 +1,8 @@
 import logging
+import os
 from fastapi import HTTPException, status
 from fastapi.encoders import jsonable_encoder
+from urllib.parse import urlparse
 from sqlalchemy.orm import Session, joinedload
 from app.static_enums.role import RoleEnum
 from .. import models, hashing
@@ -13,6 +15,20 @@ from ..crud import user_role_crud
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy import text
 from app.sql_queries.users_query import query_user_by_email_and_archived_status
+
+def create_db_user(db: Session, user: schemas.UserCreate):
+    user_dict = user.model_dump()
+    user_status = user_dict.pop("status")
+    user_profile_image_url = user_dict.pop("profile_image_url")
+    user_dict.pop("list_of_roles")
+    db_user = models.User(**user_dict)
+    db_user.user_status_id = organizer.OrganizerEnum[user_status.upper()].value
+    db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
+    db_user.created_on = db_user.updated_on = datetime.utcnow()
+    db_user.uuid = "usr-"+str(uuid.uuid4())
+    db_user.role = "organizer"
+    db_user.profile_image_url = upload_image.get_actual_url(image_url=user_profile_image_url, new_blob_container=BlobContainer.PROFILE_IMAGES.value, new_blob_name=f"profile-{db_user.uuid}") if user_profile_image_url is not None else None
+    return db_user
 
 def validate_image_url(image_url: str):
     parsed_url = urlparse(image_url)
