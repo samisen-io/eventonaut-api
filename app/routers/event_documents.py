@@ -25,7 +25,7 @@ def create_event_document(conference_id: str, file: UploadFile = File(...), db: 
         size = file.size / (1024 * 1024)
         request = EventDocumentRequest(conference_id=conference.id, 
                                         file_url=blob_url, 
-                                        file_name=name, 
+                                        name=name, 
                                         content_type=content_type, 
                                         size=size)
         
