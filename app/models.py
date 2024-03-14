@@ -506,6 +506,9 @@ class EventDocuments(Base):
     updated_on = Column(DateTime, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     document_url = Column(String, index=True)
+    content_type = Column(String, index=True)
+    name = Column(String, index=True)
+    size = Column(Float, index=True)
 
     conference = relationship("Conference", back_populates="event_documents")
     
@@ -522,6 +525,9 @@ class SessionDocuments(Base):
     updated_on = Column(DateTime, index=True)
     session_id = Column(Integer, ForeignKey("sessions.id"))
     document_url = Column(String, index=True)
+    content_type = Column(String, index=True)
+    name = Column(String, index=True)
+    size = Column(Float, index=True)
 
     session = relationship("Session", back_populates="session_documents")
     
