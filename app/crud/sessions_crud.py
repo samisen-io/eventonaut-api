@@ -115,7 +115,7 @@ def update_session_image_url(db_session, session_image_url):
     if session_image_url and upload_image.get_container_name_from_url(session_image_url) != BlobContainer.SESSION_IMAGES.value:
         db_session.session_image_url = upload_image.get_actual_url(image_url=session_image_url, new_blob_container=BlobContainer.SESSION_IMAGES.value, new_blob_name=f"session-{db_session.uuid}")
     elif session_image_url is None and db_session.session_image_url:
-        upload_image.delete_blob_by_url("session-images", f"session-{db_session.uuid}")
+        upload_image.delete_blob_by_url(db_session.session_image_url)
         db_session.session_image_url = None
 
 def update_session_speakers(db, db_session, speaker_ids):
