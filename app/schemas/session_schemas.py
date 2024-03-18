@@ -36,13 +36,14 @@ class SessionBase(BaseModel):
     
     @field_validator('tags')
     def tags_validation(cls, v, info: ValidationInfo):
-        if len(v) == 0:
-            raise ValueError(f"{info.field_name} cannot be empty")
-        for val in v:
-            if val.strip() == "":
-                raise ValueError(f"{info.field_name} cannot be empty")
-            elif len(val) > 256:
-                raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
+        if v is not None:
+            if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
+                return None
+            for val in v:
+                if val.strip() == "":
+                    return None
+                elif len(val) > 256:
+                    raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
         return v
     
     @field_validator("status")
