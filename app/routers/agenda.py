@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
+from fastapi.encoders import jsonable_encoder
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from ..dependencies import get_db
@@ -122,7 +123,7 @@ def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), c
             "tags" : updated_agenda.tags
         }
         logging.exception("Found conflict with a session")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error":"found conflict with a session", "session": session})
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error":"found conflict with a session", "session": jsonable_encoder(session)})
     logging.info("Agenda updated for: " + db_attendee.uuid)
     return updated_agenda
 
