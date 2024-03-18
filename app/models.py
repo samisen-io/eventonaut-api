@@ -220,7 +220,7 @@ class Session(Base):
 
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
-    agenda_session = relationship("AgendaSession", back_populates="session")
+    agenda = relationship("Agenda", secondary="agenda_session", back_populates="sessions")
     speakers = relationship("Speakers", secondary="session_speakers", back_populates="sessions")
     session_status = relationship("Sessionstatus", back_populates="session")
     session_documents = relationship("SessionDocuments", back_populates="session")
@@ -261,7 +261,7 @@ class Attendee(Base):
 
     user = relationship("User", back_populates="attendees")
     agenda = relationship("Agenda", back_populates="attendees")
-    agenda_session = relationship("AgendaSession", back_populates="attendees")
+    # agenda_session = relationship("AgendaSession", back_populates="attendees")
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
     aitokens = relationship("AITokens", back_populates="attendee")
     
@@ -300,7 +300,7 @@ class Agenda(Base):
 
     conference = relationship("Conference", back_populates="agenda")
     attendees = relationship("Attendee", back_populates="agenda")
-    agenda_session = relationship("AgendaSession", back_populates="agenda")
+    sessions = relationship("Session", secondary="agenda_session", back_populates="agenda")
 
 # class to define aganda session table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class AgendaSession(Base):
@@ -317,9 +317,9 @@ class AgendaSession(Base):
     start_time = Column(TIME, index=True)
     end_time = Column(TIME, index=True)
 
-    agenda = relationship("Agenda", back_populates="agenda_session")
-    session = relationship("Session", back_populates="agenda_session")
-    attendees = relationship("Attendee", back_populates="agenda_session")
+    # agenda = relationship("Agenda", back_populates="agenda_session")
+    # sessions = relationship("Session", back_populates="agenda_session")
+    # attendees = relationship("Attendee", back_populates="agenda_session")
 
 class AITokens(Base):
     __tablename__ = "aitokens"

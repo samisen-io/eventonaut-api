@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
-from ..static_enums import session as  session_enum
 from .. import models
 from ..schemas import agenda_schemas as schemas
-from . import conferences_crud, attendee_crud, sessions_crud
+from . import conferences_crud, sessions_crud
 from datetime import datetime
 import uuid
+from sqlalchemy.orm import joinedload
 
 # create agenda
 def create_agenda(db: Session, conference_id: str, attendee_id: int, agenda: schemas.AgendaCreate):
@@ -47,29 +47,14 @@ def create_agenda(db: Session, conference_id: str, attendee_id: int, agenda: sch
         db.add(db_agenda_session)
         db.commit()
         db.refresh(db_agenda_session)
-    agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
-    for session_id in session_ids:
-        session = sessions_crud.get_session_by_session_uuid(db, uuid=session_id)
-        if session is None:
-            continue
-        session = sessions_crud.add_speakers_to_session(db, session)
-        agenda_session.sessions.append(session)
+        
+    agenda_session = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).filter(models.Agenda.id == db_agenda.id).first()
     return agenda_session
 
 # return all the agendas with the list of sessions
 def get_all_agenda(db: Session, offset: int = 0, limit: int = 100):
-    agenda_sessions = []
-    agenda = db.query(models.Agenda).offset(offset).limit(limit).all()
-    for db_agenda in agenda:
-        agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
-        agenda_sessions.append(agenda_session)
-        agenda_session.sessions = []
-        for db_agenda_session in db_agenda.agenda_session:
-            session = sessions_crud.get_session_by_session_uuid(db, uuid=db_agenda_session.session.uuid)
-            if session is None:
-                continue
-            session = sessions_crud.add_speakers_to_session(db, session)
-            agenda_session.sessions.append(session)
+    agenda_sessions = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).offset(offset).limit(limit).all()
+    
     return agenda_sessions
 
 def get_agenda(db: Session, conference_id: str, attendee_id: int):
@@ -89,37 +74,15 @@ def get_agenda_by_conference_uuid_attendee_uuid(db: Session, conference_id: str,
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
     if db_agenda is None:
         return None
-    agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
-    for db_agenda_session in db_agenda.agenda_session:
-        session = sessions_crud.get_session_by_session_uuid(db, uuid=db_agenda_session.session.uuid)
-        if session is None:
-            continue
-        session = sessions_crud.add_speakers_to_session(db, session)
-        agenda_session.sessions.append(session)
+    agenda_session = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).filter(models.Agenda.id == db_agenda.id).first()
     return agenda_session
 
-def get_agenda_for_attendee(db: Session, conference_id: str, attendee_id: str):
-    conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
-    if conference is None:
-        return None
-    attendee=db.query(models.Attendee).filter(models.Attendee.uuid == attendee_id,models.Attendee.share_my_agenda == True).first()
-    if attendee is None:
-        return None
-    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
+def get_agenda_for_attendee(db: Session, conference_id: int, attendee_id: int):
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference_id, models.Agenda.attendee_id==attendee_id).first()
     if db_agenda is None:
         return None
-    agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
-    for db_agenda_session in db_agenda.agenda_session:
-        session = sessions_crud.get_session_by_session_uuid(db, uuid=db_agenda_session.session.uuid)
-        if session is None:
-            continue
-        session = sessions_crud.add_speakers_to_session(db, session)
-        agenda_session.sessions.append(session)
+    agenda_session = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).filter(models.Agenda.id == db_agenda.id).first()
     return agenda_session
-
-# get agenda by attendee id and like name string
-def get_agendas_by_attendee_id_name(db: Session, attendee_id: int, name: str):
-    return db.query(models.Agenda).filter(models.Agenda.attendee_id == attendee_id,models.Agenda.name.ilike('%'+name+'%')).all()
 
 # update agenda by conference id and attendee id
 def update_agenda(db: Session, conference_id: str, attendee_id: int, agenda: schemas.AgendaUpdate):
@@ -167,12 +130,8 @@ def update_agenda(db: Session, conference_id: str, attendee_id: int, agenda: sch
             db.refresh(db_agenda_session)
     db.commit()
     db.refresh(db_agenda)
-
-    agenda_session = schemas.Agenda(uuid=db_agenda.uuid, name=db_agenda.name, sessions=[])
-    sessions_from_db = db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).all()
-    for db_agenda_session in sessions_from_db:
-        session = db.query(models.Session).filter(models.Session.id == db_agenda_session.session_id).first()
-        agenda_session.sessions.append(schemas.Session(uuid=session.uuid, name=session.name, date=session.date, start_time=session.start_time, end_time=session.end_time, description=session.description, location=session.location, speakers=session.speakers, tags=session.tags))
+    
+    agenda_session = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).filter(models.Agenda.id == db_agenda.id).first()   
     return agenda_session
 
 # delete agenda by conference id and attendee id
