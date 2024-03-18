@@ -36,9 +36,9 @@ class SessionBase(BaseModel):
     
     @field_validator('tags')
     def tags_validation(cls, v, info: ValidationInfo):
-        if len(v) == 0:
-            return None
-        if len(v) != 0 or v is not None:
+        if v is not None:
+            if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
+                return None
             for val in v:
                 if val.strip() == "":
                     return None
