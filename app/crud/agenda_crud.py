@@ -53,7 +53,6 @@ def create_agenda(db: Session, conference_id: str, attendee_id: int, agenda: sch
         if session is None:
             continue
         session = sessions_crud.add_speakers_to_session(db, session)
-        session.status = session_enum.SessionEnum(session.session_status_id).name
         agenda_session.sessions.append(session)
     return agenda_session
 
@@ -70,7 +69,6 @@ def get_all_agenda(db: Session, offset: int = 0, limit: int = 100):
             if session is None:
                 continue
             session = sessions_crud.add_speakers_to_session(db, session)
-            session.status = session_enum.SessionEnum(session.session_status_id).name
             agenda_session.sessions.append(session)
     return agenda_sessions
 
@@ -97,7 +95,6 @@ def get_agenda_by_conference_uuid_attendee_uuid(db: Session, conference_id: str,
         if session is None:
             continue
         session = sessions_crud.add_speakers_to_session(db, session)
-        session.status = session_enum.SessionEnum(session.session_status_id).name
         agenda_session.sessions.append(session)
     return agenda_session
 
@@ -117,7 +114,6 @@ def get_agenda_for_attendee(db: Session, conference_id: str, attendee_id: str):
         if session is None:
             continue
         session = sessions_crud.add_speakers_to_session(db, session)
-        session.status = session_enum.SessionEnum(session.session_status_id).name
         agenda_session.sessions.append(session)
     return agenda_session
 
