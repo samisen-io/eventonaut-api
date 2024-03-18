@@ -63,7 +63,6 @@ def get_session_by_conference_uuid_session_uuid(db: Session, session_id: str, co
     if db_session is None:
         return None
     db_session = add_speakers_to_session(db, db_session)
-    db_session.status = session_enum.SessionEnum(db_session.session_status_id).name
     return db_session
 
 def get_session_by_session_uuid(db: Session, uuid: str):
