@@ -21,10 +21,10 @@ def get_promotion_by_conference(db: Session, conference_id: str):
     return None if conference is None else db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
 
 def get_promotions(db: Session, skip: int = 0, limit: int = 5):
-    return db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank).offset(skip).limit(limit).all()
+    return db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(skip).limit(limit).all()
 
 def get_all_promotions(db: Session, skip: int = 0, limit: int = 100):
-    promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank).offset(skip).limit(limit).all()
+    promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(skip).limit(limit).all()
     return promotions
 
 def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
