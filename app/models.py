@@ -382,6 +382,14 @@ class Promotions(Base):
     @property
     def event_id(self):
         return self.conference.uuid
+    
+    @property
+    def conference_name(self):
+        return self.conference.name
+    
+    @property
+    def conference_image_url(self):
+        return self.conference.conference_logo
 
 class Sponsors(Base):
     __tablename__ = "sponsors"
