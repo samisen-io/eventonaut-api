@@ -91,6 +91,8 @@ class Promotion(BaseModel):
     fromdate: date
     image_url: str
     promotion_name: str
+    conference_name: str
+    conference_image_url: str | None
     rank: int = Field(gt=0, lt=6)
     class Config:
         orm_mode = True
