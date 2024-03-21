@@ -35,6 +35,7 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     db_session.session_status_id = session_enum.SessionEnum[session.status.upper()].value
     db.add(db_session)
     db.commit()
+    
     for speaker_id in speaker_ids:
         session_speaker = models.SessionSpeakers(session_id=db_session.id, speaker_id=speaker_id, conference_id=conference_id)
         session_speaker.uuid = "ssp-" + str(uuid.uuid4())
