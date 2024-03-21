@@ -1,6 +1,4 @@
 import logging
-
-from sqlalchemy import text
 from app.routers import upload_image
 from .. import models
 from ..schemas import promotion_schemas
@@ -34,11 +32,7 @@ def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
     conference = db.query(models.Conference).filter(models.Conference.uuid == promotion.conference_id).first()
     db_promotion.conference_id = conference.id
     
-    try:
-        db_promotion.image_url = upload_image.get_actual_url(image_url=promotion.image_url, new_blob_container=BlobContainer.PROMOTION_IMAGES.value, new_blob_name=f"promotion-{db_promotion.uuid}")
-    except Exception as e:
-        logging.exception(str(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    db_promotion.image_url = upload_image.get_actual_url(image_url=promotion.image_url, new_blob_container=BlobContainer.PROMOTION_IMAGES.value, new_blob_name=f"promotion-{db_promotion.uuid}") if promotion.image_url is not None else None
     
     db.add(db_promotion)
     try:
@@ -75,8 +69,11 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
         db_promotion.conference_id = db_conference.id
         promotion.location = db_conference.location
 
-    if promotion_image_url is not None and upload_image.get_actual_url(image_url=promotion_image_url) != db_promotion.image_url:
-        db_promotion.image_url = upload_image.get_actual_url(image_url=promotion_image_url, new_blob_container="promotion-images", new_blob_name=f"promotion-{db_promotion.uuid}")
+    if promotion_image_url is not None and upload_image.get_container_name_from_url(promotion_image_url) != BlobContainer.PROMOTION_IMAGES.value:
+        db_promotion.image_url = upload_image.get_actual_url(image_url=promotion_image_url, new_blob_container= BlobContainer.PROMOTION_IMAGES.value, new_blob_name=f"promotion-{db_promotion.uuid}")
+    elif promotion_image_url is None and db_promotion.image_url is not None:
+        upload_image.delete_blob_by_url(db_promotion.image_url)
+        db_promotion.image_url = None
 
     db_promotion.updated_on = datetime.utcnow()
 
