@@ -22,16 +22,17 @@ jobs:
         
       #with:
        # creds: '{"clientId": "a384ad8b-1975-4ecf-be7b-9295af9b1ead", "clientSecret": "e3aafe1e-5335-4e40-99cf-05a77d28e943", "subscriptionId": "9a1facf0-c31b-44a2-a3cd-11bfaa85f05d", "tenantId": "3f699e49-baba-42b2-9990-887b23ed895d"}'
-
-    - name: Build the Docker image
-      run: docker build -t eventonaut.azurecr.io/eventonaut-data-api-image:latest .
-
     - name: Login to Azure Container Registry
       uses: docker/login-action@v1 
       with:
         registry: eventonaut.azurecr.io
         username: Eventonaut
         password: S7Fq6BHjpOD5P3FNgjLdwep999+UkYZ8p0rCI1WEdc+ACRChJ4KJ
+        
+    - name: Build the Docker image
+      run: docker build -t eventonaut.azurecr.io/eventonaut-data-api-image:latest .
+
+
 
     - name: Push Docker image to Azure Container Registry
       run: |
