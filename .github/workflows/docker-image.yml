@@ -22,6 +22,7 @@ jobs:
         
       #with:
        # creds: '{"clientId": "a384ad8b-1975-4ecf-be7b-9295af9b1ead", "clientSecret": "e3aafe1e-5335-4e40-99cf-05a77d28e943", "subscriptionId": "9a1facf0-c31b-44a2-a3cd-11bfaa85f05d", "tenantId": "3f699e49-baba-42b2-9990-887b23ed895d"}'
+    
     - name: Login to Azure Container Registry
       uses: docker/login-action@v1 
       with:
@@ -32,18 +33,22 @@ jobs:
     - name: Build the Docker image
       run: docker build -t eventonaut-data-api-image . 
 
+    - name: create tag
+      run: |
+        docker tag eventonaut-data-api-image eventonaut.azurecr.io/eventonaut-data-api-image:v2
+
     - name: Push Docker image to Azure Container Registry
       run: |
-        docker push eventonaut.azurecr.io/eventonaut-data-api-image:latest
+        docker push eventonaut.azurecr.io/eventonaut-data-api-image:v2
 
-    - name: Deploy to Azure App Service
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'event-data-api'
-        slot-name: 'production'
-        publish-profile: '<publishData><publishProfile profileName="event-data-api - Web Deploy" publishMethod="MSDeploy" publishUrl="event-data-api.scm.azurewebsites.net:443" msdeploySite="event-data-api" userName="$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="event-data-api - FTP" publishMethod="FTP" publishUrl="ftps://waws-prod-blu-485.ftp.azurewebsites.windows.net/site/wwwroot" ftpPassiveMode="True" userName="event-data-api\$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="event-data-api - Zip Deploy" publishMethod="ZipDeploy" publishUrl="event-data-api.scm.azurewebsites.net:443" userName="$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile></publishData>'
-        images: 'eventonaut.azurecr.io/eventonaut-data-api-image:latest'
+    #- name: Deploy to Azure App Service
+     # uses: azure/webapps-deploy@v2
+      #with:
+       # app-name: 'event-data-api'
+        #slot-name: 'production'
+        #publish-profile: '<publishData><publishProfile profileName="event-data-api - Web Deploy" publishMethod="MSDeploy" publishUrl="event-data-api.scm.azurewebsites.net:443" msdeploySite="event-data-api" userName="$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="event-data-api - FTP" publishMethod="FTP" publishUrl="ftps://waws-prod-blu-485.ftp.azurewebsites.windows.net/site/wwwroot" ftpPassiveMode="True" userName="event-data-api\$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="event-data-api - Zip Deploy" publishMethod="ZipDeploy" publishUrl="event-data-api.scm.azurewebsites.net:443" userName="$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile></publishData>'
+        #images: 'eventonaut.azurecr.io/eventonaut-data-api-image:latest'
 
-    - name: Restart Azure App Service
-      run: |
-        az webapp restart --name event-data-api --resource-group eventonaut-dev-group
+    #- name: Restart Azure App Service
+     # run: |
+      #  az webapp restart --name event-data-api --resource-group eventonaut-dev-group
