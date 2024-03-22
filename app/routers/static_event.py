@@ -33,7 +33,7 @@ def create_event_status(static_event: StaticEvent, db: Session = Depends(get_db)
 
 @router.get("/event_status", response_model=list[StaticTableOutput])
 def get_event_status(db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_event = db.query(models.EventStatus).all()
+    static_event = db.query(models.EventStatus).order_by(models.EventStatus.updated_on.desc()).all()
     if static_event is None or len(static_event) == 0:
         logging.exception("no status found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no status found")
