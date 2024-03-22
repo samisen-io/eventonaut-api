@@ -33,7 +33,7 @@ def create_session_status(static_session: StaticSession, db: Session = Depends(g
 
 @router.get("/session_status", response_model=list[StaticTableOutput])
 def get_session_status(db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_session = db.query(models.Sessionstatus).all()
+    static_session = db.query(models.Sessionstatus).order_by(models.Sessionstatus.updated_on.desc()).all()
     if static_session is None or len(static_session) == 0:
         logging.exception("no status found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no status found")
