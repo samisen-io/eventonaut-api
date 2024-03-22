@@ -22,7 +22,7 @@ def insert_event_document(db: Session, request: EventDocumentRequest):
     return db_event_documemt
 
 def get_event_documents_by_conference_id(db: Session, conference_id: int):
-    return db.query(EventDocuments).filter(EventDocuments.conference_id == conference_id).all()
+    return db.query(EventDocuments).filter(EventDocuments.conference_id == conference_id).order_by(EventDocuments.updated_on.desc()).all()
 
 def delete_event_document(db: Session, event_document_id: str):
     event_document = db.query(EventDocuments).filter(EventDocuments.uuid == event_document_id).first()
