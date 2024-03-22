@@ -32,6 +32,7 @@ def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), c
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     created_agenda = crud.create_agenda(db=db, conference_id=agenda.conference_id,attendee_id=current_user.id, agenda=agenda)
     if isinstance(created_agenda, Session):
+        
         session = {
             "id" : created_agenda.uuid,
             "name" : created_agenda.name,
