@@ -10,10 +10,10 @@ from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload, Load, defaultload, join, aliased
 
 def get_all_sponsors(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(models.Sponsors).offset(offset).limit(limit).all()
+    return db.query(models.Sponsors).offset(offset).limit(limit).order_by(models.Sponsors.updated_on.desc()).all()
 
 def get_all_sponsors_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 100):
-    return db.query(models.Sponsors).filter(models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).offset(offset).limit(limit).all()
+    return db.query(models.Sponsors).filter(models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).order_by(models.Sponsors.updated_on.desc()).offset(offset).limit(limit).all()
 
 def get_sponsor_by_uuid(db: Session, uuid: str, owner_id: int):
     return db.query(models.Sponsors).filter(models.Sponsors.uuid == uuid, models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).first()
@@ -24,7 +24,7 @@ def get_sponsor_by_email(db: Session, email: str, owner_id: int):
 def get_sponsors_by_conference_id(db: Session, conference_id: int, offset: int = 0, limit: int = 100):
     SponsorsAlias = aliased(models.Sponsors)
     sponsors_subquery = db.query(SponsorsAlias).filter(SponsorsAlias.is_archived == False).subquery()
-    return db.query(models.EventSponsors).join(sponsors_subquery, models.EventSponsors.sponsor_id == sponsors_subquery.c.id).filter(models.EventSponsors.conference_id == conference_id).offset(offset).limit(limit).all()
+    return db.query(models.EventSponsors).join(sponsors_subquery, models.EventSponsors.sponsor_id == sponsors_subquery.c.id).filter(models.EventSponsors.conference_id == conference_id).order_by(models.EventSponsors.updated_on.desc()).offset(offset).limit(limit).all()
 
 def create_sponsor(db: Session, sponsor: sponsor_schemas.SponsorCreate, owner_id: int):
     sponsor_dict = sponsor.model_dump()

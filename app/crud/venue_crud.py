@@ -6,10 +6,10 @@ import uuid
 from datetime import datetime
 
 def get_all_venues(db: Session, offset: int, limit: int):
-    return db.query(models.Venue).offset(offset).limit(limit).all()
+    return db.query(models.Venue).offset(offset).limit(limit).order_by(models.Venue.updated_on.desc()).all()
 
 def get_all_venues_by_owner_id(db: Session, owner_id: int, offset: int, limit: int):
-    return db.query(models.Venue).filter(models.Venue.owner_id == owner_id, models.Venue.is_archived == False).offset(offset).limit(limit).all()
+    return db.query(models.Venue).filter(models.Venue.owner_id == owner_id, models.Venue.is_archived == False).offset(offset).limit(limit).order_by(models.Venue.updated_on.desc()).all()
 
 def get_venue_by_id(db: Session, venue_id: str, owner_id: int):
     return db.query(models.Venue).filter(models.Venue.uuid == venue_id, models.Venue.owner_id == owner_id, models.Venue.is_archived == False).first()

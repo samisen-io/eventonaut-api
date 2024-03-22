@@ -1,7 +1,4 @@
 import logging
-import random
-from app import models
-
 from app.crud import conferences_crud
 from ..dependencies import get_db
 from sqlalchemy.orm import Session

@@ -21,7 +21,7 @@ def insert_session_document(db: Session, request: SessionDocumentRequest):
     return db_session_documemt
 
 def get_session_documents_by_session_id(db: Session, session_id: int): 
-    return db.query(SessionDocuments).filter(SessionDocuments.session_id == session_id).all()
+    return db.query(SessionDocuments).filter(SessionDocuments.session_id == session_id).order_by(SessionDocuments.updated_on.desc()).all()
 
 def delete_session_document(db: Session, session_id: str):
     session_document = db.query(SessionDocuments).filter(SessionDocuments.uuid == session_id).first()

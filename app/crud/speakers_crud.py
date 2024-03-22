@@ -18,7 +18,7 @@ def get_speaker_by_uuid(db: Session, uuid: str, owner_id: int):
     return db.query(Speakers).filter(Speakers.uuid == uuid, Speakers.owner_id == owner_id, Speakers.is_archived == False).first()
 
 def get_speakers_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 100):
-    return db.query(Speakers).filter(Speakers.owner_id == owner_id, Speakers.is_archived == False).offset(offset).limit(limit).all()
+    return db.query(Speakers).filter(Speakers.owner_id == owner_id, Speakers.is_archived == False).order_by(Speakers.updated_on.desc()).offset(offset).limit(limit).all()
 
 def create_speaker(db: Session, speaker: schemas.SpeakerCreate, owner_id: int, session_ids: list[int]):
     speaker_dict = speaker.model_dump()
@@ -49,20 +49,20 @@ def create_speaker(db: Session, speaker: schemas.SpeakerCreate, owner_id: int, s
     return db_speaker
 
 def get_all_speakers(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(Speakers).options(joinedload(Speakers.sessions)).filter(Speakers.is_archived == False).offset(offset).limit(limit).all()
+    return db.query(Speakers).options(joinedload(Speakers.sessions)).filter(Speakers.is_archived == False).order_by(Speakers.updated_on.desc()).offset(offset).limit(limit).all()
 
 def get_speaker(db: Session, speaker_id: uuid):
     return db.query(Speakers).filter(Speakers.uuid == speaker_id, Speakers.is_archived == False).first()
 
 def get_speakers_by_conference_id_owner_id(db: Session, conference_id: int, owner_id: int):
-    speakers = db.query(Speakers).join(models.SessionSpeakers, models.SessionSpeakers.speaker_id == Speakers.id).filter(models.SessionSpeakers.conference_id == conference_id, Speakers.owner_id == owner_id, Speakers.is_archived == False).all()
+    speakers = db.query(Speakers).join(models.SessionSpeakers, models.SessionSpeakers.speaker_id == Speakers.id).filter(models.SessionSpeakers.conference_id == conference_id, Speakers.owner_id == owner_id, Speakers.is_archived == False).order_by(models.Speakers.updated_on.desc()).all()
     return speakers
 
 def get_speakers_by_session_uuid(db: Session, session_uuid: str):
     session = db.query(models.Session).filter(models.Session.uuid == session_uuid).first()
     session_id = session.id if session else None
     speaker_ids = [speaker.speaker_id for speaker in db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == session_id).all()]
-    return db.query(Speakers).filter(Speakers.id.in_(speaker_ids)).all()
+    return db.query(Speakers).filter(Speakers.id.in_(speaker_ids)).order_by(models.Speakers.updated_on.desc()).all()
 
 def get_speaker_uuid_by_email(db: Session, email: str):
     speaker = db.query(Speakers).filter(Speakers.email == email).first()
