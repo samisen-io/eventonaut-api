@@ -33,7 +33,7 @@ def create_static_organizer(static_organizer: StaticOrganizer, db: Session = Dep
 
 @router.get("/static_organizer", response_model=list[StaticTableOutput])
 def get_static_organizer(db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_organizer = db.query(models.OrganizerStatus).all()
+    static_organizer = db.query(models.OrganizerStatus).order_by(models.OrganizerStatus.updated_on.desc()).all()
     if static_organizer is None or len(static_organizer) == 0:
         logging.exception("no status found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no status found")

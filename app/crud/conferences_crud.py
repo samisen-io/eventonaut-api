@@ -9,23 +9,22 @@ from ..schemas import conference_schemas as schemas, ai_assistant_schemas as ass
 from .. import AI_assitant
 import uuid
 from ..code_generator import generate_unique_string
-from .client_crud import get_client
-from ..static_enums import event, client
+from ..static_enums import event
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 
 # get all conferences ordered by start date in descending order
 def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
-    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).offset(offset).limit(limit).all()
+    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).order_by(models.Conference.start_date.desc(), models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
     return conferences
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
-    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.start_date >= datetime.utcnow().date(), models.Conference.is_archived == False).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
+    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.start_date >= datetime.utcnow().date(), models.Conference.is_archived == False).order_by(models.Conference.start_date, models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 10):
-    conferences = (db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).order_by(models.Conference.start_date).offset(offset).limit(limit).all())
+    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).order_by(models.Conference.start_date, models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
     return conferences
 
 def get_conference_by_code(db: Session, code: str):
