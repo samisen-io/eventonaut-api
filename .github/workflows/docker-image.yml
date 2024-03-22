@@ -16,12 +16,12 @@ jobs:
     - uses: actions/checkout@v3
 
     - name: Login to Azure
-      uses: azure/login@v1
-      #run: |
-        #az login -u abhishek@samisen.io -p MicrosoftAzure26842580#
+      #uses: azure/login@v1
+      run: |
+        az login -u abhishek@samisen.io -p MicrosoftAzure26842580#
         
-      with:
-        creds: '{"clientId": "a384ad8b-1975-4ecf-be7b-9295af9b1ead", "clientSecret": "e3aafe1e-5335-4e40-99cf-05a77d28e943", "subscriptionId": "9a1facf0-c31b-44a2-a3cd-11bfaa85f05d", "tenantId": "3f699e49-baba-42b2-9990-887b23ed895d"}'
+      #with:
+       # creds: '{"clientId": "a384ad8b-1975-4ecf-be7b-9295af9b1ead", "clientSecret": "e3aafe1e-5335-4e40-99cf-05a77d28e943", "subscriptionId": "9a1facf0-c31b-44a2-a3cd-11bfaa85f05d", "tenantId": "3f699e49-baba-42b2-9990-887b23ed895d"}'
 
     - name: Build the Docker image
       run: docker build -t eventonaut.azurecr.io/eventonaut-data-api-image:latest .
