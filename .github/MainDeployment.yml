@@ -52,4 +52,4 @@ jobs:
 
     - name: Restart Azure App Service
       run: |
-        az webapp restart --name your-app-name --resource-group your-resource-group
+        az webapp restart --name your-app-name --resource-group your-resource-group 
