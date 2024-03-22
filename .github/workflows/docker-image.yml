@@ -30,6 +30,7 @@ jobs:
         username: Eventonaut
         password: S7Fq6BHjpOD5P3FNgjLdwep999+UkYZ8p0rCI1WEdc+ACRChJ4KJ
         
+    - uses: actions/checkout@v3   
     - name: Build the Docker image
       run: docker build -t eventonaut-data-api-image . 
 
