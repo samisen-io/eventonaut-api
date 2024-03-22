@@ -29,10 +29,11 @@ jobs:
         username: Eventonaut
         password: S7Fq6BHjpOD5P3FNgjLdwep999+UkYZ8p0rCI1WEdc+ACRChJ4KJ
         
+    - name: List directory contents
+      run: ls -R   
+      
     - name: Build the Docker image
       run: docker build -t eventonaut.azurecr.io/eventonaut-data-api-image:latest .
-
-
 
     - name: Push Docker image to Azure Container Registry
       run: |
