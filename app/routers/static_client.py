@@ -33,7 +33,7 @@ def create_client_status(static_client: StaticClient, db: Session = Depends(get_
 
 @router.get("/client_status", response_model=list[StaticTableOutput])
 def get_client_status(db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_client = db.query(models.ClientStatus).all()
+    static_client = db.query(models.ClientStatus).order_by(models.ClientStatus.updated_on.desc()).all()
     if static_client is None or len(static_client) == 0:
         logging.exception("no status found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no status found")
