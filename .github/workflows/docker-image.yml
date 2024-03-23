@@ -44,9 +44,9 @@ jobs:
         username: ${{ secrets.username }}
         password: ${{ secrets.password }}
 
-    - name: Build and push Docker image
+    - name: Build the Docker image
       run: |
-        docker buildx build \
+        docker build \
           --build-arg OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
           --build-arg SECRET_KEY=${{ secrets.SECRET_KEY }} \
           --build-arg ALGORITHM=${{ secrets.ALGORITHM }} \
@@ -66,12 +66,12 @@ jobs:
           --build-arg PINECONE_API_ENV=${{ secrets.PINECONE_API_ENV }} \
           --build-arg PINECONE_API_INDEX=${{ secrets.PINECONE_API_INDEX }} \
           --build-arg AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }} \
-          -t ${{ secrets.registry }}/eventonaut-data-api-image:pr-${{ github.event.pull_request.number }} . --push
-
-    - name: Deploy to Azure App Service
-      uses: azure/webapps-deploy@v2
-      with:
-        app-name: 'event-data-api'
-        slot-name: 'production'
-        publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
-        images: '${{ secrets.registry }}/eventonaut-data-api-image:pr-${{ github.event.pull_request.number }}'
+          -t eventonaut-data-api-image .
+    
+    - name: Tag Docker image
+      run: |
+        docker tag eventonaut-data-api-image:latest ${{ secrets.registry }}/eventonaut-data-api-image:pr-${{ github.event.pull_request.number }}
+    
+    - name: Push Docker image to Azure Container Registry
+      run: |
+        docker push ${{ secrets.registry }}/eventonaut-data-api-image:pr-${{ github.event.pull_request.number }}
