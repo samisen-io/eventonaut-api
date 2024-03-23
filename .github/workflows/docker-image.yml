@@ -47,9 +47,9 @@ jobs:
     - name: Login to Azure Container Registry
       uses: docker/login-action@v1 
       with:
-        registry: eventonaut.azurecr.io
-        username: Eventonaut
-        password: S7Fq6BHjpOD5P3FNgjLdwep999+UkYZ8p0rCI1WEdc+ACRChJ4KJ
+        registry: ${{ secrets.registry }}
+        username: ${{ secrets.username }}
+        password: ${{ secrets.password }}
         
     - uses: actions/checkout@v3   
     - name: Build the Docker image
@@ -57,11 +57,11 @@ jobs:
 
     - name: create tag
       run: |
-        docker tag eventonaut-data-api-image eventonaut.azurecr.io/eventonaut-data-api-image:v3
+        docker tag eventonaut-data-api-image ${{ secrets.registry }}/eventonaut-data-api-image:pr-${{ github.event.pull_request.number }}
 
     - name: Push Docker image to Azure Container Registry
       run: |
-        docker push eventonaut.azurecr.io/eventonaut-data-api-image:v3
+        docker push ${{ secrets.registry }}/eventonaut-data-api-image:pr-${{ github.event.pull_request.number }}
 
     #- name: Deploy to Azure App Service
      # uses: azure/webapps-deploy@v2
