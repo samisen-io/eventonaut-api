@@ -36,7 +36,8 @@ async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), b
     if db_user:
         logging.exception("Email already registered")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
-    crud.validate_image_url(user.profile_image_url)
+    if user.profile_image_url is not None:
+        user.profile_image_url = crud.validate_image_url(user.profile_image_url)
     otp = await send_otp(email=user.email, email_subject="Email Verification")
     cache[user.email] = [otp, False, user]
     logging.info("OTP sent to Email")
@@ -81,6 +82,8 @@ def get_user(db: Session = Depends(get_db), current_user: User = Security(get_cu
 
 @router.put("/users", response_model=schemas.User)
 def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+    if user.profile_image_url is not None:
+        user.profile_image_url = crud.validate_image_url(user.profile_image_url)
     db_user = crud.get_db_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
