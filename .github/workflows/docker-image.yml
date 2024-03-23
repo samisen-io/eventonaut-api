@@ -57,11 +57,11 @@ jobs:
 
     - name: create tag
       run: |
-        docker tag eventonaut-data-api-image eventonaut.azurecr.io/eventonaut-data-api-image:v2
+        docker tag eventonaut-data-api-image eventonaut.azurecr.io/eventonaut-data-api-image:v3
 
     - name: Push Docker image to Azure Container Registry
       run: |
-        docker push eventonaut.azurecr.io/eventonaut-data-api-image:v2
+        docker push eventonaut.azurecr.io/eventonaut-data-api-image:v3
 
     #- name: Deploy to Azure App Service
      # uses: azure/webapps-deploy@v2
