@@ -79,7 +79,7 @@ jobs:
 
     - name: create tag
       run: |
-        docker tag eventonaut-data-api-image ${{ secrets.registry }}/eventonaut-data-api-image:pr-${{ github.event.pull_request.number }}
+        docker tag eventonaut-data-api-image ${{ secrets.registry }}/eventonaut-data-api-image:main-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
 
     - name: Push Docker image to Azure Container Registry
       run: |
