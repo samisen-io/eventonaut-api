@@ -83,10 +83,10 @@ jobs:
 
     - name: Push Docker image to Azure Container Registry
       run: |
-        docker push ${{ secrets.registry }}/eventonaut-data-api-image:pr-${{ github.event.pull_request.number }}
+        docker push ${{ secrets.registry }}/eventonaut-data-api-image:main-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
     
-    - name: Delete .env file
-      run: rm .env
+    #- name: Delete .env file
+      #run: rm .env
       
     #- name: Deploy to Azure App Service
      # uses: azure/webapps-deploy@v2
