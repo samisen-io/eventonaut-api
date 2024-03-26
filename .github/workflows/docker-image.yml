@@ -43,7 +43,9 @@ jobs:
         
       #with:
        # creds: '{"clientId": "a384ad8b-1975-4ecf-be7b-9295af9b1ead", "clientSecret": "e3aafe1e-5335-4e40-99cf-05a77d28e943", "subscriptionId": "9a1facf0-c31b-44a2-a3cd-11bfaa85f05d", "tenantId": "3f699e49-baba-42b2-9990-887b23ed895d"}'
-    
+    - name: Create .env file
+      run: echo "${{ vars.env_variable }}" > .env
+  
     - name: Login to Azure Container Registry
       uses: docker/login-action@v1 
       with:
@@ -62,7 +64,10 @@ jobs:
     - name: Push Docker image to Azure Container Registry
       run: |
         docker push ${{ secrets.registry }}/eventonaut-data-api-image:pr-${{ github.event.pull_request.number }}
-
+    
+    - name: Delete .env file
+      run: rm .env
+      
     #- name: Deploy to Azure App Service
      # uses: azure/webapps-deploy@v2
       #with:
