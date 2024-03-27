@@ -48,7 +48,7 @@ def map_session_document_response(session_id, response):
                                      size=f"{str(response.size)} MB")
 
 @router.get("/{session_id}", response_model=list[SessionDocumentResponse])
-def get_all_session_documents(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def get_all_session_documents(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
     session = sessions_crud.get_session_by_uuid_id(db, session_id, current_user.id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
