@@ -74,7 +74,7 @@ jobs:
         #slot-name: <SLOT_NAME>  # Optional, if deploying to a specific deployment slot
   
   #  - name: Deploy to Azure App Service
- #     uses: azure/webapps-deploy@v2
+  #    uses: azure/webapps-deploy@v2
   #    with:
     #    app-name: 'eventonaut-test-main'
      #   slot-name: 'production'
