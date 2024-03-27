@@ -93,14 +93,14 @@ jobs:
     #- name: Delete .env file
       #run: rm .env
       
-    #- name: Deploy to Azure App Service
-     # uses: azure/webapps-deploy@v2
-      #with:
-       # app-name: 'event-data-api'
-        #slot-name: 'production'
-        #publish-profile: '<publishData><publishProfile profileName="event-data-api - Web Deploy" publishMethod="MSDeploy" publishUrl="event-data-api.scm.azurewebsites.net:443" msdeploySite="event-data-api" userName="$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="event-data-api - FTP" publishMethod="FTP" publishUrl="ftps://waws-prod-blu-485.ftp.azurewebsites.windows.net/site/wwwroot" ftpPassiveMode="True" userName="event-data-api\$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="event-data-api - Zip Deploy" publishMethod="ZipDeploy" publishUrl="event-data-api.scm.azurewebsites.net:443" userName="$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile></publishData>'
-        #images: 'eventonaut.azurecr.io/eventonaut-data-api-image:main-b-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}'
+    - name: Deploy to Azure App Service
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: 'eventonaut-test-main'
+        slot-name: 'production'
+        publish-profile: ${{ secrets.TEST_ENV_PUBLISH_PROFILE }}
+        images: 'eventonaut.azurecr.io/eventonaut-data-api-image:main-b-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}'
 
-    #- name: Restart Azure App Service
-     # run: |
-      #  az webapp restart --name event-data-api --resource-group eventonaut-dev-group 
+    - name: Restart Azure App Service
+      run: |
+        az webapp restart --name eventonaut-test-main --resource-group eventonaut-dev-group 
