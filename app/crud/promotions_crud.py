@@ -10,19 +10,33 @@ from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 import time
 
+def exlude_archived(promotion: models.Promotions):
+    promotion.conference = None if promotion.conference is not None and promotion.conference.is_archived else promotion.conference
+
 def get_promotion(db: Session, promotion_id: str):
     promotion = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).filter(models.Promotions.uuid == promotion_id).first()
+    exlude_archived(promotion)
     return promotion
 
 def get_promotion_by_conference(db: Session, conference_id: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
-    return None if conference is None else db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
+    if conference is None:
+        return None
+    else:
+        promotion = db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
+        exlude_archived(promotion)
+        return conference
 
 def get_promotions(db: Session, skip: int = 0, limit: int = 5):
-    return db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(skip).limit(limit).all()
+    promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(skip).limit(limit).all()
+    for promotion in promotions:
+        exlude_archived(promotion)
+    return promotions
 
 def get_all_promotions(db: Session, skip: int = 0, limit: int = 100):
     promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(skip).limit(limit).all()
+    for promotion in promotions:
+        exlude_archived(promotion)
     return promotions
 
 def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
@@ -43,6 +57,7 @@ def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_promotion)
     promotion = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).filter(models.Promotions.uuid == db_promotion.uuid).first()
+    exlude_archived(promotion)
     return promotion
 
 def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
@@ -86,6 +101,7 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_promotion)
     promotion = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).filter(models.Promotions.uuid == db_promotion.uuid).first()
+    exlude_archived(promotion)
     return promotion
 
 def delete_promotion(db: Session, promotion_id: str):
