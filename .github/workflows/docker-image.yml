@@ -90,6 +90,6 @@ jobs:
         publish-profile: ${{ secrets.TEST_ENV_PUBLISH_PROFILE }}
         images: 'eventonaut.azurecr.io/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}'
 
-    #- name: Restart Azure App Service
-    #  run: |
-   #     az webapp restart --name eventonaut-test-main --resource-group eventonaut-dev-group 
+    - name: Restart Azure App Service
+      run: |
+        az webapp restart --name eventonaut-test-main --resource-group eventonaut-dev-group 
