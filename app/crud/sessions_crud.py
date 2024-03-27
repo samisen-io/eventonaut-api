@@ -12,19 +12,27 @@ from ..static_enums import session as session_enum
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 
+def exclude_archived(session: models.Session):
+    if session.speakers is not None:
+        session.speakers = [speaker for speaker in session.speakers if not speaker.is_archived]
+
 def add_speakers_to_session(db: Session, session: models.Session):
     db_session_speakers = db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == session.id).all()
     speaker_ids = [speaker.speaker_id for speaker in db_session_speakers]
     speakers = []
     for speaker_id in speaker_ids:
-        speaker = db.query(models.Speakers).filter(models.Speakers.id == speaker_id).first()
+        speaker = db.query(models.Speakers).filter(models.Speakers.id == speaker_id, models.Speakers.is_archived == False).first()
         speakers.append(speaker)
     session.speakers_list = speakers
     return session
 
 def get_sessions(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(models.Session).options(joinedload(models.Session.speakers)).filter(models.Session.is_archived == False).order_by(models.Session.updated_on.desc()).offset(offset).limit(limit).all()
-
+    sessions = db.query(models.Session).options(joinedload(models.Session.speakers)).filter(models.Session.is_archived == False).order_by(models.Session.updated_on.desc()).offset(offset).limit(limit).all()
+    for session in sessions:
+        if session is not None:
+            exclude_archived(session)
+    return sessions
+        
 def create_conference_session(db: Session, session: schemas.SessionCreate, owner_id: int, conference_id: int, speaker_ids: list[int]):
     db_session = models.Session(name=session.name, start_time=session.start_time, end_time=session.end_time, description=session.description, date=session.date, location=session.location, owner_id=owner_id, session_image_url=session.session_image_url)
     db_session.created_on = db_session.updated_on = datetime.utcnow()
@@ -54,6 +62,7 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_session)
     db_session = db.query(models.Session).options(joinedload(models.Session.speakers)).filter(models.Session.id == db_session.id).first()
+    exclude_archived(db_session)
     return db_session
 
 def get_session_by_conference_uuid_session_uuid(db: Session, session_id: str, conference_id: str):
@@ -73,6 +82,8 @@ def get_session_by_session_uuid(db: Session, uuid: str):
 
 def get_session_by_uuid_id(db: Session, uuid: int, owner_id: int):
     db_session = db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.owner_id == owner_id, models.Session.is_archived == False).first()
+    if db_session is not None:
+        exclude_archived(db_session)
     return db_session
 
 def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str):
@@ -80,6 +91,9 @@ def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str):
     if conference is None:
         return None
     db_sessions = db.query(models.Session).options(joinedload(models.Session.speakers)).filter(models.Session.conference_id == conference.id, models.Session.is_archived == False).order_by(models.Session.updated_on.desc()).all()
+    for db_session in db_sessions:
+        if db_session is not None:
+            exclude_archived(db_session)
     return db_sessions
 
 def delete_session(db: Session, db_session: models.Session):

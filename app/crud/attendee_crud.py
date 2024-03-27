@@ -1,4 +1,3 @@
-import os
 from sqlalchemy.orm import Session
 from .. import models
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
@@ -6,10 +5,7 @@ from datetime import datetime
 from .. import hashing
 from .. AI_assitant import create_thread
 import uuid
-from ..crud import conferences_crud
-from ..static_enums import event
 from ..static_enums import attendee as attendee_enum
-from urllib.parse import urlparse
 from ..routers import upload_image
 from fastapi import HTTPException, status
 import logging
@@ -42,7 +38,7 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.add(db_attendee)
     db.commit()
     db.refresh(db_attendee)
-    attendee = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == db_user.id).first()
+    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
     return attendee
 
 def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
@@ -53,7 +49,7 @@ def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
 
 # get all attendees
 def get_attendees(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).offset(skip).limit(limit).all()
+    return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.is_archived == False).offset(skip).limit(limit).options(joinedload(models.Attendee.user)).all()
 
 # get attendee by email
 def get_attendee_by_email(db: Session, email: str):
@@ -61,10 +57,10 @@ def get_attendee_by_email(db: Session, email: str):
 
 # get attendee by id
 def get_attendee_by_uuid(db: Session, attendee_id: str):
-    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.uuid == attendee_id, models.User.is_archived == False).first()
+    return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.uuid == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
 
 def get_attendee_by_id(db: Session, attendee_id: int):
-    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == attendee_id, models.User.is_archived == False).first()
+    return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
 
 # update attendee by id
 def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendeeUpdate):
@@ -111,7 +107,7 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_attendee)
     db.refresh(db_user)
-    attendee = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == db_user.id).first()
+    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
     return attendee
 
 # update attendee password by id
@@ -126,7 +122,7 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: sc
     db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
-    attendee = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == db_user.id).first()
+    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
     return attendee
 
 # delete attendee by id
