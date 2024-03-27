@@ -6,27 +6,6 @@ on:
   pull_request:
     branches: [ "test-script" ]
 
-env:
-  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-  SECRET_KEY: ${{ secrets.SECRET_KEY }}
-  ALGORITHM: ${{ secrets.ALGORITHM }}
-  ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES: ${{ secrets.ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES }}
-  ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS: ${{ secrets.ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS }}
-  ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES: ${{ secrets.ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES }}
-  ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS: ${{ secrets.ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS }}
-  DATABASE_URL_ADDRESS: ${{ secrets.DATABASE_URL_ADDRESS }}
-  sqlalchemy.url: ${{ secrets.SQLALCHEMY_URL }}
-  EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
-  EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-  OTP_EXPIRE: ${{ secrets.OTP_EXPIRE }}
-  REFRESH_TOKEN_SECRET_KEY: ${{ secrets.REFRESH_TOKEN_SECRET_KEY }}
-  CLIENT_ID: ${{ secrets.CLIENT_ID }}
-  CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-  PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
-  PINECONE_API_ENV: ${{ secrets.PINECONE_API_ENV }}
-  PINECONE_API_INDEX: ${{ secrets.PINECONE_API_INDEX }}
-  AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
-
 jobs:
 
   build:
@@ -37,38 +16,36 @@ jobs:
     #- uses: actions/checkout@v3
 
     #- name: Login to Azure
-      #uses: azure/login@v1
+      #uses: Azure/login@v2.0.0
       #run: |
-       # az login -u abhishek@samisen.io -p MicrosoftAzure26842580#
-        
-      #with:
-       # creds: '{"clientId": "a384ad8b-1975-4ecf-be7b-9295af9b1ead", "clientSecret": "e3aafe1e-5335-4e40-99cf-05a77d28e943", "subscriptionId": "9a1facf0-c31b-44a2-a3cd-11bfaa85f05d", "tenantId": "3f699e49-baba-42b2-9990-887b23ed895d"}'
-    #- name: Create .env file
-      #run: echo "${{ vars.env_variable }}" > .env
-    #- name: Create .env file
-      #run: |
-        #echo OPENAI_API_KEY=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 >> .env
-        #echo SECRET_KEY=7e78c2d5bcc770948dc41cddd0ad56b38700d32458a449ad6c7e88ed3b1604d0 >> .env
-        #echo ALGORITHM=HS256 >> .env
-        #echo ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES=60 >> .env
-        #echo ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS=10 >> .env
-        #echo ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES=90 >> .env
-        #echo ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS=365 >> .env
-        #echo DATABASE_URL_ADDRESS=postgresql://eventonaut_admin:SamisenAdmin123$@eventonaut-dev.postgres.database.azure.com:5432/postgres >> .env
-        #echo sqlalchemy.url=postgresql://vlnjcngpcwwbuq:f0b0f8931e57fec738718db99a01eb100f5ff4818543055d4fffa5a559b9a051@ec2-54-84-182-168.compute-1.amazonaws.com:5432/d7kqtqnollr189 >> .env
-        #echo EMAIL_ADDRESS=demo34125@gmail.com >> .env
-        #echo EMAIL_PASSWORD='orse wxwr crjv sxry' >> .env
-        #echo OTP_EXPIRE=300 >> .env
-        #echo REFRESH_TOKEN_SECRET_KEY=660a9cf582bf5976adfe5e946eee798aca0f699751edae8a2822a080d846e945 >> .env
-        #echo CLIENT_ID=foo >> .env
-        #echo CLIENT_SECRET=bar >> .env
-        #echo PINECONE_API_KEY=c3921b4c-40a0-45df-8fcb-4f85b84d469c >> .env
-        #echo PINECONE_API_ENV=gcp-starter >> .env
-        #echo PINECONE_API_INDEX=eventonaut-events >> .env
-        #echo AZURE_STORAGE_CONNECTION_STRING='DefaultEndpointsProtocol=https;AccountName=conferencebuddydev;AccountKey=AkI79mMDMpg+Xi75ez89PO5HuhqOLdB5cOtNhsARwapbPVcQ4AuzVkpJ7jaB+iIZm8WPV7HE4CSB+AStiZkq/A==;EndpointSuffix=core.windows.net' >> .env
-    
+        #az login -u abhishek@samisen.io -p MicrosoftAzure26842580#
+      #with: 
+        #client-id: a384ad8b-1975-4ecf-be7b-9295af9b1ead
+        #client_secret: e3aafe1e-5335-4e40-99cf-05a77d28e943
+        #tenant-id: 3f699e49-baba-42b2-9990-887b23ed895d
+        #subscription-id: 9a1facf0-c31b-44a2-a3cd-11bfaa85f05d 
 
-      
+    #- name: Azure login
+      #uses: azure/login@v2
+     # with:
+        #client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        #tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+       # subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+     #   enable-AzPSSession: true
+
+   # - name: Azure CLI script
+    #  uses: azure/CLI@v1
+     # with:
+      #  azcliversion: latest
+      #  inlineScript: |
+       #   az account show
+      #with:
+        #creds: '{"clientId": "a384ad8b-1975-4ecf-be7b-9295af9b1ead", "clientSecret": "e3aafe1e-5335-4e40-99cf-05a77d28e943", "subscriptionId": "9a1facf0-c31b-44a2-a3cd-11bfaa85f05d", "tenantId": "3f699e49-baba-42b2-9990-887b23ed895d"}'    
+
+    - name: Azure login
+      uses: azure/login@v1
+      with:
+        creds: '{"clientId": "${{ secrets.AZURE_CLIENT_ID }}", "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET }}", "tenantId": "${{ secrets.AZURE_TENANT_ID }}", "subscriptionId": "${{ secrets.AZURE_SUBSCRIPTION_ID }}"}'   
     
     - name: Login to Azure Container Registry
       uses: docker/login-action@v1 
@@ -80,27 +57,23 @@ jobs:
     - uses: actions/checkout@v3   
     - name: Build the Docker image
       run: docker build -t eventonaut-data-api-image .  
-     
  
-    - name: create tag
+    - name: Create tag
       run: |
         docker tag eventonaut-data-api-image ${{ secrets.registry }}/eventonaut-data-api-image:main-b-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
 
     - name: Push Docker image to Azure Container Registry
       run: |
         docker push ${{ secrets.registry }}/eventonaut-data-api-image:main-b-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
-    
-    #- name: Delete .env file
-      #run: rm .env
       
-    #- name: Deploy to Azure App Service
-     # uses: azure/webapps-deploy@v2
-      #with:
-       # app-name: 'event-data-api'
-        #slot-name: 'production'
-        #publish-profile: '<publishData><publishProfile profileName="event-data-api - Web Deploy" publishMethod="MSDeploy" publishUrl="event-data-api.scm.azurewebsites.net:443" msdeploySite="event-data-api" userName="$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="event-data-api - FTP" publishMethod="FTP" publishUrl="ftps://waws-prod-blu-485.ftp.azurewebsites.windows.net/site/wwwroot" ftpPassiveMode="True" userName="event-data-api\$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="event-data-api - Zip Deploy" publishMethod="ZipDeploy" publishUrl="event-data-api.scm.azurewebsites.net:443" userName="$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile></publishData>'
-        #images: 'eventonaut.azurecr.io/eventonaut-data-api-image:latest'
+  #  - name: Deploy to Azure App Service
+ #     uses: azure/webapps-deploy@v2
+  #    with:
+    #    app-name: 'eventonaut-test-main'
+     #   slot-name: 'production'
+     #   publish-profile: ${{ secrets.TEST_ENV_PUBLISH_PROFILE }}
+      #  images: 'eventonaut.azurecr.io/eventonaut-data-api-image:main-b-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}'
 
     #- name: Restart Azure App Service
-     # run: |
-      #  az webapp restart --name event-data-api --resource-group eventonaut-dev-group  
+    #  run: |
+   #     az webapp restart --name eventonaut-test-main --resource-group eventonaut-dev-group 
