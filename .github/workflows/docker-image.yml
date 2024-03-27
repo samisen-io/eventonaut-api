@@ -15,15 +15,30 @@ jobs:
     steps:
     #- uses: actions/checkout@v3
 
-    - name: Login to Azure
-      uses: Azure/login@v2.0.0
+    #- name: Login to Azure
+      #uses: Azure/login@v2.0.0
       #run: |
         #az login -u abhishek@samisen.io -p MicrosoftAzure26842580#
-      with: 
-        client-id: a384ad8b-1975-4ecf-be7b-9295af9b1ead
-        client_secret: e3aafe1e-5335-4e40-99cf-05a77d28e943
-        tenant-id: 3f699e49-baba-42b2-9990-887b23ed895d
-        subscription-id: 9a1facf0-c31b-44a2-a3cd-11bfaa85f05d
+      #with: 
+        #client-id: a384ad8b-1975-4ecf-be7b-9295af9b1ead
+        #client_secret: e3aafe1e-5335-4e40-99cf-05a77d28e943
+        #tenant-id: 3f699e49-baba-42b2-9990-887b23ed895d
+        #subscription-id: 9a1facf0-c31b-44a2-a3cd-11bfaa85f05d
+
+    - name: Azure login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        enable-AzPSSession: true
+
+    - name: Azure CLI script
+      uses: azure/CLI@v1
+      with:
+        azcliversion: latest
+        inlineScript: |
+          az account show
       #with:
         #creds: '{"clientId": "a384ad8b-1975-4ecf-be7b-9295af9b1ead", "clientSecret": "e3aafe1e-5335-4e40-99cf-05a77d28e943", "subscriptionId": "9a1facf0-c31b-44a2-a3cd-11bfaa85f05d", "tenantId": "3f699e49-baba-42b2-9990-887b23ed895d"}'    
 
