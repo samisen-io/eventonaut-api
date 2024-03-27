@@ -68,7 +68,6 @@ jobs:
         #echo AZURE_STORAGE_CONNECTION_STRING='DefaultEndpointsProtocol=https;AccountName=conferencebuddydev;AccountKey=AkI79mMDMpg+Xi75ez89PO5HuhqOLdB5cOtNhsARwapbPVcQ4AuzVkpJ7jaB+iIZm8WPV7HE4CSB+AStiZkq/A==;EndpointSuffix=core.windows.net' >> .env
     
 
-    - name: create .env
       
     
     - name: Login to Azure Container Registry
