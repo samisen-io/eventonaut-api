@@ -60,17 +60,17 @@ jobs:
  
     - name: Create tag
       run: |
-        docker tag eventonaut-data-api-image ${{ secrets.registry }}/eventonaut-data-api-image:main-b-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
+        docker tag eventonaut-data-api-image ${{ secrets.registry }}/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
 
     - name: Push Docker image to Azure Container Registry
       run: |
-        docker push ${{ secrets.registry }}/eventonaut-data-api-image:main-b-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
+        docker push ${{ secrets.registry }}/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
         
     - name: Deploy to Azure Web App
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'eventonaut-test-main'
-        images: ${{ secrets.registry }}/eventonaut-data-api-image:main-b-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
+        images: ${{ secrets.registry }}/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
         #slot-name: <SLOT_NAME>  # Optional, if deploying to a specific deployment slot
   
   #  - name: Deploy to Azure App Service
@@ -79,7 +79,7 @@ jobs:
     #    app-name: 'eventonaut-test-main'
      #   slot-name: 'production'
      #   publish-profile: ${{ secrets.TEST_ENV_PUBLISH_PROFILE }}
-      #  images: 'eventonaut.azurecr.io/eventonaut-data-api-image:main-b-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}'
+      #  images: 'eventonaut.azurecr.io/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}'
 
     #- name: Restart Azure App Service
     #  run: |
