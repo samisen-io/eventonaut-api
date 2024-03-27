@@ -79,7 +79,6 @@ jobs:
         password: ${{ secrets.password }}
         
     - uses: actions/checkout@v3
-
     - name: create .env
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -102,7 +101,7 @@ jobs:
         PINECONE_API_INDEX: ${{ secrets.PINECONE_API_INDEX }}
         AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
       run: docker build -t eventonaut-data-api-image . 
-
+ 
     - name: create tag
       run: |
         docker tag eventonaut-data-api-image ${{ secrets.registry }}/eventonaut-data-api-image:main-b-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
