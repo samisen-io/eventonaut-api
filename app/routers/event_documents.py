@@ -32,7 +32,10 @@ def create_event_document(conference_id: str, file: UploadFile = File(...), db: 
         response = crud.insert_event_document(db= db, request= request)
         
         return map_event_document_response(conference_id, response)
-        
+    
+    except HTTPException as e:
+        logging.error(f"An error occurred while creating event document: {str(e)}")
+        raise e    
     except Exception as e:
         logging.error(f"An error occurred while creating event document: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"{str(e)}")
@@ -60,6 +63,9 @@ def delete_event_document(event_document_id: str, db: Session = Depends(get_db),
         deleted_event_document = crud.delete_event_document(db, event_document_id)
         delete_blob_by_url(deleted_event_document.document_url)
         return {"message": "Document deleted successfully"}
+    except HTTPException as e:
+        logging.error(f"An error occurred while deleting event document: {str(e)}")
+        raise e
     except Exception as e:
         logging.exception(f"Error deleting document: {e}")
-        raise HTTPException(status_code=e.status_code, detail=f"{str(e.detail)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"{str(e)}")
