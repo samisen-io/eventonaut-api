@@ -187,7 +187,8 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
             db.add(db_event_sponsor)
             db.commit()
             db.refresh(db_event_sponsor)
-            
+    
+    db.refresh(db_conference)        
     db_conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.id == db_conference.id).first()
     exclude_archived(db_conference)
     return db_conference
