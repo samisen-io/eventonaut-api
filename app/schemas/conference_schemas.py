@@ -70,13 +70,13 @@ class ConferenceCreate(ConferenceBase):
     @field_validator('sponsor_ids')
     def sponsor_ids_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
-            if len(v) == 0:
+            if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
                 return None
-            for sponsor_id in v:
-                if sponsor_id.strip() == "":
+            for val in v:
+                if val.strip() == "":
                     raise ValueError(f"{info.field_name} cannot be empty")
-                elif len(sponsor_id) > 256:
-                    raise ValueError(f"{info.field_name} must not be longer than 256 characters")
+                elif len(val) > 256:
+                    raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
         return v
 
 class ConferenceUpdate(BaseModel):
@@ -123,13 +123,13 @@ class ConferenceUpdate(BaseModel):
     @field_validator('sponsor_ids')
     def sponsor_ids_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
-            if len(v) == 0:
+            if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
                 return None
-            for sponsor_id in v:
-                if sponsor_id.strip() == "":
+            for val in v:
+                if val.strip() == "":
                     raise ValueError(f"{info.field_name} cannot be empty")
-                elif len(sponsor_id) > 256:
-                    raise ValueError(f"{info.field_name} must not be longer than 256 characters")
+                elif len(val) > 256:
+                    raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
         return v
     
     @field_validator("status")
