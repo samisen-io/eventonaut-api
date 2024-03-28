@@ -22,10 +22,6 @@ async def send_otp(email: str, email_subject: str):
         logging.exception("Email not sent")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not sent")
     return otp
-
-@router.get("/success", status_code=status.HTTP_200_OK)
-def success():
-    return {"message": "Success!"}
     
 @router.post("/users", status_code=status.HTTP_200_OK)
 async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
