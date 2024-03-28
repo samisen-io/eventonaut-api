@@ -57,3 +57,4 @@ jobs:
       if: failure()
       run: |
         curl -X POST -H "Content-Type: application/json" -d "{\"text\": \"eventonaut data api deployment failed for PR ${{ github.event.pull_request.number }}. Build the Docker image step outcome: ${{ steps.build.outcome }}\"}" "https://chat.googleapis.com/v1/spaces/AAAAQQhkUXo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dcuuVkTjlOtO7piue45_l6GcTmqEe4TaYhns9uDLmNg"
+
