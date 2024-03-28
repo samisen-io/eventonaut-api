@@ -22,7 +22,7 @@ jobs:
       id: Login_to_Azure_Container_Registry
       uses: docker/login-action@v1.10.0
       with:
-        registry: ${{ secrets.registry }}
+        registry: ${{ secrets.registry vsdsgbtrb gbg}}
         username: ${{ secrets.username }}
         password: ${{ secrets.password }}
     
