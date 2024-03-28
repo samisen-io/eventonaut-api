@@ -19,6 +19,7 @@ jobs:
     steps:
        
     - name: Login to Azure Container Registry
+      id: Login to Azure Container Registry
       uses: docker/login-action@v1 
       with:
         registry: ${{ secrets.registry }}
@@ -27,20 +28,34 @@ jobs:
     
     - uses: actions/checkout@v3   
     - name: Build the Docker image
+      id: Build the Docker image
       run: docker build -t eventonaut-data-api-image .  
  
     - name: Create tag
+      id: Create tag
       run: |
         docker tag eventonaut-data-api-image ${{ secrets.registry }}/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
 
     - name: Push Docker image to Azure Container Registry
+      id: Push Docker image to Azure Container Registry
       run: |
         docker push ${{ secrets.registry }}/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
         
     - name: Deploy to Azure App Service
+      id: Deploy to Azure App Service
       uses: azure/webapps-deploy@v2
       with:
         app-name: '${{ secrets.APP_NAME }}'
         slot-name: 'production'
         publish-profile: ${{ secrets.PUBLISH_PROFILE }}
         images: 'eventonaut.azurecr.io/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}'
+
+    - name: Notify on success
+      if: success()
+      run: |
+        curl -X POST -H "Content-Type: application/json" -d "{\"text\": \"eventonaut data api deployment successful for PR ${{ github.event.pull_request.number }} APK link: https://demo-eventonaut-data-api.azurewebsites.net/docs\"}" "https://chat.googleapis.com/v1/spaces/AAAAQQhkUXo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dcuuVkTjlOtO7piue45_l6GcTmqEe4TaYhns9uDLmNg"
+  
+    - name: Notify on failure
+      if: failure()
+      run: |
+        curl -X POST -H "Content-Type: application/json" -d "{\"text\": \"eventonaut data api deployment failed for PR ${{ github.event.pull_request.number }}. Build the Docker image step outcome: ${{ steps.build.outcome }}\"}" "https://chat.googleapis.com/v1/spaces/AAAAQQhkUXo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dcuuVkTjlOtO7piue45_l6GcTmqEe4TaYhns9uDLmNg"
