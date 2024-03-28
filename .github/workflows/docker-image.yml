@@ -61,7 +61,16 @@ jobs:
 
     - name: Check Deploy to Azure App Service
       run: echo "Deploy to Azure App Service outcome:${{ steps.Deploy_to_Azure_App_Service.outcome }}"
-
+      
+    - name: Check API status
+      id: Check_API_status
+      run: |
+        status=$(curl -o /dev/null -s -w "%{http_code}\n" https://event-data-api.azurewebsites.net)
+        if [ "$status" -ne 200 ]; then
+          echo "API check failed with status $status"
+          exit 1
+        fi
+        
     - name: Notify on success
       if: success()
       run: |
@@ -76,6 +85,6 @@ jobs:
       run: |
         curl -X POST -H "Content-Type: application/json" -d @- "https://chat.googleapis.com/v1/spaces/AAAAQQhkUXo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dcuuVkTjlOtO7piue45_l6GcTmqEe4TaYhns9uDLmNg" <<EOF
         {
-          "text": "Eventonaut data api deployment failed for PR ${{ github.event.pull_request.number }}\n\n| _Login to Azure Container Registry step outcome_ | ${{ steps.Login_to_Azure_Container_Registry.outcome }} |\n| _Build the Docker image step outcome_ | ${{ steps.Build_the_Docker_image.outcome }} |\n| _Create tag step outcome_ | ${{ steps.Create_tag.outcome }} |\n| _Push Docker image to Azure Container Registry step outcome_ | ${{ steps.Push_Docker_image_to_Azure_Container_Registry.outcome }} |\n| _Deploy to Azure App Service step outcome_ | ${{ steps.Deploy_to_Azure_App_Service.outcome }} |\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} | "
+          "text": "Eventonaut data api deployment failed for PR ${{ github.event.pull_request.number }}\n\n| _Login to Azure Container Registry step outcome_ | ${{ steps.Login_to_Azure_Container_Registry.outcome }} |\n| _Build the Docker image step outcome_ | ${{ steps.Build_the_Docker_image.outcome }} |\n| _Create tag step outcome_ | ${{ steps.Create_tag.outcome }} |\n| _Push Docker image to Azure Container Registry step outcome_ | ${{ steps.Push_Docker_image_to_Azure_Container_Registry.outcome }} |\n| _Deploy to Azure App Service step outcome_ | ${{ steps.Deploy_to_Azure_App_Service.outcome }} |\n| _Check API status step outcome_ | ${{ steps.Check_API_status.outcome }} |\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} | "
         }
         EOF
