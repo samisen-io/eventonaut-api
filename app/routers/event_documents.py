@@ -50,7 +50,10 @@ def map_event_document_response(conference_id, response):
 
 @router.get("/{conference_id}", response_model=list[EventDocumentResponse])
 def get_all_event_documents(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
-    conference = conferences_crud.get_conference_by_uuid(db, conference_id, current_user.id)
+    if current_user.role == "organizer":
+        conference = conferences_crud.get_conference_by_uuid(db, conference_id, current_user.id)
+    elif current_user.role == "attendee":
+        conference = conferences_crud.get_conference(db, conference_id)
     documents = crud.get_event_documents_by_conference_id(db, conference.id)
     if len(documents) == 0:
         logging.exception(f"No documents found for conference with id: {conference_id}")
