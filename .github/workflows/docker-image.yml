@@ -18,7 +18,7 @@ jobs:
       id: Login_to_Azure_Container_Registry
       uses: docker/login-action@v1.10.0
       with:
-        registry: ${{ secrets.registry123 }}
+        registry: ${{ secrets.registry }}
         username: ${{ secrets.username }}
         password: ${{ secrets.password }}
 
@@ -45,7 +45,7 @@ jobs:
     - name: Push Docker image to Azure Container Registry
       id: Push_Docker_image_to_Azure_Container_Registry
       run: |
-        docker push ${{ secrets.registry }}/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
+        docker push ${{ secrets.registry133 }}/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
 
     - name: Check Push Docker image to Azure Container Registry
       run: echo "Push Docker image to Azure Container Registry outcome:${{ steps.Push_Docker_image_to_Azure_Container_Registry.outcome }}"
