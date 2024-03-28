@@ -7,17 +7,13 @@ on:
     branches: [ "test-script" ]
 
 permissions:
-      id-token: write
-      contents: read
+  id-token: write
+  contents: read
       
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-       
     - name: Login to Azure Container Registry
       id: Login_to_Azure_Container_Registry
       uses: docker/login-action@v1.10.0
@@ -25,22 +21,35 @@ jobs:
         registry: ${{ secrets.registry123 }}
         username: ${{ secrets.username }}
         password: ${{ secrets.password }}
-    
+
+    - name: Check Login to Azure Container Registry
+      run: echo "Login to Azure Container Registry outcome:${{ steps.Login_to_Azure_Container_Registry.outcome }}"
+
     - uses: actions/checkout@v3
+
     - name: Build the Docker image
       id: Build_the_Docker_image
       run: docker build -t eventonaut-data-api-image .  
- 
+
+    - name: Check Build the Docker image
+      run: echo "Build the Docker image outcome:${{ steps.Build_the_Docker_image.outcome }}"
+
     - name: Create tag
       id: Create_tag
       run: |
         docker tag eventonaut-data-api-image ${{ secrets.registry }}/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
 
+    - name: Check Create tag
+      run: echo "Create tag outcome:${{ steps.Create_tag.outcome }}"
+
     - name: Push Docker image to Azure Container Registry
       id: Push_Docker_image_to_Azure_Container_Registry
       run: |
         docker push ${{ secrets.registry }}/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}
-        
+
+    - name: Check Push Docker image to Azure Container Registry
+      run: echo "Push Docker image to Azure Container Registry outcome:${{ steps.Push_Docker_image_to_Azure_Container_Registry.outcome }}"
+
     - name: Deploy to Azure App Service
       id: Deploy_to_Azure_App_Service
       uses: azure/webapps-deploy@v2
@@ -50,6 +59,9 @@ jobs:
         publish-profile: ${{ secrets.PUBLISH_PROFILE }}
         images: 'eventonaut.azurecr.io/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}'
 
+    - name: Check Deploy to Azure App Service
+      run: echo "Deploy to Azure App Service outcome:${{ steps.Deploy_to_Azure_App_Service.outcome }}"
+
     - name: Notify on success
       if: success()
       run: |
@@ -58,21 +70,12 @@ jobs:
           "text": "eventonaut data api deployment successful for PR ${{ github.event.pull_request.number }}\n\n| _API link_ | https://demo-eventonaut-data-api.azurewebsites.net/docs |\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} |"
         }
         EOF
-    
-    - name: Notify on success
-      if: success() && steps.Login_to_Azure_Container_Registry == 'success'
-      run: echo "Build successful"
-    
-    - name: Notify on failure
-      if: failure() || steps.Login_to_Azure_Container_Registry == 'failure'
-      run: echo "Build failed"
       
     - name: Notify on failure
       if: failure()
       run: |
         curl -X POST -H "Content-Type: application/json" -d @- "https://chat.googleapis.com/v1/spaces/AAAAQQhkUXo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dcuuVkTjlOtO7piue45_l6GcTmqEe4TaYhns9uDLmNg" <<EOF
         {
-          "text": "Eventonaut data api deployment failed for PR ${{ github.event.pull_request.number }}\n\n| _Build the Docker image step outcome_ | ${{ steps.Login_to_Azure_Container_Registry }}|\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} | "
+          "text": "Eventonaut data api deployment failed for PR ${{ github.event.pull_request.number }}\n\n| _Login to Azure Container Registry step outcome_ | ${{ steps.Login_to_Azure_Container_Registry.outcome }} |\n| _Build the Docker image step outcome_ | ${{ steps.Build_the_Docker_image.outcome }} |\n| _Create tag step outcome_ | ${{ steps.Create_tag.outcome }} |\n| _Push Docker image to Azure Container Registry step outcome_ | ${{ steps.Push_Docker_image_to_Azure_Container_Registry.outcome }} |\n| _Deploy to Azure App Service step outcome_ | ${{ steps.Deploy_to_Azure_App_Service.outcome }} |\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} | "
         }
         EOF
-        
