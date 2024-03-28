@@ -127,6 +127,10 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate, db_speaker: Spea
 
 def delete_speaker(db: Session, speaker_id: str):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker_id).first()
+    
+    if db_speaker.sessions and any([session.is_archived == False for session in db_speaker.sessions]):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Speaker is associated with a session. Cannot delete speaker.")
+    
     db_speaker.is_archived = True
     db.commit()
     return True

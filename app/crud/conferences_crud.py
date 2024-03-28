@@ -28,7 +28,8 @@ def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 
     conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.start_date >= datetime.utcnow().date(), models.Conference.is_archived == False).order_by(models.Conference.start_date, models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
     
     for conference in conferences:
-        exclude_archived(conference)
+        if conference is not None:
+            exclude_archived(conference)
     
     return conferences
 
@@ -94,6 +95,13 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db_conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.id == db_conference.id).first()
     exclude_archived(db_conference)
     return db_conference
+
+def get_conference(db: Session, conference_id: str):
+    conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
+    if conference is None:
+        return None
+    exclude_archived(conference)
+    return conference
 
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
     try:
