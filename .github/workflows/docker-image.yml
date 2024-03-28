@@ -26,7 +26,7 @@ jobs:
         username: ${{ secrets.username }}
         password: ${{ secrets.password }}
     
-    - uses: mnrendra/checkout-fetch-all@v1
+    - uses: actions/checkout@v3
     - name: Build the Docker image
       id: Build_the_Docker_image
       run: docker build -t eventonaut-data-api-image .  
@@ -43,7 +43,7 @@ jobs:
         
     - name: Deploy to Azure App Service
       id: Deploy_to_Azure_App_Service
-      uses: sethreidnz/azure-webapps-preview-deploy@v0.1.0
+      uses: azure/webapps-deploy@v2
       with:
         app-name: '${{ secrets.APP_NAME }}'
         slot-name: 'production'
