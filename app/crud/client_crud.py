@@ -85,8 +85,13 @@ def update_client(db: Session, client: schemas.ClientUpdate):
 
 def delete_client(db: Session, client_id: str):
     db_client = db.query(models.Client).filter(models.Client.uuid == client_id).first()
+    
     if db_client is None:
         return False
+
+    if db_client.conferences and any([conference.is_archived == False for conference in db_client.conferences]):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot delete client with existing conference relationship")
+
     db_client.is_archived = True
     db.commit()
     return True
