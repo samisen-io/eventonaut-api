@@ -97,6 +97,8 @@ def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str):
     return db_sessions
 
 def delete_session(db: Session, db_session: models.Session):
+    if db_session.speakers and any([speaker.is_archived == False for speaker in db_session.speakers]):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Session is associated with a speaker. Cannot delete session.")
     db_session.is_archived = True
     db.commit()
     return True
