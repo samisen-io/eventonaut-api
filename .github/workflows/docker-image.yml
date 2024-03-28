@@ -64,7 +64,7 @@ jobs:
       run: |
         curl -X POST -H "Content-Type: application/json" -d @- "https://chat.googleapis.com/v1/spaces/AAAAQQhkUXo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dcuuVkTjlOtO7piue45_l6GcTmqEe4TaYhns9uDLmNg" <<EOF
         {
-          "text": "Eventonaut data api deployment failed** for PR ${{ github.event.pull_request.number }}\n\n| _Build the Docker image step outcome_ | {{ steps.Login_to_Azure_Container_Registry }}|\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} | "
+          "text": "Eventonaut data api deployment failed** for PR ${{ github.event.pull_request.number }}\n\n| _Build the Docker image step outcome_ | '{{ steps.Login_to_Azure_Container_Registry }}'|\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} | "
         }
         EOF
         
