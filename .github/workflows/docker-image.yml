@@ -25,8 +25,8 @@ jobs:
         password: ${{ secrets.password }}
     
     - uses: actions/checkout@v3   
-    - name: Build_the_Docker_image
-      id: Build the Docker image
+    - name: Build the Docker image
+      id: Build_the_Docker_image
       run: docker build -t eventonaut-data-api-image .  
  
     - name: Create tag
