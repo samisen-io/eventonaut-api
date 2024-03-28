@@ -65,7 +65,7 @@ jobs:
     - name: Check API status
       id: Check_API_status
       run: |
-        status=$(curl -o /dev/null -s -w "%{http_code}\n" https://event123-data-api.azurewebsites.net)
+        status=$(curl -o /dev/null -s -w "%{http_code}\n" https://event-data-api.azurewebsites.net)
         if [ "$status" -ne 200 ]; then
           echo "API check failed with status $status"
           exit 1
