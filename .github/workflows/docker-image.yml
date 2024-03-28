@@ -58,8 +58,6 @@ jobs:
           "text": "eventonaut data api deployment successful for PR ${{ github.event.pull_request.number }}\n\n| _API link_ | https://demo-eventonaut-data-api.azurewebsites.net/docs |\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} |"
         }
         EOF
-    - name: Print build outcome
-      run: echo "Build outcome: ${{ steps.Login_to_Azure_Container_Registry }}" 
     
     - name: Notify on success
       if: success() && steps.Login_to_Azure_Container_Registry == 'success'
