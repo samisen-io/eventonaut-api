@@ -20,13 +20,13 @@ jobs:
        
     - name: Login to Azure Container Registry
       id: Login_to_Azure_Container_Registry
-      uses: docker/login-action@v1 
+      uses: docker/login-action@v1.10.0
       with:
         registry: ${{ secrets.registry }}
         username: ${{ secrets.username }}
         password: ${{ secrets.password }}
     
-    - uses: actions/checkout@v3   
+    - uses: mnrendra/checkout-fetch-all@v1
     - name: Build the Docker image
       id: Build_the_Docker_image
       run: docker build -t eventonaut-data-api-image .  
@@ -43,7 +43,7 @@ jobs:
         
     - name: Deploy to Azure App Service
       id: Deploy_to_Azure_App_Service
-      uses: azure/webapps-deploy@v2
+      uses: sethreidnz/azure-webapps-preview-deploy@v0.1.0
       with:
         app-name: '${{ secrets.APP_NAME }}'
         slot-name: 'production'
@@ -55,7 +55,7 @@ jobs:
       run: |
         curl -X POST -H "Content-Type: application/json" -d @- "https://chat.googleapis.com/v1/spaces/AAAAQQhkUXo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dcuuVkTjlOtO7piue45_l6GcTmqEe4TaYhns9uDLmNg" <<EOF
         {
-          "text": "**eventonaut data api deployment successful** for PR ${{ github.event.pull_request.number }}\n\n| Key | Value |\n| --- | --- |\n| _API link_ | `https://demo-eventonaut-data-api.azurewebsites.net/docs` |\n| _PR link_ | `https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }}` |"
+          "text": "**eventonaut data api deployment successful** for PR ${{ github.event.pull_request.number }}\n\n| _API link_ | https://demo-eventonaut-data-api.azurewebsites.net/docs |\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} |"
         }
         EOF
     
@@ -64,7 +64,7 @@ jobs:
       run: |
         curl -X POST -H "Content-Type: application/json" -d @- "https://chat.googleapis.com/v1/spaces/AAAAQQhkUXo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dcuuVkTjlOtO7piue45_l6GcTmqEe4TaYhns9uDLmNg" <<EOF
         {
-          "text": "**eventonaut data api deployment failed** for PR ${{ github.event.pull_request.number }}\n\n| Key | Value |\n| --- | --- |\n| _Build the Docker image step outcome_ | `{{ steps.build.outcome }}` |"
+          "text": "**eventonaut data api deployment failed** for PR ${{ github.event.pull_request.number }}\n\n| _Build the Docker image step outcome_ | {{ steps.build.outcome }} |"
         }
         EOF
         
