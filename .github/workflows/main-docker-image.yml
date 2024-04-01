@@ -1,8 +1,10 @@
 name: Docker Image CI
 
 on:
+  push:
+    branches: [ "test" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "test" ]
 
 permissions:
   id-token: write
@@ -72,7 +74,7 @@ jobs:
     - name: Notify on success
       if: success()
       run: |
-        curl -X POST -H "Content-Type: application/json" -d @- "https://chat.googleapis.com/v1/spaces/AAAAQQhkUXo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dcuuVkTjlOtO7piue45_l6GcTmqEe4TaYhns9uDLmNg" <<EOF
+        curl -X POST -H "Content-Type: application/json" -d @- "${{ secrets.GOOGLE_CHAT_WEBHOOK_URL}}" <<EOF
         {
           "text": "eventonaut data api deployment successful for PR ${{ github.event.pull_request.number }}\n\n| _API link_ | https://event-data-api.azurewebsites.net/docs |\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} |"
         }
@@ -81,7 +83,7 @@ jobs:
     - name: Notify on failure
       if: failure()
       run: |
-        curl -X POST -H "Content-Type: application/json" -d @- "https://chat.googleapis.com/v1/spaces/AAAAQQhkUXo/messages?key=AIzaSyDdI0hCZtE6vySjMm-WEfRq3CPzqKqqsHI&token=dcuuVkTjlOtO7piue45_l6GcTmqEe4TaYhns9uDLmNg" <<EOF
+        curl -X POST -H "Content-Type: application/json" -d @- "${{ secrets.GOOGLE_CHAT_WEBHOOK_URL}}" <<EOF
         {
           "text": "Eventonaut data api deployment failed for PR ${{ github.event.pull_request.number }}\n\n| _Login to Azure Container Registry step outcome_ | ${{ steps.Login_to_Azure_Container_Registry.outcome }} |\n| _Build the Docker image step outcome_ | ${{ steps.Build_the_Docker_image.outcome }} |\n| _Create tag step outcome_ | ${{ steps.Create_tag.outcome }} |\n| _Push Docker image to Azure Container Registry step outcome_ | ${{ steps.Push_Docker_image_to_Azure_Container_Registry.outcome }} |\n| _Deploy to Azure App Service step outcome_ | ${{ steps.Deploy_to_Azure_App_Service.outcome }} |\n| _Check API status step outcome_ | ${{ steps.Check_API_status.outcome }} |\n| _PR link_ | https://github.com/samisen-io/eventonaut-api/pull/${{ github.event.pull_request.number }} | "
         }
