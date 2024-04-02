@@ -10,8 +10,7 @@ from ..routers import upload_image
 from fastapi import HTTPException, status
 import logging
 from ..static_enums.blob_container_enums import BlobContainer
-from sqlalchemy.orm import joinedload
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, aliased
 
 # create attendee
 def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
@@ -161,17 +160,8 @@ def get_attendee_conference_by_attendee_id_and_conference_id(db: Session, attend
 # get all attendee conferences
 def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, limit: int = 100):
     attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-    attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee.id).offset(skip).limit(limit).all()
-    if attendee_conferences is None:
-        return None
-    conferences = []
-    for attendee_conference in attendee_conferences:
-        conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.id == attendee_conference.conference_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow().date()).first()
-        if conference is None:
-            continue
-        conference.__dict__.pop('client_id')
-        conferences.append(conference)
-    return conferences
+    Attendee_Conferences_Alias = aliased(models.Attendee_Conferences)
+    return db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).join(Attendee_Conferences_Alias, models.Conference.id == Attendee_Conferences_Alias.conference_id).filter(Attendee_Conferences_Alias.attendee_id == attendee.id,models.Conference.is_archived == False,models.Conference.end_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).offset(skip).limit(limit).all()
 
 # delete attendee conference by attendee id and conference id
 def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, attendee_conference: attendee_conference_schemas.AttendeeConference):
