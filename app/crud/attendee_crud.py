@@ -57,7 +57,7 @@ def get_attendee_by_email(db: Session, email: str):
 
 # get attendee by id
 def get_attendee_by_uuid(db: Session, attendee_id: str):
-    return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.uuid == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
+    return db.query(models.Attendee).join(models.Attendee.user).filter(models.Attendee.uuid == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
 
 def get_attendee_by_id(db: Session, attendee_id: int):
     return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
