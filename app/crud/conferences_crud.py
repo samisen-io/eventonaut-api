@@ -34,7 +34,7 @@ def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 10):
-    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).order_by(models.Conference.start_date, models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
+    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).order_by(models.Conference.updated_on.desc(), models.Conference.start_date).offset(offset).limit(limit).all()
     
     for conference in conferences:
         exclude_archived(conference)
@@ -187,6 +187,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     db.refresh(db_conference)
 
     db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == db_conference.id).delete()
+    db.commit()
     if len(sponsor_ids) > 0 and sponsor_ids is not None:
         for sponsor_id in sponsor_ids:
             db_event_sponsor = models.EventSponsors(conference_id=db_conference.id, sponsor_id=sponsor_id)
