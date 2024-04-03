@@ -8,7 +8,7 @@ def check_url(url):
         conn = http.client.HTTPSConnection(parsed_url.netloc) if parsed_url.scheme == 'https' else http.client.HTTPConnection(parsed_url.netloc)
         conn.request("GET", parsed_url.path)
         response = conn.getresponse()
-        if re.match(r'^2\d{2}$', str(response.status)):
+        if re.match(r'^[23]\d{2}$', str(response.status)):
             return True
         else:
             return False
