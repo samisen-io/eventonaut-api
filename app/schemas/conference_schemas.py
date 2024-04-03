@@ -153,7 +153,7 @@ class ConferenceUpdate(BaseModel):
 class ConferenceResponse(BaseModel):
     uuid: str = Field(serialization_alias="id")
     name: str
-    location: str
+    location: str | None
     start_date: date = Field(..., description="Date format: YYYY-MM-DD")
     end_date: date = Field(..., description="Date format: YYYY-MM-DD")
     description: str | None = None
@@ -164,7 +164,7 @@ class ConferenceResponse(BaseModel):
     information_guide: str
     status: str
     client: client_schemas.ClientResponse | None
-    venue: venue_schemas.VenueResponse
+    venue: venue_schemas.VenueResponse 
     sponsors: list[sponsor_schemas.SponsorResponse] | None
     
     class Config:

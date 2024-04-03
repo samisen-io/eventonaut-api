@@ -32,7 +32,10 @@ def create_event_document(conference_id: str, file: UploadFile = File(...), db: 
         response = crud.insert_event_document(db= db, request= request)
         
         return map_event_document_response(conference_id, response)
-        
+    
+    except HTTPException as e:
+        logging.error(f"An error occurred while creating event document: {str(e)}")
+        raise e    
     except Exception as e:
         logging.error(f"An error occurred while creating event document: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"{str(e)}")
@@ -46,8 +49,11 @@ def map_event_document_response(conference_id, response):
                                      size=f"{str(response.size)} MB")
 
 @router.get("/{conference_id}", response_model=list[EventDocumentResponse])
-def get_all_event_documents(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    conference = conferences_crud.get_conference_by_uuid(db, conference_id, current_user.id)
+def get_all_event_documents(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
+    if current_user.role == "organizer":
+        conference = conferences_crud.get_conference_by_uuid(db, conference_id, current_user.id)
+    elif current_user.role == "attendee":
+        conference = conferences_crud.get_conference(db, conference_id)
     documents = crud.get_event_documents_by_conference_id(db, conference.id)
     if len(documents) == 0:
         logging.exception(f"No documents found for conference with id: {conference_id}")
@@ -60,6 +66,9 @@ def delete_event_document(event_document_id: str, db: Session = Depends(get_db),
         deleted_event_document = crud.delete_event_document(db, event_document_id)
         delete_blob_by_url(deleted_event_document.document_url)
         return {"message": "Document deleted successfully"}
+    except HTTPException as e:
+        logging.error(f"An error occurred while deleting event document: {str(e)}")
+        raise e
     except Exception as e:
         logging.exception(f"Error deleting document: {e}")
-        raise HTTPException(status_code=e.status_code, detail=f"{str(e.detail)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"{str(e)}")

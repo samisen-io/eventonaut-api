@@ -16,7 +16,8 @@ def get_all_sponsors_by_owner_id(db: Session, owner_id: int, offset: int = 0, li
     return db.query(models.Sponsors).filter(models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).order_by(models.Sponsors.updated_on.desc()).offset(offset).limit(limit).all()
 
 def get_sponsor_by_uuid(db: Session, uuid: str, owner_id: int):
-    return db.query(models.Sponsors).filter(models.Sponsors.uuid == uuid, models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).first()
+    sponsor = db.query(models.Sponsors).filter(models.Sponsors.uuid == uuid, models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).first()
+    return sponsor
 
 def get_sponsor_by_email(db: Session, email: str, owner_id: int):
     return db.query(models.Sponsors).filter(models.Sponsors.email == email, models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).first()
@@ -82,6 +83,10 @@ def update_sponsor(db: Session, sponsor: sponsor_schemas.SponsorUpdate, db_spons
     return db_sponsor
 
 def delete_sponsor(db: Session, db_sponsor: models.Sponsors):
+    
+    if db_sponsor.conference and any([conference.is_archived == False for conference in db_sponsor.conference]):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Sponsor is associated with a conference. Cannot delete sponsor.")
+    
     db_sponsor.is_archived = True
     db.commit()
     return True

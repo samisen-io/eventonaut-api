@@ -43,7 +43,6 @@ def get_conference(db:Session, uuid, rank):
     db_obj_dict = db_obj.__dict__.copy()
     db_obj_dict.pop('_sa_instance_state', None)
     venue = db.query(models.Venue).filter(models.Venue.id == db_obj.venue_id).first().__dict__
-    venue.pop('_sa_instance_state', None)
     venue = venue_schemas.VenueResponse(**venue)
     db_obj_dict['venue'] = venue
     db_obj_dict['status'] = EventEnum(db_obj_dict['conference_status_id']).name

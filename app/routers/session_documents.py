@@ -32,6 +32,9 @@ def create_session_document(session_id: str, file: UploadFile = File(...), db: S
         response = crud.insert_session_document(db, request)
         
         return map_session_document_response(session_id, response)
+    except HTTPException as e:
+        logging.error(f"An error occurred while creating session document: {str(e)}")
+        raise e
     except Exception as e:
         logging.error(f"An error occurred while creating session document: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"{str(e)}")
@@ -45,8 +48,11 @@ def map_session_document_response(session_id, response):
                                      size=f"{str(response.size)} MB")
 
 @router.get("/{session_id}", response_model=list[SessionDocumentResponse])
-def get_all_session_documents(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    session = sessions_crud.get_session_by_uuid_id(db, session_id, current_user.id)
+def get_all_session_documents(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
+    if current_user.role == "organizer":
+        session = sessions_crud.get_session_by_uuid_id(db, session_id, current_user.id)
+    elif current_user.role == "attendee":
+        session = sessions_crud.get_session_by_session_uuid(db, session_id)
     if not session:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     documents = crud.get_session_documents_by_session_id(db, session.id)
@@ -61,6 +67,9 @@ def delete_session_document(session_document_id: str, db: Session = Depends(get_
         delete_session_document = crud.delete_session_document(db, session_document_id)
         delete_blob_by_url(delete_session_document.document_url)
         return {"message": "Document deleted successfully"}
+    except HTTPException as e:
+        logging.error(f"An error occurred while deleting session document: {str(e)}")
+        raise e
     except Exception as e:
         logging.error(f"An error occurred while deleting session document: {str(e)}")
-        raise HTTPException(status_code=e.status_code, detail= f"{str(e.detail)}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"{str(e)}")

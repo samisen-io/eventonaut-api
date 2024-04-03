@@ -6,6 +6,9 @@ from datetime import datetime
 import uuid
 from sqlalchemy.orm import joinedload
 
+def exclude_archived(agenda: models.Agenda):
+    agenda.sessions = [session for session in agenda.sessions if not session.is_archived]
+
 # create agenda
 def create_agenda(db: Session, conference_id: str, attendee_id: int, agenda: schemas.AgendaCreate):
     session_ids = []
@@ -49,12 +52,13 @@ def create_agenda(db: Session, conference_id: str, attendee_id: int, agenda: sch
         db.refresh(db_agenda_session)
         
     agenda_session = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).filter(models.Agenda.id == db_agenda.id).first()
+    exclude_archived(agenda_session)
     return agenda_session
 
 # return all the agendas with the list of sessions
 def get_all_agenda(db: Session, offset: int = 0, limit: int = 100):
     agenda_sessions = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).offset(offset).limit(limit).all()
-    
+    exclude_archived(agenda_sessions)
     return agenda_sessions
 
 def get_agenda(db: Session, conference_id: str, attendee_id: int):
@@ -63,6 +67,7 @@ def get_agenda(db: Session, conference_id: str, attendee_id: int):
         return None
     attendee=db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
+    exclude_archived(db_agenda)
     return db_agenda
 
 # get agenda by conference id and attendee id
@@ -75,6 +80,7 @@ def get_agenda_by_conference_uuid_attendee_uuid(db: Session, conference_id: str,
     if db_agenda is None:
         return None
     agenda_session = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).filter(models.Agenda.id == db_agenda.id).first()
+    exclude_archived(agenda_session)
     return agenda_session
 
 def get_agenda_for_attendee(db: Session, conference_id: int, attendee_id: int):
@@ -82,6 +88,7 @@ def get_agenda_for_attendee(db: Session, conference_id: int, attendee_id: int):
     if db_agenda is None:
         return None
     agenda_session = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).filter(models.Agenda.id == db_agenda.id).first()
+    exclude_archived(agenda_session)
     return agenda_session
 
 # update agenda by conference id and attendee id
@@ -131,7 +138,8 @@ def update_agenda(db: Session, conference_id: str, attendee_id: int, agenda: sch
     db.commit()
     db.refresh(db_agenda)
     
-    agenda_session = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).filter(models.Agenda.id == db_agenda.id).first()   
+    agenda_session = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).filter(models.Agenda.id == db_agenda.id).first()
+    exclude_archived(agenda_session)
     return agenda_session
 
 # delete agenda by conference id and attendee id
