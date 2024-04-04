@@ -68,7 +68,8 @@ def get_agenda(db: Session, conference_id: str, attendee_id: int):
         return None
     attendee=db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
-    exclude_archived(db_agenda)
+    if db_agenda is not None:
+        exclude_archived(db_agenda)
     return db_agenda
 
 # get agenda by conference id and attendee id
