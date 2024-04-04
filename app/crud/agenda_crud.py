@@ -58,7 +58,8 @@ def create_agenda(db: Session, conference_id: str, attendee_id: int, agenda: sch
 # return all the agendas with the list of sessions
 def get_all_agenda(db: Session, offset: int = 0, limit: int = 100):
     agenda_sessions = db.query(models.Agenda).options(joinedload(models.Agenda.sessions).joinedload(models.Session.agenda)).offset(offset).limit(limit).all()
-    exclude_archived(agenda_sessions)
+    for session in agenda_sessions:
+        exclude_archived(session)
     return agenda_sessions
 
 def get_agenda(db: Session, conference_id: str, attendee_id: int):
