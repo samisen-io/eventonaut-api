@@ -10,6 +10,7 @@ class BlobContainer(Enum):
     EVENT_BANNERS = "event-banners"
     EVENT_LOGOS = "event-logos"
     SESSION_IMAGES = "session-images"
+    SESSION_BANNERS = "session-banners"
     SPEAKER_IMAGES = "speaker-images"
     SPONSOR_LOGOS = "sponsor-logos"
     PROMOTION_IMAGES = "promotion-images"

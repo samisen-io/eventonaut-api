@@ -215,6 +215,7 @@ class Session(Base):
     tags = Column(ARRAY(String), index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
     session_image_url = Column(String, index=True)
+    session_banner_url = Column(String, index=True)
     session_status_id = Column(Integer, ForeignKey("session_status.id"))
     is_archived = Column(Boolean, default=False)
 

@@ -53,11 +53,14 @@ def create_conference_session(db: Session, session: schemas.SessionCreate, owner
     
     db_session.session_image_url = upload_image.get_actual_url(image_url=session.session_image_url, new_blob_container=BlobContainer.SESSION_IMAGES.value, new_blob_name=f"session-{db_session.uuid}") if session.session_image_url is not None else None
     
+    db_session.session_banner_url = upload_image.get_actual_url(image_url=session.session_banner_url, new_blob_container=BlobContainer.SESSION_BANNERS.value, new_blob_name=f"session-{db_session.uuid}") if session.session_banner_url is not None else None
+    
     try:
         db.commit()
     except Exception as e:
         db.delete(db_session)
         upload_image.delete_blob_by_url(db_session.session_image_url)
+        upload_image.delete_blob_by_url(db_session.session_banner_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_session)
@@ -127,13 +130,17 @@ def validate_session_time(session):
         logging.exception("Invalid time")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid time")
 
-def update_session_image_url(db_session, session_image_url):
-    if session_image_url and upload_image.get_container_name_from_url(session_image_url) != BlobContainer.SESSION_IMAGES.value:
-        db_session.session_image_url = upload_image.get_actual_url(image_url=session_image_url, new_blob_container=BlobContainer.SESSION_IMAGES.value, new_blob_name=f"session-{db_session.uuid}")
-    elif session_image_url is None and db_session.session_image_url:
-        upload_image.delete_blob_by_url(db_session.session_image_url)
-        db_session.session_image_url = None
+def update_session_image_url(db_session: models.Session, session_image, blob_container):
+    url_attribute = 'session_image_url' if blob_container == BlobContainer.SESSION_IMAGES.value else 'session_banner_url'
+    current_url = getattr(db_session, url_attribute)
 
+    if session_image is not None and upload_image.get_container_name_from_url(session_image) != blob_container:
+        new_url = upload_image.get_actual_url(image_url=session_image, new_blob_container=blob_container, new_blob_name=f"session-{db_session.uuid}")
+        setattr(db_session, url_attribute, new_url)
+    elif session_image is None and current_url is not None:
+        upload_image.delete_blob_by_url(current_url)
+        setattr(db_session, url_attribute, None)
+    
 def update_session_speakers(db, db_session, speaker_ids):
     db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == db_session.id).delete()
     db.commit()
@@ -148,6 +155,7 @@ def update_session(db: Session, session: schemas.SessionUpdate, db_session: mode
     session_dict = session.model_dump()
     session_status = session_dict.pop("status", None)
     session_image_url = session_dict.pop("session_image_url", None)
+    session_banner_url = session_dict.pop("session_banner_url", None)
     session_dict.pop('id', None)
     session_dict.pop('conference_id', None)
     session_dict.pop('speakers', None)
@@ -157,7 +165,8 @@ def update_session(db: Session, session: schemas.SessionUpdate, db_session: mode
     update_session_fields(db_session, session_dict)
     validate_session_date(session, db_session)
     validate_session_time(session)
-    update_session_image_url(db_session, session_image_url)
+    update_session_image_url(db_session, session_image_url, BlobContainer.SESSION_IMAGES.value)
+    update_session_image_url(db_session, session_banner_url, BlobContainer.SESSION_BANNERS.value)
 
     db_session.updated_on = datetime.utcnow()
     try:
@@ -165,6 +174,8 @@ def update_session(db: Session, session: schemas.SessionUpdate, db_session: mode
     except Exception as e:
         if session_image_url:
             upload_image.delete_blob_by_url(db_session.session_image_url)
+        if session_banner_url:
+            upload_image.delete_blob_by_url(db_session.session_banner_url)
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_session)

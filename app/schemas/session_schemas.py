@@ -11,6 +11,7 @@ class SessionBase(BaseModel):
     date: Date = Field(..., description="Date format: YYYY-MM-DD")
     location: str
     session_image_url: str | None = None
+    session_banner_url: str | None = None
     tags: list[str] | None = None
     status: str
 
@@ -23,7 +24,7 @@ class SessionBase(BaseModel):
             raise ValueError(f"{info.field_name} cannot be longer than {max_length} characters")
         return v
 
-    @field_validator('session_image_url')
+    @field_validator('session_image_url', 'session_banner_url')
     def session_image_url_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -85,6 +86,7 @@ class SessionUpdate(BaseModel):
     date: Date | None = Field(default=None, description="Date format: YYYY-MM-DD")
     location: str | None = None
     session_image_url: str | None = None
+    session_banner_url: str | None = None
     speakers: list[str] | None = None
     tags: list[str] | None = None
     status: str | None = None
@@ -95,7 +97,7 @@ class SessionUpdate(BaseModel):
             raise ValueError(f"{info.field_name} cannot be empty")
         return v
 
-    @field_validator('name','description','location','session_image_url')
+    @field_validator('name','description','location','session_image_url','session_banner_url')
     def values_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -127,7 +129,7 @@ class SessionUpdate(BaseModel):
                 raise ValueError("Invalid status")
         return v
     
-    @field_validator('session_image_url')
+    @field_validator('session_image_url', 'session_banner_url')
     def session_image_url_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if not check_url(v):
@@ -146,5 +148,6 @@ class Session(BaseModel):
     date: Date = Field(..., description="Date format: YYYY-MM-DD")
     location: str
     session_image_url: str | None = None
+    session_banner_url: str | None = None
     tags: list[str] | None = None
     status: str
