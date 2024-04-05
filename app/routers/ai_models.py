@@ -44,6 +44,8 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     conference_id = query_input.conference_id
     question = query_input.question
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)  
+    break_word = {'data':' #@!SAMISEN!@# '}
+    break_word = json.dumps(break_word)
     if not conference:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
@@ -52,8 +54,10 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
             if isinstance(chunk, list):
                 source = chunk
                 continue
-            yield(chunk)
-        yield ' #@!SAMISEN!@# '
+            data = {'data': chunk}
+            data = json.dumps(data)
+            yield(data)
+        yield break_word
         objects = result_crud.get_objects(db=db, objects=source)
         final_result = arranging_ouput_object(objects)
         yield final_result
