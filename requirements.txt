@@ -25,3 +25,4 @@ azure-identity
 apscheduler
 pinecone-client==2.2.4
 async_timeout
+langchain-community

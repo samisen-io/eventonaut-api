@@ -2,11 +2,14 @@ import json
 from operator import itemgetter
 import os
 from dotenv import load_dotenv
-from langchain.vectorstores import Pinecone
+# from langchain.vectorstores import Pinecone
+from langchain_community.vectorstores import Pinecone
 from langchain.chains import ConversationalRetrievalChain
-from langchain.chat_models import ChatOpenAI   
+# from langchain.chat_models import ChatOpenAI   
+from langchain_community.chat_models import ChatOpenAI
 from langchain.embeddings.openai import OpenAIEmbeddings 
-from langchain.callbacks import get_openai_callback  
+# from langchain.callbacks import get_openai_callback  
+from langchain_community.callbacks import get_openai_callback
 import pinecone
 from app.custom_manager import custom_get_openai_callback
 from app.pinecone_operations import get_matching_namespace
