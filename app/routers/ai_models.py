@@ -47,8 +47,8 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     break_word = {'data':' #@!SAMISEN!@# '}
     break_word = json.dumps(break_word)
     if not conference:
-        logging.exception("Conference not found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
+       logging.exception("Conference not found")
+       raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     async def event_stream():
         async for chunk in retrieve_answer_stream(question,conference_id):
             if isinstance(chunk, list):
