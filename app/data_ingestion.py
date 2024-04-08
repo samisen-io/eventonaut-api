@@ -5,7 +5,6 @@ import csv
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from langchain.document_loaders.csv_loader import CSVLoader
-# from langchain.vectorstores import Pinecone
 from langchain_community.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 from app.crud.conferences_crud import get_conference_by_conference_uuid
