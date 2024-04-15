@@ -543,3 +543,13 @@ class SessionDocuments(Base):
     @property
     def session_uuid(self):
         return self.session.uuid
+    
+class Plan(Base):
+    __tablename__ = "plan"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    plan_id = Column(String, index=True, unique=True)
+    plan_name = Column(String, index=True)
