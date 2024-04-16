@@ -20,6 +20,8 @@ class Organization(Base):
     logo_image_url = Column(String, index=True)
     website_url = Column(String, index=True)
     external_id = Column(String, index=True)
+    
+    organization_settings = relationship("OrganizationSettings", back_populates="organization")
 
 class User(Base):
     __tablename__ = "users"
@@ -544,3 +546,16 @@ class SessionDocuments(Base):
     @property
     def session_uuid(self):
         return self.session.uuid
+    
+class OrganizationSettings(Base):
+    __tablename__ = "organization_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
+    event_brite_org_id = Column(String, index=True)
+    event_brite_access_token = Column(String, index=True)
+
+    organization = relationship("Organization", back_populates="organization_settings")
