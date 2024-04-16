@@ -109,33 +109,33 @@ def query_document(question, conference_id):
     json_data = json.dumps(data, indent=4)
     return json_data
     
-# async def retrieve_answer_stream(question, conference_id):
-#     namespace = get_matching_namespace(conference_id=conference_id)
-#     vectordb = Pinecone.from_existing_index(index_name=index_name, embedding=embedding_function, namespace=namespace, text_key = 'csv_text')
-#     retriever=vectordb.as_retriever(search_kwargs={'k': 8})
-#     model = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key)
-#     generation_chain = prompt_for_streaming | model
-#     source_list = []
-#     retrieval_chain = (
-#         {
-#             'timestamp': itemgetter('timestamp'),
-#             'context': itemgetter('input') | retriever,
-#             'input': itemgetter('input'),
-#             'history': itemgetter('history'),
-#         }
-#         | RunnablePassthrough.assign(output=generation_chain)
-#     )
-#     stream = retrieval_chain.stream({'input': question, 'history': [], 'timestamp': datetime.now()})
-#     for chunk in stream:
-#         if 'context' in chunk:
-#            for doc in chunk['context']:
-#                metadata = doc.metadata
-#                source_list.append(metadata['source'])
-#            yield source_list
-#         if 'output' in chunk:
-#             yield chunk['output'].content
+async def retrieve_answer_stream(question, conference_id):
+    namespace = get_matching_namespace(conference_id=conference_id)
+    vectordb = Pinecone.from_existing_index(index_name=index_name, embedding=embedding_function, namespace=namespace, text_key = 'csv_text')
+    retriever=vectordb.as_retriever(search_kwargs={'k': 8})
+    model = ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key)
+    generation_chain = prompt_for_streaming | model
+    source_list = []
+    retrieval_chain = (
+        {
+            'timestamp': itemgetter('timestamp'),
+            'context': itemgetter('input') | retriever,
+            'input': itemgetter('input'),
+            'history': itemgetter('history'),
+        }
+        | RunnablePassthrough.assign(output=generation_chain)
+    )
+    stream = retrieval_chain.stream({'input': question, 'history': [], 'timestamp': datetime.now()})
+    for chunk in stream:
+        if 'context' in chunk:
+           for doc in chunk['context']:
+               metadata = doc.metadata
+               source_list.append(metadata['source'])
+           yield source_list
+        if 'output' in chunk:
+            yield chunk['output'].content
 
-async def retrieve_answer_stream(question, conference_id, session_id):
+async def retrieve_answer_stream_ch(question, conference_id, session_id):
     namespace = get_matching_namespace(conference_id=conference_id)
     vectordb = Pinecone.from_existing_index(index_name=index_name, embedding=embedding_function, namespace=namespace, text_key = 'csv_text')
     retriever = vectordb.as_retriever(search_kwargs={'k':4})
@@ -147,7 +147,7 @@ async def retrieve_answer_stream(question, conference_id, session_id):
             url = upstash_url,
             token = upstash_token,
             session_id = session_id,
-            ttl = 180
+            ttl = 3600
         )
         return history
     

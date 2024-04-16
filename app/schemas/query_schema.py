@@ -7,4 +7,4 @@ class QueryInput(BaseModel):
 class QueryInputStream(BaseModel):
     question: str = Field(..., description="The question to be asked")
     conference_id: str = Field(..., description="The conference ID")
-    session_id: str = Field(..., description="The chat session ID")
+    session_id: str = Field(None, description="The chat session ID")

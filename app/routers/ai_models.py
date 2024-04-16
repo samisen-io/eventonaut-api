@@ -20,7 +20,7 @@ from app.routers.sessions import create_session_for_conference
 from app.schemas.query_schema import QueryInput, QueryInputStream
 from app.schemas.user_schemas import UserAuthentication as User
 from ..data_ingestion import add_documents, write_events_to_csv, write_sessions_to_csv, write_speakers_to_csv
-from ..data_query import query_document, retrieve_answer_stream
+from ..data_query import query_document, retrieve_answer_stream, retrieve_answer_stream_ch
 from ..crud import conferences_crud, result_crud
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
@@ -51,14 +51,22 @@ async def query_by_conference_id(query_input: QueryInputStream, db: Session = De
        logging.exception("Conference not found")
        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     async def event_stream():
-        async for chunk in retrieve_answer_stream(question,conference_id,session_id):
-            if isinstance(chunk, list):
-                source = chunk
-                continue
-            print(chunk, end="", flush=True)
-            data = {'data': chunk}
-            data = json.dumps(data)
-            yield(data)
+        if session_id is None:
+            async for chunk in retrieve_answer_stream(question,conference_id):
+                if isinstance(chunk, list):
+                    source = chunk
+                    continue
+                data = {'data': chunk}
+                data = json.dumps(data)
+                yield(data)
+        else:
+            async for chunk in retrieve_answer_stream_ch(question,conference_id,session_id):
+                if isinstance(chunk, list):
+                    source = chunk
+                    continue
+                data = {'data': chunk}
+                data = json.dumps(data)
+                yield(data)
         yield break_word
         objects = result_crud.get_objects(db=db, objects=source)
         final_result = arranging_ouput_object(objects)
