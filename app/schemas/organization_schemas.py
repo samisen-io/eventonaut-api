@@ -2,7 +2,6 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
 class OrganizationBase(BaseModel):
     name: str
-    company: str | None = None
     business_type: str
     description: str | None = None
     address: str | None = None
@@ -10,6 +9,7 @@ class OrganizationBase(BaseModel):
     contact_phone: str | None = None
     logo_image_url: str | None = None
     website_url: str | None = None
+    external_id: str | None = None
 
     @field_validator('name', 'business_type', 'contact_email')
     @classmethod
@@ -20,7 +20,7 @@ class OrganizationBase(BaseModel):
             raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
 
-    @field_validator('company', 'description', 'address', 'contact_phone', 'logo_image_url', 'website_url')
+    @field_validator('description', 'address', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
     @classmethod
     def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
@@ -36,7 +36,6 @@ class OrganizationCreate(OrganizationBase):
 class OrganizationUpdate(BaseModel):
     id: str
     name: str | None = None
-    company: str | None = None
     business_type: str | None = None
     description: str | None = None
     address: str | None = None
@@ -44,8 +43,9 @@ class OrganizationUpdate(BaseModel):
     contact_phone: str | None = None
     logo_image_url: str | None = None
     website_url: str | None = None
+    external_id: str | None = None
 
-    @field_validator('name', 'company', 'business_type', 'description', 'address', 'contact_email', 'contact_phone', 'logo_image_url', 'website_url')
+    @field_validator('name', 'business_type', 'description', 'address', 'contact_email', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
     @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
@@ -55,8 +55,17 @@ class OrganizationUpdate(BaseModel):
                 raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
 
-class Organization(OrganizationBase):
+class Organization(BaseModel):
     uuid: str = Field(serialization_alias='id')
+    name: str
+    business_type: str
+    description: str | None = None
+    address: str | None = None
+    contact_email: str
+    contact_phone: str | None = None
+    logo_image_url: str | None = None
+    website_url: str | None = None
+    external_id: str | None = None
 
     class Config:
         orm_mode = True
