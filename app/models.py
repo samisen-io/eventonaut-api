@@ -12,7 +12,6 @@ class Organization(Base):
     updated_on = Column(DateTime)
     uuid = Column(String, index=True, unique=True)
     name = Column(String, index=True)
-    company = Column(String, index=True)
     business_type = Column(String, index=True)
     description = Column(String, index=True)
     address = Column(String, index=True)
@@ -20,6 +19,7 @@ class Organization(Base):
     contact_phone = Column(String, index=True)
     logo_image_url = Column(String, index=True)
     website_url = Column(String, index=True)
+    external_id = Column(String, index=True)
 
 class User(Base):
     __tablename__ = "users"
