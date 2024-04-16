@@ -4,16 +4,10 @@ from sqlalchemy.orm import Session
 from ..crud import organization_crud as crud
 from ..schemas import organization_schemas as schemas
 from ..database import SessionLocal
+from ..dependencies import get_db
+from ..models import Organization
 
 router = APIRouter(tags=['organizations'])
-
-# Dependency
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/organizations/", response_model=schemas.Organization)
 def create_organization(organization: schemas.OrganizationCreate, db: Session = Depends(get_db)):
