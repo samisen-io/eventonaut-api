@@ -1,10 +1,8 @@
 import os
-import cv2
 from fastapi import HTTPException, status
 import requests
 import logging
 from dotenv import load_dotenv
-import numpy as np
 
 load_dotenv()
 clipdrop_api_key = os.getenv('CLIPDROP_API_KEY')

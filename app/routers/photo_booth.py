@@ -1,5 +1,5 @@
 import io
-from fastapi import APIRouter, File, HTTPException, Response, Security, UploadFile, status
+from fastapi import APIRouter, File, HTTPException, Security, UploadFile, status
 from PIL import Image
 from fastapi.responses import StreamingResponse
 from app.edit_photo import check_the_file_size, check_the_file_type, remove_background
