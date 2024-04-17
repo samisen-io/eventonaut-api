@@ -16,14 +16,14 @@ def get_backdrop_by_id(backdrop_id: str, db: Session, User):
     return db_backdrop
 
 @router.get("/backdrop/{backdrop_id}", response_model=schemas.BackdropGalleryResponse)
-def Get_backdrop(backdrop_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=["organizer"])):
+def Get_backdrop(backdrop_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
     db_backdrop = get_backdrop_by_id(backdrop_id, db, User)
     return schemas.BackdropGalleryResponse(conference_id=db_backdrop.conference.uuid, 
                                            backdrop_url=db_backdrop.backdrop_url, 
                                            uuid=db_backdrop.uuid)
 
 @router.get("/backdrops/{conference_id}", response_model=List[schemas.BackdropGalleryResponse])
-def get_backdrops_by_conferene_id(conference_id: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=["organizer"])):
+def get_backdrops_by_conferene_id(conference_id: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
     try:
         backdrops = crud.get_backdrops_by_conference_id(db, conference_id=conference_id, owner_id=User.id, skip=skip, limit=limit)
         response = [schemas.BackdropGalleryResponse(conference_id=conference_id, 
