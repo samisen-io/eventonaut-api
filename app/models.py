@@ -12,7 +12,6 @@ class Organization(Base):
     updated_on = Column(DateTime)
     uuid = Column(String, index=True, unique=True)
     name = Column(String, index=True)
-    company = Column(String, index=True)
     business_type = Column(String, index=True)
     description = Column(String, index=True)
     address = Column(String, index=True)
@@ -20,6 +19,9 @@ class Organization(Base):
     contact_phone = Column(String, index=True)
     logo_image_url = Column(String, index=True)
     website_url = Column(String, index=True)
+    external_id = Column(String, index=True)
+    
+    organization_settings = relationship("OrganizationSettings", back_populates="organization")
 
 class User(Base):
     __tablename__ = "users"
@@ -116,6 +118,7 @@ class Conference(Base):
     information_guide = Column(String, index=True)
     conference_status_id = Column(Integer, ForeignKey("event_status.id"))
     is_archived = Column(Boolean, default=False)
+    external_id = Column(String, index=True)
 
     client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")
@@ -543,3 +546,16 @@ class SessionDocuments(Base):
     @property
     def session_uuid(self):
         return self.session.uuid
+    
+class OrganizationSettings(Base):
+    __tablename__ = "organization_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
+    event_brite_org_id = Column(String, index=True)
+    event_brite_access_token = Column(String, index=True)
+
+    organization = relationship("Organization", back_populates="organization_settings")

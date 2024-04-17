@@ -15,6 +15,7 @@ class ConferenceBase(BaseModel):
     conference_banner_url: str | None = None
     information_guide: str
     status: str 
+    external_id: str | None = None
 
     @field_validator('name','information_guide')
     def value_not_empty(cls, v, info: ValidationInfo):
@@ -24,14 +25,13 @@ class ConferenceBase(BaseModel):
             raise ValueError(f"{info.field_name} must not be longer than 256 characters")
         return v
 
-    @field_validator('description','conference_logo','registration_link','conference_banner_url','timezone')
+    @field_validator('description','conference_logo','registration_link','conference_banner_url','timezone', 'external_id')
     def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
                 return None
             max_length = 50 if info.field_name == "timezone" else 256
             if len(v) > max_length:
-                print(v,"Longest Desc")
                 raise ValueError(f"{info.field_name} must not be longer than {max_length} characters")
         return v
     
@@ -94,6 +94,7 @@ class ConferenceUpdate(BaseModel):
     conference_banner_url: str | None = None
     information_guide: str | None = None
     status: str | None = None
+    external_id: str | None = None
 
     @field_validator('id')
     def id_is_not_empty(cls, v, info: ValidationInfo):
@@ -101,7 +102,7 @@ class ConferenceUpdate(BaseModel):
             raise ValueError(f"Invalid {info.field_name}")
         return v
 
-    @field_validator('name','client_id','description','venue_id','conference_logo','registration_link','information_guide','conference_banner_url','timezone')
+    @field_validator('name','client_id','description','venue_id','conference_logo','registration_link','information_guide','conference_banner_url','timezone', 'external_id')
     def value_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -163,6 +164,7 @@ class ConferenceResponse(BaseModel):
     conference_banner_url: str | None = None
     information_guide: str
     status: str
+    external_id: str | None = None
     client: client_schemas.ClientResponse | None
     venue: venue_schemas.VenueResponse 
     sponsors: list[sponsor_schemas.SponsorResponse] | None
@@ -171,9 +173,9 @@ class ConferenceResponse(BaseModel):
         orm_mode = True
 
 class ConferenceListSummary(BaseModel):
-    no_of_events: int
-    first_event_start_date: date
-    last_event_end_date: date
-    no_of_sponsors: int
-    no_of_clients: int
-    number_of_attendees: int
+    no_of_events: int | None
+    first_event_start_date: date | None
+    last_event_end_date: date | None
+    no_of_sponsors: int | None
+    no_of_clients: int | None
+    number_of_attendees: int | None
