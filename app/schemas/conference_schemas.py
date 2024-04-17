@@ -173,9 +173,9 @@ class ConferenceResponse(BaseModel):
         orm_mode = True
 
 class ConferenceListSummary(BaseModel):
-    no_of_events: int
-    first_event_start_date: date
-    last_event_end_date: date
-    no_of_sponsors: int
-    no_of_clients: int
-    number_of_attendees: int
+    no_of_events: int | None
+    first_event_start_date: date | None
+    last_event_end_date: date | None
+    no_of_sponsors: int | None
+    no_of_clients: int | None
+    number_of_attendees: int | None
