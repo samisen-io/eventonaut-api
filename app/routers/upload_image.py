@@ -15,13 +15,13 @@ load_dotenv()
 @router.post("/upload_file", status_code=201)
 def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
     try:
-        # Check file size
-        file_size = len(file.file.read()) * 1024 * 1024  
-        max_file_size = 5
+        file_size = len(file.file.read())
+        max_file_size_mb = 5  # 5 MB
+        max_file_size = max_file_size_mb * 1024 * 1024
 
         if file_size > max_file_size:
-            logging.exception(f"The file size cannot exceed {max_file_size} MB")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"The file size cannot exceed {max_file_size} MB")
+            logging.exception(f"The file size cannot exceed {max_file_size_mb} MB")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"The file size cannot exceed {max_file_size_mb} MB")  
 
         file.file.seek(0)  # Reset file pointer to the beginning
 
