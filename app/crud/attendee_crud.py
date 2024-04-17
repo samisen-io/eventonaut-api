@@ -169,10 +169,10 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, att
     db.commit()
     return True
 
-def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str):
+def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str, role: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
     if conference is None:
         return None
     conference_id = conference.id
     attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
-    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()
+    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences]), models.Attendee.share_my_profile == True).all() if role == "attendee" else db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()
