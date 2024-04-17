@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 import logging
 from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
-from app.routers import backdrop_gallery, eventbrite_connector, organization, role
+from app.routers import backdrop_gallery, eventbrite_connector, organization, photo_booth, role
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference, client, speakers, promotions,sponsor, venue, static_organizer, static_client, static_event, static_session, static_attendee, upload_image, event_documents, session_documents, organization_settings
@@ -69,6 +69,7 @@ app.include_router(sessions.router)
 app.include_router(settings.router)
 # app.include_router(ai_models.router, dependencies=[Depends(get_current_active_user)])
 app.include_router(ai_models.router)
+app.include_router(photo_booth.router)
 app.include_router(attendee.router)
 app.include_router(attendee_conference.router)
 app.include_router(agenda.router)
