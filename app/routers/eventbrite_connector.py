@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 import requests
 from app.schemas import organization_settings_schemas as os_schemas
 from app.schemas import conference_schemas as c_schemas
+from app.schemas import venue_schemas as v_schemas
 from app.crud.organization_settings_crud import create_organization_settings
 from app.dependencies import get_db
 from app.crud.organization_crud import get_organization_by_id
@@ -67,8 +68,17 @@ def save_eventbrite_events( organization_id: str, private_token: str, eventbrite
     # Create webhooks for each event
     for event in response["events"]:
         event_id = event["id"] 
-        print(event["logo"]["original"]["url"])
-        payload = {
+        # create venue
+        event_venue = get_eventbrite_venue(event_id, private_token)
+        venue_payload = {
+            'name': event_venue["venue"]["name"],
+            'location': event_venue["venue"]["address"]["city"]+", "+event_venue["venue"]["address"]["region"]+", "+event_venue["venue"]["address"]["country"],
+            'address': event_venue["venue"]["address"]["localized_address_display"],
+            'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
+        }
+        venue = v_schemas.VenueCreate(**venue_payload)
+        print(venue)
+        event_payload = {
             'name': event["name"]["text"],
             'start_date': datetime.strptime(event["start"]["utc"], "%Y-%m-%dT%H:%M:%SZ").date(),
             'end_date': datetime.strptime(event["end"]["utc"], "%Y-%m-%dT%H:%M:%SZ").date(),
@@ -78,10 +88,12 @@ def save_eventbrite_events( organization_id: str, private_token: str, eventbrite
             'conference_banner_url': event["logo"]["original"]["url"],
             'information_guide': event['url'],
             'status': "active" if event["status"] else "inactive",
-            'external_id': f"ebt_{organization_id}_{event['id']}"
+            'external_id': event['id'],
+            #change venueId
+            'venue_id': 'venue_id',
         }
-        event = c_schemas.ConferenceCreate(**payload)
-        print(event)
+        event = c_schemas.ConferenceCreate(**event_payload)
+        # print(event)
         # create_webhook(event_id, private_token, eventbrite_organization_id)
         # Save the event details in the database
     return {"message": "Eventbrite events retrieved successfully."}
@@ -139,3 +151,34 @@ def create_webhook(event_id: str, private_token: str, organization_id: str):
     url = f'https://www.eventbriteapi.com/v3/organizations/{organization_id}/webhooks/'
     response = requests.post(url, data=json.dumps(values), headers=headers)
     return response.json()
+
+@router.get('/get_eventbrite_venue/')
+def get_eventbrite_venue(event_id: str, private_token: str):
+    url = f"https://www.eventbriteapi.com/v3/events/{event_id}/?expand=venue"
+    headers = {
+        'Authorization': f'Bearer {private_token}',
+    }
+    response = requests.get(url, headers=headers)
+    event = response.json()
+    event_detail = {
+            'Event Name': event["name"]["text"],
+            'Event Timezone': event["start"]["timezone"],
+            'Event Start-Time': event["start"]["utc"],
+            'Event End-Time': event["end"]["utc"],
+            'Event URL': event["url"],
+            'Event ID': event["id"],
+            'Event Status': str(event["status"]),
+            'Event Is-Online': str(event["online_event"]),
+            'Event Logo-URL': event["logo"]["original"]["url"],
+            'Event Summary': event["summary"],
+            'Event Description': event["description"]["text"],
+            'Venue Name': event["venue"]["name"],
+            'Venue Address': event["venue"]["address"]["localized_address_display"],
+            'Venue City': event["venue"]["address"]["city"],
+            'Venue Region': event["venue"]["address"]["region"],
+            'Venue Postal-Code': event["venue"]["address"]["postal_code"],
+            'Venue Country': event["venue"]["address"]["country"],
+            'Venue Latitude': event["venue"]["latitude"],
+            'Venue Longitude': event["venue"]["longitude"],
+        }
+    return event
