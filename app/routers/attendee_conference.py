@@ -70,7 +70,7 @@ def get_attendee_profiles_for_conference_id(conference_id: str, db: Session = De
     if conference is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    attendees = crud.get_all_attendee_profiles_by_conference_id(db=db, conference_id=conference_id)
+    attendees = crud.get_all_attendee_profiles_by_conference_id(db=db, conference_id=conference_id, role=current_user.role)
     if not attendees or len(attendees) == 0:
         logging.exception("No attendees found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No attendees found")
