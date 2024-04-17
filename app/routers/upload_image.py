@@ -16,12 +16,12 @@ load_dotenv()
 def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
     try:
         # Check file size
-        file_size = len(file.file.read())
-        max_file_size = 5 * 1024 * 1024  # 5 MB
+        file_size = len(file.file.read()) * 1024 * 1024  
+        max_file_size = 5
 
         if file_size > max_file_size:
-            logging.exception(f"The file size cannot exceed {max_file_size} bytes.")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"The file size cannot exceed {max_file_size} bytes.")
+            logging.exception(f"The file size cannot exceed {max_file_size} MB")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"The file size cannot exceed {max_file_size} MB")
 
         file.file.seek(0)  # Reset file pointer to the beginning
 
