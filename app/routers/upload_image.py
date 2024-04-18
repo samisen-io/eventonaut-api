@@ -38,7 +38,7 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type. Executable files are not allowed.")
 
         elif file_extension in ["jpg", "jpeg", "png"]: 
-            blob_name = f"dyn-{uuid4()}.{file_extension}"
+            blob_name = f"dyn-{uuid4()}-{file.filename}"
             blob_client = blob_service_client.get_blob_client("temporary-images", blob_name)
 
             content_settings = ContentSettings(content_type=f'image/{file_extension}')
@@ -109,7 +109,7 @@ def check_for_blob_in_container(blob_url, container_name):
         logging.exception(str(ex))
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
     
-def  get_actual_url(image_url:str, new_blob_container:str, new_blob_name:str):
+def get_actual_url(image_url:str, new_blob_container:str, new_blob_name:str):
     parsed_url = urlparse(image_url)
     path = parsed_url.path
     filename_with_ext = os.path.basename(path)
@@ -125,8 +125,8 @@ def move_file_from_temporary_to_permanent_container(source_container_name, dest_
     try:
         connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-        source_blob_client = blob_service_client.get_blob_client(source_container_name, old_blob_name)
-        dest_blob_client = blob_service_client.get_blob_client(dest_container_name, new_blob_name)
+        source_blob_client = blob_service_client.get_blob_client(source_container_name, unquote(old_blob_name))
+        dest_blob_client = blob_service_client.get_blob_client(dest_container_name, unquote(new_blob_name))
         dest_blob_client.start_copy_from_url(source_blob_client.url)
         source_blob_client.delete_blob()
         

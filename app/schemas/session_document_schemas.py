@@ -11,6 +11,6 @@ class SessionDocumentResponse(BaseModel):
 class SessionDocumentRequest(BaseModel):
     session_id: int
     document_url: str
-    name: str
+    original_file_name: str
     content_type: str
     size: float

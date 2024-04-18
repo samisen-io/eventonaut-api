@@ -8,9 +8,19 @@ import logging
 from fastapi import HTTPException, status as Status
 
 def insert_session_document(db: Session, request: SessionDocumentRequest):
+    db_doc = db.query(SessionDocuments).filter(SessionDocuments.document_url == request.document_url).first()
+    if db_doc:
+        db_doc.content_type = request.content_type
+        db_doc.size = request.size
+        db_doc.name = request.original_file_name
+        db_doc.updated_on = datetime.utcnow()
+        db.commit()
+        db.refresh(db_doc)
+        return db_doc
+    
     db_session_documemt = SessionDocuments(session_id=request.session_id, 
                                            document_url = request.document_url, 
-                                           name = request.name, 
+                                           name = request.original_file_name, 
                                            content_type = request.content_type, 
                                            size = request.size)
     db_session_documemt.uuid = "sdo-"+str(uuid.uuid4())
