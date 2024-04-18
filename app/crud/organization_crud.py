@@ -47,3 +47,7 @@ def delete_organization(db: Session, db_organization: models.Organization):
     db.delete(db_organization)
     db.commit()
     return True
+
+# get organization by user id
+def get_organization_by_user_id(db: Session, user_id: int):
+    return db.query(models.Organization).filter(models.Organization.owner_id == user_id).first()
