@@ -20,6 +20,7 @@ def Get_backdrop(backdrop_id: str, db: Session = Depends(get_db), User = Securit
     db_backdrop = get_backdrop_by_id(backdrop_id, db, User)
     return schemas.BackdropGalleryResponse(conference_id=db_backdrop.conference.uuid, 
                                            backdrop_url=db_backdrop.backdrop_url, 
+                                           name=db_backdrop.name,
                                            uuid=db_backdrop.uuid)
 
 @router.get("/backdrops/{conference_id}", response_model=List[schemas.BackdropGalleryResponse])
@@ -28,8 +29,12 @@ def get_backdrops_by_conferene_id(conference_id: str, skip: int = 0, limit: int 
         backdrops = crud.get_backdrops_by_conference_id(db, conference_id=conference_id, owner_id=User.id, skip=skip, limit=limit)
         response = [schemas.BackdropGalleryResponse(conference_id=conference_id, 
                                                     backdrop_url=backdrop.backdrop_url, 
+                                                    name=backdrop.name,
                                                     uuid=backdrop.uuid) for backdrop in backdrops]
         return response
+    except HTTPException as e:
+        logging.exception(str(e))
+        raise e
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
@@ -39,9 +44,13 @@ def create_backdrop(backdrop: schemas.BackdropGalleryCreate, db: Session = Depen
     try:
         modelresponse = crud.create_backdrop(db=db, backdrop=backdrop, owner_id=User.id)
         response = schemas.BackdropGalleryResponse(conference_id=backdrop.conference_id, 
-                                                backdrop_url=modelresponse.backdrop_url, 
+                                                backdrop_url=modelresponse.backdrop_url,
+                                                name=modelresponse.name,
                                                 uuid=modelresponse.uuid)
         return response
+    except HTTPException as e:
+        logging.exception(str(e))
+        raise e
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
@@ -51,6 +60,7 @@ def update_backdrop(backdrop: schemas.BackdropGalleryUpdate, db: Session = Depen
     db_backdrop = get_backdrop_by_id(backdrop.id, db, User)
     updated_backdrop = crud.update_backdrop(db=db, backdrop=backdrop, db_backdrop=db_backdrop)
     response = schemas.BackdropGalleryUpdateResponse(backdrop_url=updated_backdrop.backdrop_url, 
+                                                     name=updated_backdrop.name,
                                                     uuid=updated_backdrop.uuid)
     return response
 
