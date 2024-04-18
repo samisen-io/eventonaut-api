@@ -2,7 +2,8 @@ from datetime import datetime
 import json
 import os
 import tempfile
-from fastapi import UploadFile, requests
+from fastapi import UploadFile
+import requests
 from app.schemas import conference_schemas as c_schemas
 from app.schemas import venue_schemas as v_schemas
 from app.crud.conferences_crud import create_user_conference
