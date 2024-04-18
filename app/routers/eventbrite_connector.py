@@ -1,12 +1,15 @@
 from datetime import datetime
 import json
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Security, UploadFile
 from sqlalchemy.orm import Session
 import requests
-from app.schemas import organization_settings_schemas as os_schemas
-from app.schemas import conference_schemas as c_schemas
-from app.schemas import venue_schemas as v_schemas
+from app.crud import users_crud
+from app.crud import organization_crud
+from app.eventbrite_operations import add_event, add_venue, create_webhook
+from app.oauth2 import get_current_active_user
 from app.crud.organization_settings_crud import create_organization_settings
+from app.schemas import organization_settings_schemas as os_schemas
+from app.schemas.user_schemas import UserAuthentication as User
 from app.dependencies import get_db
 from app.crud.organization_crud import get_organization_by_id
 from app.models import OrganizationSettings
@@ -25,26 +28,10 @@ def get_eventbrite_events(private_token: str, organization_id: str):
         raise HTTPException(status_code=400, detail="Incorrect request. Please check your private token and organization ID.")
     # events = response.json()["events"]
     events = response.json()
-    # event_details = []
-    # for event in events:
-    #     event_detail = {
-    #         'Event Name': event["name"]["text"],
-    #         'Event Timezone': event["start"]["timezone"],
-    #         'Event Start-Time': event["start"]["utc"],
-    #         'Event End-Time': event["end"]["utc"],
-    #         'Event URL': event["url"],
-    #         'Event ID': event["id"],
-    #         'Event Status': str(event["status"]),
-    #         'Event Is-Online': str(event["online_event"]),
-    #         'Event Logo-URL': event["logo"]["original"]["url"],
-    #         'Event Summary': event["summary"],
-    #         'Event Description': event["description"]["text"],
-    #     }
-    #     event_details.append(event_detail)
     return events
 
 @router.get("/save_eventbrite_events/")
-def save_eventbrite_events( organization_id: str, private_token: str, eventbrite_organization_id: str, db: Session = Depends(get_db)):
+def save_eventbrite_events( organization_id: str, private_token: str, eventbrite_organization_id: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     url = f"https://www.eventbriteapi.com/v3/organizations/{eventbrite_organization_id}/events/?status=live"
     headers = {
         'Authorization': f'Bearer {private_token}',
@@ -57,6 +44,8 @@ def save_eventbrite_events( organization_id: str, private_token: str, eventbrite
     if response.status_code != 200:
         raise HTTPException(status_code=400, detail="Incorrect request. Please check your private token and organization ID.")
     response = response.json()
+    owner_id = users_crud.get_user(db, current_user.id)
+    owner_id = owner_id.id
     # Save it in the database
     organization_settings = {
         'organization_id': organization_id,
@@ -64,54 +53,22 @@ def save_eventbrite_events( organization_id: str, private_token: str, eventbrite
         'event_brite_access_token': private_token
         }
     org_settings = os_schemas.OrganizationSettingsCreate(**organization_settings)
-    # create_organization_settings(db, org_settings, organization_id)
+    create_organization_settings(db, org_settings, organization_id)
+    print('########## Organization Settings Created ##########')
     # Create webhooks for each event
     for event in response["events"]:
         event_id = event["id"] 
         # create venue
         event_venue = get_eventbrite_venue(event_id, private_token)
-        venue_payload = {
-            'name': event_venue["venue"]["name"],
-            'location': event_venue["venue"]["address"]["city"]+", "+event_venue["venue"]["address"]["region"]+", "+event_venue["venue"]["address"]["country"],
-            'address': event_venue["venue"]["address"]["localized_address_display"],
-            'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
-        }
-        venue = v_schemas.VenueCreate(**venue_payload)
-        print(venue)
-        event_payload = {
-            'name': event["name"]["text"],
-            'start_date': datetime.strptime(event["start"]["utc"], "%Y-%m-%dT%H:%M:%SZ").date(),
-            'end_date': datetime.strptime(event["end"]["utc"], "%Y-%m-%dT%H:%M:%SZ").date(),
-            'description': event["description"]["text"],
-            'timezone': event["start"]["timezone"],
-            'registration_link': event["url"],
-            'conference_banner_url': event["logo"]["original"]["url"],
-            'information_guide': event['url'],
-            'status': "active" if event["status"] else "inactive",
-            'external_id': event['id'],
-            #change venueId
-            'venue_id': 'venue_id',
-        }
-        event = c_schemas.ConferenceCreate(**event_payload)
-        # print(event)
-        # create_webhook(event_id, private_token, eventbrite_organization_id)
+        event_venue = add_venue(db,event_venue,owner_id)
+        event_venue_id = event_venue.id
+        print('########## Event Venue Created ##########')
+        #add event
+        event = add_event(db,event,owner_id,event_venue_id)
+        print('########## Event Created ##########')
+        create_webhook(event_id, private_token, eventbrite_organization_id)
         # Save the event details in the database
     return {"message": "Eventbrite events retrieved successfully."}
-
-@router.get('/sync_eventbrite_events/')
-def sync_eventbrite_events(private_token: str, organization_id: str):
-    url = f"https://www.eventbriteapi.com/v3/organizations/{organization_id}/events/?status=live"
-    headers = {
-        'Authorization': f'Bearer {private_token}',
-    }
-    response = requests.get(url, headers=headers)
-    # Validate the response
-    if response.status_code != 200:
-        raise HTTPException(status_code=400, detail="Incorrect request. Please check your private token and organization ID.")
-    # Save events in the database
-    for event in response['events']:
-        event_id = event['id']
-        # Check the organization id 
     
 @router.get('/get_webhooks/')
 async def get_webhooks(private_token: str, organization_id: str):
@@ -136,22 +93,7 @@ async def webhook(request: Request):
     data = await request.json()
     print(data)
     return {'received': True}
-
-def create_webhook(event_id: str, private_token: str, organization_id: str):
-    values = {
-        "endpoint_url": "https://c272-14-97-147-123.ngrok-free.app/webhook/",
-        # "endpoint_url": "https://event-data-api.azurewebsites.net/webhook/",
-        "actions": "event.created,event.updated,event.published,event.unpublished",
-        "event_id": event_id,
-    }
-    headers = {
-        'Authorization': f'Bearer {private_token}',
-        'Content-Type': 'application/json',
-    }
-    url = f'https://www.eventbriteapi.com/v3/organizations/{organization_id}/webhooks/'
-    response = requests.post(url, data=json.dumps(values), headers=headers)
-    return response.json()
-
+        
 @router.get('/get_eventbrite_venue/')
 def get_eventbrite_venue(event_id: str, private_token: str):
     url = f"https://www.eventbriteapi.com/v3/events/{event_id}/?expand=venue"
@@ -160,25 +102,5 @@ def get_eventbrite_venue(event_id: str, private_token: str):
     }
     response = requests.get(url, headers=headers)
     event = response.json()
-    event_detail = {
-            'Event Name': event["name"]["text"],
-            'Event Timezone': event["start"]["timezone"],
-            'Event Start-Time': event["start"]["utc"],
-            'Event End-Time': event["end"]["utc"],
-            'Event URL': event["url"],
-            'Event ID': event["id"],
-            'Event Status': str(event["status"]),
-            'Event Is-Online': str(event["online_event"]),
-            'Event Logo-URL': event["logo"]["original"]["url"],
-            'Event Summary': event["summary"],
-            'Event Description': event["description"]["text"],
-            'Venue Name': event["venue"]["name"],
-            'Venue Address': event["venue"]["address"]["localized_address_display"],
-            'Venue City': event["venue"]["address"]["city"],
-            'Venue Region': event["venue"]["address"]["region"],
-            'Venue Postal-Code': event["venue"]["address"]["postal_code"],
-            'Venue Country': event["venue"]["address"]["country"],
-            'Venue Latitude': event["venue"]["latitude"],
-            'Venue Longitude': event["venue"]["longitude"],
-        }
     return event
+

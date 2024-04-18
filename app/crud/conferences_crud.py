@@ -83,7 +83,7 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         raise HTTPException(status_code=400, detail=str(e))
     db.refresh(db_conference)
 
-    if len(sponsor_ids) > 0 and sponsor_ids is not None:
+    if sponsor_ids is not None and len(sponsor_ids) > 0:
         for sponsor_id in sponsor_ids:
             db_event_sponsor = models.EventSponsors(conference_id=db_conference.id, sponsor_id=sponsor_id)
             db_event_sponsor.created_on = db_event_sponsor.updated_on = datetime.utcnow()
