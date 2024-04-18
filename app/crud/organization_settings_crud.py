@@ -15,9 +15,9 @@ def create_organization_settings(db: Session, organization_settings: schemas.Org
     db_organization_settings.organization_id = organization_id
     db_organization_settings.uuid = 'ost-' + str(uuid.uuid4())
     db_organization_settings.created_on = db_organization_settings.updated_on = datetime.utcnow()
-    db.add(db_organization_settings)
-    db.commit()
-    db.refresh(db_organization_settings)
+    # db.add(db_organization_settings)
+    # db.commit()
+    # db.refresh(db_organization_settings)
     return db_organization_settings
 
 def update_organization_settings(db: Session, db_organization_settings: OrganizationSettings, organization_settings: schemas.OrganizationSettingsUpdate):
