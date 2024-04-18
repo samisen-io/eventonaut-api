@@ -9,9 +9,19 @@ import uuid
 from datetime import datetime
 
 def insert_event_document(db: Session, request: EventDocumentRequest):
+    db_doc = db.query(EventDocuments).filter(EventDocuments.document_url == request.file_url).first()
+    if db_doc:
+        db_doc.content_type = request.content_type
+        db_doc.size = request.size
+        db_doc.name = request.original_file_name
+        db_doc.updated_on = datetime.utcnow()
+        db.commit()
+        db.refresh(db_doc)
+        return db_doc
+    
     db_event_documemt = EventDocuments(conference_id=request.conference_id, 
                                        document_url = request.file_url,
-                                       name = request.name,
+                                       name = request.original_file_name,
                                        content_type = request.content_type,
                                        size = request.size)
     db_event_documemt.uuid =  "etd-"+ str(uuid.uuid4())
