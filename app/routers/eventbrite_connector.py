@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 from fastapi import APIRouter, Depends, HTTPException, Request, Security, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, Security, UploadFile
 from sqlalchemy.orm import Session
 import requests
 from app.crud import conferences_crud, users_crud
@@ -8,6 +9,8 @@ from app.crud import organization_crud
 from app.eventbrite_operations import add_event, add_venue, create_webhook
 from app.oauth2 import get_current_active_user
 from app.crud.organization_settings_crud import create_organization_settings
+from app.schemas import organization_settings_schemas as os_schemas
+from app.schemas.user_schemas import UserAuthentication as User
 from app.schemas import organization_settings_schemas as os_schemas
 from app.schemas.user_schemas import UserAuthentication as User
 from app.dependencies import get_db
@@ -97,6 +100,7 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
     event_id = conferences_crud.get_conference_by_external_id()
     return {'received': True}
         
+        
 @router.get('/get_eventbrite_venue/')
 def get_eventbrite_venue(event_id: str, private_token: str):
     url = f"https://www.eventbriteapi.com/v3/events/{event_id}/?expand=venue"
@@ -106,4 +110,6 @@ def get_eventbrite_venue(event_id: str, private_token: str):
     response = requests.get(url, headers=headers)
     event = response.json()
     return event
+
+
 
