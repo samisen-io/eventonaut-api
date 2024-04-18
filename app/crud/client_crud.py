@@ -44,11 +44,11 @@ def get_client_by_uuid_and_owner_id(db: Session, client_id: str, owner_id: int):
     return db.query(models.Client).filter(models.Client.uuid == client_id, models.Client.owner_id == owner_id, models.Client.is_archived == False).first()
 
 def get_all_clients(db: Session, offset: int = 0, limit: int = 100):
-    clients = db.query(models.Client).offset(offset).limit(limit).all()
+    clients = db.query(models.Client).order_by(models.Client.updated_on.desc()).offset(offset).limit(limit).all()
     return clients
 
 def get_all_clients_by_owner_id(db: Session, owner_id:int, offset: int = 0, limit: int = 100):
-    clients = db.query(models.Client).filter(models.Client.owner_id == owner_id, models.Client.is_archived == False).offset(offset).limit(limit).all()
+    clients = db.query(models.Client).filter(models.Client.owner_id == owner_id, models.Client.is_archived == False).order_by(models.Client.updated_on.desc()).offset(offset).limit(limit).all()
     return clients
 
 def update_client(db: Session, client: schemas.ClientUpdate):
@@ -85,8 +85,13 @@ def update_client(db: Session, client: schemas.ClientUpdate):
 
 def delete_client(db: Session, client_id: str):
     db_client = db.query(models.Client).filter(models.Client.uuid == client_id).first()
+    
     if db_client is None:
         return False
+
+    if db_client.conferences and any([conference.is_archived == False for conference in db_client.conferences]):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Cannot delete client with existing conference relationship")
+
     db_client.is_archived = True
     db.commit()
     return True

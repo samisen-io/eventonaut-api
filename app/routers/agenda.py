@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
+from fastapi.encoders import jsonable_encoder
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from app.static_enums.role import RoleEnum
@@ -74,13 +75,15 @@ def get_agenda_by_conference_id_attendee_id(conference_id: str, db: Session = De
     logging.info("Agenda retrieved for conference:" + conference_id)
     return agenda
 
-@router.get("/agenda/attendee/{attendee_id}/conference/{conference_id}")
+@router.get("/agenda/attendee/{attendee_id}/conference/{conference_id}", response_model=schemas.Agenda)
 def get_agenda_by_conference_id_attendee_id(conference_id: str, attendee_id: str, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    if attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id) is None:
+    attendee = attendee_crud.get_attendee_by_uuid(db, attendee_id=attendee_id)
+    if attendee is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
-    if conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id) is None:
+    conference = conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
+    if conference is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    agenda=crud.get_agenda_for_attendee(db, conference_id=conference_id, attendee_id=attendee_id)
+    agenda=crud.get_agenda_for_attendee(db, conference_id=conference.id, attendee_id=attendee.id)
     if agenda is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda not found")
     return agenda
@@ -121,7 +124,7 @@ def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), c
             "tags" : updated_agenda.tags
         }
         logging.exception("Found conflict with a session")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error":"found conflict with a session", "session": session})
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"error":"found conflict with a session", "session": jsonable_encoder(session)})
     logging.info("Agenda updated for: " + db_attendee.uuid)
     return updated_agenda
 

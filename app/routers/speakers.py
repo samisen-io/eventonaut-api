@@ -1,7 +1,4 @@
 import logging
-import random
-from app import models
-
 from app.crud import conferences_crud
 from app.static_enums.role import RoleEnum
 from ..dependencies import get_db
@@ -100,7 +97,7 @@ def update_speaker(speaker: schemas.SpeakerUpdate, db: Session = Depends(get_db)
             if session.id not in session_ids:
                 session_ids.append(session.id)
     updated_speaker = crud.update_speaker(db=db, speaker=speaker, db_speaker=db_speaker, session_ids=session_ids)
-    # logging.info("Speaker updated: " + updated_speaker.uuid)
+    logging.info("Speaker updated: " + updated_speaker.uuid)
     return updated_speaker
 
 @router.delete("/speakers/{speaker_id}")

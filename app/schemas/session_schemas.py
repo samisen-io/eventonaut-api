@@ -11,6 +11,7 @@ class SessionBase(BaseModel):
     date: Date = Field(..., description="Date format: YYYY-MM-DD")
     location: str
     session_image_url: str | None = None
+    session_banner_url: str | None = None
     tags: list[str] | None = None
     status: str
 
@@ -23,7 +24,7 @@ class SessionBase(BaseModel):
             raise ValueError(f"{info.field_name} cannot be longer than {max_length} characters")
         return v
 
-    @field_validator('session_image_url')
+    @field_validator('session_image_url', 'session_banner_url')
     def session_image_url_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -36,13 +37,14 @@ class SessionBase(BaseModel):
     
     @field_validator('tags')
     def tags_validation(cls, v, info: ValidationInfo):
-        if len(v) == 0:
-            raise ValueError(f"{info.field_name} cannot be empty")
-        for val in v:
-            if val.strip() == "":
-                raise ValueError(f"{info.field_name} cannot be empty")
-            elif len(val) > 256:
-                raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
+        if v is not None:
+            if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
+                return None
+            for val in v:
+                if val.strip() == "":
+                    raise ValueError(f"{info.field_name} cannot be empty")
+                elif len(val) > 256:
+                    raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
         return v
     
     @field_validator("status")
@@ -63,7 +65,7 @@ class SessionCreate(SessionBase):
         return v
     
     @field_validator('speakers')
-    def tags_validation(cls, v, info: ValidationInfo):
+    def speakers_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
                 return None
@@ -84,6 +86,7 @@ class SessionUpdate(BaseModel):
     date: Date | None = Field(default=None, description="Date format: YYYY-MM-DD")
     location: str | None = None
     session_image_url: str | None = None
+    session_banner_url: str | None = None
     speakers: list[str] | None = None
     tags: list[str] | None = None
     status: str | None = None
@@ -94,7 +97,7 @@ class SessionUpdate(BaseModel):
             raise ValueError(f"{info.field_name} cannot be empty")
         return v
 
-    @field_validator('name','description','location','session_image_url')
+    @field_validator('name','description','location','session_image_url','session_banner_url')
     def values_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -126,7 +129,7 @@ class SessionUpdate(BaseModel):
                 raise ValueError("Invalid status")
         return v
     
-    @field_validator('session_image_url')
+    @field_validator('session_image_url', 'session_banner_url')
     def session_image_url_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if not check_url(v):
@@ -145,5 +148,6 @@ class Session(BaseModel):
     date: Date = Field(..., description="Date format: YYYY-MM-DD")
     location: str
     session_image_url: str | None = None
+    session_banner_url: str | None = None
     tags: list[str] | None = None
     status: str

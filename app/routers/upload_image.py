@@ -1,4 +1,4 @@
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 from azure.storage.blob import BlobServiceClient,ContentSettings
 from fastapi import APIRouter, File, UploadFile, Depends, HTTPException, status
 from dotenv import load_dotenv
@@ -15,13 +15,13 @@ load_dotenv()
 @router.post("/upload_file", status_code=201)
 def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
     try:
-        # Check file size
         file_size = len(file.file.read())
-        max_file_size = 5 * 1024 * 1024  # 5 MB
+        max_file_size_mb = 5  # 5 MB
+        max_file_size = max_file_size_mb * 1024 * 1024
 
         if file_size > max_file_size:
-            logging.exception(f"The file size cannot exceed {max_file_size} bytes.")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"The file size cannot exceed {max_file_size} bytes.")
+            logging.exception(f"The file size cannot exceed {max_file_size_mb} MB")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"The file size cannot exceed {max_file_size_mb} MB")  
 
         file.file.seek(0)  # Reset file pointer to the beginning
 
@@ -87,8 +87,8 @@ def get_blob_by_url(blob_url):
         connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
         url = urlparse(blob_url)
-        container_name = url.path.split("/")[1]
-        blob_name = url.path.split("/")[2]
+        container_name = unquote(url.path.split("/")[1])
+        blob_name = unquote(url.path.split("/")[2])
         
         blob_client = blob_service_client.get_blob_client(container_name, blob_name)
         
@@ -137,21 +137,27 @@ def move_file_from_temporary_to_permanent_container(source_container_name, dest_
  
 def get_container_name_from_url(blob_url):
     url = urlparse(blob_url)
-    return url.path.split("/")[1]
+    return unquote(url.path.split("/")[1])
     
 def delete_blob_by_url(blob_url):
     try:
         connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
         url = urlparse(blob_url)
-        container_name = url.path.split("/")[1]
-        blob_name = url.path.split("/")[2]
+        container_name = unquote(url.path.split("/")[1])
+        blob_name = unquote(url.path.split("/")[2])
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
         
-        blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+        if not blob_client.exists():
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
         
         blob_client.delete_blob()
         
         logging.info(f"Blob {blob_name} deleted successfully")
     except Exception as ex:
         logging.exception(str(ex))
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))  
+        if hasattr(ex, 'status_code'):
+
+            raise HTTPException(status_code=ex.status_code, detail=str(ex.detail))
+        else:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex))

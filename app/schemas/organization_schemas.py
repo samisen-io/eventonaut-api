@@ -7,6 +7,7 @@ class OrganizationBase(BaseModel):
     address: str | None = None
     logo_image_url: str | None = None
     website_url: str | None = None
+    external_id: str | None = None
 
     @field_validator('name')
     @classmethod
@@ -17,7 +18,7 @@ class OrganizationBase(BaseModel):
             raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
 
-    @field_validator('business_type', 'description', 'address', 'logo_image_url', 'website_url')
+    @field_validator('description', 'address', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
     @classmethod
     def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
@@ -38,8 +39,9 @@ class OrganizationUpdate(BaseModel):
     address: str | None = None
     logo_image_url: str | None = None
     website_url: str | None = None
+    external_id: str | None = None
 
-    @field_validator('name', 'business_type', 'description', 'address', 'logo_image_url', 'website_url')
+    @field_validator('name', 'business_type', 'description', 'address', 'contact_email', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
     @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
@@ -49,8 +51,17 @@ class OrganizationUpdate(BaseModel):
                 raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
 
-class Organization(OrganizationBase):
+class Organization(BaseModel):
     uuid: str = Field(serialization_alias='id')
+    name: str
+    business_type: str
+    description: str | None = None
+    address: str | None = None
+    contact_email: str
+    contact_phone: str | None = None
+    logo_image_url: str | None = None
+    website_url: str | None = None
+    external_id: str | None = None
 
     class Config:
         orm_mode = True

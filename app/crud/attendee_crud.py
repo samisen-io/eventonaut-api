@@ -1,4 +1,3 @@
-import os
 from sqlalchemy.orm import Session
 
 from app.static_enums.role import RoleEnum
@@ -11,13 +10,11 @@ import uuid
 from ..crud import conferences_crud, user_role_crud
 from ..static_enums import event
 from ..static_enums import attendee as attendee_enum
-from urllib.parse import urlparse
 from ..routers import upload_image
 from fastapi import HTTPException, status
 import logging
 from ..static_enums.blob_container_enums import BlobContainer
-from sqlalchemy.orm import joinedload
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, aliased
 
 # create attendee
 def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
@@ -44,8 +41,7 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.add(db_attendee)
     db.commit()
     db.refresh(db_attendee)
-    attendee = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == db_user.id).first()
-
+    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
     return attendee
 
 def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
@@ -56,7 +52,7 @@ def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
 
 # get all attendees
 def get_attendees(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).offset(skip).limit(limit).all()
+    return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.is_archived == False).offset(skip).limit(limit).options(joinedload(models.Attendee.user)).all()
 
 # get attendee by email
 def get_attendee_by_email(db: Session, email: str):
@@ -64,11 +60,10 @@ def get_attendee_by_email(db: Session, email: str):
 
 # get attendee by id
 def get_attendee_by_uuid(db: Session, attendee_id: str):
-    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.uuid == attendee_id, models.User.is_archived == False).first()
-
+    return db.query(models.Attendee).join(models.Attendee.user).filter(models.Attendee.uuid == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
 
 def get_attendee_by_id(db: Session, attendee_id: int):
-    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == attendee_id, models.User.is_archived == False).first()
+    return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
 
 # update attendee by id
 def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendeeUpdate):
@@ -115,7 +110,7 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_attendee)
     db.refresh(db_user)
-    attendee = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == db_user.id).first()
+    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
     return attendee
 
 # update attendee password by id
@@ -130,7 +125,7 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: sc
     db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
-    attendee = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.user_id == db_user.id).first()
+    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
     return attendee
 
 # delete attendee by id
@@ -169,17 +164,8 @@ def get_attendee_conference_by_attendee_id_and_conference_id(db: Session, attend
 # get all attendee conferences
 def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, limit: int = 100):
     attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-    attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee.id).offset(skip).limit(limit).all()
-    if attendee_conferences is None:
-        return None
-    conferences = []
-    for attendee_conference in attendee_conferences:
-        conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.id == attendee_conference.conference_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).first()
-        if conference is None:
-            continue
-        conference.__dict__.pop('client_id')
-        conferences.append(conference)
-    return conferences
+    Attendee_Conferences_Alias = aliased(models.Attendee_Conferences)
+    return db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).join(Attendee_Conferences_Alias, models.Conference.id == Attendee_Conferences_Alias.conference_id).filter(Attendee_Conferences_Alias.attendee_id == attendee.id,models.Conference.is_archived == False,models.Conference.end_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).offset(skip).limit(limit).all()
 
 # delete attendee conference by attendee id and conference id
 def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, attendee_conference: attendee_conference_schemas.AttendeeConference):
@@ -187,10 +173,10 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(db: Session, att
     db.commit()
     return True
 
-def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str):
+def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str, role: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
     if conference is None:
         return None
     conference_id = conference.id
     attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
-    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()
+    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences]), models.Attendee.share_my_profile == True).all() if role == "attendee" else db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()

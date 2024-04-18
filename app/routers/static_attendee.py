@@ -33,7 +33,7 @@ def create_attendee_status(static_attendee: StaticAttendee, db: Session = Depend
 
 @router.get("/attendee_status", response_model=list[StaticTableOutput])
 def get_attendee_status(db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
-    static_attendee = db.query(models.AttendeeStatus).all()
+    static_attendee = db.query(models.AttendeeStatus).order_by(models.AttendeeStatus.updated_on.desc()).all()
     if static_attendee is None or len(static_attendee) == 0:
         logging.exception("no status found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="no status found")

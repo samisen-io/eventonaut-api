@@ -1,6 +1,4 @@
 import logging
-
-from sqlalchemy import text
 from app.routers import upload_image
 from .. import models
 from ..schemas import promotion_schemas
@@ -12,59 +10,33 @@ from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 import time
 
+def exlude_archived(promotion: models.Promotions):
+    promotion.conference = None if promotion.conference is not None and promotion.conference.is_archived else promotion.conference
+
 def get_promotion(db: Session, promotion_id: str):
     promotion = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).filter(models.Promotions.uuid == promotion_id).first()
+    exlude_archived(promotion)
     return promotion
 
 def get_promotion_by_conference(db: Session, conference_id: str):
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
-    return None if conference is None else db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
+    if conference is None:
+        return None
+    else:
+        promotion = db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
+        exlude_archived(promotion)
+        return conference
 
 def get_promotions(db: Session, skip: int = 0, limit: int = 5):
-    start_time = time.time()
-
-    promotions = db.execute(
-        text("""SELECT 
-                promotions."uuid" as id ,
-                promotions.todate as todate,
-                promotions.fromdate as fromdate,
-                promotions.image_url as image_url,
-                promotions.promotion_name as promotion_name,
-                promotions.rank as rank,
-                conferences."location" as location , 
-                conferences.uuid as conference_id,
-                conferences.start_date as start_date ,
-                conferences.end_date  as end_date
-                FROM promotions 
-                JOIN conferences ON promotions.conference_id = conferences.id 
-                WHERE promotions.rank > 0
-                ORDER BY promotions.rank
-                            OFFSET :skip
-                            LIMIT :limit"""), 
-            {"skip": skip, "limit": limit}
-        ).fetchall()
-
-    promotions_list = [{
-        'uuid': promotion.id,
-        'todate': promotion.todate,
-        'fromdate': promotion.fromdate,
-        'image_url': promotion.image_url,
-        'promotion_name': promotion.promotion_name,
-        'rank': promotion.rank,
-        'location': promotion.location,
-        'event_id': promotion.conference_id,
-        'conference_start_date': promotion.start_date,
-        'conference_end_date': promotion.end_date
-    } for promotion in promotions]
-
-    end_time = time.time()
-    execution_time = end_time - start_time
-    print(f"Execution time: {execution_time} seconds")
-
-    return promotions_list
+    promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(skip).limit(limit).all()
+    for promotion in promotions:
+        exlude_archived(promotion)
+    return promotions
 
 def get_all_promotions(db: Session, skip: int = 0, limit: int = 100):
-    promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank).offset(skip).limit(limit).all()
+    promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(skip).limit(limit).all()
+    for promotion in promotions:
+        exlude_archived(promotion)
     return promotions
 
 def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
@@ -74,11 +46,7 @@ def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
     conference = db.query(models.Conference).filter(models.Conference.uuid == promotion.conference_id).first()
     db_promotion.conference_id = conference.id
     
-    try:
-        db_promotion.image_url = upload_image.get_actual_url(image_url=promotion.image_url, new_blob_container=BlobContainer.PROMOTION_IMAGES.value, new_blob_name=f"promotion-{db_promotion.uuid}")
-    except Exception as e:
-        logging.exception(str(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    db_promotion.image_url = upload_image.get_actual_url(image_url=promotion.image_url, new_blob_container=BlobContainer.PROMOTION_IMAGES.value, new_blob_name=f"promotion-{db_promotion.uuid}") if promotion.image_url is not None else None
     
     db.add(db_promotion)
     try:
@@ -89,6 +57,7 @@ def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_promotion)
     promotion = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).filter(models.Promotions.uuid == db_promotion.uuid).first()
+    exlude_archived(promotion)
     return promotion
 
 def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
@@ -115,8 +84,11 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
         db_promotion.conference_id = db_conference.id
         promotion.location = db_conference.location
 
-    if promotion_image_url is not None and upload_image.get_actual_url(image_url=promotion_image_url) != db_promotion.image_url:
-        db_promotion.image_url = upload_image.get_actual_url(image_url=promotion_image_url, new_blob_container="promotion-images", new_blob_name=f"promotion-{db_promotion.uuid}")
+    if promotion_image_url is not None and upload_image.get_container_name_from_url(promotion_image_url) != BlobContainer.PROMOTION_IMAGES.value:
+        db_promotion.image_url = upload_image.get_actual_url(image_url=promotion_image_url, new_blob_container= BlobContainer.PROMOTION_IMAGES.value, new_blob_name=f"promotion-{db_promotion.uuid}")
+    elif promotion_image_url is None and db_promotion.image_url is not None:
+        upload_image.delete_blob_by_url(db_promotion.image_url)
+        db_promotion.image_url = None
 
     db_promotion.updated_on = datetime.utcnow()
 
@@ -129,6 +101,7 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_promotion)
     promotion = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).filter(models.Promotions.uuid == db_promotion.uuid).first()
+    exlude_archived(promotion)
     return promotion
 
 def delete_promotion(db: Session, promotion_id: str):

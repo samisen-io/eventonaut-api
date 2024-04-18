@@ -9,23 +9,36 @@ from ..schemas import conference_schemas as schemas, ai_assistant_schemas as ass
 from .. import AI_assitant
 import uuid
 from ..code_generator import generate_unique_string
-from .client_crud import get_client
-from ..static_enums import event, client
+from ..static_enums import event
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 
+def exclude_archived(conference: models.Conference):
+    conference.client = None if conference.client is not None and conference.client.is_archived else conference.client
+    conference.sponsors = [sponsor for sponsor in conference.sponsors if not sponsor.is_archived]
+    conference.venue = None if conference.venue is not None and conference.venue.is_archived else conference.venue
+
 # get all conferences ordered by start date in descending order
 def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
-    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).offset(offset).limit(limit).all()
+    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).order_by(models.Conference.start_date.desc(), models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
     return conferences
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
-    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.start_date >= datetime.utcnow().date(), models.Conference.is_archived == False).order_by(models.Conference.start_date).offset(offset).limit(limit).all()
+    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.start_date >= datetime.utcnow().date(), models.Conference.is_archived == False).order_by(models.Conference.start_date, models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
+    
+    for conference in conferences:
+        if conference is not None:
+            exclude_archived(conference)
+    
     return conferences
 
 def get_conferences_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 10):
-    conferences = (db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).order_by(models.Conference.start_date).offset(offset).limit(limit).all())
+    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False, models.Conference.end_date >= datetime.utcnow()).order_by(models.Conference.updated_on.desc(), models.Conference.start_date).offset(offset).limit(limit).all()
+    
+    for conference in conferences:
+        exclude_archived(conference)
+    
     return conferences
 
 def get_conference_by_code(db: Session, code: str):
@@ -70,7 +83,7 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
         raise HTTPException(status_code=400, detail=str(e))
     db.refresh(db_conference)
 
-    if len(sponsor_ids) > 0 and sponsor_ids is not None:
+    if sponsor_ids is not None and len(sponsor_ids) > 0:
         for sponsor_id in sponsor_ids:
             db_event_sponsor = models.EventSponsors(conference_id=db_conference.id, sponsor_id=sponsor_id)
             db_event_sponsor.created_on = db_event_sponsor.updated_on = datetime.utcnow()
@@ -80,13 +93,22 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
             db.refresh(db_event_sponsor)
     
     db_conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.id == db_conference.id).first()
+    exclude_archived(db_conference)
     return db_conference
+
+def get_conference(db: Session, conference_id: str):
+    conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
+    if conference is None:
+        return None
+    exclude_archived(conference)
+    return conference
 
 def get_conference_by_uuid(db: Session, uuid: str, owner_id: int):
     try:
         conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.uuid == uuid, models.Conference.owner_id == owner_id, models.Conference.is_archived == False).first()
         if conference is None:
             raise HTTPException(status_code=404, detail="Conference not found")
+        exclude_archived(conference)
         return conference
     except HTTPException as e:
         logging.exception(str(e))
@@ -99,6 +121,7 @@ def get_conference_by_conference_uuid(db: Session, uuid: str):
     conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.uuid == uuid, models.Conference.is_archived == False).first()
     if conference is None:
         return None
+    exclude_archived(conference)
     return conference
 
 def delete_conference(db: Session, conference: models.Conference):
@@ -164,6 +187,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     db.refresh(db_conference)
 
     db.query(models.EventSponsors).filter(models.EventSponsors.conference_id == db_conference.id).delete()
+    db.commit()
     if len(sponsor_ids) > 0 and sponsor_ids is not None:
         for sponsor_id in sponsor_ids:
             db_event_sponsor = models.EventSponsors(conference_id=db_conference.id, sponsor_id=sponsor_id)
@@ -172,13 +196,16 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
             db.add(db_event_sponsor)
             db.commit()
             db.refresh(db_event_sponsor)
-            
-    db_conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.id == db_conference.id).first()
     
+    db.refresh(db_conference)        
+    db_conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.id == db_conference.id).first()
+    exclude_archived(db_conference)
     return db_conference
 
 def get_event_list_summary(db: Session, owner_id: int):
     db_conferences = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).order_by(models.Conference.start_date).all()
+    if len(db_conferences) == 0 or db_conferences is None:
+        return schemas.ConferenceListSummary(no_of_events=0, first_event_start_date=None, last_event_end_date=None, no_of_sponsors=0, no_of_clients=0, number_of_attendees=0)
     total_events = len(db_conferences)
     first_event_start_date = db_conferences[0].start_date
     last_event_end_date = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).order_by(models.Conference.end_date.desc()).first().end_date
@@ -194,3 +221,10 @@ def get_event_list_summary(db: Session, owner_id: int):
         total_attendees += db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).count()
 
     return schemas.ConferenceListSummary(no_of_events=total_events, first_event_start_date=first_event_start_date, last_event_end_date=last_event_end_date, no_of_sponsors=total_sponsors, no_of_clients=total_clients, number_of_attendees=total_attendees)
+
+def get_conference_by_external_id(db: Session, external_id: str):
+    conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.external_id == external_id, models.Conference.is_archived == False).first()
+    if conference is None:
+        return None
+    exclude_archived(conference)
+    return conference

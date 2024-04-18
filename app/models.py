@@ -17,6 +17,9 @@ class Organization(Base):
     address = Column(String, index=True)
     logo_image_url = Column(String, index=True)
     website_url = Column(String, index=True)
+    external_id = Column(String, index=True)
+    
+    organization_settings = relationship("OrganizationSettings", back_populates="organization")
     
     organization_user = relationship("Organization_User", back_populates="organization")
 
@@ -147,6 +150,7 @@ class Conference(Base):
     information_guide = Column(String, index=True)
     conference_status_id = Column(Integer, ForeignKey("event_status.id"))
     is_archived = Column(Boolean, default=False)
+    external_id = Column(String, index=True)
 
     client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")
@@ -246,12 +250,13 @@ class Session(Base):
     tags = Column(ARRAY(String), index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
     session_image_url = Column(String, index=True)
+    session_banner_url = Column(String, index=True)
     session_status_id = Column(Integer, ForeignKey("session_status.id"))
     is_archived = Column(Boolean, default=False)
 
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
-    agenda_session = relationship("AgendaSession", back_populates="session")
+    agenda = relationship("Agenda", secondary="agenda_session", back_populates="sessions")
     speakers = relationship("Speakers", secondary="session_speakers", back_populates="sessions")
     session_status = relationship("Sessionstatus", back_populates="session")
     session_documents = relationship("SessionDocuments", back_populates="session")
@@ -292,7 +297,7 @@ class Attendee(Base):
 
     user = relationship("User", back_populates="attendees")
     agenda = relationship("Agenda", back_populates="attendees")
-    agenda_session = relationship("AgendaSession", back_populates="attendees")
+    # agenda_session = relationship("AgendaSession", back_populates="attendees")
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
     aitokens = relationship("AITokens", back_populates="attendee")
     
@@ -331,7 +336,7 @@ class Agenda(Base):
 
     conference = relationship("Conference", back_populates="agenda")
     attendees = relationship("Attendee", back_populates="agenda")
-    agenda_session = relationship("AgendaSession", back_populates="agenda")
+    sessions = relationship("Session", secondary="agenda_session", back_populates="agenda")
 
 # class to define aganda session table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class AgendaSession(Base):
@@ -348,9 +353,9 @@ class AgendaSession(Base):
     start_time = Column(TIME, index=True)
     end_time = Column(TIME, index=True)
 
-    agenda = relationship("Agenda", back_populates="agenda_session")
-    session = relationship("Session", back_populates="agenda_session")
-    attendees = relationship("Attendee", back_populates="agenda_session")
+    # agenda = relationship("Agenda", back_populates="agenda_session")
+    # sessions = relationship("Session", back_populates="agenda_session")
+    # attendees = relationship("Attendee", back_populates="agenda_session")
 
 class AITokens(Base):
     __tablename__ = "aitokens"
@@ -413,6 +418,14 @@ class Promotions(Base):
     @property
     def event_id(self):
         return self.conference.uuid
+    
+    @property
+    def conference_name(self):
+        return self.conference.name
+    
+    @property
+    def conference_image_url(self):
+        return self.conference.conference_logo
 
 class Sponsors(Base):
     __tablename__ = "sponsors"
@@ -537,6 +550,9 @@ class EventDocuments(Base):
     updated_on = Column(DateTime, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     document_url = Column(String, index=True)
+    content_type = Column(String, index=True)
+    name = Column(String, index=True)
+    size = Column(Float, index=True)
 
     conference = relationship("Conference", back_populates="event_documents")
     
@@ -553,9 +569,25 @@ class SessionDocuments(Base):
     updated_on = Column(DateTime, index=True)
     session_id = Column(Integer, ForeignKey("sessions.id"))
     document_url = Column(String, index=True)
+    content_type = Column(String, index=True)
+    name = Column(String, index=True)
+    size = Column(Float, index=True)
 
     session = relationship("Session", back_populates="session_documents")
     
     @property
     def session_uuid(self):
         return self.session.uuid
+    
+class OrganizationSettings(Base):
+    __tablename__ = "organization_settings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
+    event_brite_org_id = Column(String, index=True)
+    event_brite_access_token = Column(String, index=True)
+
+    organization = relationship("Organization", back_populates="organization_settings")

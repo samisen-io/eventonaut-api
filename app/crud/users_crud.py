@@ -142,7 +142,7 @@ def map_to_user(results):
 
 
 def get_users(db: Session, offset: int = 0, limit: int = 100):
-    users = db.query(models.User).filter(models.User.role == 'organizer').offset(offset).limit(limit).all()
+    users = db.query(models.User).filter(models.User.role == 'organizer').order_by(models.User.updated_on.desc()).offset(offset).limit(limit).all()
     return users
 
 def update_user_status(user: schemas.UserBaseUpdate, db_user: models.User):

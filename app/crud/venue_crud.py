@@ -4,12 +4,13 @@ from ..schemas import venue_schemas
 from .. import models
 import uuid
 from datetime import datetime
+from fastapi import HTTPException, status
 
 def get_all_venues(db: Session, offset: int, limit: int):
-    return db.query(models.Venue).offset(offset).limit(limit).all()
+    return db.query(models.Venue).offset(offset).limit(limit).order_by(models.Venue.updated_on.desc()).all()
 
 def get_all_venues_by_owner_id(db: Session, owner_id: int, offset: int, limit: int):
-    return db.query(models.Venue).filter(models.Venue.owner_id == owner_id, models.Venue.is_archived == False).offset(offset).limit(limit).all()
+    return db.query(models.Venue).filter(models.Venue.owner_id == owner_id, models.Venue.is_archived == False).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
 
 def get_venue_by_id(db: Session, venue_id: str, owner_id: int):
     return db.query(models.Venue).filter(models.Venue.uuid == venue_id, models.Venue.owner_id == owner_id, models.Venue.is_archived == False).first()
@@ -43,6 +44,9 @@ def update_venue(db: Session, venue: venue_schemas.VenueUpdate, db_venue: models
     return db_venue
 
 def delete_venue(db: Session, db_venue: models.Venue):
+    if db_venue.conference and any([conference.is_archived == False for conference in db_venue.conference]):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Venue is associated with a conference. Cannot delete venue.")
+    
     db_venue.is_archived = True
     db.commit()
     return True
