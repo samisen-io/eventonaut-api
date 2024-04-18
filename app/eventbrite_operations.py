@@ -13,8 +13,7 @@ from app.routers.upload_image import upload_file
 
 def create_webhook(event_id: str, private_token: str, organization_id: str):
     values = {
-        "endpoint_url": "https://6857-110-235-225-230.ngrok-free.app/webhook/",
-        # "endpoint_url": "https://event-data-api.azurewebsites.net/webhook/",
+        "endpoint_url": "https://event-data-api.azurewebsites.net/webhook/",
         "actions": "event.created,event.updated,event.published,event.unpublished",
         "event_id": event_id,
     }
@@ -40,8 +39,6 @@ def add_venue(db,event_venue,owner_id):
 def add_event(db,event,owner_id,venue_id):
     # upload photo
     event_logo_url = event["logo"]["original"]["url"]
-    print('########## Event Logo URL Before ##########')
-    print(event_logo_url)
     response = requests.get(event_logo_url, stream=True)
     if response.status_code == 200:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as temp_file:
@@ -52,8 +49,6 @@ def add_event(db,event,owner_id,venue_id):
         with open(temp_filename, 'rb') as f:
             upload_file_response = upload_file(UploadFile(filename=temp_filename, file=f))
             event_logo_url = upload_file_response['url']
-            print('########## Event Logo URL After ##########')
-            print(event_logo_url)
             event_payload = {
                 'name': event["name"]["text"],
                 'start_date': datetime.strptime(event["start"]["utc"], "%Y-%m-%dT%H:%M:%SZ").date(),
@@ -69,7 +64,6 @@ def add_event(db,event,owner_id,venue_id):
                 'venue_id': str(venue_id),
             }
             event = c_schemas.ConferenceCreate(**event_payload)
-            print(event)
             event = create_user_conference(db, event, owner_id, venue_id, None)
             os.remove(temp_filename)
             return event
