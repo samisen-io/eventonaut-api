@@ -17,7 +17,7 @@ from app.schemas import speaker_schemas as speaker_schemas
 from app.dependencies import get_db
 from app.oauth2 import get_current_active_user
 from app.routers.sessions import create_session_for_conference
-from app.schemas.query_schema import QueryInput
+from app.schemas.query_schema import QueryInput, QueryInputStream
 from app.schemas.user_schemas import UserAuthentication as User
 from ..data_ingestion import add_documents, write_events_to_csv, write_sessions_to_csv, write_speakers_to_csv
 from ..data_query import query_document, retrieve_answer_stream
@@ -40,9 +40,10 @@ async def delete_index(current_user: User = Security(get_current_active_user, sc
     return status
 
 @router.post("/query_the_document_stream/")
-async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+async def query_by_conference_id(query_input: QueryInputStream, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
     conference_id = query_input.conference_id
     question = query_input.question
+    session_id = query_input.session_id
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)  
     break_word = {'data':' #@!SAMISEN!@# '}
     break_word = json.dumps(break_word)
@@ -50,10 +51,11 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
        logging.exception("Conference not found")
        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     async def event_stream():
-        async for chunk in retrieve_answer_stream(question,conference_id):
+        async for chunk in retrieve_answer_stream(question,conference_id,session_id):
             if isinstance(chunk, list):
                 source = chunk
                 continue
+            print(chunk, end="", flush=True)
             data = {'data': chunk}
             data = json.dumps(data)
             yield(data)
