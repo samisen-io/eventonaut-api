@@ -18,7 +18,8 @@ class OrganizationBase(BaseModel):
             raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
 
-    @field_validator('description', 'address', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
+    # @field_validator('description', 'address', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
+    @field_validator('description', 'address', 'logo_image_url', 'website_url', 'external_id')
     @classmethod
     def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
@@ -41,7 +42,8 @@ class OrganizationUpdate(BaseModel):
     website_url: str | None = None
     external_id: str | None = None
 
-    @field_validator('name', 'business_type', 'description', 'address', 'contact_email', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
+    # @field_validator('name', 'business_type', 'description', 'address', 'contact_email', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
+    @field_validator('name', 'business_type', 'description', 'address', 'logo_image_url', 'website_url', 'external_id')
     @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
