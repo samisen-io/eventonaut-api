@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.schemas.user_schemas import UserAuthentication as User
+from app.schemas.user_role import UserRole as User_Role
 from app.schemas.token_schemas import TokenInput
 from app.static_enums.role import RoleEnum
 from ..crud import users_crud
@@ -65,13 +66,13 @@ def sanitize_username(username: str) -> str:
 def get_scopes(scopes: List[str]) -> List[str]:
     return scopes if scopes else None
 
-def validate_user_and_scope(user: User, scopes: List[str]) -> None:
+def validate_user_and_scope(user: User_Role, scopes: List[str]) -> None:
     if not user:
         logging.exception("Incorrect username or password")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
-    if not scopes or not any(scope in user.role for scope in scopes):
+    if not scopes or not any(scope in RoleEnum(user.user_roles[0].role_id).name for scope in scopes):
         logging.exception("Incorrect scope")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect scope",
