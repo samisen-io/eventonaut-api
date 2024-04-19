@@ -68,4 +68,4 @@ def update_backdrop(backdrop: schemas.BackdropGalleryUpdate, db: Session = Depen
 def delete_backdrop(backdrop_id: str, db: Session = Depends(get_db),  User = Security(get_current_active_user, scopes=["organizer"])):
     db_backdrop = get_backdrop_by_id(backdrop_id, db, User)
     crud.delete_backdrop(db=db, db_backdrop=db_backdrop)
-    return {"detail": "Backdrop deleted"}
+    return {"detail": "Backdrop deleted"} 
