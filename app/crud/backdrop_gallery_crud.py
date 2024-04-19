@@ -5,9 +5,23 @@ import app.schemas.backdrop_gallery_schemas as schemas
 import app.crud.conferences_crud as conferences_crud
 from datetime import datetime
 import uuid
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 from sqlalchemy.orm import joinedload
 from sqlalchemy import text
+from ..routers import upload_image
+from ..static_enums.blob_container_enums import BlobContainer
+from urllib.parse import urlparse, unquote
+import re
+
+def extract_filename(url: str) -> str:
+    parsed_url = urlparse(url)
+    filename_with_extension = unquote(parsed_url.path.split('/')[-1])
+    filename = filename_with_extension.split('.')[0]
+
+    # Remove the UUID
+    filename = re.sub(r'dyn-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-', '', filename)
+
+    return filename
 
 def get_backdrop_by_id(db: Session, backdrop_id: str, owner_id: int):
     backdrop = db.query(models.BackdropGallery).options(
@@ -34,6 +48,7 @@ def execute_backdrop_query(db: Session, conference_id: str, owner_id: int, skip:
             backdrop_gallery.id as id,
             backdrop_gallery.uuid as uuid,
             backdrop_gallery.backdrop_url as backdrop_url,
+            backdrop_gallery.name as name,
             backdrop_gallery.created_on as created_on,
             backdrop_gallery.updated_on as updated_on,
             backdrop_gallery.is_archived as is_archived,
@@ -65,6 +80,7 @@ def create_backdrop_objects(result):
             id=row.id,
             uuid=row.uuid,
             backdrop_url=row.backdrop_url,
+            name=row.name,
             created_on=row.created_on,
             updated_on=row.updated_on,
             is_archived=row.is_archived,
@@ -96,13 +112,23 @@ def create_backdrop(db: Session, backdrop: schemas.BackdropGalleryCreate, owner_
         if backdrops >= 3:
             raise HTTPException(status_code=400, detail="A conference can only have three backdrops")
         
-        db_backdrop = models.BackdropGallery(backdrop_url = backdrop.backdrop_url, 
-                                         owner_id=owner_id, 
-                                         conference_id=conference.id)
+        original_filename = extract_filename(backdrop.backdrop_url)
+        
+        db_backdrop = models.BackdropGallery(owner_id=owner_id, 
+                                         conference_id=conference.id,
+                                         name=original_filename)
         db_backdrop.created_on = db_backdrop.updated_on = datetime.utcnow()
         db_backdrop.uuid = 'bdg-' + str(uuid.uuid4())
+        
+        db_backdrop.backdrop_url = upload_image.get_actual_url(image_url=backdrop.backdrop_url, new_blob_container=BlobContainer.BACKDROP_IMAGES.value, new_blob_name=f"back-drop-{db_backdrop.uuid}-{original_filename}") if backdrop.backdrop_url else None
+        
         db.add(db_backdrop)
-        db.commit()
+        try:
+            db.commit()
+        except Exception as e:
+            upload_image.delete_blob_by_url(db_backdrop.backdrop_url)
+            logging.exception(str(e))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         db.refresh(db_backdrop)
         return db_backdrop
     except Exception as e:
@@ -113,11 +139,25 @@ def update_backdrop(db: Session, backdrop: schemas.BackdropGalleryUpdate, db_bac
     backdrop_dict = backdrop.model_dump()
     
     backdrop_dict.pop('id', None)
+    backdrop_image = backdrop_dict.pop('backdrop_url')
     
     for key, value in backdrop_dict.items():
         setattr(db_backdrop, key, value)
+        
+    if backdrop_image is not None and upload_image.get_container_name_from_url(backdrop_image) != BlobContainer.BACKDROP_IMAGES.value:
+        db_backdrop.backdrop_url = upload_image.get_actual_url(image_url=backdrop_image, new_blob_container=BlobContainer.BACKDROP_IMAGES.value, new_blob_name=f"back-drop-{db_backdrop.uuid}")
+    elif backdrop_image is None and db_backdrop.backdrop_url is not None:
+        upload_image.delete_blob_by_url(db_backdrop.backdrop_url)
+        db_backdrop.backdrop_url = None
+    
     db_backdrop.updated_on = datetime.utcnow()
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        if backdrop_image is not None:
+            upload_image.delete_blob_by_url(db_backdrop.backdrop_url)
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db.refresh(db_backdrop)
     return db_backdrop
 

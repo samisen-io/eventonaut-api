@@ -11,6 +11,6 @@ class EventDocumentResponse(BaseModel):
 class EventDocumentRequest(BaseModel):
     conference_id: int
     file_url: str
-    name: str
+    original_file_name: str
     content_type: str
     size: float
