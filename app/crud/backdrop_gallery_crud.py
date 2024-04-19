@@ -63,7 +63,6 @@ def execute_backdrop_query(db: Session, conference_id: str, owner_id: int, skip:
         WHERE 
             backdrop_gallery.is_archived = false AND 
             conferences.uuid = :conference_id AND 
-            backdrop_gallery.owner_id = :owner_id AND 
             conferences.is_archived = false AND 
             users.is_archived = false
         OFFSET :skip
