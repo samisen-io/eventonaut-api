@@ -14,6 +14,9 @@ from .. import models
 from cachetools import TTLCache
 import os
 from ..otp_generator import send_mail, generate_otp, validate_otp
+from app.services.signup_service import signup_organization_admin
+from app.schemas import signup_schemas as s_schemas, user_schemas, organization_schemas, organization_user_schemas
+
 
 default_time_limit = int(os.getenv("OTP_EXPIRE"))
 router = APIRouter(tags=["users"])
@@ -98,17 +101,34 @@ def get_role_names(user: schemas.User):
 @router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     user = validate_user_email(user)
-    role_ids = get_role_ids(user)
     await check_user_exists(db, user)
-    try:
-        user = crud.create_user(db=db, user=user, role_ids=role_ids)
-        user.list_of_roles = get_role_names(user)
-        logging.info("User created: " + user.uuid)
-        del cache[user.email]
-        return user
-    except Exception as e:
-        logging.exception(str(e))
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    signup_response = signup_organization_admin(db=db, organizer_signup_request = s_schemas.SignupOrganizerRequest(email=user.email, password=user.hashed_password, organization_name=user.company))
+    
+    # update_user_request = schemas.UserBaseUpdate(first_name=user.first_name, 
+    #                                              last_name=user.last_name, 
+    #                                              status=user.status, 
+    #                                              timezone=user.timezone, 
+    #                                              profile_image_url=user.profile_image_url, 
+    #                                              list_of_roles=user.list_of_roles)
+    
+    updated_user = update_user(user, db, current_user_id=signup_response.user_id)
+
+    return updated_user
+
+
+# async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+#     user = validate_user_email(user)
+#     role_ids = get_role_ids(user)
+#     await check_user_exists(db, user)
+#     try:
+#         user = crud.create_user(db=db, user=user, role_ids=role_ids)
+#         user.list_of_roles = get_role_names(user)
+#         logging.info("User created: " + user.uuid)
+#         del cache[user.email]
+#         return user
+#     except Exception as e:
+#         logging.exception(str(e))
+#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
 def get_users_from_db(db: Session, offset: int, limit: int):
     users = crud.get_users(db, offset=offset, limit=limit)
@@ -140,7 +160,7 @@ def get_user(db: Session = Depends(get_db), current_user:  User = Security(get_c
     return db_user
 
 @router.put("/users", response_model=schemas.User)
-def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
+def update_user_(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if user.profile_image_url is not None:
         user.profile_image_url = crud.validate_image_url(user.profile_image_url)
     db_user = crud.get_db_user(db, user_id=current_user.id)
@@ -196,3 +216,28 @@ def delete_user(db: Session = Depends(get_db), current_user: User = Security(get
     deleted_user = crud.delete_user(db=db, user=db_user)
     logging.info("User deleted: " + db_user.uuid)
     return deleted_user
+
+def update_user(user: schemas.UserBaseUpdate, current_user_id: str, db: Session = Depends(get_db)):
+    
+    if user.profile_image_url is not None:
+        user.profile_image_url = crud.validate_image_url(user.profile_image_url)
+    db_user = crud.get_user_by_uuid(db, user_uuid=current_user_id)
+    if db_user is None:
+        logging.exception("User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    updated_user = crud.update_user(db=db, user=user, db_user=db_user)
+    logging.info("User updated: " + updated_user.uuid)
+    
+    updated_user_response = schemas.User(
+        email=updated_user.email,
+        first_name=updated_user.first_name,
+        last_name=updated_user.last_name,
+        timezone=updated_user.timezone,
+        status= OrganizerEnum(updated_user.user_status_id).name,
+        profile_image_url=updated_user.profile_image_url,
+        list_of_roles= get_role_names(updated_user),
+        is_active=updated_user.is_active,
+        uuid=updated_user.uuid
+    )
+    
+    return updated_user_response
