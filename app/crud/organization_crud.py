@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime
 from fastapi import HTTPException
 from pydantic import ValidationError
+from sqlalchemy.orm import joinedload
 
 def get_all_organizations(db: Session, offset: int, limit: int):
     try:
@@ -59,4 +60,4 @@ def delete_organization(db: Session, db_organization: models.Organization):
 
 # get organization by user id
 def get_organization_by_user_id(db: Session, user_id: int):
-    return db.query(models.Organization).filter(models.Organization.owner_id == user_id).first()
+    return db.query(models.Organization).options(joinedload(models.Organization.organization_user)).filter(models.Organization_User.user_id == user_id).first()

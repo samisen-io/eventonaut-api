@@ -47,12 +47,11 @@ def verify_token(token:str, credentials_exception, db: Session):
         logout_token_crud.get_all_jti_in_tokens(db=db, token_jti=jti)
         token_scopes = payload.get("scopes", [])
         
-        token_data = TokenData(username=username, scopes=[token_scopes])
+        token_data = TokenData(username=username, scopes=[token_scopes], id=payload.get("id"))
         
     except (JWTError, ValidationError):
         raise credentials_exception
     return token_data
-
 
 def verify_token_RT(token:str, credentials_exception,db: Session):
     try:

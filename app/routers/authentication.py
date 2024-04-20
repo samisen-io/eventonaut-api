@@ -5,6 +5,8 @@ from typing import Dict, List
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordRequestForm
+from app.crud.organization_crud import get_organization_by_user_id
+from app.schemas.organization_schemas import Organization
 from app.schemas.user_schemas import UserAuthentication as User
 from app.schemas.user_role import UserRole as User_Role
 from app.schemas.token_schemas import TokenInput
@@ -20,7 +22,7 @@ from ..crud import logout_token_crud
 from datetime import datetime
 # from ..my_token import token_cache
 
-from app.oauth2 import get_current_active_user, get_current_user_RT, get_token_data, oauth_2_scheme
+from app.oauth2 import get_current_active_user, get_current_organization, get_current_user_RT, get_token_data, oauth_2_scheme
 
 import app
 
@@ -53,9 +55,10 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     
     token_expirations = get_token_expirations(scopes[0])
     
+    organization = get_organization_by_user_id(db, user.id)
     refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
     rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
+    access_token = create_access_token(data={"sub": user.email, "org_id": organization.id, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
     
     logging.info("User logged in: " + user.uuid)
     return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
@@ -113,6 +116,11 @@ def print_something2(current_user: User = Security(get_current_active_user, scop
 def print_something3(current_user: User = Security(get_current_active_user, scopes=["ORGANIZATION_USER"])):
     logging.info("Organizer logged in: " + current_user.uuid)
     return {"message": "Hello World"}
+
+@router.get("/print_something")
+def print_something4(current_organization: Organization = Security(get_current_organization, scopes=["ORGANIZATION_ADMIN"])):
+    logging.info("Organizer logged in: " + current_organization.uuid)
+    return {"message": current_organization.uuid}
     
 @router.post("/refresh_token", response_model = Token)
 async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
