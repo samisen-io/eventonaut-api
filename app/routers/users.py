@@ -38,16 +38,16 @@ async def send_otp(email: str, email_subject: str):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not sent")
     return otp
 
-@router.post("/users", status_code=status.HTTP_200_OK)
-async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
-    global cache
-    try:
-        valid = validate_email(user.email)
-        user.email = valid.normalized.lower()
-    except EmailNotValidError as e:
-        logging.exception(str(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    return user
+# @router.post("/users", status_code=status.HTTP_200_OK)
+# async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+#     global cache
+#     try:
+#         valid = validate_email(user.email)
+#         user.email = valid.normalized.lower()
+#     except EmailNotValidError as e:
+#         logging.exception(str(e))
+#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+#     return user
 
 def get_role_ids(user: schemas.UserCreate):
     role_ids = set()
@@ -99,9 +99,9 @@ def get_role_names(user: schemas.User):
     return roles_names
 
 @router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED, include_in_schema=False)
-async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     user = validate_user_email(user)
-    await check_user_exists(db, user)
+    check_user_exists(db, user)
     signup_response = signup_organization_admin(db=db, organizer_signup_request = s_schemas.SignupOrganizerRequest(email=user.email, password=user.hashed_password, organization_name=user.company))
     
     # update_user_request = schemas.UserBaseUpdate(first_name=user.first_name, 
@@ -111,7 +111,7 @@ async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), b
     #                                              profile_image_url=user.profile_image_url, 
     #                                              list_of_roles=user.list_of_roles)
     
-    updated_user = update_user(user, db, current_user_id=signup_response.user_id)
+    updated_user = update_user(user, current_user_id=signup_response.user_id, db = db)
 
     return updated_user
 
@@ -218,7 +218,6 @@ def delete_user(db: Session = Depends(get_db), current_user: User = Security(get
     return deleted_user
 
 def update_user(user: schemas.UserBaseUpdate, current_user_id: str, db: Session = Depends(get_db)):
-    
     if user.profile_image_url is not None:
         user.profile_image_url = crud.validate_image_url(user.profile_image_url)
     db_user = crud.get_user_by_uuid(db, user_uuid=current_user_id)

@@ -169,6 +169,8 @@ def update_user_image(user: schemas.UserBaseUpdate, db_user: models.User):
     elif user_profile_image_url is None and db_user.profile_image_url is not None:
         upload_image.delete_blob_by_url(db_user.profile_image_url)
         db_user.profile_image_url = None
+    else:
+        db_user.profile_image_url = user_profile_image_url
 
 def get_role_names_from_user_roles(user_roles):
     return [RoleEnum(user_role.role_id).name for user_role in user_roles]
