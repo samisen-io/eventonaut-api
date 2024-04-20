@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session
 
 oauth_2_scheme = OAuth2PasswordBearer(
     tokenUrl="login",
-    scopes={"ATTENDEE": "ATTENDEE", "ORGANIZATION_ADMIN": "ORGANIZATION_ADMIN", "ORGANIZATION_USER": "ORGANIZATION_USER"},
+    scopes={"ATTENDEE": "Attendee scope", 
+            "ORGANIZATION_ADMIN": "Organization admin scope", 
+            "ORGANIZATION_USER": "Organization user scope"},
     )
 
 def get_current_user(
