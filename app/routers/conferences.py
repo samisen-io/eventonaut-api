@@ -172,6 +172,10 @@ def get_conference_by_conference_id(conference_id: str, db: Session = Depends(ge
 
 @router.get("/event-list-summary", response_model=schemas.ConferenceListSummary)
 def get_conference_list_summary(db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
-    conference_list_summary = crud.get_event_list_summary(db, current_user.id)
-    logging.info("Conference list summary retrieved for owner id: " + current_user.uuid)
-    return conference_list_summary
+    try:
+        conference_list_summary = crud.get_event_list_summary(db, current_user.id)
+        logging.info("Conference list summary retrieved for owner id: " + current_user.uuid)
+        return conference_list_summary
+    except Exception as e:
+        logging.exception("Error retrieving conference list summary" + str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error retrieving conference list summary" + str(e))
