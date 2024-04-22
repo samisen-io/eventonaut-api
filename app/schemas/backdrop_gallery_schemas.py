@@ -28,6 +28,7 @@ class BackdropGalleryResponse(BackdropGalleryBase):
     conference_id: str
     uuid: str = Field(serialization_alias="id")
     name: str
+    size: float | None = None
 
 class BackdropGalleryUpdate(BackdropGalleryBase):
     id: str
@@ -35,3 +36,4 @@ class BackdropGalleryUpdate(BackdropGalleryBase):
 class BackdropGalleryUpdateResponse(BackdropGalleryBase):
     uuid: str = Field(serialization_alias="id")
     name: str
+    size: float | None = None
