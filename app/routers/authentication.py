@@ -22,7 +22,7 @@ from ..crud import logout_token_crud
 from datetime import datetime
 # from ..my_token import token_cache
 
-from app.oauth2 import get_current_active_user, get_current_organization, get_current_user_RT, get_token_data, oauth_2_scheme
+from app.oauth2 import get_current_active_organization, get_current_active_user, get_current_organization, get_current_user_RT, get_token_data, oauth_2_scheme
 
 import app
 
@@ -120,6 +120,7 @@ def print_something3(current_user: User = Security(get_current_active_user, scop
 @router.get("/print_something")
 def print_something4(current_organization: Organization = Security(get_current_organization, scopes=["ORGANIZATION_ADMIN"])):
     logging.info("Organizer logged in: " + current_organization.uuid)
+    print(current_organization.uuid)
     return {"message": current_organization.uuid}
     
 @router.post("/refresh_token", response_model = Token)
