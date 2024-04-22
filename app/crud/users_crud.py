@@ -87,6 +87,10 @@ def get_user(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
     return user
 
+def get_users_by_organization_id(db: Session, organization_id: int):
+    users = db.query(models.User).join(models.Organization_User).filter(models.Organization_User.organization_id == organization_id, models.User.is_archived == False).all()
+    return users
+
 def get_user_by_uuid(db: Session, user_uuid: str):
     try:
         user = db.query(models.User).filter(models.User.uuid == user_uuid, models.User.is_archived == False).first()

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 import logging
 from sqlalchemy.orm import Session
-from app.oauth2 import get_current_active_user
+from app.oauth2 import get_current_active_organization, get_current_active_user
 from app.static_enums.organizer import OrganizerEnum
 from app.static_enums.role import RoleEnum
 from ..schemas import user_schemas as schemas
@@ -98,22 +98,19 @@ def get_role_names(user: schemas.User):
     roles_names = [role for role in roles_names if role != '']
     return roles_names
 
-@router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED, include_in_schema=False)
+@router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED, include_in_schema=True)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
-    user = validate_user_email(user)
-    check_user_exists(db, user)
-    signup_response = signup_organization_admin(db=db, organizer_signup_request = s_schemas.SignupOrganizerRequest(email=user.email, password=user.hashed_password, organization_name=user.company))
-    
-    # update_user_request = schemas.UserBaseUpdate(first_name=user.first_name, 
-    #                                              last_name=user.last_name, 
-    #                                              status=user.status, 
-    #                                              timezone=user.timezone, 
-    #                                              profile_image_url=user.profile_image_url, 
-    #                                              list_of_roles=user.list_of_roles)
-    
-    updated_user = update_user(user, current_user_id=signup_response.user_id, db = db)
-
-    return updated_user
+    try:  
+        user = validate_user_email(user)
+        check_user_exists(db, user)
+        signup_response = signup_organization_admin(db=db, organizer_signup_request = s_schemas.SignupOrganizerRequest(email=user.email, password=user.hashed_password, organization_name=user.company))
+        
+        updated_user = update_user(user, current_user_id=signup_response.user_id, db = db)
+        updated_user.company = signup_response.organization_name
+        return updated_user
+    except Exception as e:
+        logging.exception("User not created" + str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not created")
 
 
 # async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
@@ -148,6 +145,21 @@ def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_d
     users = assign_role_names_to_users(users)
     logging.info("Users retrieved")
     return users
+
+@router.get("/users/organization_id", response_model=list[schemas.User])
+def get_users_by_organization_id(organization_id: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), offset: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    try:
+        users = crud.get_users_by_organization_id(db, organization_id, offset, limit)
+        if users is None or len(users) == 0:
+            logging.exception("No user found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No user found")
+        users = assign_role_names_to_users(users)
+        logging.info("Users retrieved")
+        return users
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
 
 @router.get("/users", response_model=schemas.User)
 def get_user(db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):

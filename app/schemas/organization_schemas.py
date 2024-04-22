@@ -64,6 +64,7 @@ class Organization(BaseModel):
     logo_image_url: str | None = None
     website_url: str | None = None
     external_id: str | None = None
+    is_archived: bool
 
     class Config:
         orm_mode = True
