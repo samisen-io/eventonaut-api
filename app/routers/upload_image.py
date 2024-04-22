@@ -161,3 +161,17 @@ def delete_blob_by_url(blob_url):
             raise HTTPException(status_code=ex.status_code, detail=str(ex.detail))
         else:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex))
+        
+def get_blob_size_by_url(blob_url):
+    try:
+        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        url = urlparse(blob_url)
+        container_name = unquote(url.path.split("/")[1])
+        blob_name = unquote(url.path.split("/")[2])
+        blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+        properties = blob_client.get_blob_properties()
+        return properties.size
+    except Exception as ex:
+        logging.exception(str(ex))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
