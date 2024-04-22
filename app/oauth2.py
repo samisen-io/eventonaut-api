@@ -54,7 +54,6 @@ def get_current_organization(current_user: User = Security(get_current_active_us
 
 def get_current_active_organization(current_organization: Organization = Security(get_current_organization)):
     try:
-        print(current_organization.id)
         if current_organization.is_archived is True:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive organization")
         return current_organization

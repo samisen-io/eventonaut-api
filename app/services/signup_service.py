@@ -13,7 +13,7 @@ def create_organization(db: Session, name: str):
 
 def create_user(db: Session, email: str, password: str, user_role: RoleEnum):
     create_user_request = user_schemas.UserCreate(email=email, hashed_password=password, status="active")
-    return users_crud.create_user(db=db, user=create_user_request, role_ids=[user_role.value])
+    return users_crud.create_user_with_roles(db=db, user=create_user_request, role_ids=[user_role.value])
 
 def create_organization_user(db: Session, organization_id: str, user_id: str):
     organization_user = organization_user_schemas.Organization_UserCreate(organization_id=organization_id, user_id=user_id)

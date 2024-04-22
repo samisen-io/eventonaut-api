@@ -110,7 +110,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_a
         return updated_user
     except Exception as e:
         logging.exception("User not created" + str(e))
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not created")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not created" + str(e))
 
 
 # async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
@@ -147,9 +147,9 @@ def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_d
     return users
 
 @router.get("/users/organization_id", response_model=list[schemas.User])
-def get_users_by_organization_id(organization_id: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), offset: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+def get_users_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     try:
-        users = crud.get_users_by_organization_id(db, organization_id, offset, limit)
+        users = crud.get_users_by_organization_id(db, organization.id, offset, limit)
         if users is None or len(users) == 0:
             logging.exception("No user found")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No user found")

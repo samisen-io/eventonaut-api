@@ -77,7 +77,7 @@ def assign_roles_to_user(db: Session, db_user: models.User, role_ids: list[int])
     for role_id in role_ids:
         user_role_crud.create_user_role(db, user_id=db_user.id, role_id=role_id)
 
-def create_user(db: Session, user: schemas.UserCreate, role_ids: list[int]):
+def create_user_with_roles(db: Session, user: schemas.UserCreate, role_ids: list[int]):
     db_user = create_db_user(db, user)
     add_user_to_db(db, db_user)
     assign_roles_to_user(db, db_user, role_ids)
@@ -87,8 +87,18 @@ def get_user(db: Session, user_id: int):
     user = db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
     return user
 
-def get_users_by_organization_id(db: Session, organization_id: int):
-    users = db.query(models.User).join(models.Organization_User).filter(models.Organization_User.organization_id == organization_id, models.User.is_archived == False).all()
+def get_users_by_organization_id(db: Session, organization_id: int, offset: int, limit: int):
+    # users = db.query(models.User).options(joinedload(models.User.organization_user)).filter(models.Organization_User.organization_id == organization_id, models.User.is_archived == False).offset(offset).limit(limit).all()
+    users = (
+    db.query(models.User)
+    .join(models.Organization_User, models.User.id == models.Organization_User.user_id)
+    .join(models.User_Role, models.User.id == models.User_Role.user_id)
+    .filter(models.Organization_User.organization_id == organization_id, models.User.is_archived == False)
+    .offset(offset)
+    .limit(limit)
+    .all()
+    )
+    
     return users
 
 def get_user_by_uuid(db: Session, user_uuid: str):
@@ -117,7 +127,7 @@ def get_active_user_by_email(db: Session, email: str):
 
 def get_user_by_email_and_password(db: Session, email: str, password: str):
     try:
-        user = db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
+        user = db.query(models.User).options(joinedload(models.User.user_roles)).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
         if user is None:
             return False
         if hashing.verify_password(password, user.hashed_password):
@@ -158,6 +168,7 @@ def update_user_fields(user: schemas.UserBaseUpdate, db_user: models.User):
     user_dict = user.model_dump()
     user_dict.pop("status")
     user_dict.pop("profile_image_url")
+    user_dict.pop("hashed_password")
     non_nullable_fields = ['first_name','last_name','business_type']
     for key, value in user_dict.items():
         if key in non_nullable_fields:

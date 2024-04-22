@@ -20,6 +20,7 @@ from ..token import create_refresh_token, invalidate_refresh_token
 from .. import basicauth
 from ..crud import logout_token_crud
 from datetime import datetime
+from .. import models
 # from ..my_token import token_cache
 
 from app.oauth2 import get_current_active_organization, get_current_active_user, get_current_organization, get_current_user_RT, get_token_data, oauth_2_scheme
@@ -69,7 +70,7 @@ def sanitize_username(username: str) -> str:
 def get_scopes(scopes: List[str]) -> List[str]:
     return scopes if scopes else None
 
-def validate_user_and_scope(user: User_Role, scopes: List[str]) -> None:
+def validate_user_and_scope(user: models.User, scopes: List[str]) -> None:
     if not user:
         logging.exception("Incorrect username or password")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
