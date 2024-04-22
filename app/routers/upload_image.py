@@ -44,10 +44,12 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
             content_settings = ContentSettings(content_type=f'image/{file_extension}')
 
         elif file_extension in ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"]:
-            blob_name = file.filename
-            if file.filename[:3] == "evt":
+            folder_name = file.filename[:40]
+            actual_filename = file.filename[41:]
+            blob_name = f"{folder_name}/{actual_filename}"
+            if folder_name[:3] == "evt":
                 blob_client = blob_service_client.get_blob_client(BlobContainer.EVENT_DOCUMENTS.value, blob_name)
-            elif file.filename[:3] == "ses":
+            elif folder_name[:3] == "ses":
                 blob_client = blob_service_client.get_blob_client(BlobContainer.SESSION_DOCUMENTS.value, blob_name)
             
             if file_extension in ['txt', 'csv']:

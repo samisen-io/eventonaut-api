@@ -20,7 +20,7 @@ def create_session_document(session_id: str, file: UploadFile = File(...), db: S
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
         
         original_file_name = file.filename
-        file.filename = f"ses-doc-{current_user.uuid}-{original_file_name}"
+        file.filename = f'{session.uuid}-{file.filename}'
         uploaded_file = upload_file(file, db)
         blob_url = uploaded_file["url"]
         
