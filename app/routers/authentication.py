@@ -56,13 +56,19 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     
     token_expirations = get_token_expirations(scopes[0])
     
-    organization = get_organization_by_user_id(db, user.id)
-    refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
-    rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-    access_token = create_access_token(data={"sub": user.email, "org_id": organization.id, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
-    
+    if scopes[0] != RoleEnum.ATTENDEE.name:
+        organization = get_organization_by_user_id(db, user.id)
+        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
+        rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+        access_token = create_access_token(data={"sub": user.email, "org_id": organization.id, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
+    else:
+        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
+        rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+        access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
+        
     logging.info("User logged in: " + user.uuid)
     return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+
 
 def sanitize_username(username: str) -> str:
     return username.lower().strip()
