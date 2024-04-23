@@ -33,7 +33,7 @@ def validate_user_email(user: schemas.UserCreate):
 
 async def send_otp(email: str, email_subject: str):
     otp = generate_otp()
-    if not send_mail(otp, "Email Verification", email):
+    if not send_mail(otp, email_subject, email):
         logging.exception("Email not sent")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not sent")
     return otp
@@ -61,6 +61,7 @@ def get_role_ids(user: schemas.UserCreate):
     return list(role_ids)
 
 async def check_user_exists(db: Session, user: schemas.UserCreate):
+    global cache
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         logging.exception("Email already registered")
@@ -75,6 +76,7 @@ async def check_user_exists(db: Session, user: schemas.UserCreate):
 @router.post("/users/verify", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
 async def verify_otp(email: str, otp: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     global cache
+    
     if email not in cache.keys():
         logging.exception("Email not verified")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not verified")
@@ -86,6 +88,12 @@ async def verify_otp(email: str, otp: str, db: Session = Depends(get_db), basic_
         logging.exception("Invalid OTP")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP")
     user = cache[email][2]
+    del cache[email]
+    
+    signup_response = signup_organization_admin(db=db, organizer_signup_request = s_schemas.SignupOrganizerRequest(email=user.email, password=user.hashed_password, organization_name=user.company))
+    updated_user = update_user(user, current_user_id=signup_response.user_id, db = db)
+    updated_user.company = signup_response.organization_name
+    return updated_user
 
 def get_role_names(user: schemas.User):
     roles_names = []
@@ -98,20 +106,14 @@ def get_role_names(user: schemas.User):
     roles_names = [role for role in roles_names if role != '']
     return roles_names
 
-@router.post("/users", response_model=schemas.User, status_code=status.HTTP_201_CREATED, include_in_schema=True)
-def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+@router.post("/users")
+async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:  
         user = validate_user_email(user)
-        check_user_exists(db, user)
-        signup_response = signup_organization_admin(db=db, organizer_signup_request = s_schemas.SignupOrganizerRequest(email=user.email, password=user.hashed_password, organization_name=user.company))
-        
-        updated_user = update_user(user, current_user_id=signup_response.user_id, db = db)
-        updated_user.company = signup_response.organization_name
-        return updated_user
+        return await check_user_exists(db, user)
     except Exception as e:
         logging.exception("User not created" + str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not created" + str(e))
-
 
 # async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
 #     user = validate_user_email(user)
