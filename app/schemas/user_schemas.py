@@ -1,3 +1,4 @@
+from typing import List
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from fastapi import HTTPException, status as statuscode
 import logging
@@ -6,15 +7,16 @@ from ..url_validator import check_url
 
 class UserBase(BaseModel):
     email: str
-    first_name: str
-    last_name: str
+    first_name: str | None = None
+    last_name: str | None = None
+    status: str | None = None
     company: str | None = None
-    business_type: str
     timezone: str | None = None
-    status: str
     profile_image_url: str | None = None
+    list_of_roles: List[str] | None = None
 
-    @field_validator('email','first_name','last_name','business_type')
+    @field_validator('email')
+    @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
             logging.exception(f"{info.field_name} cannot be empty")
@@ -25,13 +27,15 @@ class UserBase(BaseModel):
         return v
     
     @field_validator("status")
+    @classmethod
     def check_status(cls, v):
         v = v.upper()
         if v not in list(organizer.OrganizerEnum.__members__):
             raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid status")
         return v
     
-    @field_validator('company','timezone','profile_image_url')
+    @field_validator('timezone')
+    @classmethod
     def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -43,6 +47,7 @@ class UserBase(BaseModel):
         return v
     
     @field_validator('profile_image_url')
+    @classmethod
     def validate_url(cls, v, info: ValidationInfo):
         if v is not None:
             if not check_url(v):
@@ -53,6 +58,7 @@ class UserCreate(UserBase):
     hashed_password: str
 
     @field_validator('hashed_password')
+    @classmethod
     def hashed_password_is_not_empty(cls, v):
         if v.strip() == "" or v.__contains__(" "):
             logging.exception("Invalid password")
@@ -65,13 +71,13 @@ class UserCreate(UserBase):
 class UserBaseUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
-    company: str |None = None
-    business_type: str |None = None
+    status: str | None = None
     timezone: str |None = None
-    status: str |None = None
     profile_image_url: str |None = None
+    list_of_roles: List[str] | None = None
 
-    @field_validator('first_name','last_name','company','business_type','timezone','profile_image_url')
+    @field_validator('first_name','last_name','timezone','profile_image_url')
+    @classmethod
     def user_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -83,6 +89,7 @@ class UserBaseUpdate(BaseModel):
         return v
     
     @field_validator("status")
+    @classmethod
     def check_status(cls, v):
         if v is not None:
             if v.strip() == "":
@@ -93,19 +100,21 @@ class UserBaseUpdate(BaseModel):
         return v
     
     @field_validator('profile_image_url')
+    @classmethod
     def validate_url(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
                 return None
             if not check_url(v):
                 raise ValueError(f"Broken {info.field_name} link or invalid url")
-        return v
+
 
 class UserPasswordUpdate(BaseModel):
     old_password: str
     new_password: str
 
     @field_validator('old_password','new_password')
+    @classmethod
     def password_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "" or v.__contains__(" "):
             logging.exception(f"Invalid {info.field_name}")
@@ -118,9 +127,23 @@ class UserPasswordUpdate(BaseModel):
 class User(UserBase):
     uuid: str = Field(serialization_alias="id")
     is_active: bool
-
+    
     class Config:
         orm_mode = True
         
 class UserAuthentication(User):
     role: str
+
+class UserAuthorization(BaseModel):
+    id: int
+    uuid: str
+    email: str
+    first_name: str | None = None
+    last_name: str | None = None
+    hashed_password: str
+    is_active: bool
+    is_verified: bool
+    is_archived: bool
+    user_status_id: int | None = None
+    role: List[str] | None = None
+    

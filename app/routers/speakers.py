@@ -1,5 +1,6 @@
 import logging
 from app.crud import conferences_crud
+from app.static_enums.role import RoleEnum
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Security, status
@@ -14,7 +15,7 @@ from ..schemas.session_speaker_schema import SpeakerResponse
 router = APIRouter(tags=["speakers"])
 
 @router.post("/speakers", response_model=SpeakerResponse, status_code=status.HTTP_201_CREATED)
-def create_speaker(speaker: schemas.SpeakerCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def create_speaker(speaker: schemas.SpeakerCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     try:
         valid = validate_email(speaker.email)
         speaker.email = valid.normalized.lower()
@@ -47,7 +48,7 @@ def get_all_speakers(offset: int = 0, limit: int = 100, db: Session = Depends(ge
     return speakers
 
 @router.get("/speakers/conference/{conference_id}", response_model=list[SpeakerResponse])
-def get_speakers_by_conference_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def get_speakers_by_conference_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     conference = conferences_crud.get_conference_by_uuid(db=db, uuid=conference_id, owner_id=current_user.id)
     if conference is None:
         logging.exception("Conference not found")
@@ -60,7 +61,7 @@ def get_speakers_by_conference_id(conference_id: str, db: Session = Depends(get_
     return speakers
 
 @router.get("/speakers", response_model=list[SpeakerResponse])
-def get_speakers_by_owner_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def get_speakers_by_owner_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     speakers = crud.get_speakers_by_owner_id(db=db, owner_id=current_user.id, offset=offset, limit=limit)
     if speakers is None or len(speakers) == 0:
         logging.exception("Speaker not found")
@@ -69,7 +70,7 @@ def get_speakers_by_owner_id(offset: int = 0, limit: int = 100, db: Session = De
     return speakers
 
 @router.get("/speakers/{speaker_id}", response_model=SpeakerResponse)
-def get_speaker(speaker_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def get_speaker(speaker_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_speaker = crud.get_speaker_by_uuid(db, uuid=speaker_id, owner_id=current_user.id)
     if db_speaker is None:
         logging.exception("Speaker not found")
@@ -78,7 +79,7 @@ def get_speaker(speaker_id: str, db: Session = Depends(get_db), current_user: Us
     return db_speaker
 
 @router.put("/speakers", response_model=SpeakerResponse)
-def update_speaker(speaker: schemas.SpeakerUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def update_speaker(speaker: schemas.SpeakerUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if all(value is None for value in dict(speaker).values()):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
@@ -100,7 +101,7 @@ def update_speaker(speaker: schemas.SpeakerUpdate, db: Session = Depends(get_db)
     return updated_speaker
 
 @router.delete("/speakers/{speaker_id}")
-def delete_speaker(speaker_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def delete_speaker(speaker_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_speaker = crud.get_speaker(db, speaker_id=speaker_id)
     if db_speaker is None:
         logging.exception("Speaker not found")

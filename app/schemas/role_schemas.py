@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field
 
 
 class RoleBase(BaseModel):
-    name: str | None = None
-    description: str | None = None
+    name: str
+    description: str
 
 
 # Properties to receive via API on creation
@@ -18,18 +18,16 @@ class RoleCreate(RoleBase):
 # Properties to receive via API on update
 
 
-class RoleUpdate(RoleBase):
-    id: str
-    name: str
-    description: str
-
-
-# Properties to return via API
-
+class RoleUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    
+class RoleResponse(RoleBase):
+    class Config:
+        orm_mode = True
 
 class Role(RoleBase):
     uuid: str = Field(serialization_alias="id")
-    name: str
-
+    
     class Config:
         orm_mode = True

@@ -5,7 +5,8 @@ from fastapi.responses import JSONResponse
 import logging
 from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
-from app.routers import backdrop_gallery, eventbrite_connector, organization, photo_booth, role
+from .routers import signup_organizer
+from .routers import backdrop_gallery, eventbrite_connector, organization, organization_user, photo_booth, role
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference, client, speakers, promotions,sponsor, venue, static_organizer, static_client, static_event, static_session, static_attendee, upload_image, event_documents, session_documents, organization_settings
@@ -57,6 +58,10 @@ app.add_middleware(
 # Add the routers to the application with authentication middleware
 app.include_router(organization_settings.router)
 app.include_router(upload_image.router)
+app.include_router(signup_organizer.router)
+app.include_router(organization.router)
+app.include_router(organization_user.router)
+app.include_router(role.router)
 app.include_router(users.router)
 app.include_router(client.router)
 app.include_router(conferences.router)
