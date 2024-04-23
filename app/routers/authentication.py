@@ -1,11 +1,16 @@
 import os
 from datetime import timedelta
 import logging
+from typing import Dict, List
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from fastapi.security import OAuth2PasswordRequestForm
+from app.crud.organization_crud import get_organization_by_user_id
+from app.schemas.organization_schemas import Organization
 from app.schemas.user_schemas import UserAuthentication as User
+from app.schemas.user_role import UserRole as User_Role
 from app.schemas.token_schemas import TokenInput
+from app.static_enums.role import RoleEnum
 from ..crud import users_crud
 from ..dependencies import get_db
 from app.token import Token, create_access_token
@@ -15,9 +20,12 @@ from ..token import create_refresh_token, invalidate_refresh_token
 from .. import basicauth
 from ..crud import logout_token_crud
 from datetime import datetime
+from .. import models
 # from ..my_token import token_cache
 
-from app.oauth2 import get_current_active_user, get_current_user_RT, oauth_2_scheme
+from app.oauth2 import get_current_active_organization, get_current_active_user, get_current_organization, get_current_user_RT, get_token_data, oauth_2_scheme
+
+import app
 
 router = APIRouter(tags=["authentication"])
 
@@ -35,70 +43,113 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 def authenticate_user(db: Session, username: str, password: str, token_jti: str):
     user =  users_crud.get_user_by_email_and_password(db=db,email=username, password=password)
-    db_tokens = logout_token_crud.get_all_jti_in_tokens(db=db)
-    if token_jti in db_tokens:
-        logging.exception("Token is invalid")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
+    logout_token_crud.get_all_jti_in_tokens(db=db, token_jti=token_jti)
     return user
 
 @router.post("/login", response_model=Token)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends(), basic_auth = Depends(basicauth.basic_auth)):
-    form_data.username = form_data.username.lower().strip()
-    scopes = form_data.scopes if form_data.scopes else None
+    form_data.username = sanitize_username(form_data.username)
+    scopes = get_scopes(form_data.scopes)
+    if len(scopes) != 1:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Only one scope is allowed",
+                            headers={"WWW-Authenticate": "Bearer"})
+
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
+
+    validate_user_and_scope(user, scopes)
+
+    token_expirations = get_token_expirations(scopes[0])
+    
+    if scopes[0] != RoleEnum.ATTENDEE.name:
+        organization = get_organization_by_user_id(db, user.id)
+        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
+        rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+        access_token = create_access_token(data={"sub": user.email, "org_id": organization.id, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
+    else:
+        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
+        rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+        access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
+        
+    logging.info("User logged in: " + user.uuid)
+    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
+
+
+def sanitize_username(username: str) -> str:
+    return username.lower().strip()
+
+def get_scopes(scopes: List[str]) -> List[str]:
+    return scopes if scopes else None
+
+def validate_user_and_scope(user: models.User, scopes: List[str]) -> None:
     if not user:
         logging.exception("Incorrect username or password")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
-    if not scopes or user.role not in scopes or len(scopes) != 1:
+    if not scopes or not any(scope in RoleEnum(user.user_roles[0].role_id).name for scope in scopes):
         logging.exception("Incorrect scope")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect scope",
                             headers={"WWW-Authenticate": "Bearer"})
-    if user.role == "organizer":
-        access_token_expires = timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES)
-        refresh_token_expires = timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)
 
-    elif user.role == "attendee":
-        access_token_expires = timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS)
-        refresh_token_expires = timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)
-
-    refresh_token = create_refresh_token(data={"sub": user.email, "scopes": [user.role]}, expires_delta=refresh_token_expires)
-    rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-    access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": [user.role]}, expires_delta=access_token_expires)
-    logging.info("User logged in: " + user.uuid)
-    return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
-
+def get_token_expirations(role: str) -> Dict[str, timedelta]:
+    if role == RoleEnum.ATTENDEE.name:
+        return {'access_token_expires': timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS), 
+                'refresh_token_expires': timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)}
+        
+    elif role == RoleEnum.ORGANIZATION_ADMIN.name or role == RoleEnum.ORGANIZATION_USER.name:
+        return {'access_token_expires': timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES), 
+                'refresh_token_expires': timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)}
+    
+    elif role == "organizer":
+         return {'access_token_expires': timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES), 
+                'refresh_token_expires': timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)}
+         
+    elif role == "attendee":
+        return {'access_token_expires': timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS), 
+                'refresh_token_expires': timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)}
+    
+    else:
+        logging.exception("Invalid role")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid role")
+    
 @router.get("/print_something_attendee")
-def print_something(current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def print_something(current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     logging.info("Attendee logged in: " + current_user.uuid)
     return {"message": "Hello World"}
 
 @router.get("/print_something_organizer")
-def print_something2(current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def print_something2(current_user: User = Security(get_current_active_user, scopes=["ORGANIZATION_ADMIN"])):
     logging.info("Organizer logged in: " + current_user.uuid)
     return {"message": "Hello World"}
+
+@router.get("/print_something_organizer")
+def print_something3(current_user: User = Security(get_current_active_user, scopes=["ORGANIZATION_USER"])):
+    logging.info("Organizer logged in: " + current_user.uuid)
+    return {"message": "Hello World"}
+
+@router.get("/print_something")
+def print_something4(current_organization: Organization = Security(get_current_organization, scopes=["ORGANIZATION_ADMIN"])):
+    logging.info("Organizer logged in: " + current_organization.uuid)
+    print(current_organization.uuid)
+    return {"message": current_organization.uuid}
     
 @router.post("/refresh_token", response_model = Token)
 async def create_new_access_and_refresh_token(token:TokenInput,  db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:
         jwt_token = token.token
-        # validate refresh token
+        token_data = get_token_data(jwt_token,db)
+        
         current_user: User = get_current_user_RT(jwt_token,db)
         invalidate_refresh_token(jwt_token=jwt_token, db=db)
 
-        if current_user.role == "organizer":
-            access_token_expires = timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES)
-            refresh_token_expires = timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)
+        token_expirations = get_token_expirations(token_data.scopes[0])
         
-        elif current_user.role == "attendee":
-            access_token_expires = timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS)
-            refresh_token_expires = timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)
-
-        refresh_token = create_refresh_token(data={"sub": current_user.email}, expires_delta=refresh_token_expires)
+        refresh_token = create_refresh_token(data={"sub": current_user.email, "scopes": token_data.scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
         rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-        access_token = create_access_token(data={"sub": current_user.email, "id":current_user.id, "rt_jti":rt_jti, "scopes": [current_user.role]}, expires_delta=access_token_expires)
+        access_token = create_access_token(data={"sub": current_user.email, "id":current_user.id, "rt_jti":rt_jti, "scopes": [token_data.scopes[0]]}, expires_delta=token_expirations['access_token_expires'])
+        
         logging.info("Refresh token created: " + current_user.uuid)
         return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
     except JWTError:
@@ -118,7 +169,7 @@ async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db), basic_a
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
 
 @router.post("/logout")
-async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"]),db: Session = Depends(get_db)):
+async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Security(get_current_active_user, scopes=["ATTENDEE", "ORGANIZATION_ADMIN", "ORGANIZATION_USER"]),db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(jwt_token, SECRET_KEY, algorithms=[ALGORITHM])
         jti = payload.get("jti")

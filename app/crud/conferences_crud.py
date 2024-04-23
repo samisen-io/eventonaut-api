@@ -210,7 +210,8 @@ def get_event_list_summary(db: Session, owner_id: int):
     total_events = len(db_conferences)
     first_event_start_date = db_conferences[0].start_date
     last_event_end_date = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).order_by(models.Conference.end_date.desc()).first().end_date
-    total_clients = db.query(models.Client).filter(models.Client.owner_id == owner_id, models.Client.is_archived == False).count()
+    clients = db.query(models.Client).filter(models.Client.owner_id == owner_id, models.Client.is_archived == False).all()
+    total_clients = len(clients)
 
     total_sponsors = 0
     total_attendees = 0

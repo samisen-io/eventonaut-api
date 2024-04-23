@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
-
+from sqlalchemy import UniqueConstraint
 from .database import Base
 
 class Organization(Base):
@@ -15,14 +15,37 @@ class Organization(Base):
     business_type = Column(String, index=True)
     description = Column(String, index=True)
     address = Column(String, index=True)
-    contact_email = Column(String, index=True)
-    contact_phone = Column(String, index=True)
     logo_image_url = Column(String, index=True)
     website_url = Column(String, index=True)
     external_id = Column(String, index=True)
+    is_archived = Column(Boolean, default=False)
     
     organization_settings = relationship("OrganizationSettings", back_populates="organization")
+    organization_user = relationship("Organization_User", back_populates="organization")
+    clients = relationship("Client", back_populates="organization")
+    conferences = relationship("Conference", back_populates="organization")
+    backdrop_gallery = relationship("BackdropGallery", back_populates="organization")
+    speakers = relationship("Speakers", back_populates="organization")
+    sessions = relationship("Session", back_populates="organization")
+    promotions = relationship("Promotions", back_populates="organization")
+    sponsors = relationship("Sponsors", back_populates="organization")
+    venues = relationship("Venue", back_populates="organization")
+    event_documents = relationship("EventDocuments", back_populates="organization")
+    session_documents = relationship("SessionDocuments", back_populates="organization")
 
+class Organization_User(Base):
+    __tablename__ = "organization_user"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    uuid = Column(String, index=True, unique=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True)
+
+    organization = relationship("Organization", back_populates="organization_user")
+    user = relationship("User", back_populates="organization_user")
+    
 class User(Base):
     __tablename__ = "users"
 
@@ -33,16 +56,16 @@ class User(Base):
     email = Column(String, index=True, unique=True)
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
-    company = Column(String, index=True)
-    business_type = Column(String, index=True)
     hashed_password = Column(String)
     role = Column(String, index=True)
     timezone = Column(String, index=True)
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
     user_status_id = Column(Integer, ForeignKey("organizer_status.id"))
-    is_archived = Column(Boolean, default=False)
     profile_image_url = Column(String, index=True)
+    is_archived = Column(Boolean, default=False)
+    company = Column(String, index=True)
+    business_type = Column(String, index=True)
 
     attendees = relationship("Attendee", back_populates="user")
     conferences = relationship("Conference", back_populates="owner")
@@ -53,6 +76,8 @@ class User(Base):
     speakers = relationship("Speakers", back_populates="owner")
     sponsors = relationship("Sponsors", back_populates="owner")
     organizer_status = relationship("OrganizerStatus", back_populates="user")
+    user_roles = relationship('User_Role', back_populates='user')
+    organization_user = relationship("Organization_User", back_populates="user")
     backdrop_gallery = relationship("BackdropGallery", back_populates="User")
     
     @property
@@ -68,7 +93,24 @@ class Role(Base):
     updated_on = Column(DateTime)
     name = Column(String, index=True)
     description = Column(String, index=True)
+    
+    user_roles = relationship('User_Role', back_populates='role')
+    
+class User_Role(Base):
+    __tablename__ = "user_role"
 
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    role_id = Column(Integer, ForeignKey("role.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    
+    user = relationship('User', back_populates='user_roles')
+    role = relationship('Role', back_populates='user_roles')
+
+    __table_args__ = (UniqueConstraint('user_id', 'role_id', name='_user_role_uc'),)
+    
 class Client(Base):
     __tablename__ = "clients"
 
@@ -85,10 +127,12 @@ class Client(Base):
     profile_image_url = Column(String, index=True)
     client_status_id = Column(Integer, ForeignKey("client_status.id"))
     is_archived = Column(Boolean, default=False)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
 
     owner = relationship("User", back_populates="client")
     conferences = relationship("Conference", back_populates="client")
     client_status = relationship("ClientStatus", back_populates="client")
+    organization = relationship("Organization", back_populates="clients")
     
     @property
     def status(self):
@@ -119,6 +163,7 @@ class Conference(Base):
     conference_status_id = Column(Integer, ForeignKey("event_status.id"))
     is_archived = Column(Boolean, default=False)
     external_id = Column(String, index=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
 
     client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")
@@ -135,6 +180,7 @@ class Conference(Base):
     event_status = relationship("EventStatus", back_populates="conference")
     backdrop_gallery = relationship("BackdropGallery", back_populates="conference")
     event_documents = relationship("EventDocuments", back_populates="conference")
+    organization = relationship("Organization", back_populates="conferences")
     
     @property
     def status(self):
@@ -157,9 +203,11 @@ class BackdropGallery(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     backdrop_url = Column(String, index=True)
     is_archived = Column(Boolean, default=False)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
     
     conference = relationship("Conference", back_populates="backdrop_gallery")
     User = relationship("User", back_populates="backdrop_gallery")
+    organization = relationship("Organization", back_populates="backdrop_gallery")
     
 class Conference_Files(Base):
     __tablename__ = "conference_files"
@@ -187,9 +235,11 @@ class Speakers(Base):
     bio = Column(String, index=True)
     profile_image_url = Column(String, index=True)
     is_archived = Column(Boolean, default=False)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
 
     sessions = relationship("Session", secondary="session_speakers", back_populates="speakers")
     owner = relationship("User", back_populates="speakers")
+    organization = relationship("Organization", back_populates="speakers")
 
 class SessionSpeakers(Base):
     __tablename__ = "session_speakers"
@@ -223,6 +273,7 @@ class Session(Base):
     session_banner_url = Column(String, index=True)
     session_status_id = Column(Integer, ForeignKey("session_status.id"))
     is_archived = Column(Boolean, default=False)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
 
     conference = relationship("Conference", back_populates="sessions")
     owner = relationship("User", back_populates="sessions")
@@ -230,6 +281,7 @@ class Session(Base):
     speakers = relationship("Speakers", secondary="session_speakers", back_populates="sessions")
     session_status = relationship("Sessionstatus", back_populates="session")
     session_documents = relationship("SessionDocuments", back_populates="session")
+    organization = relationship("Organization", back_populates="sessions")
 
     @property
     def status(self):
@@ -370,8 +422,10 @@ class Promotions(Base):
     image_url = Column(String, index=True)
     promotion_name = Column(String, index=True)
     rank = Column(Integer, default=0)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
 
     conference = relationship("Conference", back_populates="promotions")
+    organization = relationship("Organization", back_populates="promotions")
     
     @property
     def location(self):
@@ -413,10 +467,12 @@ class Sponsors(Base):
     logo_image_url = Column(String, index=True)
     sponsorship_level = Column(String, index=True)
     is_archived = Column(Boolean, default=False)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
 
     owner = relationship("User", back_populates="sponsors")
     event_sponsors = relationship("EventSponsors", back_populates="sponsors", overlaps="conference")
     conference = relationship("Conference", secondary="event_sponsors", back_populates="sponsors", overlaps="event_sponsors")
+    organization = relationship("Organization", back_populates="sponsors")
 
 class EventSponsors(Base):
     __tablename__ = "event_sponsors"
@@ -454,9 +510,11 @@ class Venue(Base):
     address = Column(String, index=True)
     geo_location = Column(String, index=True)
     is_archived = Column(Boolean, default=False)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
 
     owner = relationship("User", back_populates="venues")
     conference = relationship("Conference", back_populates="venue")
+    organization = relationship("Organization", back_populates="venues")
     
 class OrganizerStatus(Base):
     __tablename__ = "organizer_status"
@@ -523,8 +581,10 @@ class EventDocuments(Base):
     content_type = Column(String, index=True)
     name = Column(String, index=True)
     size = Column(Float, index=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
 
     conference = relationship("Conference", back_populates="event_documents")
+    organization = relationship("Organization", back_populates="event_documents")
     
     @property
     def conference_uuid(self):
@@ -542,8 +602,10 @@ class SessionDocuments(Base):
     content_type = Column(String, index=True)
     name = Column(String, index=True)
     size = Column(Float, index=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
 
     session = relationship("Session", back_populates="session_documents")
+    organization = relationship("Organization", back_populates="session_documents")
     
     @property
     def session_uuid(self):

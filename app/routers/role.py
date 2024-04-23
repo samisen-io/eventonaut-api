@@ -1,5 +1,4 @@
 from typing import List
-
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -7,41 +6,44 @@ from ..basicauth import basic_auth
 from ..crud import role_crud as crud
 from ..dependencies import get_db
 from ..schemas import role_schemas as schemas
+from app import basicauth
 
 router = APIRouter(tags=["role"])
 
-
-@router.post("/role", response_model=schemas.Role, status_code=status.HTTP_201_CREATED)
+@router.post("/role", response_model=schemas.RoleResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 def create_role(
     role: schemas.RoleCreate,
     db: Session = Depends(get_db),
     basic_auth=Depends(basic_auth),
 ):
-    return crud.create_role(db=db, role=role)
+    try:
+        return crud.create_role(db=db, role=role)
+    except HTTPException as e:
+        raise e
 
-
-@router.get("/role", response_model=List[schemas.Role])
+@router.get("/roles", response_model=List[schemas.RoleResponse])
 def read_roles(
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
     basic_auth=Depends(basic_auth),
 ):
-    roles = crud.get_roles(db, skip=skip, limit=limit)
-    return roles
+    try:
+        roles = crud.get_roles(db, skip=skip, limit=limit)
+        return roles
+    except HTTPException as e:
+        raise e
 
-
-@router.get("/role/{role_id}", response_model=schemas.Role)
+@router.get("/role/{name}", response_model=schemas.RoleResponse, include_in_schema=False)
 def read_role(
-    role_id: str, db: Session = Depends(get_db), basic_auth=Depends(basic_auth)
+    role_name: str, db: Session = Depends(get_db), basic_auth=Depends(basic_auth)
 ):
-    db_role = crud.get_role(db, role_id=role_id)
+    db_role = crud.get_role(db, role_name=role_name)
     if db_role is None:
         raise HTTPException(status_code=404, detail="Role not found")
     return db_role
 
-
-@router.put("/role/{role_id}", response_model=schemas.Role)
+@router.put("/role/{name}", response_model=schemas.RoleResponse, include_in_schema=False)
 def update_role(
     role: schemas.RoleUpdate,
     db: Session = Depends(get_db),
@@ -52,12 +54,11 @@ def update_role(
         raise HTTPException(status_code=404, detail="Role not found")
     return db_role
 
-
-@router.delete("/role/{role_id}")
+@router.delete("/role/{name}", include_in_schema=False)
 def delete_role(
-    role_id: str, db: Session = Depends(get_db), basic_auth=Depends(basic_auth)
+    role_name: str, db: Session = Depends(get_db), basic_auth=Depends(basic_auth)
 ):
-    db_role = crud.delete_role(db=db, role_id=role_id)
+    db_role = crud.delete_role(db=db, role_name=role_name)
     if db_role is None:
         raise HTTPException(status_code=404, detail="Role not found")
     return db_role
