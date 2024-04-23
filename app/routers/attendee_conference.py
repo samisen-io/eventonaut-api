@@ -66,7 +66,7 @@ def delete_attendee_conference_by_attendee_id_and_conference_id(conference_ident
     return deleted_attendee_conference
 
 @router.get("/attendee/profiles", response_model=list[schemas.Attendee])
-def get_attendee_profiles_for_conference_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name, "organizer"])):
+def get_attendee_profiles_for_conference_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ATTENDEE.name, "organizer"])):
     conference = conferences_crud.get_conference_by_uuid(db, uuid=conference_id,owner_id=current_user.id) if current_user.role == "organizer" else conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
     if conference is None:
         logging.exception("Conference not found")
