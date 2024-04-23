@@ -50,10 +50,15 @@ def authenticate_user(db: Session, username: str, password: str, token_jti: str)
 async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends(), basic_auth = Depends(basicauth.basic_auth)):
     form_data.username = sanitize_username(form_data.username)
     scopes = get_scopes(form_data.scopes)
+    if len(scopes) != 1:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail="Only one scope is allowed",
+                            headers={"WWW-Authenticate": "Bearer"})
+
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
-    
+
     validate_user_and_scope(user, scopes)
-    
+
     token_expirations = get_token_expirations(scopes[0])
     
     if scopes[0] != RoleEnum.ATTENDEE.name:
