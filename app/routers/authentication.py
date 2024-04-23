@@ -188,3 +188,4 @@ async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Se
     except JWTError:
         logging.exception("Invalid token")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
+    
