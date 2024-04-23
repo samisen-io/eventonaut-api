@@ -50,7 +50,7 @@ def map_session_document_response(session_id, response):
                                      size=f"{str(response.size)} MB")
 
 @router.get("/{session_id}", response_model=list[SessionDocumentResponse])
-def get_all_session_documents(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_USER.name, RoleEnum.ATTENDEE.name, "organizer", "attendee"])):
+def get_all_session_documents(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, RoleEnum.ATTENDEE.name, "organizer", "attendee"])):
     if current_user.role == "organizer":
         session = sessions_crud.get_session_by_uuid_id(db, session_id, current_user.id)
     elif current_user.role == "attendee":
