@@ -9,11 +9,12 @@ from ..crud import session_document_crud as crud
 from ..schemas.session_document_schemas import SessionDocumentResponse, SessionDocumentRequest
 from ..static_enums.blob_container_enums import BlobContainer
 import logging
+from app.static_enums.role import RoleEnum
 
 router = APIRouter(tags=["session_documents"], prefix="/session_documents")
 
 @router.post("/", response_model=SessionDocumentResponse, status_code=status.HTTP_201_CREATED)
-def create_session_document(session_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def create_session_document(session_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name,"organizer"])):
     try:
         session = sessions_crud.get_session_by_uuid_id(db, session_id, current_user.id)
         if not session:
@@ -49,7 +50,7 @@ def map_session_document_response(session_id, response):
                                      size=f"{str(response.size)} MB")
 
 @router.get("/{session_id}", response_model=list[SessionDocumentResponse])
-def get_all_session_documents(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
+def get_all_session_documents(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_USER.name, RoleEnum.ATTENDEE.name, "organizer", "attendee"])):
     if current_user.role == "organizer":
         session = sessions_crud.get_session_by_uuid_id(db, session_id, current_user.id)
     elif current_user.role == "attendee":
@@ -63,7 +64,7 @@ def get_all_session_documents(session_id: str, db: Session = Depends(get_db), cu
     return [map_session_document_response(session_id, document) for document in documents]
 
 @router.delete("/event_documents")
-def delete_session_document(session_document_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])): 
+def delete_session_document(session_document_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])): 
     try:
         delete_session_document = crud.delete_session_document(db, session_document_id)
         delete_blob_by_url(delete_session_document.document_url)

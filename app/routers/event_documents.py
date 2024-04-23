@@ -10,11 +10,12 @@ from ..crud import event_documents_crud as crud
 from ..schemas.event_document_schemas import EventDocumentRequest, EventDocumentResponse
 from ..static_enums.blob_container_enums import BlobContainer
 from fastapi.encoders import jsonable_encoder
+from app.static_enums.role import RoleEnum
 
 router = APIRouter(tags=["event_documents"], prefix="/event_documents")
 
 @router.post("/", response_model=EventDocumentResponse, status_code=status.HTTP_201_CREATED)
-def create_event_document(conference_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def create_event_document(conference_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
     try:
         conference = conferences_crud.get_conference_by_uuid(db, conference_id, current_user.id)
         
@@ -51,7 +52,7 @@ def map_event_document_response(conference_id, response):
                                      size=f"{str(response.size)} MB")
 
 @router.get("/{conference_id}", response_model=list[EventDocumentResponse])
-def get_all_event_documents(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer", "attendee"])):
+def get_all_event_documents(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ATTENDEE.name,"organizer", "attendee"])):
     if current_user.role == "organizer":
         conference = conferences_crud.get_conference_by_uuid(db, conference_id, current_user.id)
     elif current_user.role == "attendee":
@@ -63,7 +64,7 @@ def get_all_event_documents(conference_id: str, db: Session = Depends(get_db), c
     return [map_event_document_response(conference_id, document) for document in documents]
 
 @router.delete("/")
-def delete_event_document(event_document_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def delete_event_document(event_document_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
     try:
         deleted_event_document = crud.delete_event_document(db, event_document_id)
         delete_blob_by_url(deleted_event_document.document_url)

@@ -5,11 +5,12 @@ from fastapi.responses import StreamingResponse
 from app.edit_photo import check_the_file_size, check_the_file_type, remove_background
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
+from app.static_enums.role import RoleEnum
 
 router = APIRouter(tags = ['photo_booth'])
 
 @router.post('/remove_the_background/')
-async def remove_the_background(file: UploadFile = File(...), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+async def remove_the_background(file: UploadFile = File(...), current_user: User = Security(get_current_active_user, scopes=[ RoleEnum.ATTENDEE.name, "attendee"])):
     try:
         file_object = file.file.read()
         check_the_file_size(file_object)
