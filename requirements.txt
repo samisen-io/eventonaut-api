@@ -29,4 +29,3 @@ langchain-community
 pillow
 opencv-python
 upstash-redis
-rembg
