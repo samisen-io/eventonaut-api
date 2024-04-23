@@ -198,6 +198,7 @@ class BackdropGallery(Base):
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     name = Column(String, index=True)
+    size = Column(Float, index=True)
     owner_id = Column(Integer, ForeignKey("users.id"))
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     backdrop_url = Column(String, index=True)

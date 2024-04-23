@@ -17,8 +17,9 @@ router = APIRouter(tags=["event_documents"], prefix="/event_documents")
 def create_event_document(conference_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
     try:
         conference = conferences_crud.get_conference_by_uuid(db, conference_id, current_user.id)
+        
         original_file_name = file.filename
-        file.filename = f"evt-doc-{current_user.uuid}-{original_file_name}"
+        file.filename = f'{conference.uuid}-{file.filename}'
         uploaded_file = upload_file(file, db)
         blob_url = uploaded_file["url"]
         

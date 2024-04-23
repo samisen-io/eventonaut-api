@@ -21,6 +21,7 @@ def Get_backdrop(backdrop_id: str, db: Session = Depends(get_db), User = Securit
     return schemas.BackdropGalleryResponse(conference_id=db_backdrop.conference.uuid, 
                                            backdrop_url=db_backdrop.backdrop_url, 
                                            name=db_backdrop.name,
+                                           size=db_backdrop.size,
                                            uuid=db_backdrop.uuid)
 
 @router.get("/backdrops/{conference_id}", response_model=List[schemas.BackdropGalleryResponse])
@@ -30,6 +31,7 @@ def get_backdrops_by_conferene_id(conference_id: str, skip: int = 0, limit: int 
         response = [schemas.BackdropGalleryResponse(conference_id=conference_id, 
                                                     backdrop_url=backdrop.backdrop_url, 
                                                     name=backdrop.name,
+                                                    size=backdrop.size,
                                                     uuid=backdrop.uuid) for backdrop in backdrops]
         return response
     except HTTPException as e:
@@ -46,11 +48,12 @@ def create_backdrop(backdrop: schemas.BackdropGalleryCreate, db: Session = Depen
         response = schemas.BackdropGalleryResponse(conference_id=backdrop.conference_id, 
                                                 backdrop_url=modelresponse.backdrop_url,
                                                 name=modelresponse.name,
+                                                size=modelresponse.size,
                                                 uuid=modelresponse.uuid)
         return response
     except HTTPException as e:
-        logging.exception(str(e))
-        raise e
+        print("printing",e.detail)
+        raise
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
@@ -61,6 +64,7 @@ def update_backdrop(backdrop: schemas.BackdropGalleryUpdate, db: Session = Depen
     updated_backdrop = crud.update_backdrop(db=db, backdrop=backdrop, db_backdrop=db_backdrop)
     response = schemas.BackdropGalleryUpdateResponse(backdrop_url=updated_backdrop.backdrop_url, 
                                                      name=updated_backdrop.name,
+                                                     size=updated_backdrop.size,
                                                     uuid=updated_backdrop.uuid)
     return response
 
@@ -68,4 +72,4 @@ def update_backdrop(backdrop: schemas.BackdropGalleryUpdate, db: Session = Depen
 def delete_backdrop(backdrop_id: str, db: Session = Depends(get_db),  User = Security(get_current_active_user, scopes=["organizer"])):
     db_backdrop = get_backdrop_by_id(backdrop_id, db, User)
     crud.delete_backdrop(db=db, db_backdrop=db_backdrop)
-    return {"detail": "Backdrop deleted"}
+    return {"detail": "Backdrop deleted"} 

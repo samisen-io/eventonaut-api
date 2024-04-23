@@ -49,6 +49,7 @@ def execute_backdrop_query(db: Session, conference_id: str, owner_id: int, skip:
             backdrop_gallery.uuid as uuid,
             backdrop_gallery.backdrop_url as backdrop_url,
             backdrop_gallery.name as name,
+            backdrop_gallery.size as size,
             backdrop_gallery.created_on as created_on,
             backdrop_gallery.updated_on as updated_on,
             backdrop_gallery.is_archived as is_archived,
@@ -63,7 +64,6 @@ def execute_backdrop_query(db: Session, conference_id: str, owner_id: int, skip:
         WHERE 
             backdrop_gallery.is_archived = false AND 
             conferences.uuid = :conference_id AND 
-            backdrop_gallery.owner_id = :owner_id AND 
             conferences.is_archived = false AND 
             users.is_archived = false
         OFFSET :skip
@@ -81,6 +81,7 @@ def create_backdrop_objects(result):
             uuid=row.uuid,
             backdrop_url=row.backdrop_url,
             name=row.name,
+            size=row.size,
             created_on=row.created_on,
             updated_on=row.updated_on,
             is_archived=row.is_archived,
@@ -121,6 +122,8 @@ def create_backdrop(db: Session, backdrop: schemas.BackdropGalleryCreate, owner_
         db_backdrop.uuid = 'bdg-' + str(uuid.uuid4())
         
         db_backdrop.backdrop_url = upload_image.get_actual_url(image_url=backdrop.backdrop_url, new_blob_container=BlobContainer.BACKDROP_IMAGES.value, new_blob_name=f"back-drop-{db_backdrop.uuid}-{original_filename}") if backdrop.backdrop_url else None
+                
+        db_backdrop.size = upload_image.get_blob_size_by_url(db_backdrop.backdrop_url)
         
         db.add(db_backdrop)
         try:
@@ -131,6 +134,8 @@ def create_backdrop(db: Session, backdrop: schemas.BackdropGalleryCreate, owner_
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
         db.refresh(db_backdrop)
         return db_backdrop
+    except HTTPException as e:
+        raise e
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=400, detail=str(e))
@@ -149,6 +154,8 @@ def update_backdrop(db: Session, backdrop: schemas.BackdropGalleryUpdate, db_bac
     elif backdrop_image is None and db_backdrop.backdrop_url is not None:
         upload_image.delete_blob_by_url(db_backdrop.backdrop_url)
         db_backdrop.backdrop_url = None
+    
+    db_backdrop.size = upload_image.get_blob_size_by_url(db_backdrop.backdrop_url)
     
     db_backdrop.updated_on = datetime.utcnow()
     try:
