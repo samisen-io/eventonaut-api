@@ -28,10 +28,11 @@ class BackdropGalleryResponse(BackdropGalleryBase):
     conference_id: str
     uuid: str = Field(serialization_alias="id")
     name: str
-
+    size: float
 class BackdropGalleryUpdate(BackdropGalleryBase):
     id: str
 
 class BackdropGalleryUpdateResponse(BackdropGalleryBase):
     uuid: str = Field(serialization_alias="id")
     name: str
+    size: float

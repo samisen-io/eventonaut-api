@@ -44,10 +44,12 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
             content_settings = ContentSettings(content_type=f'image/{file_extension}')
 
         elif file_extension in ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"]:
-            blob_name = file.filename
-            if file.filename[:3] == "evt":
+            folder_name = file.filename[:40]
+            actual_filename = file.filename[41:]
+            blob_name = f"{folder_name}/{actual_filename}"
+            if folder_name[:3] == "evt":
                 blob_client = blob_service_client.get_blob_client(BlobContainer.EVENT_DOCUMENTS.value, blob_name)
-            elif file.filename[:3] == "ses":
+            elif folder_name[:3] == "ses":
                 blob_client = blob_service_client.get_blob_client(BlobContainer.SESSION_DOCUMENTS.value, blob_name)
             
             if file_extension in ['txt', 'csv']:
@@ -161,3 +163,17 @@ def delete_blob_by_url(blob_url):
             raise HTTPException(status_code=ex.status_code, detail=str(ex.detail))
         else:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex))
+        
+def get_blob_size_by_url(blob_url):
+    try:
+        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        url = urlparse(blob_url)
+        container_name = unquote(url.path.split("/")[1])
+        blob_name = unquote(url.path.split("/")[2])
+        blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+        properties = blob_client.get_blob_properties()
+        return properties.size
+    except Exception as ex:
+        logging.exception(str(ex))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
