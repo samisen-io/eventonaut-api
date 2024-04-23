@@ -147,22 +147,14 @@ def delete_blob_by_url(blob_url):
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
         url = urlparse(blob_url)
         container_name = unquote(url.path.split("/")[1])
-        blob_name = unquote(url.path.split("/")[2])
+        blob_name = unquote("/".join(url.path.split("/")[2:]))
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
-        
         if not blob_client.exists():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-        
         blob_client.delete_blob()
-        
         logging.info(f"Blob {blob_name} deleted successfully")
     except Exception as ex:
-        logging.exception(str(ex))
-        if hasattr(ex, 'status_code'):
-
-            raise HTTPException(status_code=ex.status_code, detail=str(ex.detail))
-        else:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
         
 def get_blob_size_by_url(blob_url):
     try:
