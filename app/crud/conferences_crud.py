@@ -13,6 +13,7 @@ from ..static_enums import event
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 from datetime import datetime
+from . import exhibitor_crud
 
 def exclude_archived(conference: models.Conference):
     conference.client = None if conference.client is not None and conference.client.is_archived else conference.client
@@ -131,6 +132,10 @@ def delete_conference(db: Session, conference: models.Conference):
         for session in sessions:
             session.is_archived = True
     delete_namespace(conference_id=conference.uuid)
+    exhibitors = exhibitor_crud.get_exhibitors(db=db, conference_id=conference.id)
+    if exhibitors is not None:
+        for exhibitor in exhibitors:
+            exhibitor.is_archived = True
     conference.is_archived = True
     db.commit()
     return True
