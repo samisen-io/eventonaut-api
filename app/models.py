@@ -180,7 +180,7 @@ class Conference(Base):
     backdrop_gallery = relationship("BackdropGallery", back_populates="conference")
     event_documents = relationship("EventDocuments", back_populates="conference")
     organization = relationship("Organization", back_populates="conferences")
-    exhibitors = relationship("Exhibitors", back_populates="conference")
+    exhibitor = relationship("Exhibitor", back_populates="conference")
     
     @property
     def status(self):
@@ -614,8 +614,8 @@ class OrganizationSettings(Base):
 
     organization = relationship("Organization", back_populates="organization_settings")
     
-class Exhibitors(Base):
-    __tablename__ = "exhibitors"
+class Exhibitor(Base):
+    __tablename__ = "exhibitor"
 
     id = Column(Integer, primary_key=True, index=True)
     uuid = Column(String, index=True, unique=True)
@@ -632,5 +632,10 @@ class Exhibitors(Base):
     category = Column(String, nullable=False)
     exhibitor_logo = Column(String)
     exhibitor_banner = Column(String)
+    is_archived = Column(Boolean, default=False)
     
-    conference = relationship("Conference", back_populates="exhibitors")
+    conference = relationship("Conference", back_populates="exhibitor")
+    
+    @property
+    def conference_uuid(self):
+        return self.conference.uuid
