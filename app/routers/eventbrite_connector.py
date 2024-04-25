@@ -13,6 +13,7 @@ from app.schemas import organization_settings_schemas as os_schemas
 from app.schemas.user_schemas import UserAuthentication as User
 from app.dependencies import get_db
 from app.crud.organization_crud import get_organization_by_id
+from app.static_enums.role import RoleEnum
 
 router = APIRouter(tags=["Eventbrite Connector"])
 
@@ -31,7 +32,7 @@ def get_eventbrite_events(private_token: str, organization_id: str):
     return events
 
 @router.get("/sync_eventbrite_events/")
-def sync_eventbrite_events( organization_id: str, private_token: str, eventbrite_organization_id: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def sync_eventbrite_events( organization_id: str, private_token: str, eventbrite_organization_id: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
     url = f"https://www.eventbriteapi.com/v3/organizations/{eventbrite_organization_id}/events/?status=live"
     headers = {
         'Authorization': f'Bearer {private_token}',

@@ -16,3 +16,6 @@ class BlobContainer(Enum):
     PROMOTION_IMAGES = "promotion-images"
     EVENT_DOCUMENTS = "event-documents"
     SESSION_DOCUMENTS = "session-documents"
+    BACKDROP_IMAGES = "backdrop-images"
+    EXHIBITOR_LOGOS = "exhibitor-logos"
+    EXHIBITOR_BANNERS = "exhibitor-banners"

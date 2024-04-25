@@ -13,6 +13,7 @@ from ..static_enums import event
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 from datetime import datetime
+from . import exhibitor_crud
 
 def exclude_archived(conference: models.Conference):
     conference.client = None if conference.client is not None and conference.client.is_archived else conference.client
@@ -59,8 +60,9 @@ def create_user_conference(db: Session, conference: schemas.ConferenceCreate, us
     db_conference.client_id = db_client.id if db_client is not None else None
     db_conference.created_on = db_conference.updated_on = datetime.utcnow()
     db_conference.uuid = "evt-" + str(uuid.uuid4())
-    assistant = assistant_schemas.AssistantCreate(model="gpt-3.5-turbo-1106", name=f"ca_{db_conference.uuid}", description="Conference Assistant", instructions="You are conference assitant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.", tools=[{"type": "code_interpreter"}])
-    db_conference.assistant_id = AI_assitant.create_assistant(schema=assistant).id
+    # assistant = assistant_schemas.AssistantCreate(model="gpt-3.5-turbo-1106", name=f"ca_{db_conference.uuid}", description="Conference Assistant", instructions="You are conference assitant. You can help users with their queries related to the sessions of the conference to build their agenda/schedule.", tools=[{"type": "code_interpreter"}])
+    # db_conference.assistant_id = AI_assitant.create_assistant(schema=assistant).id
+    db_conference.assistant_id = "assistant_id_placeholder"
 
     while True:
         try:
@@ -130,6 +132,10 @@ def delete_conference(db: Session, conference: models.Conference):
         for session in sessions:
             session.is_archived = True
     delete_namespace(conference_id=conference.uuid)
+    exhibitors = exhibitor_crud.get_exhibitors(db=db, conference_id=conference.id)
+    if exhibitors is not None:
+        for exhibitor in exhibitors:
+            exhibitor.is_archived = True
     conference.is_archived = True
     db.commit()
     return True
@@ -209,7 +215,8 @@ def get_event_list_summary(db: Session, owner_id: int):
     total_events = len(db_conferences)
     first_event_start_date = db_conferences[0].start_date
     last_event_end_date = db.query(models.Conference).filter(models.Conference.owner_id == owner_id, models.Conference.is_archived == False).order_by(models.Conference.end_date.desc()).first().end_date
-    total_clients = db.query(models.Client).filter(models.Client.owner_id == owner_id, models.Client.is_archived == False).count()
+    clients = db.query(models.Client).filter(models.Client.owner_id == owner_id, models.Client.is_archived == False).all()
+    total_clients = len(clients)
 
     total_sponsors = 0
     total_attendees = 0

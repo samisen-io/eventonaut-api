@@ -1,10 +1,14 @@
 from sqlalchemy.orm import Session
+
+from app.static_enums.role import RoleEnum
 from .. import models
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
 from datetime import datetime
 from .. import hashing
 from .. AI_assitant import create_thread
 import uuid
+from ..crud import conferences_crud, user_role_crud
+from ..static_enums import event
 from ..static_enums import attendee as attendee_enum
 from ..routers import upload_image
 from fastapi import HTTPException, status
@@ -28,6 +32,8 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.commit()
     db.refresh(db_user)
 
+    assign_roles_to_user(db, db_user, [RoleEnum.ATTENDEE.value])
+    
     db_attendee = models.Attendee()
     db_attendee.created_on = datetime.utcnow()
     db_attendee.updated_on = datetime.utcnow()
@@ -39,6 +45,10 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.refresh(db_attendee)
     attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
     return attendee
+
+def assign_roles_to_user(db: Session, db_user: models.User, role_ids: list[int]):
+    for role_id in role_ids:
+        user_role_crud.create_user_role(db, user_id=db_user.id, role_id=role_id)
 
 def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()

@@ -15,13 +15,13 @@ load_dotenv()
 @router.post("/upload_file", status_code=201)
 def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
     try:
-        # Check file size
         file_size = len(file.file.read())
-        max_file_size = 5 * 1024 * 1024  # 5 MB
+        max_file_size_mb = 5  # 5 MB
+        max_file_size = max_file_size_mb * 1024 * 1024
 
         if file_size > max_file_size:
-            logging.exception(f"The file size cannot exceed {max_file_size} bytes.")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"The file size cannot exceed {max_file_size} bytes.")
+            logging.exception(f"The file size cannot exceed {max_file_size_mb} MB")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"The file size cannot exceed {max_file_size_mb} MB")  
 
         file.file.seek(0)  # Reset file pointer to the beginning
 
@@ -38,16 +38,18 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type. Executable files are not allowed.")
 
         elif file_extension in ["jpg", "jpeg", "png"]: 
-            blob_name = f"dyn-{uuid4()}.{file_extension}"
+            blob_name = f"dyn-{uuid4()}-{file.filename}"
             blob_client = blob_service_client.get_blob_client("temporary-images", blob_name)
 
             content_settings = ContentSettings(content_type=f'image/{file_extension}')
 
         elif file_extension in ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"]:
-            blob_name = file.filename
-            if file.filename[:3] == "evt":
+            folder_name = file.filename[:40]
+            actual_filename = file.filename[41:]
+            blob_name = f"{folder_name}/{actual_filename}"
+            if folder_name[:3] == "evt":
                 blob_client = blob_service_client.get_blob_client(BlobContainer.EVENT_DOCUMENTS.value, blob_name)
-            elif file.filename[:3] == "ses":
+            elif folder_name[:3] == "ses":
                 blob_client = blob_service_client.get_blob_client(BlobContainer.SESSION_DOCUMENTS.value, blob_name)
             
             if file_extension in ['txt', 'csv']:
@@ -109,7 +111,7 @@ def check_for_blob_in_container(blob_url, container_name):
         logging.exception(str(ex))
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
     
-def  get_actual_url(image_url:str, new_blob_container:str, new_blob_name:str):
+def get_actual_url(image_url:str, new_blob_container:str, new_blob_name:str):
     parsed_url = urlparse(image_url)
     path = parsed_url.path
     filename_with_ext = os.path.basename(path)
@@ -125,8 +127,8 @@ def move_file_from_temporary_to_permanent_container(source_container_name, dest_
     try:
         connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-        source_blob_client = blob_service_client.get_blob_client(source_container_name, old_blob_name)
-        dest_blob_client = blob_service_client.get_blob_client(dest_container_name, new_blob_name)
+        source_blob_client = blob_service_client.get_blob_client(source_container_name, unquote(old_blob_name))
+        dest_blob_client = blob_service_client.get_blob_client(dest_container_name, unquote(new_blob_name))
         dest_blob_client.start_copy_from_url(source_blob_client.url)
         source_blob_client.delete_blob()
         
@@ -145,19 +147,25 @@ def delete_blob_by_url(blob_url):
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
         url = urlparse(blob_url)
         container_name = unquote(url.path.split("/")[1])
-        blob_name = unquote(url.path.split("/")[2])
+        blob_name = unquote("/".join(url.path.split("/")[2:]))
         blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
-        
         if not blob_client.exists():
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
-        
         blob_client.delete_blob()
-        
         logging.info(f"Blob {blob_name} deleted successfully")
     except Exception as ex:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
+        
+def get_blob_size_by_url(blob_url):
+    try:
+        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        url = urlparse(blob_url)
+        container_name = unquote(url.path.split("/")[1])
+        blob_name = unquote(url.path.split("/")[2])
+        blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+        properties = blob_client.get_blob_properties()
+        return properties.size
+    except Exception as ex:
         logging.exception(str(ex))
-        if hasattr(ex, 'status_code'):
-
-            raise HTTPException(status_code=ex.status_code, detail=str(ex.detail))
-        else:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(ex))
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))

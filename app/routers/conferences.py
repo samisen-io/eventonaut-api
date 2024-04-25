@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
+from app.static_enums.role import RoleEnum
 from ..schemas import conference_schemas as schemas
 from ..crud import conferences_crud as crud, users_crud, client_crud, venue_crud, sponsors_crud
 from ..dependencies import get_db
@@ -16,7 +17,7 @@ import json
 router = APIRouter(tags=["conferences"])
 
 @router.post("/conferences", response_model=schemas.ConferenceResponse, status_code=status.HTTP_201_CREATED)
-def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name,"organizer"])):
     if not users_crud.get_user(db, user_id=current_user.id):
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -65,7 +66,7 @@ def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Sess
     return conferences
 
 @router.get("/conferences", response_model=list[schemas.ConferenceResponse])
-def get_all_conferences_by_owner_id(offset: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def get_all_conferences_by_owner_id(offset: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name,"organizer"])):
     db_user = users_crud.get_user(db, user_id=current_user.id)
     if db_user is None:
         logging.exception("User not found")
@@ -78,7 +79,7 @@ def get_all_conferences_by_owner_id(offset: int = 0, limit: int = 10, db: Sessio
     return db_conferences
 
 @router.put("/conferences", response_model=schemas.ConferenceResponse)
-def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     conference_dict = conference.model_dump()
     conference_dict.pop("id")
     if all(value is None for value in conference_dict.values()):
@@ -114,7 +115,7 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
     return updated_conference
 
 @router.delete("/conferences/{conference_id}")
-def delete_conference_owner_id_conference_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def delete_conference_owner_id_conference_id(conference_id: str, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if not users_crud.get_user(db, user_id=current_user.id):
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -127,7 +128,7 @@ def delete_conference_owner_id_conference_id(conference_id: str, db: Session = D
     return deleted_conference
 
 @router.get("/conferences/generate_qr_code/{conference_id}")
-def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
+def generate_qr_code(conference_id: str, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     conference = crud.get_conference_by_uuid(db, uuid=conference_id, owner_id=current_user.id)
     if conference is None:
         logging.exception("Conference not found")
@@ -170,7 +171,11 @@ def get_conference_by_conference_id(conference_id: str, db: Session = Depends(ge
     return conference
 
 @router.get("/event-list-summary", response_model=schemas.ConferenceListSummary)
-def get_conference_list_summary(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["organizer"])):
-    conference_list_summary = crud.get_event_list_summary(db, current_user.id)
-    logging.info("Conference list summary retrieved for owner id: " + current_user.uuid)
-    return conference_list_summary
+def get_conference_list_summary(db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
+    try:
+        conference_list_summary = crud.get_event_list_summary(db, current_user.id)
+        logging.info("Conference list summary retrieved for owner id: " + current_user.uuid)
+        return conference_list_summary
+    except Exception as e:
+        logging.exception("Error retrieving conference list summary" + str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error retrieving conference list summary" + str(e))

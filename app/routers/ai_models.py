@@ -19,6 +19,7 @@ from app.oauth2 import get_current_active_user
 from app.routers.sessions import create_session_for_conference
 from app.schemas.query_schema import QueryInput, QueryInputStream
 from app.schemas.user_schemas import UserAuthentication as User
+from app.static_enums.role import RoleEnum
 from ..data_ingestion import add_documents, write_events_to_csv, write_sessions_to_csv, write_speakers_to_csv
 from ..data_query import query_document, retrieve_answer_stream
 from ..crud import conferences_crud, result_crud
@@ -28,19 +29,19 @@ from app.schemas.user_schemas import UserAuthentication as User
 router = APIRouter(tags=["ai_models"])
 
 @router.put("/create_vector_db/", status_code=status.HTTP_201_CREATED)
-async def create_index(name:str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+async def create_index(name:str, current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), db: Session = Depends(get_db)):
     index_name = create_vector_db(name) 
     logging.info("Created index: " + index_name)  
     return {'index_name': index_name}
 
 @router.delete("/delete_vector_db/")
-async def delete_index(current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+async def delete_index(current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), db: Session = Depends(get_db)):
     status = delete_vector_db()
     logging.info("Deleted index: " + status)
     return status
 
 @router.post("/query_the_document_stream/")
-async def query_by_conference_id(query_input: QueryInputStream, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+async def query_by_conference_id(query_input: QueryInputStream, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
     conference_id = query_input.conference_id
     question = query_input.question
     session_id = query_input.session_id
@@ -66,7 +67,7 @@ async def query_by_conference_id(query_input: QueryInputStream, db: Session = De
     return StreamingResponse(event_stream())
     
 @router.post("/query_the_document/")
-async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
     start_time = datetime.utcnow()
     conference_id = query_input.conference_id
     question = query_input.question
@@ -105,7 +106,7 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     return final_result
 
 @router.delete("/delete_namespace/")
-async def delete_namespace_from_pinecone(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+async def delete_namespace_from_pinecone(conference_id: str, current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), db: Session = Depends(get_db)):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         logging.exception("Conference not found")
@@ -117,7 +118,7 @@ async def delete_namespace_from_pinecone(conference_id: str, current_user: User 
 @router.post("/upload_session_file/")
 async def upload_session_file(file: UploadFile,
                               conference_id: str,
-                              current_user: User = Security(get_current_active_user, scopes=["organizer"]),
+                              current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]),
                               db: Session = Depends(get_db)):
     contents = await file.read()
     filename = file.filename
@@ -173,7 +174,7 @@ async def upload_session_file(file: UploadFile,
 @router.post("/upload_speaker_file/")
 async def upload_speaker_file(file: UploadFile,
                               conference_id: str,
-                              current_user: User = Security(get_current_active_user, scopes=["organizer"]),
+                              current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]),
                               db: Session = Depends(get_db)):
     contents = await file.read()
     filename = file.filename
@@ -218,7 +219,7 @@ async def upload_speaker_file(file: UploadFile,
     return {'filename': filename}
 
 @router.post("/synchronize_database_and_pinecone/")
-async def update_namespace(conference_id: str, current_user: User = Security(get_current_active_user, scopes=["organizer"]), db: Session = Depends(get_db)):
+async def update_namespace(conference_id: str, current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), db: Session = Depends(get_db)):
     write_sessions_to_csv(db,conference_id)
     write_speakers_to_csv(db,conference_id)
     write_events_to_csv(db,conference_id)

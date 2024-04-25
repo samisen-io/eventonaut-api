@@ -44,29 +44,26 @@ def verify_token(token:str, credentials_exception, db: Session):
         jti: str = payload.get("jti")
         if username is None:
             raise credentials_exception
-        db_tokens = logout_token_crud.get_all_jti_in_tokens(db=db)
-        if jti and jti in db_tokens:
-            raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
+        logout_token_crud.get_all_jti_in_tokens(db=db, token_jti=jti)
         token_scopes = payload.get("scopes", [])
-        # print(token_scopes)
-        token_data = TokenData(username=username, scopes=token_scopes)
-        # print(token_data)
+        
+        token_data = TokenData(username=username, scopes=[token_scopes], id=payload.get("id"))
+        
     except (JWTError, ValidationError):
         raise credentials_exception
     return token_data
-
 
 def verify_token_RT(token:str, credentials_exception,db: Session):
     try:
         payload = jwt.decode(token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
+        scopes: str = payload.get("scopes")
         jti: str = payload.get("jti")
         if username is None:
             raise credentials_exception
-        db_tokens = logout_token_crud.get_all_jti_in_tokens(db=db)
-        if jti and jti in db_tokens:
-            raise HTTPException(status_code=401, detail="Token is invalid")
-        token_data = TokenData(username=username)
+        logout_token_crud.get_all_jti_in_tokens(db=db, token_jti=jti)
+        
+        token_data = TokenData(username=username, scopes=[scopes])
     except JWTError:
         raise credentials_exception
     return token_data
