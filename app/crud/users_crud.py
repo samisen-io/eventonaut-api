@@ -117,6 +117,9 @@ def get_db_user(db: Session, user_id: int):
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
 
+def get_role_by_user_id(db: Session, user_id: int):
+    return db.query(models.Role).join(models.User_Role, models.Role.id == models.User_Role.role_id).filter(models.User_Role.user_id == user_id).all()
+
 def get_active_user_by_email(db: Session, email: str):
     query = text(query_user_by_email_and_archived_status)
     result = db.execute(query, {'email': email}).fetchall()

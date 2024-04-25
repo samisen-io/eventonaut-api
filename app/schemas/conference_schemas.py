@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from datetime import date
 from ..schemas import venue_schemas, client_schemas, sponsor_schemas
-from ..static_enums import event
+from ..static_enums import event, event_types
 from ..url_validator import check_url
 
 class ConferenceBase(BaseModel):
@@ -16,6 +16,7 @@ class ConferenceBase(BaseModel):
     information_guide: str
     status: str 
     external_id: str | None = None
+    event_type: str
 
     @field_validator('name','information_guide')
     def value_not_empty(cls, v, info: ValidationInfo):
@@ -24,6 +25,14 @@ class ConferenceBase(BaseModel):
         elif len(v) > 256:
             raise ValueError(f"{info.field_name} must not be longer than 256 characters")
         return v
+
+    @field_validator('event_type')
+    def event_type_is_valid(cls, v, info: ValidationInfo):
+        if v.strip() == "":
+            raise ValueError(f"{info.field_name} cannot be empty")
+        if v.upper() not in list(event_types.EventTypeEnum.__members__):
+            raise ValueError(f"Invalid {info.field_name}")
+        return v.lower()
 
     @field_validator('description','conference_logo','registration_link','conference_banner_url','timezone', 'external_id')
     def optional_field_validation(cls, v, info: ValidationInfo):
@@ -95,6 +104,7 @@ class ConferenceUpdate(BaseModel):
     information_guide: str | None = None
     status: str | None = None
     external_id: str | None = None
+    event_type: str | None = None
 
     @field_validator('id')
     def id_is_not_empty(cls, v, info: ValidationInfo):
@@ -110,6 +120,15 @@ class ConferenceUpdate(BaseModel):
             max_len = 50 if info.field_name == 'timezone' else 256
             if len(v) > max_len:
                 raise ValueError(f"{info.field_name} cannot be longer than {max_len} characters")
+        return v
+    
+    @field_validator('event_type')
+    def event_type_is_valid(cls, v, info: ValidationInfo):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            if v.upper() not in list(event_types.EventTypeEnum.__members__):
+                raise ValueError(f"Invalid {info.field_name}")
         return v
     
     @field_validator('timezone')
@@ -165,12 +184,17 @@ class ConferenceResponse(BaseModel):
     information_guide: str
     status: str
     external_id: str | None = None
+    event_type: str
     client: client_schemas.ClientResponse | None
     venue: venue_schemas.VenueResponse 
     sponsors: list[sponsor_schemas.SponsorResponse] | None
     
     class Config:
         orm_mode = True
+        
+    @field_validator('event_type')
+    def event_type_is_valid(cls, v: str):
+        return v.upper()
 
 class ConferenceListSummary(BaseModel):
     no_of_events: int | None
