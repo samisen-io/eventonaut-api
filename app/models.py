@@ -164,6 +164,7 @@ class Conference(Base):
     is_archived = Column(Boolean, default=False)
     external_id = Column(String, index=True)
     organization_id = Column(Integer, ForeignKey("organization.id"))
+    event_type = Column(String, index=True)
 
     client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")

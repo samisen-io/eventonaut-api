@@ -1,6 +1,7 @@
 from ..dependencies import get_db
 from ..schemas import exhibitor_schemas as schemas
 from ..crud import exhibitor_crud as crud, conferences_crud as conf_crud
+from ..crud import users_crud
 from fastapi import APIRouter, Depends, HTTPException, status, Security
 import logging
 from ..oauth2 import get_current_active_user
@@ -10,8 +11,12 @@ from ..schemas.user_schemas import UserAuthentication as User
 router = APIRouter(tags=["Exhibitors"])
 
 @router.get("/exhibitors/{conference_id}", response_model=list[schemas.ExhibitorResponse])
-def get_exhibitors(conference_id: str, db = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
-    conference = conf_crud.get_conference_by_uuid(db, conference_id, current_user.id)
+def get_exhibitors(conference_id: str, db = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, RoleEnum.ATTENDEE.name])):
+    roles = users_crud.get_role_by_user_id(db, current_user.id)
+    if roles[0].name == RoleEnum.ATTENDEE.name:
+        conference = conf_crud.get_conference(db, conference_id)
+    elif roles[0].name == RoleEnum.ORGANIZATION_ADMIN.name or roles[0].role_name == RoleEnum.ORGANIZATION_USER.name:
+        conference = conf_crud.get_conference_by_uuid(db, conference_id, current_user.id)
     if not conference:
         logging.exception(f"Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
