@@ -4,6 +4,7 @@ import os
 import tempfile
 from fastapi import UploadFile
 import requests
+from app.crud.organization_crud import get_organization_by_user_id
 from app.schemas import conference_schemas as c_schemas
 from app.schemas import venue_schemas as v_schemas
 from app.crud.conferences_crud import create_user_conference
@@ -26,11 +27,14 @@ def create_webhook(event_id: str, private_token: str, organization_id: str):
     return response.json()
 
 def add_venue(db,event_venue,owner_id):
+    organization = get_organization_by_user_id(db, owner_id)
+    organization_id = organization.id
     venue_payload = {
         'name': event_venue["venue"]["name"],
         'location': event_venue["venue"]["address"]["city"]+", "+event_venue["venue"]["address"]["region"]+", "+event_venue["venue"]["address"]["country"],
         'address': event_venue["venue"]["address"]["localized_address_display"],
-        'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
+        'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"]),
+        'organization_id': organization_id,
     }
     venue_obj = v_schemas.VenueCreate(**venue_payload)
     venue = create_venue(db,venue_obj,owner_id)
@@ -49,6 +53,7 @@ def add_event(db,event,owner_id,venue_id):
         with open(temp_filename, 'rb') as f:
             upload_file_response = upload_file(UploadFile(filename=temp_filename, file=f))
             event_logo_url = upload_file_response['url']
+            organization = get_organization_by_user_id(db, owner_id)
             event_payload = {
                 'name': event["name"]["text"],
                 'start_date': datetime.strptime(event["start"]["utc"], "%Y-%m-%dT%H:%M:%SZ").date(),
@@ -61,6 +66,7 @@ def add_event(db,event,owner_id,venue_id):
                 'information_guide': event['url'],
                 'status': "active" if event["status"] else "inactive",
                 'external_id': event['id'],
+                'organization_id': organization.id,
                 'venue_id': str(venue_id),
             }
             event = c_schemas.ConferenceCreate(**event_payload)
