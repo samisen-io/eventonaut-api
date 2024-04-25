@@ -68,13 +68,6 @@ class User(Base):
     business_type = Column(String, index=True)
 
     attendees = relationship("Attendee", back_populates="user")
-    conferences = relationship("Conference", back_populates="owner")
-    sessions = relationship("Session", back_populates="owner")
-    settings = relationship("Settings", back_populates="owner")
-    client = relationship("Client", back_populates="owner")
-    venues = relationship("Venue", back_populates="owner")
-    speakers = relationship("Speakers", back_populates="owner")
-    sponsors = relationship("Sponsors", back_populates="owner")
     organizer_status = relationship("OrganizerStatus", back_populates="user")
     user_roles = relationship('User_Role', back_populates='user')
     organization_user = relationship("Organization_User", back_populates="user")
@@ -118,7 +111,6 @@ class Client(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
     contact_name = Column(String, index=True)
     contact_email = Column(String, index=True)
@@ -129,7 +121,6 @@ class Client(Base):
     is_archived = Column(Boolean, default=False)
     organization_id = Column(Integer, ForeignKey("organization.id"))
 
-    owner = relationship("User", back_populates="client")
     conferences = relationship("Conference", back_populates="client")
     client_status = relationship("ClientStatus", back_populates="client")
     organization = relationship("Organization", back_populates="clients")
@@ -152,7 +143,6 @@ class Conference(Base):
     start_date = Column(DATE, index=True)
     end_date = Column(DATE, index=True)
     description = Column(String, index=True)
-    owner_id = Column(Integer, ForeignKey("users.id"))
     conference_logo = Column(String, index=True)
     conference_banner_url = Column(String, index=True)
     assistant_id = Column(String, index=True)
@@ -167,7 +157,6 @@ class Conference(Base):
     event_type = Column(String, index=True)
 
     client = relationship("Client", back_populates="conferences")
-    owner = relationship("User", back_populates="conferences")
     sessions = relationship("Session", back_populates="conference")
     settings = relationship("Settings", back_populates="conference")
     agenda = relationship("Agenda", back_populates="conference")
@@ -200,7 +189,6 @@ class BackdropGallery(Base):
     updated_on = Column(DateTime)
     name = Column(String, index=True)
     size = Column(Float, index=True)
-    owner_id = Column(Integer, ForeignKey("users.id"))
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     backdrop_url = Column(String, index=True)
     is_archived = Column(Boolean, default=False)
@@ -229,7 +217,6 @@ class Speakers(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
     email = Column(String, index=True, unique=True)
     title = Column(String, index=True)
@@ -239,7 +226,6 @@ class Speakers(Base):
     organization_id = Column(Integer, ForeignKey("organization.id"))
 
     sessions = relationship("Session", secondary="session_speakers", back_populates="speakers")
-    owner = relationship("User", back_populates="speakers")
     organization = relationship("Organization", back_populates="speakers")
 
 class SessionSpeakers(Base):
@@ -268,7 +254,6 @@ class Session(Base):
     location = Column(String, index=True)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     tags = Column(ARRAY(String), index=True)
-    owner_id = Column(Integer, ForeignKey("users.id"))
     session_image_url = Column(String, index=True)
     session_banner_url = Column(String, index=True)
     session_status_id = Column(Integer, ForeignKey("session_status.id"))
@@ -276,7 +261,6 @@ class Session(Base):
     organization_id = Column(Integer, ForeignKey("organization.id"))
 
     conference = relationship("Conference", back_populates="sessions")
-    owner = relationship("User", back_populates="sessions")
     agenda = relationship("Agenda", secondary="agenda_session", back_populates="sessions")
     speakers = relationship("Speakers", secondary="session_speakers", back_populates="sessions")
     session_status = relationship("Sessionstatus", back_populates="session")
@@ -295,11 +279,9 @@ class Settings(Base):
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
     conference_id = Column(Integer, ForeignKey("conferences.id"))
-    owner_id = Column(Integer, ForeignKey("users.id"))
     body = Column(JSONB, index=True)
 
     conference = relationship("Conference", back_populates="settings")
-    owner = relationship("User", back_populates="settings")
 
 class Attendee(Base):
     __tablename__ = "attendees"
@@ -449,7 +431,6 @@ class Sponsors(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
     description = Column(String, index=True)
     email = Column(String, index=True)
@@ -460,7 +441,6 @@ class Sponsors(Base):
     is_archived = Column(Boolean, default=False)
     organization_id = Column(Integer, ForeignKey("organization.id"))
 
-    owner = relationship("User", back_populates="sponsors")
     event_sponsors = relationship("EventSponsors", back_populates="sponsors", overlaps="conference")
     conference = relationship("Conference", secondary="event_sponsors", back_populates="sponsors", overlaps="event_sponsors")
     organization = relationship("Organization", back_populates="sponsors")
@@ -495,7 +475,6 @@ class Venue(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
     location = Column(String, index=True)
     address = Column(String, index=True)
@@ -503,7 +482,6 @@ class Venue(Base):
     is_archived = Column(Boolean, default=False)
     organization_id = Column(Integer, ForeignKey("organization.id"))
 
-    owner = relationship("User", back_populates="venues")
     conference = relationship("Conference", back_populates="venue")
     organization = relationship("Organization", back_populates="venues")
     
