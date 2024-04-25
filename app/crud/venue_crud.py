@@ -7,13 +7,19 @@ from datetime import datetime
 from fastapi import HTTPException, status
 
 def get_all_venues(db: Session, offset: int, limit: int):
-    return db.query(models.Venue).offset(offset).limit(limit).order_by(models.Venue.updated_on.desc()).all()
+    return db.query(models.Venue).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
 
-def get_all_venues_by_owner_id(db: Session, owner_id: int, offset: int, limit: int):
-    return db.query(models.Venue).filter(models.Venue.owner_id == owner_id, models.Venue.is_archived == False).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
+# def get_all_venues_by_owner_id(db: Session, owner_id: int, offset: int, limit: int):
+#     return db.query(models.Venue).filter(models.Venue.owner_id == owner_id, models.Venue.is_archived == False).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
+
+def get_all_venues_by_organization_id(db: Session, organization_id: int, offset: int, limit: int):
+    return db.query(models.Venue).filter(models.Venue.organization_id == organization_id, models.Venue.is_archived == False).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
 
 def get_venue_by_id(db: Session, venue_id: str, owner_id: int):
     return db.query(models.Venue).filter(models.Venue.uuid == venue_id, models.Venue.owner_id == owner_id, models.Venue.is_archived == False).first()
+
+def get_venue_by_id_for_organization(db: Session, venue_id: str, organization_id: int):
+    return db.query(models.Venue).filter(models.Venue.uuid == venue_id, models.Venue.organization_id == organization_id, models.Venue.is_archived == False).first()
 
 def create_venue(db: Session, venue: venue_schemas.VenueCreate, owner_id: int):
     db_venue = models.Venue(**venue.model_dump(), owner_id=owner_id)
