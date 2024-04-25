@@ -1,8 +1,6 @@
 name: Docker Image CI
 
 on:
-  push:
-    branches: [ "feat-photobooth" ]
   pull_request:
     types:
       - closed
@@ -56,9 +54,9 @@ jobs:
       id: Deploy_to_Azure_App_Service
       uses: azure/webapps-deploy@v2
       with:
-        app-name: 'event-data-api'
+        app-name: '${{ secrets.APP_NAME }}'
         slot-name: 'production'
-        publish-profile: <publishData><publishProfile profileName="event-data-api - Web Deploy" publishMethod="MSDeploy" publishUrl="event-data-api.scm.azurewebsites.net:443" msdeploySite="event-data-api" userName="$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="event-data-api - FTP" publishMethod="FTP" publishUrl="ftps://waws-prod-blu-485.ftp.azurewebsites.windows.net/site/wwwroot" ftpPassiveMode="True" userName="event-data-api\$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile><publishProfile profileName="event-data-api - Zip Deploy" publishMethod="ZipDeploy" publishUrl="event-data-api.scm.azurewebsites.net:443" userName="$event-data-api" userPWD="nh7iY3jmLMKZFEZe7oo79ndQenP6WZSn8AWLYCsQpr1pgiJF2ti2WMiwRpZ0" destinationAppUrl="https://event-data-api.azurewebsites.net" SQLServerDBConnectionString="" mySQLDBConnectionString="" hostingProviderForumLink="" controlPanelLink="https://portal.azure.com" webSystem="WebSites"><databases /></publishProfile></publishData>
+        publish-profile: ${{ secrets.PUBLISH_PROFILE }}
         images: 'eventonaut.azurecr.io/eventonaut-data-api-image:main-build-${{ github.run_number }}-pr-${{ github.event.pull_request.number }}'
 
     - name: Check Deploy to Azure App Service
@@ -73,20 +71,20 @@ jobs:
           exit 1
         fi
         
-    # - name: Notify on success
-    #   if: success()
-    #   run: |
-    #     curl -X POST -H "Content-Type: application/json" -d @- "${{ secrets.GOOGLE_CHAT_WEBHOOK_URL}}" <<EOF
-    #     {
-    #       "text": "eventonaut data api deployment successful for PR ${{ github.event.pull_request.number }}\n\n| _API link_ | ${{ secrets.EVENTONAUT_DATA_API_URL}}/docs |\n| _PR link_ | ${{ secrets.PULL_REQUESTS_URL }}/${{ github.event.pull_request.number }} |"
-    #     }
-    #     EOF
+    - name: Notify on success
+      if: success()
+      run: |
+        curl -X POST -H "Content-Type: application/json" -d @- "${{ secrets.GOOGLE_CHAT_WEBHOOK_URL}}" <<EOF
+        {
+          "text": "eventonaut data api deployment successful for PR ${{ github.event.pull_request.number }}\n\n| _API link_ | ${{ secrets.EVENTONAUT_DATA_API_URL}}/docs |\n| _PR link_ | ${{ secrets.PULL_REQUESTS_URL }}/${{ github.event.pull_request.number }} |"
+        }
+        EOF
       
-    # - name: Notify on failure
-    #   if: failure()
-    #   run: |
-    #     curl -X POST -H "Content-Type: application/json" -d @- "${{ secrets.GOOGLE_CHAT_WEBHOOK_URL}}" <<EOF
-    #     {
-    #       "text": "Eventonaut data api deployment failed for PR ${{ github.event.pull_request.number }}\n\n| _Login to Azure Container Registry step outcome_ | ${{ steps.Login_to_Azure_Container_Registry.outcome }} |\n| _Build the Docker image step outcome_ | ${{ steps.Build_the_Docker_image.outcome }} |\n| _Create tag step outcome_ | ${{ steps.Create_tag.outcome }} |\n| _Push Docker image to Azure Container Registry step outcome_ | ${{ steps.Push_Docker_image_to_Azure_Container_Registry.outcome }} |\n| _Deploy to Azure App Service step outcome_ | ${{ steps.Deploy_to_Azure_App_Service.outcome }} |\n| _Check API status step outcome_ | ${{ steps.Check_API_status.outcome }} |\n| _PR link_ | ${{ secrets.PULL_REQUESTS_URL }}/${{ github.event.pull_request.number }} | "
-    #     }
-    #     EOF
+    - name: Notify on failure
+      if: failure()
+      run: |
+        curl -X POST -H "Content-Type: application/json" -d @- "${{ secrets.GOOGLE_CHAT_WEBHOOK_URL}}" <<EOF
+        {
+          "text": "Eventonaut data api deployment failed for PR ${{ github.event.pull_request.number }}\n\n| _Login to Azure Container Registry step outcome_ | ${{ steps.Login_to_Azure_Container_Registry.outcome }} |\n| _Build the Docker image step outcome_ | ${{ steps.Build_the_Docker_image.outcome }} |\n| _Create tag step outcome_ | ${{ steps.Create_tag.outcome }} |\n| _Push Docker image to Azure Container Registry step outcome_ | ${{ steps.Push_Docker_image_to_Azure_Container_Registry.outcome }} |\n| _Deploy to Azure App Service step outcome_ | ${{ steps.Deploy_to_Azure_App_Service.outcome }} |\n| _Check API status step outcome_ | ${{ steps.Check_API_status.outcome }} |\n| _PR link_ | ${{ secrets.PULL_REQUESTS_URL }}/${{ github.event.pull_request.number }} | "
+        }
+        EOF
