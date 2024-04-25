@@ -30,7 +30,7 @@ def create_venue(db: Session, venue: venue_schemas.VenueCreate, owner_id: int):
     db.refresh(db_venue)
     return db_venue
 
-def create_venue_for_organization(db: Session, venue: venue_schemas.VenueCreate, organization_id: int):
+def create_venue_using_organization_id(db: Session, venue: venue_schemas.VenueCreate, organization_id: int):
     db_venue = models.Venue(**venue.model_dump(), organization_id=organization_id)
     db_venue.created_on = db_venue.updated_on = datetime.utcnow()
     db_venue.uuid = 'ven-' + str(uuid.uuid4())
