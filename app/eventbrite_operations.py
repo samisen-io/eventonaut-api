@@ -2,13 +2,14 @@ from datetime import datetime
 import json
 import os
 import tempfile
+from urllib.parse import urlparse
 from fastapi import UploadFile
 import requests
 from app.crud.organization_crud import get_organization_by_user_id
 from app.schemas import conference_schemas as c_schemas
 from app.schemas import venue_schemas as v_schemas
 from app.crud.conferences_crud import create_user_conference
-from app.crud.venue_crud import create_venue
+from app.crud.venue_crud import create_venue, create_venue_using_organization_id
 from app.routers.upload_image import upload_file
 
 
@@ -33,11 +34,10 @@ def add_venue(db,event_venue,owner_id):
         'name': event_venue["venue"]["name"],
         'location': event_venue["venue"]["address"]["city"]+", "+event_venue["venue"]["address"]["region"]+", "+event_venue["venue"]["address"]["country"],
         'address': event_venue["venue"]["address"]["localized_address_display"],
-        'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"]),
-        'organization_id': organization_id,
+        'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
     }
     venue_obj = v_schemas.VenueCreate(**venue_payload)
-    venue = create_venue(db,venue_obj,owner_id)
+    venue = create_venue_using_organization_id(db,venue_obj,owner_id)
     return venue
     
 def add_event(db,event,owner_id,venue_id):
@@ -68,8 +68,14 @@ def add_event(db,event,owner_id,venue_id):
                 'external_id': event['id'],
                 'organization_id': organization.id,
                 'venue_id': str(venue_id),
+                'event_type': 'OTHER'
             }
             event = c_schemas.ConferenceCreate(**event_payload)
             event = create_user_conference(db, event, owner_id, venue_id, None)
             os.remove(temp_filename)
             return event
+        
+def get_organization_id_from_url(url: str):
+    path_parts = urlparse(url).path.split('/')
+    return path_parts[-1] if path_parts[-1] else path_parts[-2]
+
