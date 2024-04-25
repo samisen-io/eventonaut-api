@@ -72,7 +72,6 @@ class User(Base):
     sessions = relationship("Session", back_populates="owner")
     settings = relationship("Settings", back_populates="owner")
     client = relationship("Client", back_populates="owner")
-    venues = relationship("Venue", back_populates="owner")
     speakers = relationship("Speakers", back_populates="owner")
     sponsors = relationship("Sponsors", back_populates="owner")
     organizer_status = relationship("OrganizerStatus", back_populates="user")
@@ -495,7 +494,6 @@ class Venue(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
     location = Column(String, index=True)
     address = Column(String, index=True)
@@ -503,7 +501,6 @@ class Venue(Base):
     is_archived = Column(Boolean, default=False)
     organization_id = Column(Integer, ForeignKey("organization.id"))
 
-    owner = relationship("User", back_populates="venues")
     conference = relationship("Conference", back_populates="venue")
     organization = relationship("Organization", back_populates="venues")
     
