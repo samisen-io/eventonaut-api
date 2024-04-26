@@ -30,4 +30,5 @@ pillow
 opencv-python
 upstash-redis
 rembg
+onesignal-python-api
 
