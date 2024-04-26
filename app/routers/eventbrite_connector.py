@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Security, Upload
 from sqlalchemy.orm import Session
 import requests
 from app.crud import conferences_crud, users_crud
-from app.eventbrite_operations import add_event, add_venue, create_webhook
+from app.eventbrite_operations import add_event, add_venue, create_webhook, get_organization_id_from_url
 from app.oauth2 import get_current_active_user
 from app.crud.organization_settings_crud import create_organization_settings
 from app.schemas import organization_settings_schemas as os_schemas
@@ -100,14 +100,16 @@ async def webhook(request: Request, db: Session = Depends(get_db)):
     organization_id = data['config']['user_id']
     api_url = data['api_url']
     action = data['config']['action']
-    event_id = conferences_crud.get_conference_by_external_id(db, organization_id)
+    eb_event_id = get_organization_id_from_url(api_url)
+    # event_id = conferences_crud.get_conference_by_external_id(db, organization_id)
     # print every value
     print(data)
     print(endpoint_url)
     print(organization_id)
     print(api_url)
     print(action)
-    print(event_id)
+    # print(event_id)
+    print(eb_event_id)
     return {'received': True}
         
         
