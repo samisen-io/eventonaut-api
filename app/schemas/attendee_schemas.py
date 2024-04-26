@@ -146,8 +146,18 @@ class AttendeeUpdate(BaseModel):
         return v
 
 #pydantic model for attendee
-class Attendee(AttendeeBase):
+class Attendee(BaseModel):
     uuid: str = Field(serialization_alias="id")
+    email: str
+    first_name: str | None = None
+    last_name: str | None = None
+    title: str | None = None
+    company: str | None = None
+    bio: str | None = None
+    share_my_profile: bool | None = None
+    share_my_agenda: bool | None = None
+    profile_image_url: str | None = None
+    status: str
     is_active: bool
     
     class Config:

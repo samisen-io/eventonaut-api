@@ -319,7 +319,7 @@ class Attendee(Base):
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
     aitokens = relationship("AITokens", back_populates="attendee")
     
-    _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "status", "is_active"}
+    _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "is_active"}
 
     def __getattr__(self, name):
         if name in self._user_delegated_attrs:
