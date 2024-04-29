@@ -42,13 +42,13 @@ def get_all_promotions(db: Session, skip: int = 0, limit: int = 100):
         exlude_archived(promotion)
     return promotions
 
-def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
+def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate, organization_id: int):
     db_promotion = models.Promotions(**promotion.model_dump())
     db_promotion.uuid = "pro-" + str(uuid.uuid4())
     db_promotion.created_on = db_promotion.updated_on = datetime.utcnow()
     conference = db.query(models.Conference).filter(models.Conference.uuid == promotion.conference_id).first()
     db_promotion.conference_id = conference.id
-    
+    db_promotion.organization_id = organization_id
     db_promotion.image_url = upload_image.get_actual_url(image_url=promotion.image_url, new_blob_container=BlobContainer.PROMOTION_IMAGES.value, new_blob_name=f"promotion-{db_promotion.uuid}") if promotion.image_url is not None else None
     
     db.add(db_promotion)

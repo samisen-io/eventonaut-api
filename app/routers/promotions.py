@@ -13,7 +13,7 @@ import logging
 router = APIRouter(tags=['promotions'])
 
 @router.post('/promotions', response_model=promotion_schemas.Promotion, status_code=status.HTTP_201_CREATED)
-def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
+def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     db_promotion = promotions_crud.get_promotion_by_conference(db=db, conference_id=promotion.conference_id)
     if db_promotion:
         logging.exception("Promotion already registered")
@@ -21,7 +21,7 @@ def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session =
     if promotion.fromdate > promotion.todate:
         logging.exception("Invalid date range")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date range")
-    promotion = promotions_crud.create_promotion(db=db, promotion=promotion)
+    promotion = promotions_crud.create_promotion(db=db, promotion=promotion, orhanization_id=organization.id)
     logging.info("Promotion created: " + promotion.uuid)
     return promotion
 
