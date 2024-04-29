@@ -74,21 +74,21 @@ async def check_user_exists(db: Session, user: schemas.UserCreate):
     return {"msg": "OTP sent successfully"}
     
 @router.post("/users/verify", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
-async def verify_otp(email: str, otp: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+async def verify_otp(otp_validation: schemas.OtpVerification, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     global cache
     
-    if email not in cache.keys():
+    if otp_validation.email not in cache.keys():
         logging.exception("Email not verified")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not verified")
-    if len(otp) != 6:
+    if len(otp_validation.otp) != 6:
         logging.exception("Invalid OTP")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP")
-    valid_otp = validate_otp(cache[email][0], otp)
+    valid_otp = validate_otp(cache[otp_validation.email][0], otp_validation.otp)
     if not valid_otp:
         logging.exception("Invalid OTP")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP")
-    user = cache[email][2]
-    del cache[email]
+    user = cache[otp_validation.email][2]
+    del cache[otp_validation.email]
     
     signup_response = signup_organization_admin(db=db, organizer_signup_request = s_schemas.SignupOrganizerRequest(email=user.email, password=user.hashed_password, organization_name=user.company))
     updated_user = update_user(user, current_user_id=signup_response.user_id, db = db)
