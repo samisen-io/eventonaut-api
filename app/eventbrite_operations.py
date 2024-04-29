@@ -10,7 +10,7 @@ from app.crud.organization_crud import get_organization_by_user_id
 from app.schemas import conference_schemas as c_schemas
 from app.schemas import venue_schemas as v_schemas
 from app.crud.conferences_crud import create_user_conference
-from app.crud.venue_crud import create_venue, create_venue_using_organization_id
+from app.crud.venue_crud import create_venue, create_venue_using_organization_id, update_venue_by_id
 from app.routers.upload_image import upload_file
 
 
@@ -38,17 +38,23 @@ def add_venue(db,event_venue,owner_id):
         'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
     }
     venue_obj = v_schemas.VenueCreate(**venue_payload)
-    venue = create_venue_using_organization_id(db,venue_obj,owner_id)
+    venue = create_venue_using_organization_id(db,venue_obj,organization_id)
     return venue
 
-def update_venue(db,event_venue,owner_id):
-    organization = get_organization_by_user_id(db, owner_id)
+def update_venue_from_eventbrite(db,event_venue,owner_id,venue_id):
+    # organization = get_organization_by_user_id(db, owner_id)
     venue_payload = {
+        'id': venue_id,
         'name': event_venue["venue"]["name"],
         'location': event_venue["venue"]["address"]["city"]+", "+event_venue["venue"]["address"]["region"]+", "+event_venue["venue"]["address"]["country"],
         'address': event_venue["venue"]["address"]["localized_address_display"],
         'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
     }
+    print('################')
+    print(venue_payload)
+    venue_obj = v_schemas.VenueUpdate(**venue_payload)
+    venue = update_venue_by_id(db, venue_obj)
+    return venue
     
 def add_event(db,event,owner_id,venue_id):
     # upload photo
@@ -90,5 +96,5 @@ def get_organization_id_from_url(url: str):
     return path_parts[-1] if path_parts[-1] else path_parts[-2]
 
 def update_from_eventbrite(db, eb_event_id, organization_id, endpoint_url):
-    # print("Eventbrite event updated. Event ID: ", eb_event_id)
+    print("Eventbrite event updated. Event ID: ", eb_event_id)
     pass
