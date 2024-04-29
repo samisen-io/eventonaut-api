@@ -1,3 +1,4 @@
+from sqlalchemy import BigInteger
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from ..models import OrganizationSettings

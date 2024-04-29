@@ -235,3 +235,10 @@ def get_conference_by_external_id(db: Session, external_id: str):
         return None
     exclude_archived(conference)
     return conference
+
+def get_conference_by_external_id(db: Session, external_id: str):
+    conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.external_id == external_id, models.Conference.is_archived == False).first()
+    if conference is None:
+        return None
+    exclude_archived(conference)
+    return conference
