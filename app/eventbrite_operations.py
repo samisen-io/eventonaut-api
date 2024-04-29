@@ -40,7 +40,6 @@ def add_venue(db,event_venue,organization_id):
     return venue
 
 def update_venue_from_eventbrite(db,event_venue,owner_id,venue_id):
-    # organization = get_organization_by_user_id(db, owner_id)
     venue_payload = {
         'id': venue_id,
         'name': event_venue["venue"]["name"],

@@ -39,7 +39,6 @@ def sync_eventbrite_events(private_token: str, eventbrite_organization_id: str, 
         'Authorization': f'Bearer {private_token}',
     }
     response = requests.get(url, headers=headers)
-    # organization = get_organization_by_uuid(db, organization_id)
     organization = get_organization_by_user_id(db, current_user.id)
     if organization is None:
         raise HTTPException(status_code=400, detail="Organization not found in Command Center. Please check your organization ID.")
