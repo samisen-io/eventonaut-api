@@ -30,7 +30,8 @@ def create_notification(db,conference_id,headings, content, picture):
             headings={"en": headings},
             contents={"en": content},
             include_external_user_ids=external_user_ids,
-            big_picture=picture
+            big_picture=picture,
+            url = f"https://Eventonaut.app/eventId/{conference_id}"
         )
     try:
         api_instance.create_notification(notification)
