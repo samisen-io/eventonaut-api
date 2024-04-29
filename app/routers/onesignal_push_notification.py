@@ -2,9 +2,13 @@ import os
 from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
 from app.crud.conferences_crud import get_conference_by_uuid
+from urllib.parse import urlparse
+from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
+from app.crud.conferences_crud import get_conference_by_uuid
 from app.edit_photo import check_the_file_size, check_the_file_type
 from app.oauth2 import get_current_active_user
 from app.onesignal_operations import create_notification
+from app.schemas.onesignal_notification_schema import PushNotification
 from app.schemas.onesignal_notification_schema import PushNotification
 from app.schemas.user_schemas import UserAuthentication as User
 from sqlalchemy.orm import Session
@@ -30,8 +34,6 @@ def send_notification(notification: PushNotification,
         raise HTTPException(status_code=400, detail="Message cannot be empty")
     if not title:
         raise HTTPException(status_code=400, detail="Title cannot be empty")
-    if not is_valid_url(picture_url):
-        raise HTTPException(status_code=400, detail="Invalid URL")
     create_notification(db, conference_id, title, message, picture_url)
     return {'message': 'Notification sent successfully.'}
     
