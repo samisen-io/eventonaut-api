@@ -58,7 +58,7 @@ def get_all_session_documents_by_organization(offset: int = 0, limit: int = 100,
     if len(documents) == 0:
         logging.exception("No documents found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No documents found")
-    return [map_session_document_response(document.session_id, document) for document in documents]
+    return [map_session_document_response(document.session_uuid, document) for document in documents]
 
 @router.get("/{session_id}", response_model=list[SessionDocumentResponse])
 def get_all_session_documents(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, RoleEnum.ATTENDEE.name, "organizer", "attendee"])):
