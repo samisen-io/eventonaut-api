@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from datetime import date
-from ..schemas import venue_schemas, client_schemas, sponsor_schemas
+from ..schemas import venue_schemas, client_schemas, sponsor_schemas, exhibitor_schemas
 from ..static_enums import event, event_types
 from ..url_validator import check_url
 
@@ -62,6 +62,7 @@ class ConferenceCreate(ConferenceBase):
     client_id: str | None = None
     venue_id: str
     sponsor_ids: list[str] | None = None
+    exhibitor_ids: list[str] | None = None
 
     @field_validator('venue_id')
     def venue_id_is_not_empty(cls, v, info: ValidationInfo):
@@ -76,7 +77,7 @@ class ConferenceCreate(ConferenceBase):
                 return None
         return v
     
-    @field_validator('sponsor_ids')
+    @field_validator('sponsor_ids', 'exhibitor_ids')
     def sponsor_ids_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
@@ -93,6 +94,7 @@ class ConferenceUpdate(BaseModel):
     client_id: str | None = None
     venue_id: str | None = None
     sponsor_ids: list[str] | None = None
+    exhibitor_ids: list[str] | None = None
     name: str | None = None
     start_date: date | None = Field(default=None, description="Date format: YYYY-MM-DD")
     end_date: date | None = Field(default=None, description="Date format: YYYY-MM-DD")
@@ -140,7 +142,7 @@ class ConferenceUpdate(BaseModel):
                 raise ValueError(f"{info.field_name} must not be longer than 50 characters")
         return v
     
-    @field_validator('sponsor_ids')
+    @field_validator('sponsor_ids', 'exhibitor_ids')
     def sponsor_ids_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if len(v) == 0 or (len(v) == 1 and v[0].strip() == ""):
@@ -188,6 +190,7 @@ class ConferenceResponse(BaseModel):
     client: client_schemas.ClientResponse | None
     venue: venue_schemas.VenueResponse 
     sponsors: list[sponsor_schemas.SponsorResponse] | None
+    exhibitors: list[exhibitor_schemas.ExhibitorResponse] | None
     
     class Config:
         orm_mode = True
