@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from app.static_enums.role import RoleEnum
+from ..static_enums import event_types
 from ..schemas import conference_schemas as schemas
-from ..crud import conferences_crud as crud, users_crud, client_crud, venue_crud, sponsors_crud
+from ..crud import conferences_crud as crud, users_crud, client_crud, venue_crud, sponsors_crud, exhibitor_crud
 from ..dependencies import get_db
 from .. import basicauth
 from datetime import date
@@ -18,10 +19,11 @@ router = APIRouter(tags=["conferences"])
 
 @router.post("/conferences", response_model=schemas.ConferenceResponse, status_code=status.HTTP_201_CREATED)
 def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name,"organizer"])):
+    organization_id = current_user.organization_user[0].organization_id
     if not users_crud.get_user(db, user_id=current_user.id):
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    db_venue = venue_crud.get_venue_by_id(db, venue_id=conference.venue_id, owner_id=current_user.id)
+    db_venue = venue_crud.get_venue_by_id_for_organization(db, venue_id=conference.venue_id, organization_id=organization_id)
     if db_venue is None:
         logging.exception("Venue not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Venue not found")
@@ -37,7 +39,19 @@ def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsor not found")
             if db_sponsor.id not in sponsors_ids:
                 sponsors_ids.append(db_sponsor.id)
-    db_conference = crud.create_user_conference(db=db, conference=conference, user_id=current_user.id, venue_id=db_venue.id, sponsor_ids=sponsors_ids)
+    exhibitor_ids = []
+    if conference.event_type.upper() == event_types.EventTypeEnum.CONFERENCE.name and conference.exhibitor_ids is not None:
+        logging.exception("Exhibitors not allowed for type conference")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exhibitors not allowed for type conference")
+    elif conference.event_type.upper() == event_types.EventTypeEnum.TRADE_SHOW.name and conference.exhibitor_ids is not None:
+        for exhibitor_id in conference.exhibitor_ids:
+            db_exhibitor = exhibitor_crud.get_exhibitor_by_id(db, exhibitor_id, organization_id)
+            if not db_exhibitor:
+                logging.exception("Exhibitor not found")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exhibitor not found")
+            if db_exhibitor.id not in exhibitor_ids:
+                exhibitor_ids.append(db_exhibitor.id)
+    db_conference = crud.create_user_conference(db=db, conference=conference, user_id=current_user.id, venue_id=db_venue.id, sponsor_ids=sponsors_ids, exhibitor_ids=exhibitor_ids)
     logging.info("Conference created: " + db_conference.uuid)
     return db_conference 
 
@@ -82,6 +96,7 @@ def get_all_conferences_by_owner_id(offset: int = 0, limit: int = 10, db: Sessio
 def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     conference_dict = conference.model_dump()
     conference_dict.pop("id")
+    organization_id = current_user.organization_user[0].organization_id
     if all(value is None for value in conference_dict.values()):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
@@ -110,7 +125,23 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsor not found")
             if db_sponsor.id not in sponsors_ids:
                 sponsors_ids.append(db_sponsor.id)
-    updated_conference = crud.update_user_conference(db=db, conference=conference, db_conference=db_conference, sponsor_ids=sponsors_ids)
+    exhibitors_ids = []
+    if conference.event_type and conference.event_type.upper() == event_types.EventTypeEnum.CONFERENCE.name and conference.exhibitor_ids is not None:
+        logging.exception("Exhibitors not allowed for type conference")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exhibitors not allowed for type conference")
+    elif not conference.event_type or conference.event_type.upper() == event_types.EventTypeEnum.TRADE_SHOW.name and conference.exhibitor_ids is not None:
+        if not conference.event_type and db_conference.event_type.upper() == event_types.EventTypeEnum.CONFERENCE.name:
+            logging.exception("Exhibitors not allowed for type conference")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exhibitors not allowed for type conference")
+        if conference.exhibitor_ids is not None and len(conference.exhibitor_ids) > 0:
+            for exhibitor_id in conference.exhibitor_ids:
+                db_exhibitor = exhibitor_crud.get_exhibitor_by_id(db, exhibitor_id, organization_id)
+                if not db_exhibitor:
+                    logging.exception("Exhibitor not found")
+                    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exhibitor not found")
+                if db_exhibitor.id not in exhibitors_ids:
+                    exhibitors_ids.append(db_exhibitor.id)
+    updated_conference = crud.update_user_conference(db=db, conference=conference, db_conference=db_conference, sponsor_ids=sponsors_ids,exhibitor_ids=exhibitors_ids)
     logging.info("Conference updated: " + updated_conference.uuid)
     return updated_conference
 

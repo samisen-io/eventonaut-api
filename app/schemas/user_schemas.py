@@ -52,6 +52,8 @@ class UserBase(BaseModel):
     @classmethod
     def validate_url(cls, v, info: ValidationInfo):
         if v is not None:
+            if v.strip() == "":
+                return None
             if not check_url(v):
                 raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v

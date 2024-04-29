@@ -1,6 +1,6 @@
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy import UniqueConstraint
 from .database import Base
 
@@ -32,6 +32,7 @@ class Organization(Base):
     venues = relationship("Venue", back_populates="organization")
     event_documents = relationship("EventDocuments", back_populates="organization")
     session_documents = relationship("SessionDocuments", back_populates="organization")
+    exhibitors = relationship("Exhibitor", back_populates="organization")
 
 class Organization_User(Base):
     __tablename__ = "organization_user"
@@ -72,7 +73,6 @@ class User(Base):
     sessions = relationship("Session", back_populates="owner")
     settings = relationship("Settings", back_populates="owner")
     client = relationship("Client", back_populates="owner")
-    venues = relationship("Venue", back_populates="owner")
     speakers = relationship("Speakers", back_populates="owner")
     sponsors = relationship("Sponsors", back_populates="owner")
     organizer_status = relationship("OrganizerStatus", back_populates="user")
@@ -83,6 +83,10 @@ class User(Base):
     @property
     def status(self):
         return self.organizer_status.status.upper()
+    
+    @property
+    def organization_id(self):
+        return self.organization_user.organization_id
     
 class Role(Base):
     __tablename__ = "role"
@@ -164,6 +168,7 @@ class Conference(Base):
     is_archived = Column(Boolean, default=False)
     external_id = Column(String, index=True)
     organization_id = Column(Integer, ForeignKey("organization.id"))
+    event_type = Column(String, index=True)
 
     client = relationship("Client", back_populates="conferences")
     owner = relationship("User", back_populates="conferences")
@@ -175,12 +180,12 @@ class Conference(Base):
     aitokens = relationship("AITokens", back_populates="conference")
     promotions = relationship("Promotions", back_populates="conference")
     venue = relationship("Venue", back_populates="conference")
-    # event_sponsors = relationship("EventSponsors", back_populates="conference")
     sponsors = relationship("Sponsors", secondary="event_sponsors", back_populates="conference", overlaps="event_sponsors")
     event_status = relationship("EventStatus", back_populates="conference")
     backdrop_gallery = relationship("BackdropGallery", back_populates="conference")
     event_documents = relationship("EventDocuments", back_populates="conference")
     organization = relationship("Organization", back_populates="conferences")
+    exhibitors = relationship("Exhibitor", secondary="event_exhibitor", backref=backref("conferences", lazy='dynamic'))
     
     @property
     def status(self):
@@ -252,7 +257,6 @@ class SessionSpeakers(Base):
     session_id = Column(Integer, ForeignKey("sessions.id"))
     speaker_id = Column(Integer, ForeignKey("speakers.id"))
 
-# class to define session table
 class Session(Base):
     __tablename__ = "sessions"
 
@@ -287,7 +291,6 @@ class Session(Base):
     def status(self):
         return self.session_status.status.upper()
     
-#class to define settings table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class Settings(Base):
     __tablename__ = "settings"
 
@@ -302,7 +305,6 @@ class Settings(Base):
     conference = relationship("Conference", back_populates="settings")
     owner = relationship("User", back_populates="settings")
 
-# class to define attendee table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class Attendee(Base):
     __tablename__ = "attendees"
 
@@ -319,11 +321,10 @@ class Attendee(Base):
 
     user = relationship("User", back_populates="attendees")
     agenda = relationship("Agenda", back_populates="attendees")
-    # agenda_session = relationship("AgendaSession", back_populates="attendees")
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
     aitokens = relationship("AITokens", back_populates="attendee")
     
-    _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "status", "is_active"}
+    _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "is_active"}
 
     def __getattr__(self, name):
         if name in self._user_delegated_attrs:
@@ -344,7 +345,6 @@ class Attendee_Conferences(Base):
     attendee = relationship("Attendee", back_populates="attendee_conference")
     conference = relationship("Conference", back_populates="attendee_conference")
 
-# class to define agenda table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class Agenda(Base):
     __tablename__ = "agenda"
 
@@ -360,7 +360,6 @@ class Agenda(Base):
     attendees = relationship("Attendee", back_populates="agenda")
     sessions = relationship("Session", secondary="agenda_session", back_populates="agenda")
 
-# class to define aganda session table with id, conference id as foreign key, created on and updated on as datetime and body as a string
 class AgendaSession(Base):
     __tablename__ = "agenda_session"
 
@@ -374,10 +373,6 @@ class AgendaSession(Base):
     date = Column(DATE, index=True)
     start_time = Column(TIME, index=True)
     end_time = Column(TIME, index=True)
-
-    # agenda = relationship("Agenda", back_populates="agenda_session")
-    # sessions = relationship("Session", back_populates="agenda_session")
-    # attendees = relationship("Attendee", back_populates="agenda_session")
 
 class AITokens(Base):
     __tablename__ = "aitokens"
@@ -484,7 +479,6 @@ class EventSponsors(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     sponsor_id = Column(Integer, ForeignKey("sponsors.id"))
 
-    # conference = relationship("Conference", back_populates="event_sponsors")
     sponsors = relationship("Sponsors", back_populates="event_sponsors", overlaps="conference, sponsors")
     @property
     def spn_uuid(self):
@@ -504,7 +498,6 @@ class Venue(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
-    owner_id = Column(Integer, ForeignKey("users.id"))
     name = Column(String, index=True)
     location = Column(String, index=True)
     address = Column(String, index=True)
@@ -512,7 +505,6 @@ class Venue(Base):
     is_archived = Column(Boolean, default=False)
     organization_id = Column(Integer, ForeignKey("organization.id"))
 
-    owner = relationship("User", back_populates="venues")
     conference = relationship("Conference", back_populates="venue")
     organization = relationship("Organization", back_populates="venues")
     
@@ -623,3 +615,38 @@ class OrganizationSettings(Base):
     event_brite_access_token = Column(String, index=True)
 
     organization = relationship("Organization", back_populates="organization_settings")
+    
+class Exhibitor(Base):
+    __tablename__ = "exhibitor"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
+    name = Column(String, nullable=False)
+    address = Column(String, nullable=False)
+    about = Column(String, nullable=False)
+    contact_name = Column(String, nullable=False)
+    contact_phone = Column(String, nullable=False)
+    contact_email = Column(String, nullable=False)
+    booth_number = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    exhibitor_logo = Column(String)
+    exhibitor_banner = Column(String)
+    is_archived = Column(Boolean, default=False)
+    
+    organization = relationship("Organization", back_populates="exhibitors")
+    event_exhibitor = relationship("EventExhibitor", back_populates="exhibitor", overlaps="conferences,exhibitors")
+    
+class EventExhibitor(Base):
+    __tablename__ = "event_exhibitor"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    exhibitor_id = Column(Integer, ForeignKey("exhibitor.id"))
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+
+    exhibitor = relationship("Exhibitor", back_populates="event_exhibitor", overlaps="conferences,exhibitors")

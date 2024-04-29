@@ -115,7 +115,11 @@ def get_db_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
 
 def get_user_by_email(db: Session, email: str):
-    return db.query(models.User).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
+    user = db.query(models.User).options(joinedload(models.User.organization_user), joinedload(models.User.user_roles).options(joinedload(models.User_Role.role))).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
+    return user
+
+def get_role_by_user_id(db: Session, user_id: int):
+    return db.query(models.Role).join(models.User_Role, models.Role.id == models.User_Role.role_id).filter(models.User_Role.user_id == user_id).all()
 
 def get_active_user_by_email(db: Session, email: str):
     query = text(query_user_by_email_and_archived_status)
@@ -153,8 +157,6 @@ def map_to_user(results):
     )
     return user
     
-
-
 def get_users(db: Session, offset: int = 0, limit: int = 100):
     users = db.query(models.User).filter(models.User.role == 'organizer').order_by(models.User.updated_on.desc()).offset(offset).limit(limit).all()
     return users
