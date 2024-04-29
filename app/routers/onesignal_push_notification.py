@@ -30,16 +30,6 @@ def send_notification(notification: PushNotification,
         raise HTTPException(status_code=400, detail="Message cannot be empty")
     if not title:
         raise HTTPException(status_code=400, detail="Title cannot be empty")
-    if not is_valid_url(picture_url):
-        raise HTTPException(status_code=400, detail="Invalid URL")
     create_notification(db, conference_id, title, message, picture_url)
     return {'message': 'Notification sent successfully.'}
-    
-def is_valid_url(url):
-    try:
-        result = urlparse(url)
-        return all([result.scheme, result.netloc])
-    except:
-        return False
-    
     
