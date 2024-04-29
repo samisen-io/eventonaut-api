@@ -39,6 +39,12 @@ class OrganizationUsersResponse(BaseModel):
     organization_name: str
     users: List[OrganizationUserBase]
 
+class OrgResp(BaseModel):
+    id: int
+    uuid: str
+    organization_id: int
+    user_id: int
+
 class UserOrganizationsResponse(BaseModel):
     user_id: str
     organizations: List[OrganizationBase]
