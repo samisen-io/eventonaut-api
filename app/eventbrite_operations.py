@@ -17,7 +17,7 @@ def create_webhook(event_id: str, private_token: str, organization_id: str):
     values = {
         "endpoint_url": "https://event-data-api.azurewebsites.net/webhook/",
         # "endpoint_url": "https://781f-110-235-225-198.ngrok-free.app/webhook/",
-        "actions": "event.created,event.updated,event.published,event.unpublished",
+        "actions": "event.updated,event.published,event.unpublished",
         "event_id": event_id,
     }
     headers = {
