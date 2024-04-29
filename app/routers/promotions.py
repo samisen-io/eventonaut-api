@@ -22,7 +22,7 @@ def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session =
         logging.exception("Invalid date range")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date range")
     promotion = promotions_crud.create_promotion(db=db, promotion=promotion, orhanization_id=organization.id)
-    logging.info("Promotion created: " + promotion.uuid)
+    logging.info("Promotion created: " + promotion.conference_id)
     return promotion
 
 @router.get('/promotions/by_organization', response_model=list[promotion_schemas.Promotion])
