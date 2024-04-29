@@ -68,6 +68,12 @@ class User(Base):
     business_type = Column(String, index=True)
 
     attendees = relationship("Attendee", back_populates="user")
+    conferences = relationship("Conference", back_populates="owner")
+    sessions = relationship("Session", back_populates="owner")
+    settings = relationship("Settings", back_populates="owner")
+    client = relationship("Client", back_populates="owner")
+    speakers = relationship("Speakers", back_populates="owner")
+    sponsors = relationship("Sponsors", back_populates="owner")
     organizer_status = relationship("OrganizerStatus", back_populates="user")
     user_roles = relationship('User_Role', back_populates='user')
     organization_user = relationship("Organization_User", back_populates="user")
@@ -302,7 +308,7 @@ class Attendee(Base):
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
     aitokens = relationship("AITokens", back_populates="attendee")
     
-    _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "status", "is_active"}
+    _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "is_active"}
 
     def __getattr__(self, name):
         if name in self._user_delegated_attrs:
