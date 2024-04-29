@@ -48,21 +48,10 @@ class ExhibitorBase(BaseModel):
         return v
     
 class ExhibitorCreate(ExhibitorBase):
-    conference_id: str
-    
-    @field_validator('conference_id')
-    def check_empty(cls, v, info: ValidationInfo):
-        if v == "":
-            logging.exception(f"{info.field_name} cannot be empty")
-            raise ValueError(f"{info.field_name} cannot be empty")
-        elif len(v) > 256:
-            logging.exception(f"{info.field_name} cannot be more than 256 characters")
-            raise ValueError(f"{info.field_name} cannot be more than 256 characters")
-        return v
+    pass
 
 class ExhibitorUpdate(BaseModel):
     id: str
-    conference_id: str | None = None
     name: str | None = None
     address: str | None = None
     about: str | None = None
@@ -84,7 +73,7 @@ class ExhibitorUpdate(BaseModel):
             raise ValueError(f"{info.field_name} cannot be more than 256 characters")
         return v
     
-    @field_validator('conference_id', 'name', 'address', 'about', 'contact_name', 'contact_email', 'booth_number', 'category', 'exhibitor_logo', 'exhibitor_banner')
+    @field_validator('name', 'address', 'about', 'contact_name', 'contact_email', 'booth_number', 'category', 'exhibitor_logo', 'exhibitor_banner')
     def check_none(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -119,7 +108,6 @@ class ExhibitorUpdate(BaseModel):
     
 class ExhibitorResponse(BaseModel):
     uuid: str = Field(serialization_alias='id')
-    conference_uuid: str = Field(serialization_alias='conference_id')
     name: str
     address: str
     about: str
