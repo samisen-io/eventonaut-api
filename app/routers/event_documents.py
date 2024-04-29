@@ -59,7 +59,7 @@ def get_all_event_documents_by_organization(offset: int = 0, limit: int = 100, d
     if len(documents) == 0:
         logging.exception(f"No documents found for organization with id: {organization.id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No documents found")
-    return [map_event_document_response(organization.id, document) for document in documents]
+    return [map_event_document_response(document.conference_uuid, document) for document in documents]
 
 @router.get("/{conference_id}", response_model=list[EventDocumentResponse])
 def get_all_event_documents(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ATTENDEE.name,"organizer", "attendee"])):
