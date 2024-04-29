@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.schemas.user_schemas import UserAuthentication as User
 from app.oauth2 import get_current_active_user
 from app.static_enums.role import RoleEnum
+from ..static_enums.event_types import EventTypeEnum
 from ..schemas import session_schemas as schemas
 from ..crud import sessions_crud as crud, conferences_crud, speakers_crud
 from ..dependencies import get_db
@@ -19,6 +20,9 @@ def create_session_for_conference(session: schemas.SessionCreate, db: Session = 
     if conference is None:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
+    if conference.event_type.upper() != EventTypeEnum.CONFERENCE.name:
+        logging.exception(f"{conference.event_type.upper()} cannot have sessions")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{conference.event_type.upper()} cannot have sessions")
     if session.date < conference.start_date or session.date > conference.end_date or session.date < date.today():
         logging.exception("Invalid date")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid date! Date must fall under Conference date range!!")
@@ -52,6 +56,9 @@ def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Se
         if conference is None:
             logging.exception("Conference not found")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
+        if conference.event_type.upper() != EventTypeEnum.CONFERENCE.name:
+            logging.exception(f"{conference.event_type.upper()} cannot have sessions")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{conference.event_type.upper()} cannot have sessions")
         if session.date < conference.start_date or session.date > conference.end_date or session.date < date.today():
             logging.exception(f"Invalid date! Conference date is between {conference.start_date} and {conference.end_date} and today is {date.today()}")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid date! Date should fall under conference date range")
@@ -100,6 +107,9 @@ def get_sessions_by_conference_id(conference_id: str, db: Session = Depends(get_
 def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     validate_session_update(session)
     conference = get_conference(session, db, current_user)
+    if conference.event_type.upper() != EventTypeEnum.CONFERENCE.name:
+        logging.exception(f"{conference.event_type.upper()} cannot have sessions")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{conference.event_type.upper()} cannot have sessions")
     db_session = get_db_session(session, db, current_user)
     validate_date_and_time(session, conference)
     session_speaker_ids = get_speaker_ids(session, db, current_user)
