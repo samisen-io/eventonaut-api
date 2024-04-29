@@ -1,5 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Security, status
 from sqlalchemy.orm import Session
+
+from app import models
+from app.oauth2 import get_current_active_organization
+from app.static_enums.role import RoleEnum
 from ..schemas import promotion_schemas
 from ..crud import promotions_crud
 from ..dependencies import get_db
@@ -20,6 +24,15 @@ def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session =
     promotion = promotions_crud.create_promotion(db=db, promotion=promotion)
     logging.info("Promotion created: " + promotion.uuid)
     return promotion
+
+@router.get('/promotions/by_organization', response_model=list[promotion_schemas.Promotion])
+def get_promotions_by_organization(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+    promotions = promotions_crud.get_promotions_by_organization(db=db, organization_id=organization.id, offset=offset, limit=limit)
+    if promotions is None or len(promotions) == 0:
+        logging.exception("Promotions not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Promotions not found")
+    logging.info("Promotions retrieved")
+    return promotions
 
 @router.get('/promotions', response_model=list[promotion_schemas.Promotion])
 def get_promotions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):

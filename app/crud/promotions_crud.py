@@ -10,6 +10,9 @@ from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 import time
 
+def get_promotions_by_organization(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+    return db.query(models.Promotions).filter(models.Promotions.organization_id == organization_id).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(offset).limit(limit).all()
+
 def exlude_archived(promotion: models.Promotions):
     promotion.conference = None if promotion.conference is not None and promotion.conference.is_archived else promotion.conference
 
