@@ -13,6 +13,16 @@ from ..static_enums.blob_container_enums import BlobContainer
 from urllib.parse import urlparse, unquote
 import re
 
+def get_all_backdrops_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+    backdrops = db.query(models.BackdropGallery).options(
+        joinedload(models.BackdropGallery.User),
+        joinedload(models.BackdropGallery.conference)
+    ).filter(
+        models.BackdropGallery.organization_id == organization_id,
+        models.BackdropGallery.is_archived == False
+    ).offset(offset).limit(limit).all()
+    return backdrops
+
 def extract_filename(url: str) -> str:
     parsed_url = urlparse(url)
     filename_with_extension = unquote(parsed_url.path.split('/')[-1])

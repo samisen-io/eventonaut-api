@@ -10,6 +10,9 @@ from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 import time
 
+def get_promotions_by_organization(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+    return db.query(models.Promotions).filter(models.Promotions.organization_id == organization_id).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(offset).limit(limit).all()
+
 def exlude_archived(promotion: models.Promotions):
     promotion.conference = None if promotion.conference is not None and promotion.conference.is_archived else promotion.conference
 
@@ -39,13 +42,13 @@ def get_all_promotions(db: Session, skip: int = 0, limit: int = 100):
         exlude_archived(promotion)
     return promotions
 
-def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate):
+def create_promotion(db: Session, promotion: promotion_schemas.PromotionCreate, organization_id: int):
     db_promotion = models.Promotions(**promotion.model_dump())
     db_promotion.uuid = "pro-" + str(uuid.uuid4())
     db_promotion.created_on = db_promotion.updated_on = datetime.utcnow()
     conference = db.query(models.Conference).filter(models.Conference.uuid == promotion.conference_id).first()
     db_promotion.conference_id = conference.id
-    
+    db_promotion.organization_id = organization_id
     db_promotion.image_url = upload_image.get_actual_url(image_url=promotion.image_url, new_blob_container=BlobContainer.PROMOTION_IMAGES.value, new_blob_name=f"promotion-{db_promotion.uuid}") if promotion.image_url is not None else None
     
     db.add(db_promotion)

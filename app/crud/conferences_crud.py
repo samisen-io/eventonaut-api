@@ -15,6 +15,10 @@ from sqlalchemy.orm import joinedload
 from datetime import datetime
 from . import exhibitor_crud
 
+def get_all_conferences_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+    conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.organization_id == organization_id, models.Conference.is_archived == False).order_by(models.Conference.start_date.desc(), models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
+    return conferences
+
 def exclude_archived(conference: models.Conference):
     conference.client = None if conference.client is not None and conference.client.is_archived else conference.client
     conference.sponsors = [sponsor for sponsor in conference.sponsors if not sponsor.is_archived]
