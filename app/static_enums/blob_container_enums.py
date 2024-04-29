@@ -19,3 +19,4 @@ class BlobContainer(Enum):
     BACKDROP_IMAGES = "backdrop-images"
     EXHIBITOR_LOGOS = "exhibitor-logos"
     EXHIBITOR_BANNERS = "exhibitor-banners"
+    EXHIBITOR_DOCUMENTS = "exhibitor-documents"
