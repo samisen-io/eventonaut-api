@@ -135,11 +135,4 @@ def get_eventbrite_venue(event_id: str, private_token: str):
     event = response.json()
     return event
 
-@router.get('/testing/')
-def testing(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
-    organization = get_organization_by_user_id(db, current_user.id)
-    print(organization.id)
-    return {'message': organization.id}
-
-
 
