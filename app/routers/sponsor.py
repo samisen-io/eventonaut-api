@@ -1,3 +1,4 @@
+from app import models
 from app.static_enums.role import RoleEnum
 from ..schemas import sponsor_schemas as schemas
 from ..crud import sponsors_crud
@@ -6,7 +7,7 @@ from sqlalchemy.orm import Session
 import logging
 from ..dependencies import get_db
 import email_validator
-from ..oauth2 import get_current_active_user
+from ..oauth2 import get_current_active_organization, get_current_active_user
 from ..crud import conferences_crud
 
 router = APIRouter(tags=["sponsors"])
@@ -44,6 +45,16 @@ def get_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db
     logging.info("Sponsors retrieved")
     return sponsors
 
+@router.get("/sponsors/by_organization", response_model=list[schemas.SponsorResponse])
+def get_sponsors_by_organization_id(limit: int = 100, offset:int = 0, db: Session = Depends(get_db), oganization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
+    sponsors = sponsors_crud.get_sponsors_by_organization_id(db=db, organization_id=oganization.id, offset=offset, limit=limit)
+    
+    if sponsors is None or len(sponsors) == 0:
+        logging.exception("Sponsors not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsors not found")
+    logging.info(f"Sponsors retrieved for organization id {oganization.id}")
+    return sponsors
+
 @router.get("/sponsors/{sponsor_id}", response_model=schemas.SponsorResponse)
 def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     sponsor = sponsors_crud.get_sponsor_by_uuid(db=db, uuid=sponsor_id, owner_id=current_user.id)
@@ -65,6 +76,13 @@ def get_sponsors_by_conference_id(conference_id: str, db: Session = Depends(get_
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsors not found")
     logging.info(f"Sponsors retrieved for conference id {conference_id}")
     return sponsors
+
+
+# def get_sponsors_by_organization_id(db, organization_id, offset, limit):
+#     logging.info(f"Fetching sponsors for organization_id: {organization_id}")
+#     sponsors = db.query(models.Sponsor).filter(models.Sponsor.organization_id == organization_id).offset(offset).limit(limit).all()
+#     logging.info(f"Fetched sponsors: {sponsors}")
+#     return sponsors
 
 @router.put("/sponsors", response_model=schemas.SponsorResponse)
 def update_sponsor(sponsor: schemas.SponsorUpdate, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):

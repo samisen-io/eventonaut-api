@@ -1,8 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
 from sqlalchemy.orm import Session
+from app import models
 from app.schemas.user_schemas import UserAuthentication as User
-from app.oauth2 import get_current_active_user
+from app.oauth2 import get_current_active_organization, get_current_active_user
 from app.static_enums.role import RoleEnum
 from ..static_enums.event_types import EventTypeEnum
 from ..schemas import session_schemas as schemas
@@ -78,6 +79,15 @@ def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Se
 
     logging.info("Sessions created for conference: " + session.conference_id)
     return session_list
+
+@router.get("/sessions/by_organization", response_model=list[SessionResponse])
+def get_sessions_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
+    db_sessions = crud.get_sessions_by_organization_id(db, organization_id=organization.id, offset=offset, limit=limit)
+    if db_sessions is None or len(db_sessions) == 0:
+        logging.exception("No sessions found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    logging.info(f"Sessions retrieved for organization: {organization.id} ")
+    return db_sessions
 
 @router.get("/sessions/all_sessions", response_model=list[SessionResponse])
 def get_all_sessions(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):

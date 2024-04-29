@@ -8,6 +8,9 @@ import logging
 import uuid
 from datetime import datetime
 
+def get_event_documents_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+    return db.query(EventDocuments).filter(EventDocuments.organization_id == organization_id).order_by(EventDocuments.updated_on.desc()).offset(offset).limit(limit).all()
+
 def insert_event_document(db: Session, request: EventDocumentRequest):
     db_doc = db.query(EventDocuments).filter(EventDocuments.document_url == request.file_url).first()
     if db_doc:
