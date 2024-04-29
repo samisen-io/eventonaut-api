@@ -45,7 +45,7 @@ def get_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db
     logging.info("Sponsors retrieved")
     return sponsors
 
-@router.get("/sponsors/organization_id", response_model=list[schemas.SponsorResponse])
+@router.get("/sponsors/by_organization", response_model=list[schemas.SponsorResponse])
 def get_sponsors_by_organization_id(limit: int = 100, offset:int = 0, db: Session = Depends(get_db), oganization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     sponsors = sponsors_crud.get_sponsors_by_organization_id(db=db, organization_id=oganization.id, offset=offset, limit=limit)
     
