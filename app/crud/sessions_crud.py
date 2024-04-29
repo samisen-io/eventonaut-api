@@ -12,6 +12,9 @@ from ..static_enums import session as session_enum
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
 
+def get_sessions_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+    return db.query(models.Session).filter(models.Session.organization_id == organization_id, models.Session.is_archived == False).order_by(models.Session.updated_on.desc()).offset(offset).limit(limit).all()
+
 def exclude_archived(session: models.Session):
     if session.speakers is not None:
         session.speakers = [speaker for speaker in session.speakers if not speaker.is_archived]

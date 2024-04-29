@@ -2,8 +2,9 @@ import logging
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Security
 from sqlalchemy.orm import Session
+from app import models
 from app.crud import backdrop_gallery_crud as crud
-from app.oauth2 import get_current_active_user
+from app.oauth2 import get_current_active_organization, get_current_active_user
 from app.schemas import backdrop_gallery_schemas as schemas
 from app.dependencies import get_db
 from app.static_enums.role import RoleEnum
@@ -15,6 +16,23 @@ def get_backdrop_by_id(backdrop_id: str, db: Session, User):
     if db_backdrop is None:
         raise HTTPException(status_code=404, detail="Backdrop not found")
     return db_backdrop
+
+@router.get("/backdrops/by_organization", response_model=List[schemas.BackdropGalleryResponse])
+def get_all_backdrops_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization= Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name])):
+    try:
+        backdrops = crud.get_all_backdrops_by_organization_id(db=db, organization_id=organization.id, offset=offset, limit=limit)
+        response = [schemas.BackdropGalleryResponse(conference_id=backdrop.conference.uuid, 
+                                                    backdrop_url=backdrop.backdrop_url, 
+                                                    name=backdrop.name,
+                                                    size=backdrop.size,
+                                                    uuid=backdrop.uuid) for backdrop in backdrops]
+        return response
+    except HTTPException as e:
+        logging.exception(str(e))
+        raise e
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/backdrop/{backdrop_id}", response_model=schemas.BackdropGalleryResponse)
 def Get_backdrop(backdrop_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ATTENDEE.name, "organizer", "attendee"])):

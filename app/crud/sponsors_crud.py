@@ -9,6 +9,12 @@ from datetime import datetime
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload, Load, defaultload, join, aliased
 
+def get_sponsors_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+    return db.query(models.Sponsors).filter(
+        models.Sponsors.organization_id == organization_id, 
+        models.Sponsors.is_archived == False).order_by(
+            models.Sponsors.updated_on.desc()).offset(offset).limit(limit).all()
+
 def get_all_sponsors(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.Sponsors).offset(offset).limit(limit).order_by(models.Sponsors.updated_on.desc()).all()
 

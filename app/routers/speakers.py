@@ -1,4 +1,5 @@
 import logging
+from app import models
 from app.crud import conferences_crud
 from app.static_enums.role import RoleEnum
 from ..dependencies import get_db
@@ -7,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Security, status
 from ..schemas import speaker_schemas as schemas
 from ..crud import speakers_crud as crud
 from ..crud import sessions_crud
-from app.oauth2 import get_current_active_user
+from app.oauth2 import get_current_active_organization, get_current_active_user
 from app.schemas.user_schemas import UserAuthentication as User
 from email_validator import validate_email, EmailNotValidError
 from ..schemas.session_speaker_schema import SpeakerResponse
@@ -67,6 +68,15 @@ def get_speakers_by_owner_id(offset: int = 0, limit: int = 100, db: Session = De
         logging.exception("Speaker not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
     logging.info("Speakers retrieved for owner: " + str(current_user.uuid))
+    return speakers
+
+@router.get("/speakers/by_organization", response_model=list[SpeakerResponse])
+def get_speakers_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
+    speakers = crud.get_speakers_by_organization_id(db=db, organization_id=organization.id, offset=offset, limit=limit)
+    if speakers is None or len(speakers) == 0:
+        logging.exception("Speaker not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
+    logging.info("Speakers retrieved for organization: " + str(organization.uuid))
     return speakers
 
 @router.get("/speakers/{speaker_id}", response_model=SpeakerResponse)

@@ -2,8 +2,9 @@ from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from app import models
 from app.schemas.user_schemas import UserAuthentication as User
-from app.oauth2 import get_current_active_user
+from app.oauth2 import get_current_active_organization, get_current_active_user
 from app.static_enums.role import RoleEnum
 from ..static_enums import event_types
 from ..schemas import conference_schemas as schemas
@@ -66,6 +67,15 @@ def get_all_conferences(offset: int = 0, limit: int = 100, db: Session = Depends
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     logging.info("All Conferences retrieved")
     return conferences
+
+@router.get("/conferences/by_organization", response_model=list[schemas.ConferenceResponse])
+def get_all_conferences_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+    db_conferences = crud.get_all_conferences_by_organization_id(db, organization_id= organization.id, offset=offset, limit=limit)
+    if db_conferences is None or len(db_conferences) == 0:
+        logging.exception("No conferences found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
+    logging.info(f"Conferences retrieved for Organization id: {organization.id}")
+    return db_conferences
 
 @router.get("/conferences/for_attendee", response_model=list[schemas.ConferenceResponse])
 def get_all_conferences_for_attendee(offset: int = 0, limit: int = 100, db: Session = Depends(get_db),basic_auth = Depends(basicauth.basic_auth)):
