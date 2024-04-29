@@ -90,7 +90,7 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     if conference.venue_id is not None:
-        db_venue = venue_crud.get_venue_by_id(db, venue_id=conference.venue_id, owner_id=current_user.id)
+        db_venue = venue_crud.get_venue_by_id_for_organization(db, venue_id=conference.venue_id, organization_id=organization_id)
         if db_venue is None:
             logging.exception("Venue not found")
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Venue not found")
