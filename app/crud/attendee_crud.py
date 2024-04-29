@@ -149,8 +149,7 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: sc
 def delete_attendee_by_uuid(db: Session, attendee_id: int):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.is_archived == False).first()
-    db_user.user_status_id = attendee_enum.AttendeeEnum.INACTIVE.value
-    db_user.is_archived = True
+    db.delete(db_user)
     db.commit()
     return True
 
