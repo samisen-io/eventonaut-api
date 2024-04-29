@@ -157,6 +157,66 @@ def delete_conference(db: Session, conference: models.Conference):
     db.commit()
     return True
 
+def update_user_conference_externally(db: Session, conference: schemas.ConferenceUpdate):
+    conference_dict = conference.model_dump()
+    conference_dict.pop('id')
+    conference_dict.pop('sponsor_ids')
+    conference_dict.pop('exhibitor_ids')
+    conference_status = conference_dict.pop("status")
+    conference_logo = conference_dict.pop("conference_logo")
+    conference_banner_url = conference_dict.pop("conference_banner_url")
+    conference_dict['venue_id'] = db.query(models.Venue).filter(models.Venue.uuid == conference_dict['venue_id']).first().id if conference_dict['venue_id'] is not None else None
+
+    db_conference = conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors),joinedload(models.Conference.exhibitors)).filter(models.Conference.uuid == conference.id, models.Conference.is_archived == False).first()
+    
+    non_nullable_feilds = ['name','venue_id','start_date','end_date','information_guide','event_type']
+
+    if conference_status is not None:
+        db_conference.conference_status_id = event.EventEnum[conference_status.upper()].value
+
+    for key, value in conference_dict.items():
+            if key in non_nullable_feilds:
+                if value is not None:
+                    setattr(db_conference,key,value)
+            else:
+                setattr(db_conference,key,value)
+
+    if db_conference.start_date > db_conference.end_date or db_conference.start_date < date.today():
+        logging.exception("Invalid date range")
+        raise HTTPException(status_code=400, detail="Invalid date range")
+    
+    db_client = db.query(models.Client).filter(models.Client.uuid == conference.client_id).first()
+    db_conference.client_id = db_client.id if db_client is not None else None
+    
+    if conference_logo is not None and upload_image.get_container_name_from_url(conference_logo) != BlobContainer.EVENT_LOGOS.value:
+        db_conference.conference_logo = upload_image.get_actual_url(image_url=conference_logo, new_blob_container=BlobContainer.EVENT_LOGOS.value, new_blob_name=f"event-logo-{db_conference.uuid}")
+    elif conference_logo is None and db_conference.conference_logo is not None:
+        upload_image.delete_blob_by_url(db_conference.conference_logo)
+        db_conference.conference_logo = None
+        
+    if conference_banner_url is not None and upload_image.get_container_name_from_url(conference_banner_url) != BlobContainer.EVENT_BANNERS.value:
+        db_conference.conference_banner_url = upload_image.get_actual_url(image_url=conference_banner_url, new_blob_container=BlobContainer.EVENT_BANNERS.value, new_blob_name=f"event-banner-{db_conference.uuid}")
+    elif conference_banner_url is None and db_conference.conference_banner_url is not None:
+        upload_image.delete_blob_by_url(db_conference.conference_banner_url)
+        db_conference.conference_banner_url = None 
+    
+    db_conference.updated_on = datetime.utcnow()
+    try:
+        db.commit()
+    except Exception as e:
+        if conference_logo is not None:
+            upload_image.delete_blob_by_url(db_conference.conference_logo)
+        if conference_banner_url is not None:
+            upload_image.delete_blob_by_url(db_conference.conference_banner_url)
+        logging.exception(str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+    db.refresh(db_conference)
+    
+    db.refresh(db_conference)        
+    db_conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors),joinedload(models.Conference.exhibitors)).filter(models.Conference.id == db_conference.id).first()
+    exclude_archived(db_conference)
+    return db_conference
+
 def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db_conference: models.Conference, sponsor_ids: list[int], exhibitor_ids: list[int]):
     conference_dict = conference.model_dump()
     conference_dict.pop('id')
