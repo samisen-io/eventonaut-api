@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from fastapi import HTTPException, status as statuscode
 import logging
 from ..static_enums import organizer
+from ..static_enums.role import RoleEnum
 from ..url_validator import check_url
 
 class UserBase(BaseModel):
@@ -20,10 +21,10 @@ class UserBase(BaseModel):
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
             logging.exception(f"{info.field_name} cannot be empty")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} cannot be empty")
+            raise ValueError(f"{info.field_name} cannot be empty")
         elif len(v) > 256:
             logging.exception(f"{info.field_name} should be less than 256 characters")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be less than 256 characters")
+            raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
     
     @field_validator("status")
@@ -31,7 +32,8 @@ class UserBase(BaseModel):
     def check_status(cls, v):
         v = v.upper()
         if v not in list(organizer.OrganizerEnum.__members__):
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid status")
+            logging.exception("Invalid status")
+            raise ValueError("Invalid status")
         return v
     
     @field_validator('timezone')
@@ -43,7 +45,7 @@ class UserBase(BaseModel):
             max_len = 50 if info.field_name == "timezone" else 256
             if len(v) > max_len:
                 logging.exception(f"{info.field_name} should be less than {max_len} characters")
-                raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be less than {max_len} characters")
+                raise ValueError(f"{info.field_name} should be less than {max_len} characters")
         return v
     
     @field_validator('profile_image_url')
@@ -54,6 +56,15 @@ class UserBase(BaseModel):
                 raise ValueError(f"Broken {info.field_name} link or invalid url")
         return v
     
+    @field_validator('list_of_roles')
+    @classmethod
+    def check_role(cls, v):
+        if v is not None:
+            for role in v:
+                if role not in list(RoleEnum.__members__):
+                    raise ValueError("Invalid role")
+        return v
+    
 class UserCreate(UserBase):
     hashed_password: str
 
@@ -62,10 +73,10 @@ class UserCreate(UserBase):
     def hashed_password_is_not_empty(cls, v):
         if v.strip() == "" or v.__contains__(" "):
             logging.exception("Invalid password")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid password")
+            raise ValueError("Invalid password")
         if not 8 <= len(v) <= 16:
             logging.exception("Password should be between 8 and 16 characters")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Password should be between 8 and 16 characters")
+            raise ValueError("Password should be between 8 and 16 characters")
         return v
     
 class UserBaseUpdate(BaseModel):
@@ -85,7 +96,7 @@ class UserBaseUpdate(BaseModel):
             max_len = 50 if info.field_name == "timezone" else 256
             if len(v) > max_len:
                 logging.exception(f"{info.field_name} should be less than {max_len} characters")
-                raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be less than {max_len} characters")
+                raise ValueError(f"{info.field_name} should be less than {max_len} characters")
         return v
     
     @field_validator("status")
@@ -96,7 +107,7 @@ class UserBaseUpdate(BaseModel):
                 return None
             v = v.upper()
             if v not in list(organizer.OrganizerEnum.__members__):
-                raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail="Invalid status")
+                raise ValueError("Invalid status")
         return v
     
     @field_validator('profile_image_url')
@@ -118,10 +129,10 @@ class UserPasswordUpdate(BaseModel):
     def password_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "" or v.__contains__(" "):
             logging.exception(f"Invalid {info.field_name}")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"Invalid {info.field_name}")
+            raise ValueError(f"Invalid {info.field_name}")
         if not 8 <= len(v) <= 16:
             logging.exception(f"{info.field_name} should be between 8 and 16 characters")
-            raise HTTPException(status_code=statuscode.HTTP_400_BAD_REQUEST, detail=f"{info.field_name} should be between 8 and 16 characters")
+            raise ValueError(f"{info.field_name} should be between 8 and 16 characters")
         return v
 
 class User(UserBase):
@@ -147,3 +158,16 @@ class UserAuthorization(BaseModel):
     user_status_id: int | None = None
     role: List[str] | None = None
     
+class OtpVerification(BaseModel):
+    email: str
+    otp: str
+    
+    @field_validator('email')
+    def field_is_not_empty(cls, v, info: ValidationInfo):
+        if v.strip() == "":
+            logging.exception(f"{info.field_name} cannot be empty")
+            raise ValueError(f"{info.field_name} cannot be empty")
+        elif len(v) > 256:
+            logging.exception(f"{info.field_name} should be less than 256 characters")
+            raise ValueError(f"{info.field_name} should be less than 256 characters")
+        return v
