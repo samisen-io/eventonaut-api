@@ -1,6 +1,6 @@
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy import UniqueConstraint
 from .database import Base
 
@@ -32,6 +32,7 @@ class Organization(Base):
     venues = relationship("Venue", back_populates="organization")
     event_documents = relationship("EventDocuments", back_populates="organization")
     session_documents = relationship("SessionDocuments", back_populates="organization")
+    exhibitors = relationship("Exhibitor", back_populates="organization")
 
 class Organization_User(Base):
     __tablename__ = "organization_user"
@@ -82,6 +83,10 @@ class User(Base):
     @property
     def status(self):
         return self.organizer_status.status.upper()
+    
+    @property
+    def organization_id(self):
+        return self.organization_user.organization_id
     
 class Role(Base):
     __tablename__ = "role"
@@ -180,7 +185,7 @@ class Conference(Base):
     backdrop_gallery = relationship("BackdropGallery", back_populates="conference")
     event_documents = relationship("EventDocuments", back_populates="conference")
     organization = relationship("Organization", back_populates="conferences")
-    exhibitor = relationship("Exhibitor", back_populates="conference")
+    exhibitors = relationship("Exhibitor", secondary="event_exhibitor", backref=backref("conferences", lazy='dynamic'))
     
     @property
     def status(self):
@@ -474,7 +479,6 @@ class EventSponsors(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     sponsor_id = Column(Integer, ForeignKey("sponsors.id"))
 
-    # conference = relationship("Conference", back_populates="event_sponsors")
     sponsors = relationship("Sponsors", back_populates="event_sponsors", overlaps="conference, sponsors")
     @property
     def spn_uuid(self):
@@ -619,7 +623,7 @@ class Exhibitor(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime, index=True)
     updated_on = Column(DateTime, index=True)
-    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    organization_id = Column(Integer, ForeignKey("organization.id"))
     name = Column(String, nullable=False)
     address = Column(String, nullable=False)
     about = Column(String, nullable=False)
@@ -632,8 +636,17 @@ class Exhibitor(Base):
     exhibitor_banner = Column(String)
     is_archived = Column(Boolean, default=False)
     
-    conference = relationship("Conference", back_populates="exhibitor")
+    organization = relationship("Organization", back_populates="exhibitors")
+    event_exhibitor = relationship("EventExhibitor", back_populates="exhibitor", overlaps="conferences,exhibitors")
     
-    @property
-    def conference_uuid(self):
-        return self.conference.uuid
+class EventExhibitor(Base):
+    __tablename__ = "event_exhibitor"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    exhibitor_id = Column(Integer, ForeignKey("exhibitor.id"))
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+
+    exhibitor = relationship("Exhibitor", back_populates="event_exhibitor", overlaps="conferences,exhibitors")
