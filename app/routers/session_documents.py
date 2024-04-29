@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status, File, Security
+
+from app import models
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
 from .upload_image import upload_file, check_for_blob_in_container, delete_blob_by_url
-from app.oauth2 import get_current_active_user
+from app.oauth2 import get_current_active_organization, get_current_active_user
 from ..crud import sessions_crud
 from app.schemas.user_schemas import UserAuthentication as User
 from ..crud import session_document_crud as crud
@@ -49,6 +51,14 @@ def map_session_document_response(session_id, response):
                                      name=response.name, 
                                      content_type=response.content_type, 
                                      size=f"{str(response.size)} MB")
+    
+@router.get("/by_organization", response_model=list[SessionDocumentResponse])
+def get_all_session_documents_by_organization(offset: int = 0, limit: int = 100,db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+    documents = crud.get_all_session_documents_by_organization(db, organization.id, offset, limit)
+    if len(documents) == 0:
+        logging.exception("No documents found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No documents found")
+    return [map_session_document_response(document.session_id, document) for document in documents]
 
 @router.get("/{session_id}", response_model=list[SessionDocumentResponse])
 def get_all_session_documents(session_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, RoleEnum.ATTENDEE.name, "organizer", "attendee"])):
