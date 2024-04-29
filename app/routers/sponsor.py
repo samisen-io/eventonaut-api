@@ -45,6 +45,16 @@ def get_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db
     logging.info("Sponsors retrieved")
     return sponsors
 
+@router.get("/sponsors/organization_id", response_model=list[schemas.SponsorResponse])
+def get_sponsors_by_organization_id(limit: int = 100, offset:int = 0, db: Session = Depends(get_db), oganization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
+    sponsors = sponsors_crud.get_sponsors_by_organization_id(db=db, organization_id=oganization.id, offset=offset, limit=limit)
+    
+    if sponsors is None or len(sponsors) == 0:
+        logging.exception("Sponsors not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsors not found")
+    logging.info(f"Sponsors retrieved for organization id {oganization.id}")
+    return sponsors
+
 @router.get("/sponsors/{sponsor_id}", response_model=schemas.SponsorResponse)
 def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     sponsor = sponsors_crud.get_sponsor_by_uuid(db=db, uuid=sponsor_id, owner_id=current_user.id)
@@ -67,14 +77,12 @@ def get_sponsors_by_conference_id(conference_id: str, db: Session = Depends(get_
     logging.info(f"Sponsors retrieved for conference id {conference_id}")
     return sponsors
 
-@router.get("/sponsors/{organization_id}", response_model=list[schemas.SponsorResponseWithConference])
-def get_sponsors_by_organization_id(organization_id: str, limit: int, offset:int, db: Session = Depends(get_db), oganization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
-    sponsors = sponsors_crud.get_sponsors_by_organization_id(db=db, organization_id=oganization.id, limit=limit, offset=offset)
-    if sponsors is None or len(sponsors) == 0:
-        logging.exception("Sponsors not found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsors not found")
-    logging.info(f"Sponsors retrieved for organization id {organization_id}")
-    return sponsors
+
+# def get_sponsors_by_organization_id(db, organization_id, offset, limit):
+#     logging.info(f"Fetching sponsors for organization_id: {organization_id}")
+#     sponsors = db.query(models.Sponsor).filter(models.Sponsor.organization_id == organization_id).offset(offset).limit(limit).all()
+#     logging.info(f"Fetched sponsors: {sponsors}")
+#     return sponsors
 
 @router.put("/sponsors", response_model=schemas.SponsorResponse)
 def update_sponsor(sponsor: schemas.SponsorUpdate, db: Session = Depends(get_db), current_user = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
