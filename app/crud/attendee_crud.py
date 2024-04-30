@@ -177,7 +177,7 @@ def get_attendee_conference_by_attendee_id_and_conference_id(db: Session, attend
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
     if attendee is None or conference is None:
         return None
-    return db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee.id).filter(models.Attendee_Conferences.conference_id == conference.id).first()
+    return db.query(models.Attendee_Conferences).options(joinedload(models.Attendee_Conferences.conference)).filter(models.Attendee_Conferences.attendee_id == attendee.id).filter(models.Attendee_Conferences.conference_id == conference.id).first()
 
 # get all attendee conferences
 def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, limit: int = 100):
