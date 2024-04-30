@@ -14,3 +14,4 @@ class PushNotification(BaseModel):
             return None
         if not check_url(value):
             raise ValueError("Invalid URL")
+        return value
