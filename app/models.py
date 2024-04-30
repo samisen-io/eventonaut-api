@@ -33,6 +33,7 @@ class Organization(Base):
     event_documents = relationship("EventDocuments", back_populates="organization")
     session_documents = relationship("SessionDocuments", back_populates="organization")
     exhibitors = relationship("Exhibitor", back_populates="organization")
+    exhibitor_documents = relationship("ExhibitorDocuments", back_populates="organization")
 
 class Organization_User(Base):
     __tablename__ = "organization_user"
@@ -638,6 +639,7 @@ class Exhibitor(Base):
     
     organization = relationship("Organization", back_populates="exhibitors")
     event_exhibitor = relationship("EventExhibitor", back_populates="exhibitor", overlaps="conferences,exhibitors")
+    exhibitor_documents = relationship("ExhibitorDocuments", back_populates="exhibitor")
     
 class EventExhibitor(Base):
     __tablename__ = "event_exhibitor"
@@ -650,3 +652,24 @@ class EventExhibitor(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
 
     exhibitor = relationship("Exhibitor", back_populates="event_exhibitor", overlaps="conferences,exhibitors")
+    
+class ExhibitorDocuments(Base):
+    __tablename__ = "exhibitor_documents"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    exhibitor_id = Column(Integer, ForeignKey("exhibitor.id"))
+    document_url = Column(String, index=True)
+    content_type = Column(String, index=True)
+    name = Column(String, index=True)
+    size = Column(Float, index=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
+
+    exhibitor = relationship("Exhibitor", back_populates="exhibitor_documents")
+    organization = relationship("Organization", back_populates="exhibitor_documents")
+    
+    @property
+    def exhibitor_uuid(self):
+        return self.exhibitor.uuid

@@ -34,16 +34,19 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
         
         blob_client = None
         
+        image_extensions = ["jpg", "jpeg", "png"]
+        file_extensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"]
+                
         if file_extension in executable_extensions:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type. Executable files are not allowed.")
 
-        elif file_extension in ["jpg", "jpeg", "png"]: 
+        elif file_extension in image_extensions: 
             blob_name = f"dyn-{uuid4()}-{file.filename}"
             blob_client = blob_service_client.get_blob_client("temporary-images", blob_name)
 
             content_settings = ContentSettings(content_type=f'image/{file_extension}')
 
-        elif file_extension in ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"]:
+        elif file_extension in file_extensions:
             folder_name = file.filename[:40]
             actual_filename = file.filename[41:]
             blob_name = f"{folder_name}/{actual_filename}"
@@ -51,6 +54,8 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
                 blob_client = blob_service_client.get_blob_client(BlobContainer.EVENT_DOCUMENTS.value, blob_name)
             elif folder_name[:3] == "ses":
                 blob_client = blob_service_client.get_blob_client(BlobContainer.SESSION_DOCUMENTS.value, blob_name)
+            elif folder_name[:3] == "exb":
+                blob_client = blob_service_client.get_blob_client(BlobContainer.EXHIBITOR_DOCUMENTS.value, blob_name)
             
             if file_extension in ['txt', 'csv']:
                 content_settings = ContentSettings(content_type=f'text/{file_extension}')
@@ -66,7 +71,8 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
 
         # Get the image URL
         blob_url = blob_client.url
-        return {"message": "Image uploaded successfully", "url": blob_url}
+        message = "Image uploaded successfully" if file_extension in image_extensions else "File uploaded successfully"
+        return {"message": message, "url": blob_url}
 
     except HTTPException as ex:
         raise HTTPException(status_code=ex.status_code, detail=ex.detail)

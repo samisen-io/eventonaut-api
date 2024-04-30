@@ -21,11 +21,11 @@ def get_exhibitors(db = Depends(get_db), current_organization: Organization = Se
 
 @router.get("/exhibitors/{conference_id}", response_model=list[schemas.ExhibitorResponse])
 def get_exhibitors(conference_id: str, db = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, RoleEnum.ATTENDEE.name])):
-    organization_id = current_user.organization_user[0].organization_id
     roles = [user_role.role for user_role in current_user.user_roles]
     if roles[0].name == RoleEnum.ATTENDEE.name:
         conference = conf_crud.get_conference(db, conference_id)
     elif roles[0].name == RoleEnum.ORGANIZATION_ADMIN.name or roles[0].name == RoleEnum.ORGANIZATION_USER.name:
+        organization_id = current_user.organization_user[0].organization_id
         conference = conf_crud.get_conference_by_id_for_organization(db, conference_id, organization_id)
     if not conference:
         logging.exception(f"Conference not found")
