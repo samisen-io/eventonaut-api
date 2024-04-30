@@ -16,7 +16,7 @@ def attendee_exhibitor_mapper(conference_id: int, exhibitors: list[models.Exhibi
     exhibitor_responses = [schemas.ExhibitorResponse(**exhibitor.__dict__) for exhibitor in exhibitors] if exhibitors else []
     return schemas.AttendeeExhibitorResponse(conference_id=conference_id, exhibitors=exhibitor_responses)
 
-@router.get("/")
+@router.get("/", response_model=schemas.AttendeeExhibitorResponse)
 def get_exhibitors_for_conference(conference_id: str, db: Session = Depends(get_db), current_user: dict = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     attendee = attendee_crud.get_attendee_by_id(db, current_user.id)
     attendee_conference = attendee_crud.get_attendee_conference_by_attendee_id_and_conference_id(db, attendee_id=current_user.id, conference_id=conference_id)
@@ -33,7 +33,7 @@ def get_exhibitors_for_conference(conference_id: str, db: Session = Depends(get_
     attendee_exhibitors = attendee_exhibitor_mapper(conference_id, exhibitors)
     return attendee_exhibitors
 
-@router.post("/", response_model=schemas.AttendeeExhibitorResponse)
+@router.put("/", response_model=schemas.AttendeeExhibitorResponse)
 def create_attendee_exhibitor(attendee_exhibitor: schemas.AttendeeExhibitorCreate, db: Session = Depends(get_db), current_user: dict = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     attendee = attendee_crud.get_attendee_by_id(db, current_user.id)
     attendee_conference = attendee_crud.get_attendee_conference_by_attendee_id_and_conference_id(db, attendee_id=current_user.id, conference_id=attendee_exhibitor.conference_id)
