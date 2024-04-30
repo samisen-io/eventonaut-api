@@ -187,6 +187,7 @@ class Conference(Base):
     event_documents = relationship("EventDocuments", back_populates="conference")
     organization = relationship("Organization", back_populates="conferences")
     exhibitors = relationship("Exhibitor", secondary="event_exhibitor", backref=backref("conferences", lazy='dynamic'))
+    attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="conference")
     
     @property
     def status(self):
@@ -324,6 +325,7 @@ class Attendee(Base):
     agenda = relationship("Agenda", back_populates="attendees")
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
     aitokens = relationship("AITokens", back_populates="attendee")
+    attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="attendee")
     
     _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "is_active"}
 
@@ -640,6 +642,7 @@ class Exhibitor(Base):
     organization = relationship("Organization", back_populates="exhibitors")
     event_exhibitor = relationship("EventExhibitor", back_populates="exhibitor", overlaps="conferences,exhibitors")
     exhibitor_documents = relationship("ExhibitorDocuments", back_populates="exhibitor")
+    attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="exhibitors")
     
 class EventExhibitor(Base):
     __tablename__ = "event_exhibitor"
@@ -673,3 +676,18 @@ class ExhibitorDocuments(Base):
     @property
     def exhibitor_uuid(self):
         return self.exhibitor.uuid
+    
+class AttendeeExhibitors(Base):
+    __tablename__ = "attendee_exhibitors"
+
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    updated_on = Column(DateTime, index=True)
+    attendee_id = Column(Integer, ForeignKey("attendees.id"))
+    exhibitor_id = Column(Integer, ForeignKey("exhibitor.id"))
+    conference_id = Column(Integer, ForeignKey("conferences.id"))
+    
+    attendee = relationship("Attendee", back_populates="attendee_exhibitors")
+    exhibitors = relationship("Exhibitor", back_populates="attendee_exhibitors")
+    conference = relationship("Conference", back_populates="attendee_exhibitors")
