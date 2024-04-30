@@ -14,8 +14,8 @@ def get_exhibitors_by_organization_id(db: Session, organization_id: int):
 def get_exhibitors(db: Session, conference_id: int):
     return db.query(Exhibitor).join(EventExhibitor, EventExhibitor.exhibitor_id == Exhibitor.id).filter(EventExhibitor.conference_id == conference_id, Exhibitor.is_archived == False).all()
 
-def get_exhibitor(db: Session, exhibitor_id: str):
-    return db.query(Exhibitor).filter(Exhibitor.uuid == exhibitor_id, Exhibitor.is_archived == False).first()
+def get_exhibitor(db: Session, exhibitor_id: str, conference_id: int):
+    return db.query(Exhibitor).join(EventExhibitor, EventExhibitor.exhibitor_id == Exhibitor.id).filter(Exhibitor.uuid == exhibitor_id, EventExhibitor.conference_id == conference_id, Exhibitor.is_archived == False).first()
 
 def get_exhibitor_by_id(db: Session, exhibitor_id: str, organization_id: int):
     return db.query(Exhibitor).filter(Exhibitor.uuid == exhibitor_id, Exhibitor.organization_id == organization_id, Exhibitor.is_archived == False).first()
