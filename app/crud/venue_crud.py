@@ -58,6 +58,26 @@ def update_venue(db: Session, venue: venue_schemas.VenueUpdate, db_venue: models
     db.refresh(db_venue)
     return db_venue
 
+def update_venue_by_id(db: Session, venue: venue_schemas.VenueUpdate):
+    venue_dict = venue.model_dump()
+    db_venue = db.query(models.Venue).filter(models.Venue.uuid == venue_dict['id']).first()
+    db_venue.geo_location = venue_dict.pop('geo_location')
+    venue_dict.pop('id')
+    
+    non_nullable_fields = ['name', 'location']
+    
+    for key, value in venue_dict.items():
+        if key in non_nullable_fields and value is not None:
+            setattr(db_venue, key, value)
+        elif key not in non_nullable_fields:
+            setattr(db_venue, key, value)
+
+    db_venue.updated_on = datetime.utcnow()
+
+    db.commit()
+    db.refresh(db_venue)
+    return db_venue
+
 def delete_venue(db: Session, db_venue: models.Venue):
     if db_venue.conference and any([conference.is_archived == False for conference in db_venue.conference]):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Venue is associated with a conference. Cannot delete venue.")

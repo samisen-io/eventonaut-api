@@ -1,3 +1,4 @@
+from sqlalchemy import BigInteger
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from ..models import OrganizationSettings
@@ -35,3 +36,6 @@ def delete_organization_settings(db: Session, db_organization_settings: Organiza
     db.delete(db_organization_settings)
     db.commit()
     return True
+
+def get_organization_settings_by_eventbrite_org_id(db: Session, eventbrite_org_id: str):
+    return db.query(OrganizationSettings).filter(OrganizationSettings.event_brite_org_id == eventbrite_org_id).first()

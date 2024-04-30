@@ -21,6 +21,9 @@ def get_organization_by_uuid(db: Session, organization_uuid: str):
 def get_organization_by_id(db: Session, organization_id: int):
     return db.query(models.Organization).filter(models.Organization.id == organization_id).first()
 
+def get_organization_by_external_id(db: Session, external_id: str):
+    return db.query(models.Organization).filter(models.Organization.external_id == external_id).first()
+
 def get_organization_by_name(db: Session, organization_name: str):
     return db.query(models.Organization).filter(models.Organization.name == organization_name).first()
 
