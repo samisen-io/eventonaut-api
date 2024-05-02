@@ -149,6 +149,21 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: sc
 def delete_attendee_by_uuid(db: Session, attendee_id: int):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.is_archived == False).first()
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.attendee_id == db_attendee.id).all()
+    db_attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == db_attendee.id).all()
+    db_agenda_sessions = db.query(models.AgendaSession).filter(models.AgendaSession.attendee_id == db_attendee.id).all()
+    
+    for agenda in db_agenda:
+        db.delete(agenda)
+
+    for attendee_conference in db_attendee_conferences:
+        db.delete(attendee_conference)
+        
+    for agenda_session in db_agenda_sessions:
+        db.delete(agenda_session)
+
+    db.commit()
+    
     db.delete(db_attendee)
     db.delete(db_user)
     db.commit()
