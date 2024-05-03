@@ -57,7 +57,7 @@ def map_exhibitor_document_response(exhibitor_id, response):
 def get_all_exhibitor_documents(exhibitor_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ATTENDEE.name,"organizer", "attendee"])):
     roles = [user_role.role for user_role in current_user.user_roles]
     if roles[0].name == RoleEnum.ATTENDEE.name:
-        exhibitor = exhibitor_crud.get_exhibitor(db, exhibitor_id)
+        exhibitor = exhibitor_crud.get_exhibitor_by_uuid(db, exhibitor_id)
     elif roles[0].name == RoleEnum.ORGANIZATION_ADMIN.name or roles[0].name == RoleEnum.ORGANIZATION_USER.name:
         organization_id = current_user.organization_user[0].organization_id
         exhibitor = exhibitor_crud.get_exhibitor_by_id(db, exhibitor_id, organization_id)
