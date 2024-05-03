@@ -7,10 +7,11 @@ from datetime import datetime
 def get_organization_settings(db: Session, organization_id: int):
     return db.query(OrganizationSettings).filter(OrganizationSettings.organization_id == organization_id).first()
 
-def create_organization_settings(db: Session, organization_settings: schemas.OrganizationSettingsCreate, organization_id: int):
+def create_organization_settings(db: Session, organization_settings: schemas.OrganizationSettingsCreate, organization_id: int, evt_brite_org_id: str):
     org_settings_dict = organization_settings.model_dump()
     db_organization_settings = OrganizationSettings(**org_settings_dict)
     db_organization_settings.organization_id = organization_id
+    db_organization_settings.event_brite_org_id = evt_brite_org_id
     db_organization_settings.uuid = 'ost-' + str(uuid.uuid4())
     db_organization_settings.created_on = db_organization_settings.updated_on = datetime.utcnow()
     db.add(db_organization_settings)
@@ -18,8 +19,9 @@ def create_organization_settings(db: Session, organization_settings: schemas.Org
     db.refresh(db_organization_settings)
     return db_organization_settings
 
-def update_organization_settings(db: Session, db_organization_settings: OrganizationSettings, organization_settings: schemas.OrganizationSettingsUpdate):
+def update_organization_settings(db: Session, db_organization_settings: OrganizationSettings, organization_settings: schemas.OrganizationSettingsUpdate, evt_brite_org_id: str):
     db_organization_settings.updated_on = datetime.utcnow()
+    db_organization_settings.event_brite_org_id = evt_brite_org_id
     org_settings_dict = organization_settings.model_dump()
     for key, value in org_settings_dict.items():
         if value is not None:

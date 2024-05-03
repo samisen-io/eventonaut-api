@@ -15,8 +15,8 @@ from app.routers.upload_image import upload_file
 
 def create_webhook(event_id: str, private_token: str, organization_id: str):
     values = {
-        "endpoint_url": "https://event-data-api.azurewebsites.net/webhook/",
-        # "endpoint_url": "https://781f-110-235-225-198.ngrok-free.app/webhook/",
+        "endpoint_url": "https://dev.api.eventonaut.app/webhook/",
+        # "endpoint_url": "https://d5c6-14-97-147-123.ngrok-free.app/webhook/",
         "actions": "event.updated,event.published,event.unpublished",
         "event_id": event_id,
     }
@@ -27,6 +27,16 @@ def create_webhook(event_id: str, private_token: str, organization_id: str):
     url = f'https://www.eventbriteapi.com/v3/organizations/{organization_id}/webhooks/'
     response = requests.post(url, data=json.dumps(values), headers=headers)
     return response.json()
+
+def get_organization_id(private_token: str):
+    headers = {
+        'Authorization': f'Bearer   {private_token}',
+    }
+    url = 'https://www.eventbriteapi.com/v3/users/me/organizations/'
+    response = requests.get(url, headers=headers)
+    response = response.json()
+    organization_id = response["organizations"][0]["id"]
+    return organization_id
 
 def add_venue(db,event_venue,organization_id):
     venue_payload = {
