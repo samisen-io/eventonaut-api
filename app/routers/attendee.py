@@ -47,7 +47,7 @@ def get_attendee_by_id(db: Session = Depends(get_db), current_user: User = Secur
     if not db_attendee:
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
-    logging.info("Attendee retrieved: " + db_attendee.email)
+    logging.info("Attendee retrieved: " + db_attendee.uuid)
     return db_attendee
 
 # update attendee by email
