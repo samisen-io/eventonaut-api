@@ -15,7 +15,6 @@ import re
 
 def get_all_backdrops_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
     backdrops = db.query(models.BackdropGallery).options(
-        joinedload(models.BackdropGallery.User),
         joinedload(models.BackdropGallery.conference)
     ).filter(
         models.BackdropGallery.organization_id == organization_id,
@@ -33,25 +32,28 @@ def extract_filename(url: str) -> str:
 
     return filename
 
-def get_backdrop_by_id(db: Session, backdrop_id: str, owner_id: int):
+def get_backdrop_by_id(db: Session, backdrop_id: str, organization_id: int):
     backdrop = db.query(models.BackdropGallery).options(
-        joinedload(models.BackdropGallery.User),
+        joinedload(models.BackdropGallery.organization),
         joinedload(models.BackdropGallery.conference)
     ).filter(
-        models.BackdropGallery.uuid == backdrop_id
+        models.BackdropGallery.uuid == backdrop_id,
+        models.Organization.id == organization_id,
+        models.BackdropGallery.is_archived == False,
+        models.Organization.is_archived == False,
     ).first()
 
     if backdrop is None:
         raise HTTPException(status_code=404, detail="Backdrop not found")
     
-    if backdrop.User.id != owner_id:
-        raise HTTPException(status_code=403, detail="Permission denied")
-    if backdrop.is_archived or backdrop.User.is_archived or backdrop.conference.is_archived:
-        raise HTTPException(status_code=404, detail="Backdrop not found")
+    # if backdrop.organization.id != organization_id:
+    #     raise HTTPException(status_code=403, detail="Permission denied")
+    # if backdrop.is_archived or backdrop.User.is_archived or backdrop.conference.is_archived:
+    #     raise HTTPException(status_code=404, detail="Backdrop not found")
 
     return backdrop
 
-def execute_backdrop_query(db: Session, conference_id: str, owner_id: int, skip: int = 0, limit: int = 100):
+def execute_backdrop_query(db: Session, conference_id: str, organization_id: int, skip: int = 0, limit: int = 100):
     result = db.execute(
         text("""
         SELECT 
@@ -63,23 +65,23 @@ def execute_backdrop_query(db: Session, conference_id: str, owner_id: int, skip:
             backdrop_gallery.created_on as created_on,
             backdrop_gallery.updated_on as updated_on,
             backdrop_gallery.is_archived as is_archived,
-            backdrop_gallery.owner_id as owner_id,
+            backdrop_gallery.organization_id as organization_id,
             backdrop_gallery.conference_id as conference_id
         FROM 
             backdrop_gallery
         JOIN 
-            users ON backdrop_gallery.owner_id = users.id
+            organization ON backdrop_gallery.organization_id = organization.id
         JOIN 
             conferences ON backdrop_gallery.conference_id = conferences.id
         WHERE 
             backdrop_gallery.is_archived = false AND 
             conferences.uuid = :conference_id AND 
-            conferences.is_archived = false AND 
-            users.is_archived = false
+            conferences.is_archived = false AND
+            backdrop_gallery.organization_id = :organization_id
         OFFSET :skip
         LIMIT :limit
         """),
-        {"conference_id": conference_id, "owner_id": owner_id, "skip": skip, "limit": limit}
+        {"conference_id": conference_id, "organization_id": organization_id, "skip": skip, "limit": limit}
     ).fetchall()
     return result
 
@@ -95,7 +97,7 @@ def create_backdrop_objects(result):
             created_on=row.created_on,
             updated_on=row.updated_on,
             is_archived=row.is_archived,
-            owner_id=row.owner_id,
+            organization_id=row.organization_id,
             conference_id=row.conference_id
         )
         backdrops.append(backdrop)
@@ -105,15 +107,15 @@ def check_backdrops(backdrops):
     if not backdrops:
         raise HTTPException(status_code=404, detail="No backdrops found")
 
-def get_backdrops_by_conference_id(db: Session, conference_id: str, owner_id: str, skip: int = 0, limit: int = 100):
-    result = execute_backdrop_query(db, conference_id, owner_id, skip, limit)
+def get_backdrops_by_conference_id(db: Session, conference_id: str, organization_id: int, skip: int = 0, limit: int = 100):
+    result = execute_backdrop_query(db, conference_id, organization_id, skip, limit)
     backdrops = create_backdrop_objects(result)
     check_backdrops(backdrops)
     return backdrops
 
-def create_backdrop(db: Session, backdrop: schemas.BackdropGalleryCreate, owner_id: int):
+def create_backdrop(db: Session, backdrop: schemas.BackdropGalleryCreate, organization_id: int):
     try:
-        conference = conferences_crud.get_conference_by_uuid(db=db, uuid=backdrop.conference_id, owner_id=owner_id)
+        conference = conferences_crud.get_conference_by_uuid(db=db, uuid=backdrop.conference_id, organization_id=organization_id)
 
         backdrops = db.query(models.BackdropGallery).filter(
             models.BackdropGallery.conference_id == conference.id,
@@ -125,7 +127,7 @@ def create_backdrop(db: Session, backdrop: schemas.BackdropGalleryCreate, owner_
         
         original_filename = extract_filename(backdrop.backdrop_url)
         
-        db_backdrop = models.BackdropGallery(owner_id=owner_id, 
+        db_backdrop = models.BackdropGallery(organization_id=organization_id, 
                                          conference_id=conference.id,
                                          name=original_filename)
         db_backdrop.created_on = db_backdrop.updated_on = datetime.utcnow()
