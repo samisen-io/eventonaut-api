@@ -27,8 +27,8 @@ def get_organization_by_external_id(db: Session, external_id: str):
 def get_organization_by_name(db: Session, organization_name: str):
     return db.query(models.Organization).filter(models.Organization.name == organization_name).first()
 
-def get_organization_by_user_id(db: Session, user_id: int):
-    return db.query(models.OrganizationUser).filter(models.OrganizationUser.user_id == user_id).first()
+# def get_organization_by_user_id(db: Session, user_id: int):
+#     return db.query(models.Organization_User).filter(models.Organization_User.user_id == user_id).first()
 
 def create_organization(db: Session, organization: organization_schemas.OrganizationCreate):
     try:
