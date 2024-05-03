@@ -5,14 +5,14 @@ from sqlalchemy.orm import Session
 from app import models
 from app.crud import backdrop_gallery_crud as crud
 from app.oauth2 import get_current_active_organization, get_current_active_user
-from app.schemas import backdrop_gallery_schemas as schemas
+from app.schemas import backdrop_gallery_schemas as schemas, organization_schemas
 from app.dependencies import get_db
 from app.static_enums.role import RoleEnum
 
 router = APIRouter(tags=["backdrop"])
 
-def get_backdrop_by_id(backdrop_id: str, db: Session, User):
-    db_backdrop = crud.get_backdrop_by_id(db, backdrop_id=backdrop_id, owner_id=User.id)
+def get_backdrop_by_id(backdrop_id: str, db: Session, organization):
+    db_backdrop = crud.get_backdrop_by_id(db, backdrop_id=backdrop_id, organization_id=organization.id)
     if db_backdrop is None:
         raise HTTPException(status_code=404, detail="Backdrop not found")
     return db_backdrop
@@ -35,8 +35,8 @@ def get_all_backdrops_by_organization_id(offset: int = 0, limit: int = 100, db: 
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/backdrop/{backdrop_id}", response_model=schemas.BackdropGalleryResponse)
-def Get_backdrop(backdrop_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ATTENDEE.name, "organizer", "attendee"])):
-    db_backdrop = get_backdrop_by_id(backdrop_id, db, User)
+def Get_backdrop(backdrop_id: str, db: Session = Depends(get_db), current_organization: organization_schemas.OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ATTENDEE.name, "organizer", "attendee"])):
+    db_backdrop = get_backdrop_by_id(backdrop_id, db, current_organization)
     return schemas.BackdropGalleryResponse(conference_id=db_backdrop.conference.uuid, 
                                            backdrop_url=db_backdrop.backdrop_url, 
                                            name=db_backdrop.name,
@@ -44,9 +44,9 @@ def Get_backdrop(backdrop_id: str, db: Session = Depends(get_db), User = Securit
                                            uuid=db_backdrop.uuid)
 
 @router.get("/backdrops/{conference_id}", response_model=List[schemas.BackdropGalleryResponse])
-def get_backdrops_by_conferene_id(conference_id: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ATTENDEE.name,"organizer", "attendee"])):
+def get_backdrops_by_conferene_id(conference_id: str, skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_organization: organization_schemas.OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ATTENDEE.name,"organizer", "attendee"])):
     try:
-        backdrops = crud.get_backdrops_by_conference_id(db, conference_id=conference_id, owner_id=User.id, skip=skip, limit=limit)
+        backdrops = crud.get_backdrops_by_conference_id(db, conference_id=conference_id, organization_id=current_organization.id, skip=skip, limit=limit)
         response = [schemas.BackdropGalleryResponse(conference_id=conference_id, 
                                                     backdrop_url=backdrop.backdrop_url, 
                                                     name=backdrop.name,
@@ -61,9 +61,9 @@ def get_backdrops_by_conferene_id(conference_id: str, skip: int = 0, limit: int 
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/backdrop", response_model=schemas.BackdropGalleryResponse)
-def create_backdrop(backdrop: schemas.BackdropGalleryCreate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
+def create_backdrop(backdrop: schemas.BackdropGalleryCreate, db: Session = Depends(get_db), current_organization: organization_schemas.OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
     try:
-        modelresponse = crud.create_backdrop(db=db, backdrop=backdrop, owner_id=User.id)
+        modelresponse = crud.create_backdrop(db=db, backdrop=backdrop, organization_id=current_organization.id)
         response = schemas.BackdropGalleryResponse(conference_id=backdrop.conference_id, 
                                                 backdrop_url=modelresponse.backdrop_url,
                                                 name=modelresponse.name,
@@ -78,8 +78,8 @@ def create_backdrop(backdrop: schemas.BackdropGalleryCreate, db: Session = Depen
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.put("/backdrop/{backdrop_id}", response_model=schemas.BackdropGalleryUpdateResponse)
-def update_backdrop(backdrop: schemas.BackdropGalleryUpdate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
-    db_backdrop = get_backdrop_by_id(backdrop.id, db, User)
+def update_backdrop(backdrop: schemas.BackdropGalleryUpdate, db: Session = Depends(get_db), current_organization: organization_schemas.OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
+    db_backdrop = get_backdrop_by_id(backdrop.id, db, current_organization)
     updated_backdrop = crud.update_backdrop(db=db, backdrop=backdrop, db_backdrop=db_backdrop)
     response = schemas.BackdropGalleryUpdateResponse(backdrop_url=updated_backdrop.backdrop_url, 
                                                      name=updated_backdrop.name,
@@ -88,7 +88,7 @@ def update_backdrop(backdrop: schemas.BackdropGalleryUpdate, db: Session = Depen
     return response
 
 @router.delete("/backdrop/{backdrop_id}")
-def delete_backdrop(backdrop_id: str, db: Session = Depends(get_db),  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
-    db_backdrop = get_backdrop_by_id(backdrop_id, db, User)
+def delete_backdrop(backdrop_id: str, db: Session = Depends(get_db),  current_organization: organization_schemas.OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
+    db_backdrop = get_backdrop_by_id(backdrop_id, db, current_organization)
     crud.delete_backdrop(db=db, db_backdrop=db_backdrop)
     return {"detail": "Backdrop deleted"} 
