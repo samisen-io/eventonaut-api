@@ -68,3 +68,6 @@ class Organization(BaseModel):
 
     class Config:
         orm_mode = True
+        
+class OrganizationSecurity(Organization):
+    id: int
