@@ -1,5 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, APIRouter, Depends, status, Security
+
+from app.eventbrite_operations import get_organization_id
 from ..schemas import organization_settings_schemas as schemas
 from ..basicauth import basic_auth
 from ..dependencies import get_db
@@ -33,11 +35,12 @@ def create_organization_settings(organization_settings: schemas.OrganizationSett
         logging.exception(f"Organization not found for organization_id: {current_organization.uuid}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
     db_organization_settings = crud.get_organization_settings(db, organization.id)
+    evt_brite_org_id = get_organization_id(organization_settings.event_brite_access_token)
     if db_organization_settings is not None:
         logging.exception(f"Organization settings already exist for organization_id: {organization.uuid}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Organization settings already exist")
     logging.info(f"Creating organization settings for organization_id: {organization.uuid}")
-    db_organization_settings = crud.create_organization_settings(db, organization_settings, organization.id)
+    db_organization_settings = crud.create_organization_settings(db, organization_settings, organization.id, evt_brite_org_id)
     db_organization_settings.organization_id = organization.uuid
     return db_organization_settings
 
@@ -52,7 +55,8 @@ def update_organization_settings(organization_settings: schemas.OrganizationSett
         logging.exception(f"Organization settings not found for organization_id: {organization.uuid}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization settings not found")
     logging.info(f"Updating organization settings for organization_id: {organization.uuid}")
-    updated_organization_settings = crud.update_organization_settings(db, db_organization_settings, organization_settings)
+    evt_brite_org_id = get_organization_id(organization_settings.event_brite_access_token)
+    updated_organization_settings = crud.update_organization_settings(db, db_organization_settings, organization_settings, evt_brite_org_id)
     updated_organization_settings.organization_id = organization.uuid
     return updated_organization_settings
 

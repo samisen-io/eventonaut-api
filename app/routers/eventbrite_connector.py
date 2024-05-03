@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Security, Upload
 from sqlalchemy.orm import Session
 import requests
 from app.crud import conferences_crud, users_crud
-from app.eventbrite_operations import add_event, add_venue, create_webhook, get_organization_id_from_url, update_eventbrite_status, update_from_eventbrite, update_venue_from_eventbrite
+from app.eventbrite_operations import add_event, add_venue, create_webhook, get_organization_id, get_organization_id_from_url, update_eventbrite_status, update_from_eventbrite, update_venue_from_eventbrite
 from app.oauth2 import get_current_active_user
 from app.crud.organization_settings_crud import create_organization_settings, get_organization_settings, get_organization_settings_by_eventbrite_org_id
 from app.schemas import organization_settings_schemas as os_schemas
@@ -33,7 +33,8 @@ def get_eventbrite_events(private_token: str, organization_id: str):
     return events
 
 @router.get("/sync_eventbrite_events/")
-def sync_eventbrite_events(private_token: str, eventbrite_organization_id: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
+def sync_eventbrite_events(private_token: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
+    eventbrite_organization_id = get_organization_id(private_token)
     url = f"https://www.eventbriteapi.com/v3/organizations/{eventbrite_organization_id}/events/?status=live"
     headers = {
         'Authorization': f'Bearer {private_token}',
@@ -133,5 +134,9 @@ def get_eventbrite_venue(event_id: str, private_token: str):
     response = requests.get(url, headers=headers)
     event = response.json()
     return event
+
+@router.post('/create_webhook/')
+def create_eventbrite_webhook(event_id: str, private_token: str, organization_id: str):
+    return create_webhook(event_id, private_token, organization_id)
 
 
