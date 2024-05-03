@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
 class OrganizationSettingsBase(BaseModel):
-    # event_brite_org_id: str
     event_brite_access_token: str
     
     @field_validator('event_brite_access_token')
@@ -17,7 +16,6 @@ class OrganizationSettingsCreate(OrganizationSettingsBase):
     pass
 
 class OrganizationSettingsUpdate(BaseModel):
-    # event_brite_org_id: str | None = None
     event_brite_access_token: str | None = None
     
     @field_validator('event_brite_access_token')
