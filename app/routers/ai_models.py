@@ -20,7 +20,7 @@ from app.routers.sessions import create_session_for_conference
 from app.schemas.query_schema import QueryInput, QueryInputStream
 from app.schemas.user_schemas import UserAuthentication as User
 from app.static_enums.role import RoleEnum
-from ..data_ingestion import add_documents, write_events_to_csv, write_sessions_to_csv, write_speakers_to_csv
+from ..data_ingestion import add_documents, write_events_to_csv, write_exhibitors_to_csv, write_sessions_to_csv, write_speakers_to_csv
 from ..data_query import query_document, retrieve_answer_stream
 from ..crud import conferences_crud, result_crud
 from sqlalchemy.orm import Session
@@ -218,17 +218,45 @@ async def upload_speaker_file(file: UploadFile,
     logging.info("Speakers file uploaded successfully")
     return {'filename': filename}
 
+# @router.post("/synchronize_database_and_pinecone/")
+# async def update_namespace(conference_id: str, current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), db: Session = Depends(get_db)):
+#     write_sessions_to_csv(db,conference_id)
+#     write_speakers_to_csv(db,conference_id)
+#     write_events_to_csv(db,conference_id)
+#     namespace = create_namespace(conference_id)
+#     status = delete_namespace(conference_id)
+#     status = status['status']
+#     add_documents(namespace,conference_id,'sessions')
+#     add_documents(namespace,conference_id,'speakers')
+#     namespace = add_documents(namespace,conference_id,'events')
+#     namespace = namespace['namespace']
+#     logging.info("Database and Pinecone Synchronized")
+#     return {'namespace': namespace, 'deletion_status': status}
+
+
 @router.post("/synchronize_database_and_pinecone/")
 async def update_namespace(conference_id: str, current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), db: Session = Depends(get_db)):
-    write_sessions_to_csv(db,conference_id)
-    write_speakers_to_csv(db,conference_id)
-    write_events_to_csv(db,conference_id)
-    namespace = create_namespace(conference_id)
-    status = delete_namespace(conference_id)
-    status = status['status']
-    add_documents(namespace,conference_id,'sessions')
-    add_documents(namespace,conference_id,'speakers')
-    namespace = add_documents(namespace,conference_id,'events')
-    namespace = namespace['namespace']
+    conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
+    print(conference.event_type)
+    if conference.event_type == 'conference':
+        write_sessions_to_csv(db,conference_id)
+        write_speakers_to_csv(db,conference_id)
+        write_events_to_csv(db,conference_id)
+        namespace = create_namespace(conference_id)
+        status = delete_namespace(conference_id)
+        status = status['status']
+        add_documents(namespace,conference_id,'sessions')
+        add_documents(namespace,conference_id,'speakers')
+        namespace = add_documents(namespace,conference_id,'events')
+        namespace = namespace['namespace']
+    elif conference.event_type == 'trade_show':
+        write_events_to_csv(db,conference_id)
+        write_exhibitors_to_csv(db, conference_id)
+        write_exhibitor_docs(db, conference_id)
+        # namespace = create_namespace(conference_id)
+        # status = delete_namespace(conference_id)
+        # status = status['status']
+        # namespace = add_documents(namespace,conference_id,'events')
+        # namespace = namespace['namespace']
     logging.info("Database and Pinecone Synchronized")
-    return {'namespace': namespace, 'deletion_status': status}
+    # return {'namespace': namespace, 'deletion_status': status}

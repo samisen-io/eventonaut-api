@@ -119,6 +119,21 @@ def write_events_to_csv(db, conference_id):
         merged_dict = {**conference_dict, **venue}
         writer.writeheader()
         writer.writerow(merged_dict)
+        
+def write_exhibitors_to_csv(db, conference_id):
+    file_path = file_path_in_files_csv(conference_id,'exhibitors')
+    result = get_conference_by_conference_uuid(db, conference_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+        fieldnames = ['uuid','name','address','about', 'contact_email', 'booth_number', 'type']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for exhibitor in result.exhibitors:
+            exhibitor_dict = exhibitor.__dict__
+            exhibitor_dict = filter_fields(exhibitor_dict, fieldnames)
+            exhibitor_dict['type'] = 'exhibitor'
+            writer.writerow(exhibitor_dict)
 
 def add_documents(namespace,conference_id,category):
     # get the file path
@@ -138,3 +153,6 @@ def add_documents(namespace,conference_id,category):
     except OSError as e:
         print(f"Error: {file_path} : {e.strerror}")
     return {"namespace":namespace}
+
+def write_exhibitor_docs(db, conference_id):
+    result = get_

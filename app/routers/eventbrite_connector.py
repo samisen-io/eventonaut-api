@@ -57,6 +57,7 @@ def sync_eventbrite_events(private_token: str, eventbrite_organization_id: str, 
             organization_id = organization.id
             # create venue
             event_venue = get_eventbrite_venue(event_id, private_token)
+            print(event_venue)
             event_venue = add_venue(db,event_venue,organization_id)
             event_venue_id = event_venue.id
             #add event
