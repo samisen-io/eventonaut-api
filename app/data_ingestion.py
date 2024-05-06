@@ -164,4 +164,6 @@ def write_exhibitor_docs(db, conference_id):
         exhibitor_docs = get_exhibitor_documents_by_exhibitor_id(db, exhibitor.id)
         if not exhibitor_docs:
             raise HTTPException(status_code=404, detail="No exhibitor documents found for this exhibitor_id")
+        for exhibitor_doc in exhibitor_docs:
+            print(exhibitor_doc.id)
         
