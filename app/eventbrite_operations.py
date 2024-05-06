@@ -91,7 +91,7 @@ def add_event(db,event,owner_id,venue_id):
                 'event_type': 'other'
             }
             event = c_schemas.ConferenceCreate(**event_payload)
-            event = create_user_conference(db, event, owner_id, venue_id, None, None)
+            event = create_user_conference(db, event, owner_id, venue_id, None, None, None)
             os.remove(temp_filename)
             return event
         
