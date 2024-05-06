@@ -5,6 +5,7 @@ import logging
 from ..static_enums import organizer
 from ..static_enums.role import RoleEnum
 from ..url_validator import check_url
+from . import organization_user_schemas
 
 class UserBase(BaseModel):
     email: str
@@ -143,9 +144,23 @@ class User(UserBase):
     
     class Config:
         orm_mode = True
-        
+ 
+class Role(BaseModel):
+    id: int
+    description: str
+    uuid: str
+    name: str
+ 
+class UserRoles(BaseModel):
+    uuid: str
+    role_id: int 
+    role: Role
+       
 class UserAuthentication(User):
+    id: int
     role: str
+    user_roles: List[UserRoles]
+    organization_user: list[organization_user_schemas.OrgResp]
 
 class UserAuthorization(BaseModel):
     id: int

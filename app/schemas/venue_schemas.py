@@ -17,7 +17,7 @@ class VenuBase(BaseModel):
     @field_validator('geo_location', 'address')
     def check_geo_location(cls, v: str, info: ValidationInfo):
         if v is not None:
-            if v == '':
+            if v.strip() == '':
                 return None
             elif len(v) > 256:
                 raise ValueError(f"{info.field_name} cannot be more than 256 characters")

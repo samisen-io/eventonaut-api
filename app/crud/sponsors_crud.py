@@ -16,26 +16,26 @@ def get_sponsors_by_organization_id(db: Session, organization_id: int, offset: i
             models.Sponsors.updated_on.desc()).offset(offset).limit(limit).all()
 
 def get_all_sponsors(db: Session, offset: int = 0, limit: int = 100):
-    return db.query(models.Sponsors).offset(offset).limit(limit).order_by(models.Sponsors.updated_on.desc()).all()
+    return db.query(models.Sponsors).order_by(models.Sponsors.updated_on.desc()).offset(offset).limit(limit).all()
 
-def get_all_sponsors_by_owner_id(db: Session, owner_id: int, offset: int = 0, limit: int = 100):
-    return db.query(models.Sponsors).filter(models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).order_by(models.Sponsors.updated_on.desc()).offset(offset).limit(limit).all()
+def get_all_sponsors_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+    return db.query(models.Sponsors).filter(models.Sponsors.organization_id == organization_id, models.Sponsors.is_archived == False).order_by(models.Sponsors.updated_on.desc()).offset(offset).limit(limit).all()
 
-def get_sponsor_by_uuid(db: Session, uuid: str, owner_id: int):
-    sponsor = db.query(models.Sponsors).filter(models.Sponsors.uuid == uuid, models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).first()
+def get_sponsor_by_uuid(db: Session, uuid: str, organization_id: int):
+    sponsor = db.query(models.Sponsors).filter(models.Sponsors.uuid == uuid, models.Sponsors.organization_id == organization_id, models.Sponsors.is_archived == False).first()
     return sponsor
 
-def get_sponsor_by_email(db: Session, email: str, owner_id: int):
-    return db.query(models.Sponsors).filter(models.Sponsors.email == email, models.Sponsors.owner_id == owner_id, models.Sponsors.is_archived == False).first()
+def get_sponsor_by_email(db: Session, email: str, organization_id: int):
+    return db.query(models.Sponsors).filter(models.Sponsors.email == email, models.Sponsors.organization_id == organization_id, models.Sponsors.is_archived == False).first()
 
 def get_sponsors_by_conference_id(db: Session, conference_id: int, offset: int = 0, limit: int = 100):
     SponsorsAlias = aliased(models.Sponsors)
     sponsors_subquery = db.query(SponsorsAlias).filter(SponsorsAlias.is_archived == False).subquery()
     return db.query(models.EventSponsors).join(sponsors_subquery, models.EventSponsors.sponsor_id == sponsors_subquery.c.id).filter(models.EventSponsors.conference_id == conference_id).order_by(models.EventSponsors.updated_on.desc()).offset(offset).limit(limit).all()
 
-def create_sponsor(db: Session, sponsor: sponsor_schemas.SponsorCreate, owner_id: int):
+def create_sponsor(db: Session, sponsor: sponsor_schemas.SponsorCreate, organization_id: int):
     sponsor_dict = sponsor.model_dump()
-    db_sponsor = models.Sponsors(**sponsor_dict, owner_id=owner_id)
+    db_sponsor = models.Sponsors(**sponsor_dict, organization_id=organization_id)
     db_sponsor.created_on = db_sponsor.updated_on = datetime.now()
     db_sponsor.uuid = 'spn-' + str(uuid.uuid4())
     
