@@ -17,7 +17,7 @@ def get_backdrop_by_id(backdrop_id: str, db: Session, organization):
         raise HTTPException(status_code=404, detail="Backdrop not found")
     return db_backdrop
 
-@router.get("/backdrops/by_organization", response_model=List[schemas.BackdropGalleryResponse])
+@router.get("/backdrops", response_model=List[schemas.BackdropGalleryResponse])
 def get_all_backdrops_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization= Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name])):
     try:
         backdrops = crud.get_all_backdrops_by_organization_id(db=db, organization_id=organization.id, offset=offset, limit=limit)
