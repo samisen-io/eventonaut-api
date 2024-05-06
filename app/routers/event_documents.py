@@ -52,7 +52,7 @@ def map_event_document_response(conference_id, response):
                                      content_type=response.content_type, 
                                      size=f"{str(response.size)} MB")
     
-@router.get("/by_organization", response_model=list[EventDocumentResponse])
+@router.get("/", response_model=list[EventDocumentResponse])
 def get_all_event_documents_by_organization(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name])):
     documents = crud.get_event_documents_by_organization_id(db, organization.id, offset, limit)
     if len(documents) == 0:

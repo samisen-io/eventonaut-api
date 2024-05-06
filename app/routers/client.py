@@ -26,18 +26,6 @@ def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db), c
     logging.info("Client created: " + client.uuid)
     return client
 
-@router.get("/clients/by_organization", response_model=list[schemas.ClientResponse])
-def get_all_clients_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
-    if offset < 0 or limit < 0:
-        logging.exception("Invalid query parameters")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid query parameters")
-    clients = crud.get_all_clients_by_organization_id(db=db, offset=offset, limit=limit, organization_id=current_organization.id)
-    if clients is None or len(clients) == 0:
-        logging.exception("Client not found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
-    logging.info("Clients Retrieved")
-    return clients
-
 @router.get("/clients", response_model=list[schemas.ClientResponse])
 def get_all_clients_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if offset < 0 or limit < 0:
