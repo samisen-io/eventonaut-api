@@ -8,6 +8,8 @@ from langchain.document_loaders.csv_loader import CSVLoader
 from langchain_community.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 from app.crud.conferences_crud import get_conference_by_conference_uuid
+from app.crud.exhibitor_crud import get_exhibitors
+from app.crud.exhibitor_documents_crud import get_exhibitor_documents_by_exhibitor_id
 from app.crud.speakers_crud import get_speakers_by_session_uuid
 from app.routers.sessions import get_sessions_by_conference_id
 import pinecone
@@ -155,4 +157,11 @@ def add_documents(namespace,conference_id,category):
     return {"namespace":namespace}
 
 def write_exhibitor_docs(db, conference_id):
-    result = get_
+    exhibitors = get_exhibitors(db, conference_id)
+    if not exhibitors:
+        raise HTTPException(status_code=404, detail="No exhibitors found for this conference_id")
+    for exhibitor in exhibitors:
+        exhibitor_docs = get_exhibitor_documents_by_exhibitor_id(db, exhibitor.id)
+        if not exhibitor_docs:
+            raise HTTPException(status_code=404, detail="No exhibitor documents found for this exhibitor_id")
+        
