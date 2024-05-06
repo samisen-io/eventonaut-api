@@ -79,7 +79,7 @@ def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Se
     logging.info("Sessions created for conference: " + session.conference_id)
     return session_list
 
-@router.get("/sessions/by_organization", response_model=list[SessionResponse])
+@router.get("/sessions", response_model=list[SessionResponse])
 def get_sessions_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_sessions = crud.get_sessions_by_organization_id(db, organization_id=current_organization.id, offset=offset, limit=limit)
     if db_sessions is None or len(db_sessions) == 0:
