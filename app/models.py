@@ -320,6 +320,7 @@ class Attendee(Base):
     share_my_profile = Column(Boolean, default=False)
     share_my_agenda = Column(Boolean, default=False)
     thread_id = Column(String, index=True)
+    checked_in = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="attendees")
     agenda = relationship("Agenda", back_populates="attendees")
