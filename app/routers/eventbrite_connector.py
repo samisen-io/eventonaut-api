@@ -53,7 +53,6 @@ def sync_eventbrite_events(private_token: str, db: Session = Depends(get_db),cur
     for event in response["events"]:
         event_id = event["id"] 
         db_event = conferences_crud.get_conference_by_external_id(db, event_id)
-        print(db_event.id)
         if not db_event:
             organization = get_organization_by_user_id(db, owner_id)
             organization_id = organization.id
@@ -63,7 +62,6 @@ def sync_eventbrite_events(private_token: str, db: Session = Depends(get_db),cur
             event_venue_id = event_venue.id
             #add event
             event = add_event(db,event,owner_id,event_venue_id)
-            print(event.id+" added")
             create_webhook(event_id, private_token, eventbrite_organization_id)
         # Save the event details in the database
     return {"message": "Eventbrite events retrieved successfully."}
