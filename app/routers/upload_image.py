@@ -41,7 +41,8 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type. Executable files are not allowed.")
 
         elif file_extension in image_extensions: 
-            blob_name = f"dyn-{uuid4()}-{file.filename}"
+            original_filename = os.path.basename(file.filename)
+            blob_name = f"dyn-{uuid4()}-{original_filename}"
             blob_client = blob_service_client.get_blob_client("temporary-images", blob_name)
 
             content_settings = ContentSettings(content_type=f'image/{file_extension}')
