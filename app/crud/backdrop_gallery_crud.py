@@ -181,8 +181,8 @@ def update_backdrop(db: Session, backdrop: schemas.BackdropGalleryUpdate, db_bac
     return db_backdrop
 
 def delete_backdrop(db: Session, db_backdrop: models.BackdropGallery):
-    db_backdrop.is_archived = True
-    db_backdrop.updated_on = datetime.utcnow()
-    db.commit()
+    upload_image.delete_blob_by_url(db_backdrop.backdrop_url)
     db.refresh(db_backdrop)
+    db.delete(db_backdrop)
+    db.commit()
     return True
