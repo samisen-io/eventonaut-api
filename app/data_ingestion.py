@@ -4,6 +4,7 @@ import os
 import csv
 import csv
 import tempfile
+from urllib.parse import urlparse
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from langchain.document_loaders.csv_loader import CSVLoader
@@ -175,9 +176,12 @@ def write_exhibitor_docs(db, conference_id):
         if exhibitor_docs:
             for exhibitor_doc in exhibitor_docs:
                 url = exhibitor_doc.document_url
-                content_type = requests.head(url).headers['content-type']
-                extension = mimetypes.guess_extension(content_type)
+                parsed_url = urlparse(url)
+                _, extension = os.path.splitext(parsed_url.path)
                 print(url)
+                print(extension)
+                if extension is None:
+                    raise HTTPException(status_code=400, detail="Unsupported file format")
                 response = requests.get(url, stream=True)
                 if response.status_code == 200:
                     files_folder = os.path.join('app', 'files')
@@ -199,7 +203,7 @@ def write_exhibitor_docs(db, conference_id):
                                 writer.writerow(row)
                         add_csv_documents(exhibitor.uuid, temp.name, delimiter)
                     elif extension == '.txt':
-                        add_txt_documents(exhibitor.uuid, temp.name)
+                        add_txt_documents(exhibitor.uuid, file_path)
                     else:
                         raise HTTPException(status_code=400, detail="Unsupported file format")
     return {"message":"Exhibitor documents added successfully"}

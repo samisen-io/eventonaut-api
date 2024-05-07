@@ -52,8 +52,7 @@ def add_csv_documents(namespace, file_path, delimiter):
 def add_txt_documents(namespace, file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         txt_data = f.read()
-    if separator == None:
-        separator = '\n'
+    separator = '\n'
     text_splitter = CharacterTextSplitter(
         separator = separator,
         chunk_size = 2000,
