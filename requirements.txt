@@ -31,4 +31,6 @@ opencv-python
 upstash-redis
 rembg
 onesignal-python-api
+langchain-openai
+pypdf
 

@@ -1,16 +1,20 @@
 import datetime
+import mimetypes
 import os
 import csv
 import csv
+import tempfile
 from dotenv import load_dotenv
 from fastapi import HTTPException
 from langchain.document_loaders.csv_loader import CSVLoader
 from langchain_community.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
+import requests
 from app.crud.conferences_crud import get_conference_by_conference_uuid
 from app.crud.exhibitor_crud import get_exhibitors
 from app.crud.exhibitor_documents_crud import get_exhibitor_documents_by_exhibitor_id
 from app.crud.speakers_crud import get_speakers_by_session_uuid
+from app.file_type_handler import add_csv_documents, add_pdf_document, add_txt_documents, read_the_structured_file
 from app.routers.sessions import get_sessions_by_conference_id
 import pinecone
 
@@ -123,6 +127,7 @@ def write_events_to_csv(db, conference_id):
         writer.writerow(merged_dict)
         
 def write_exhibitors_to_csv(db, conference_id):
+    print('writing exhibitors to csv')
     file_path = file_path_in_files_csv(conference_id,'exhibitors')
     result = get_conference_by_conference_uuid(db, conference_id)
     if not result:
@@ -157,13 +162,49 @@ def add_documents(namespace,conference_id,category):
     return {"namespace":namespace}
 
 def write_exhibitor_docs(db, conference_id):
-    exhibitors = get_exhibitors(db, conference_id)
+    conference = get_conference_by_conference_uuid(db, conference_id)
+    if not conference:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    exhibitors = get_exhibitors(db, conference.id)
+    print(exhibitors)
     if not exhibitors:
         raise HTTPException(status_code=404, detail="No exhibitors found for this conference_id")
     for exhibitor in exhibitors:
+        print(exhibitor.id)
         exhibitor_docs = get_exhibitor_documents_by_exhibitor_id(db, exhibitor.id)
-        if not exhibitor_docs:
-            raise HTTPException(status_code=404, detail="No exhibitor documents found for this exhibitor_id")
-        for exhibitor_doc in exhibitor_docs:
-            print(exhibitor_doc.id)
+        if exhibitor_docs:
+            for exhibitor_doc in exhibitor_docs:
+                url = exhibitor_doc.document_url
+                content_type = requests.head(url).headers['content-type']
+                extension = mimetypes.guess_extension(content_type)
+                print(url)
+                response = requests.get(url, stream=True)
+                if response.status_code == 200:
+                    files_folder = os.path.join('app', 'files')
+                    if not os.path.exists(files_folder):
+                        os.makedirs(files_folder) 
+                    file_path = os.path.join(files_folder, str(exhibitor_doc.uuid)+extension)
+                    with open(file_path, 'wb') as fp:
+                        for chunk in response.iter_content(chunk_size = 8192):
+                            if chunk:
+                                fp.write(chunk)
+                    if extension == '.pdf':
+                        add_pdf_document(exhibitor.uuid, file_path)
+                    elif extension == '.csv' or extension == '.xlsx':
+                        reader, delimiter = read_the_structured_file(file_path)
+                        with tempfile.NamedTemporaryFile(mode='w+t', delete=False, encoding='utf-8') as temp:
+                            writer = csv.DictWriter(temp, fieldnames=reader.fieldnames)
+                            writer.writeheader()
+                            for row in reader:
+                                writer.writerow(row)
+                        add_csv_documents(exhibitor.uuid, temp.name, delimiter)
+                    elif extension == '.txt':
+                        add_txt_documents(exhibitor.uuid, temp.name)
+                    else:
+                        raise HTTPException(status_code=400, detail="Unsupported file format")
+    return {"message":"Exhibitor documents added successfully"}
+                    
+                    
+                           
+
         
