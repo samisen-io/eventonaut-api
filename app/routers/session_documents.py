@@ -52,7 +52,7 @@ def map_session_document_response(session_id, response):
                                      content_type=response.content_type, 
                                      size=f"{str(response.size)} MB")
     
-@router.get("/by_organization", response_model=list[SessionDocumentResponse])
+@router.get("/", response_model=list[SessionDocumentResponse])
 def get_all_session_documents_by_organization(offset: int = 0, limit: int = 100,db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     documents = crud.get_all_session_documents_by_organization(db, organization.id, offset, limit)
     if len(documents) == 0:

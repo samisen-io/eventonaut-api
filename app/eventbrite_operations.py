@@ -9,14 +9,14 @@ from app.crud.organization_crud import get_organization_by_user_id
 from app.schemas import conference_schemas as c_schemas
 from app.schemas import venue_schemas as v_schemas
 from app.crud.conferences_crud import create_user_conference, update_user_conference, update_user_conference_externally
-from app.crud.venue_crud import create_venue, create_venue_using_organization_id, update_venue_by_id
+from app.crud.venue_crud import create_venue, create_venue, update_venue_by_id
 from app.routers.upload_image import upload_file
 
 
 def create_webhook(event_id: str, private_token: str, organization_id: str):
     values = {
-        "endpoint_url": "https://event-data-api.azurewebsites.net/webhook/",
-        # "endpoint_url": "https://781f-110-235-225-198.ngrok-free.app/webhook/",
+        "endpoint_url": "https://dev.api.eventonaut.app/webhook/",
+        # "endpoint_url": "https://d5c6-14-97-147-123.ngrok-free.app/webhook/",
         "actions": "event.updated,event.published,event.unpublished",
         "event_id": event_id,
     }
@@ -28,6 +28,16 @@ def create_webhook(event_id: str, private_token: str, organization_id: str):
     response = requests.post(url, data=json.dumps(values), headers=headers)
     return response.json()
 
+def get_organization_id(private_token: str):
+    headers = {
+        'Authorization': f'Bearer   {private_token}',
+    }
+    url = 'https://www.eventbriteapi.com/v3/users/me/organizations/'
+    response = requests.get(url, headers=headers)
+    response = response.json()
+    organization_id = response["organizations"][0]["id"]
+    return organization_id
+
 def add_venue(db,event_venue,organization_id):
     venue_payload = {
         'name': event_venue["venue"]["name"],
@@ -36,7 +46,7 @@ def add_venue(db,event_venue,organization_id):
         'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
     }
     venue_obj = v_schemas.VenueCreate(**venue_payload)
-    venue = create_venue_using_organization_id(db,venue_obj,organization_id)
+    venue = create_venue(db,venue_obj,organization_id)
     return venue
 
 def update_venue_from_eventbrite(db,event_venue,owner_id,venue_id):
@@ -81,7 +91,7 @@ def add_event(db,event,owner_id,venue_id):
                 'event_type': 'other'
             }
             event = c_schemas.ConferenceCreate(**event_payload)
-            event = create_user_conference(db, event, owner_id, venue_id, None, None)
+            event = create_user_conference(db, event, organization.id, venue_id, None, None, None)
             os.remove(temp_filename)
             return event
         

@@ -49,7 +49,6 @@ class ClientUpdate(BaseModel):
     id: str
     name: str | None = None
     contact_name: str | None = None
-    contact_email: str | None = None
     contact_phone: str | None = None
     status: str | None = None
     address: str | None = None
@@ -63,7 +62,7 @@ class ClientUpdate(BaseModel):
             raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
         return v
     
-    @field_validator('contact_email', 'contact_name', 'name', 'address', 'profile_image_url')
+    @field_validator('contact_name', 'name', 'address', 'profile_image_url')
     def check_empty_string(cls, v, info: ValidationInfo):
         if v is not None:
             if v == "":

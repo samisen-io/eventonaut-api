@@ -115,7 +115,7 @@ def get_db_user(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id, models.User.is_archived == False).first()
 
 def get_user_by_email(db: Session, email: str):
-    user = db.query(models.User).options(joinedload(models.User.organization_user), joinedload(models.User.user_roles).options(joinedload(models.User_Role.role))).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
+    user = db.query(models.User).options(joinedload(models.User.organization_user), joinedload(models.User.user_roles).joinedload(models.User_Role.role)).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
     return user
 
 def get_role_by_user_id(db: Session, user_id: int):
@@ -267,11 +267,11 @@ def update_user_password_by_email(db: Session, email: str, password: str):
     return db_user
 
 def delete_user(db: Session, user: models.User):
-    db_session = db.query(models.Session).filter(models.Session.owner_id == user.id).all()
+    db_session = db.query(models.Session).filter(models.Session.organization_id == user.id).all()
     for session in db_session:
         session.is_archived = True
         
-    conference = db.query(models.Conference).filter(models.Conference.owner_id == user.id).all()
+    conference = db.query(models.Conference).filter(models.Conference.organization_id == user.id).all()
     for c in conference:
         c.is_archived = True
 

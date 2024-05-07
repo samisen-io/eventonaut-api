@@ -36,11 +36,11 @@ def get_sessions(db: Session, offset: int = 0, limit: int = 100):
             exclude_archived(session)
     return sessions
         
-def create_conference_session(db: Session, session: schemas.SessionCreate, owner_id: int, conference_id: int, speaker_ids: list[int]):
-    db_session = models.Session(name=session.name, start_time=session.start_time, end_time=session.end_time, description=session.description, date=session.date, location=session.location, owner_id=owner_id, session_image_url=session.session_image_url)
+def create_conference_session(db: Session, session: schemas.SessionCreate, organization_id: int, conference_id: int, speaker_ids: list[int]):
+    db_session = models.Session(name=session.name, start_time=session.start_time, end_time=session.end_time, description=session.description, date=session.date, location=session.location, organization_id=organization_id, session_image_url=session.session_image_url)
     db_session.created_on = db_session.updated_on = datetime.utcnow()
     db_session.uuid = "ses-" + str(uuid.uuid4())
-    db_session.owner_id = owner_id
+    db_session.organization_id = organization_id
     db_session.conference_id = conference_id
     db_session.tags = session.tags
     db_session.session_status_id = session_enum.SessionEnum[session.status.upper()].value
@@ -86,8 +86,8 @@ def get_session_by_session_uuid(db: Session, uuid: str):
     db_session = add_speakers_to_session(db, db_session)
     return db_session
 
-def get_session_by_uuid_id(db: Session, uuid: int, owner_id: int):
-    db_session = db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.owner_id == owner_id, models.Session.is_archived == False).first()
+def get_session_by_uuid_id(db: Session, uuid: int, organization_id: int):
+    db_session = db.query(models.Session).filter(models.Session.uuid == uuid, models.Session.organization_id == organization_id, models.Session.is_archived == False).first()
     if db_session is not None:
         exclude_archived(db_session)
     return db_session
