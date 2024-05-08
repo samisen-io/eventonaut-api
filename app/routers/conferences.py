@@ -46,7 +46,7 @@ def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session
     if conference.event_type.upper() == event_types.EventTypeEnum.CONFERENCE.name and conference.exhibitor_ids is not None:
         logging.exception("Exhibitors not allowed for type conference")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exhibitors not allowed for type conference")
-    elif conference.event_type.upper() == event_types.EventTypeEnum.TRADE_SHOW.name and conference.exhibitor_ids is not None:
+    elif conference.event_type.upper() == event_types.EventTypeEnum.TRADESHOW.name and conference.exhibitor_ids is not None:
         for exhibitor_id in conference.exhibitor_ids:
             db_exhibitor = exhibitor_crud.get_exhibitor_by_id(db, exhibitor_id, current_organization.id)
             if not db_exhibitor:
@@ -136,7 +136,7 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
     if (conference.event_type and conference.event_type.upper() == event_types.EventTypeEnum.CONFERENCE.name and conference.exhibitor_ids is not None) or (not conference.event_type and db_conference.event_type.upper() == event_types.EventTypeEnum.CONFERENCE.name and conference.exhibitor_ids is not None):
         logging.exception("Exhibitors not allowed for type conference")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Exhibitors not allowed for type conference")
-    if (conference.event_type and conference.event_type.upper() == event_types.EventTypeEnum.TRADE_SHOW.name and conference.exhibitor_ids is not None) or (not conference.event_type and db_conference.event_type.upper() == event_types.EventTypeEnum.TRADE_SHOW.name and conference.exhibitor_ids is not None):
+    if (conference.event_type and conference.event_type.upper() == event_types.EventTypeEnum.TRADESHOW.name and conference.exhibitor_ids is not None) or (not conference.event_type and db_conference.event_type.upper() == event_types.EventTypeEnum.TRADESHOW.name and conference.exhibitor_ids is not None):
         if conference.exhibitor_ids is not None and len(conference.exhibitor_ids) > 0:
             for exhibitor_id in conference.exhibitor_ids:
                 db_exhibitor = exhibitor_crud.get_exhibitor_by_id(db, exhibitor_id, current_organization.id)
