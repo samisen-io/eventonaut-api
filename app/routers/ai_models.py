@@ -56,7 +56,6 @@ async def query_by_conference_id(query_input: QueryInputStream, db: Session = De
             if isinstance(chunk, list):
                 source = chunk
                 continue
-            print(chunk, end="", flush=True)
             data = {'data': chunk}
             data = json.dumps(data)
             yield(data)
@@ -221,7 +220,6 @@ async def upload_speaker_file(file: UploadFile,
 @router.post("/synchronize_database_and_pinecone/")
 async def update_namespace(conference_id: str, current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), db: Session = Depends(get_db)):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
-    print(conference.event_type)
     if conference.event_type == 'conference':
         write_sessions_to_csv(db,conference_id)
         write_speakers_to_csv(db,conference_id)

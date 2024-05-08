@@ -128,7 +128,6 @@ def write_events_to_csv(db, conference_id):
         writer.writerow(merged_dict)
         
 def write_exhibitors_to_csv(db, conference_id):
-    print('writing exhibitors to csv')
     file_path = file_path_in_files_csv(conference_id,'exhibitors')
     result = get_conference_by_conference_uuid(db, conference_id)
     if not result:
@@ -167,19 +166,16 @@ def write_exhibitor_docs(db, conference_id):
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
     exhibitors = get_exhibitors(db, conference.id)
-    print(exhibitors)
+    c=0
     if not exhibitors:
         raise HTTPException(status_code=404, detail="No exhibitors found for this conference_id")
     for exhibitor in exhibitors:
-        print(exhibitor.id)
         exhibitor_docs = get_exhibitor_documents_by_exhibitor_id(db, exhibitor.id)
         if exhibitor_docs:
             for exhibitor_doc in exhibitor_docs:
                 url = exhibitor_doc.document_url
                 parsed_url = urlparse(url)
                 _, extension = os.path.splitext(parsed_url.path)
-                print(url)
-                print(extension)
                 if extension is None:
                     raise HTTPException(status_code=400, detail="Unsupported file format")
                 response = requests.get(url, stream=True)
@@ -194,6 +190,7 @@ def write_exhibitor_docs(db, conference_id):
                                 fp.write(chunk)
                     if extension == '.pdf':
                         add_pdf_document(exhibitor.uuid, file_path)
+                        c+=1
                     elif extension == '.csv' or extension == '.xlsx':
                         reader, delimiter = read_the_structured_file(file_path)
                         with tempfile.NamedTemporaryFile(mode='w+t', delete=False, encoding='utf-8') as temp:
@@ -202,11 +199,11 @@ def write_exhibitor_docs(db, conference_id):
                             for row in reader:
                                 writer.writerow(row)
                         add_csv_documents(exhibitor.uuid, temp.name, delimiter)
+                        c+=1
                     elif extension == '.txt':
                         add_txt_documents(exhibitor.uuid, file_path)
-                    else:
-                        raise HTTPException(status_code=400, detail="Unsupported file format")
-    return {"message":"Exhibitor documents added successfully"}
+                        c+=1
+    return {"total_documents_added":c}
                     
                     
                            
