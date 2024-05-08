@@ -230,7 +230,7 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
         add_documents(namespace,conference_id,'sessions')
         add_documents(namespace,conference_id,'speakers')
         namespace = add_documents(namespace,conference_id,'events')
-    elif conference.event_type == 'trade_show':
+    elif conference.event_type == 'tradeshow':
         write_events_to_csv(db,conference_id)
         write_exhibitors_to_csv(db, conference_id)
         write_exhibitor_docs(db, conference_id)

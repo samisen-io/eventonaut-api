@@ -23,7 +23,7 @@ def get_exhibitors_for_conference(conference_id: str, db: Session = Depends(get_
     if attendee_conference is None:
         logging.exception("Attendee not registered for Event")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    if attendee_conference.conference.event_type.upper() != EventTypeEnum.TRADE_SHOW.name:
+    if attendee_conference.conference.event_type.upper() != EventTypeEnum.TRADESHOW.name:
         logging.exception("Event is not a trade show")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event is not a trade show")
     exhibitors = attendee_exhibitors_crud.get_exhibitors_for_conference(db, attendee.id, attendee_conference.conference_id)
@@ -40,7 +40,7 @@ def create_attendee_exhibitor(attendee_exhibitor: schemas.AttendeeExhibitorCreat
     if attendee_conference is None:
         logging.exception("Attendee not registered for Event")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
-    if attendee_conference.conference.event_type.upper() != EventTypeEnum.TRADE_SHOW.name:
+    if attendee_conference.conference.event_type.upper() != EventTypeEnum.TRADESHOW.name:
         logging.exception("Event is not a trade show")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event is not a trade show")
     exhibitor_ids = []
