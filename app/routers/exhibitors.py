@@ -8,6 +8,7 @@ from ..oauth2 import get_current_active_user, get_current_active_organization
 from ..static_enums.role import RoleEnum
 from ..schemas.user_schemas import UserAuthentication as User
 from ..schemas.organization_schemas import Organization
+from email_validator import validate_email, EmailNotValidError
 
 router = APIRouter(tags=["Exhibitors"])
 
@@ -48,6 +49,12 @@ def get_exhibitor(exhibitor_id: str, db = Depends(get_db), current_user: User = 
 @router.post("/exhibitor", response_model=schemas.ExhibitorResponse, status_code=status.HTTP_201_CREATED)
 def create_exhibitor(exhibitor: schemas.ExhibitorCreate, db = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     organization_id = current_user.organization_user[0].organization_id
+    try:
+        valid = validate_email(exhibitor.contact_email)
+        exhibitor.contact_email = valid.normalized.lower()
+    except EmailNotValidError as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     return crud.create_exhibitor(db, exhibitor, organization_id)    
 
 @router.put("/exhibitor", response_model=schemas.ExhibitorResponse)
