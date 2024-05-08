@@ -12,13 +12,14 @@ from ..crud import event_documents_crud as crud
 from ..schemas.event_document_schemas import EventDocumentRequest, EventDocumentResponse
 from ..static_enums.blob_container_enums import BlobContainer
 from app.static_enums.role import RoleEnum
+from ..schemas.organization_schemas import OrganizationSecurity
 
 router = APIRouter(tags=["event_documents"], prefix="/event_documents")
 
 @router.post("/", response_model=EventDocumentResponse, status_code=status.HTTP_201_CREATED)
-def create_event_document(conference_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
+def create_event_document(conference_id: str, file: UploadFile = File(...), db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     try:
-        conference = conferences_crud.get_conference_by_uuid(db, conference_id, current_user.id)
+        conference = conferences_crud.get_conference_by_uuid(db, conference_id, current_organization.id)
         
         original_file_name = file.filename
         file.filename = f'{conference.uuid}-{file.filename}'
@@ -53,10 +54,10 @@ def map_event_document_response(conference_id, response):
                                      size=f"{str(response.size)} MB")
     
 @router.get("/", response_model=list[EventDocumentResponse])
-def get_all_event_documents_by_organization(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name])):
-    documents = crud.get_event_documents_by_organization_id(db, organization.id, offset, limit)
+def get_all_event_documents_by_organization(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+    documents = crud.get_event_documents_by_organization_id(db, current_organization.id, offset, limit)
     if len(documents) == 0:
-        logging.exception(f"No documents found for organization with id: {organization.id}")
+        logging.exception(f"No documents found for organization with id: {current_organization.id}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No documents found")
     return [map_event_document_response(document.conference_uuid, document) for document in documents]
 
