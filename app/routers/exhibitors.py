@@ -7,13 +7,13 @@ import logging
 from ..oauth2 import get_current_active_user, get_current_active_organization
 from ..static_enums.role import RoleEnum
 from ..schemas.user_schemas import UserAuthentication as User
-from ..schemas.organization_schemas import Organization
+from ..schemas.organization_schemas import OrganizationSecurity
 from email_validator import validate_email, EmailNotValidError
 
 router = APIRouter(tags=["Exhibitors"])
 
 @router.get("/exhibitor", response_model=list[schemas.ExhibitorResponse])
-def get_exhibitors(db = Depends(get_db), current_organization: Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def get_exhibitors(db = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     exhibitors = crud.get_exhibitors_by_organization_id(db, current_organization.id)
     if not exhibitors or len(exhibitors) == 0:
         logging.exception(f"No exhibitors found")
