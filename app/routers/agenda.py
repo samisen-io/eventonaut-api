@@ -145,6 +145,6 @@ def delete_agenda(conference_id: str, db: Session = Depends(get_db), current_use
     except:
         logging.exception("Agenda not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda not found")
-    deleted_agenda = crud.delete_agenda(db=db, conference_id=conference_id, attendee_id=current_user.id)
+    deleted_agenda = crud.delete_agenda(db=db, agenda=db_agenda)
     logging.info("Agenda deleted for conference: " + conference_id)
     return deleted_agenda

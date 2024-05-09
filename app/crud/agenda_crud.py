@@ -145,22 +145,10 @@ def update_agenda(db: Session, conference_id: str, attendee_id: int, agenda: sch
     return agenda_session
 
 # delete agenda by conference id and attendee id
-def delete_agenda(db: Session, conference_id: str, attendee_id: int):
-    conference=conferences_crud.get_conference_by_conference_uuid(db, uuid=conference_id)
-    attendee=db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
-    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference.id,models.Agenda.attendee_id==attendee.id).first()
-    db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
-    db.delete(db_agenda)
+def delete_agenda(db: Session, agenda: models.Agenda):
+    agenda_Sessions = db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == agenda.id).all()
+    for session in agenda_Sessions:
+        db.delete(session)
+    db.delete(agenda)
     db.commit()
     return True
-
-# delete agenda by conference id
-def delete_agenda_by_conference_id(db: Session, conference_id: int):
-    db_agenda = db.query(models.Agenda).filter(models.Agenda.conference_id == conference_id).first()
-    if db_agenda is not None:
-        db.query(models.AgendaSession).filter(models.AgendaSession.agenda_id == db_agenda.id).delete()
-        db.delete(db_agenda)
-        db.commit()
-        return True
-    else:
-        return False
