@@ -32,6 +32,13 @@ def extract_filename(url: str) -> str:
 
     return filename
 
+def get_backdrop(db: Session, backdrop_id: str):
+    backdrop = db.query(models.BackdropGallery).filter(models.BackdropGallery.uuid == backdrop_id).first()
+    if backdrop is None:
+        logging.exception(f"Backdrop not found")
+        raise HTTPException(status_code=404, detail="Backdrop not found")
+    return backdrop
+
 def get_backdrop_by_id(db: Session, backdrop_id: str, organization_id: int):
     backdrop = db.query(models.BackdropGallery).options(
         joinedload(models.BackdropGallery.organization),
@@ -75,7 +82,7 @@ def execute_backdrop_query(db: Session, conference_id: str, organization_id: int
             conferences ON backdrop_gallery.conference_id = conferences.id
         WHERE 
             backdrop_gallery.is_archived = false AND 
-            conferences.uuid = :conference_id AND 
+            conferences.id = :conference_id AND 
             conferences.is_archived = false AND
             backdrop_gallery.organization_id = :organization_id
         OFFSET :skip
@@ -109,6 +116,12 @@ def check_backdrops(backdrops):
 
 def get_backdrops_by_conference_id(db: Session, conference_id: str, organization_id: int, skip: int = 0, limit: int = 100):
     result = execute_backdrop_query(db, conference_id, organization_id, skip, limit)
+    backdrops = create_backdrop_objects(result)
+    check_backdrops(backdrops)
+    return backdrops
+
+def get_backdrops_by_conference(db: Session, conference_id: str, skip: int = 0, limit: int = 100):
+    result = db.query(models.BackdropGallery).options(joinedload(models.BackdropGallery.conference)).filter(models.BackdropGallery.conference_id == conference_id,models.BackdropGallery.is_archived == False).offset(skip).limit(limit).all()
     backdrops = create_backdrop_objects(result)
     check_backdrops(backdrops)
     return backdrops
