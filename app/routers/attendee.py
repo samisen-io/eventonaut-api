@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Body, Form, HTTPException, Depends, Security, UploadFile, status, File
 import logging
 from app.oauth2 import get_current_active_user
+from app.static_enums.role import RoleEnum
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
 from ..schemas import attendee_schemas as schemas
@@ -41,17 +42,17 @@ def get_all_attendees(skip: int = 0, limit: int = 100, db: Session = Depends(get
 
 # get attendee by id
 @router.get("/attendee", response_model=schemas.Attendee)
-def get_attendee_by_id(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def get_attendee_by_id(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     db_attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)
     if not db_attendee:
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
-    logging.info("Attendee retrieved: " + db_attendee.email)
+    logging.info("Attendee retrieved: " + db_attendee.uuid)
     return db_attendee
 
 # update attendee by email
 @router.put("/attendee", response_model=schemas.Attendee)
-def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if all(value is None for value in dict(attendee).values()):
         logging.exception("Invalid request body")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request body")
@@ -64,7 +65,7 @@ def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depend
 
 # update attende password by id
 @router.put("/attendee/password", response_model=schemas.Attendee)
-def update_attendee_password_by_id(attendee: schemas.AttendePassword, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def update_attendee_password_by_id(attendee: schemas.AttendePassword, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if not crud.get_attendee_by_id(db, attendee_id=current_user.id):
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
@@ -80,7 +81,7 @@ def update_attendee_password_by_id(attendee: schemas.AttendePassword, db: Sessio
 
 # delete all attendee by id
 @router.delete("/attendee")
-def delete_attendee_by_id(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=["attendee"])):
+def delete_attendee_by_id(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     db_attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)
     if not db_attendee:
         logging.exception("Attendee not found")

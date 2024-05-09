@@ -2,16 +2,14 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
 class OrganizationBase(BaseModel):
     name: str
-    business_type: str
+    business_type: str | None = None
     description: str | None = None
     address: str | None = None
-    contact_email: str
-    contact_phone: str | None = None
     logo_image_url: str | None = None
     website_url: str | None = None
     external_id: str | None = None
 
-    @field_validator('name', 'business_type', 'contact_email')
+    @field_validator('name')
     @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
@@ -20,7 +18,8 @@ class OrganizationBase(BaseModel):
             raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
 
-    @field_validator('description', 'address', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
+    # @field_validator('description', 'address', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
+    @field_validator('description', 'address', 'logo_image_url', 'website_url', 'external_id')
     @classmethod
     def optional_field_validation(cls, v, info: ValidationInfo):
         if v is not None:
@@ -39,13 +38,12 @@ class OrganizationUpdate(BaseModel):
     business_type: str | None = None
     description: str | None = None
     address: str | None = None
-    contact_email: str | None = None
-    contact_phone: str | None = None
     logo_image_url: str | None = None
     website_url: str | None = None
     external_id: str | None = None
 
-    @field_validator('name', 'business_type', 'description', 'address', 'contact_email', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
+    # @field_validator('name', 'business_type', 'description', 'address', 'contact_email', 'contact_phone', 'logo_image_url', 'website_url', 'external_id')
+    @field_validator('name', 'business_type', 'description', 'address', 'logo_image_url', 'website_url', 'external_id')
     @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
@@ -66,6 +64,10 @@ class Organization(BaseModel):
     logo_image_url: str | None = None
     website_url: str | None = None
     external_id: str | None = None
+    is_archived: bool
 
     class Config:
         orm_mode = True
+        
+class OrganizationSecurity(Organization):
+    id: int

@@ -1,10 +1,14 @@
 from sqlalchemy.orm import Session
+
+from app.static_enums.role import RoleEnum
 from .. import models
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
 from datetime import datetime
 from .. import hashing
 from .. AI_assitant import create_thread
 import uuid
+from ..crud import conferences_crud, user_role_crud
+from ..static_enums import event
 from ..static_enums import attendee as attendee_enum
 from ..routers import upload_image
 from fastapi import HTTPException, status
@@ -12,7 +16,10 @@ import logging
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload, aliased
 
-# create attendee
+def set_attendee_status(attende: models.Attendee):
+    attende.status = attendee_enum.AttendeeEnum(attende.user.user_status_id).name
+    return attende
+
 def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     attendee_dict = attendee.model_dump()
     attendee_status = attendee_dict.pop("status", None)
@@ -23,11 +30,13 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db_user.uuid = "usr-" + str(uuid.uuid4())
     db_user.role = "attendee"
     db_user.is_active = True
-    db_user.user_status_id = attendee_enum.AttendeeEnum[attendee_status.upper()].value if attendee_status is not None else attendee_enum.AttendeeEnum.INACTIVE.value
+    db_user.user_status_id = attendee_enum.AttendeeEnum[attendee_status.upper()].value if attendee_status is not None else attendee_enum.AttendeeEnum.ACTIVE.value
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
 
+    assign_roles_to_user(db, db_user, [RoleEnum.ATTENDEE.value])
+    
     db_attendee = models.Attendee()
     db_attendee.created_on = datetime.utcnow()
     db_attendee.updated_on = datetime.utcnow()
@@ -38,7 +47,12 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db.commit()
     db.refresh(db_attendee)
     attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
+    set_attendee_status(attendee)
     return attendee
+
+def assign_roles_to_user(db: Session, db_user: models.User, role_ids: list[int]):
+    for role_id in role_ids:
+        user_role_crud.create_user_role(db, user_id=db_user.id, role_id=role_id)
 
 def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
@@ -48,8 +62,11 @@ def get_thread_id_by_attendee_id(db: Session, attendee_id: int):
 
 # get all attendees
 def get_attendees(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.is_archived == False).offset(skip).limit(limit).options(joinedload(models.Attendee.user)).all()
-
+    attendees = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.is_archived == False).offset(skip).limit(limit).options(joinedload(models.Attendee.user)).all()
+    for attendee in attendees:
+        set_attendee_status(attendee)
+    return attendees
+        
 # get attendee by email
 def get_attendee_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email, models.User.is_archived == False).first()
@@ -59,7 +76,9 @@ def get_attendee_by_uuid(db: Session, attendee_id: str):
     return db.query(models.Attendee).join(models.Attendee.user).filter(models.Attendee.uuid == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
 
 def get_attendee_by_id(db: Session, attendee_id: int):
-    return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
+    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
+    set_attendee_status(attendee)
+    return attendee
 
 # update attendee by id
 def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendeeUpdate):
@@ -107,6 +126,7 @@ def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.Att
     db.refresh(db_attendee)
     db.refresh(db_user)
     attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
+    set_attendee_status(attendee)
     return attendee
 
 # update attendee password by id
@@ -122,13 +142,30 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: sc
     db.commit()
     db.refresh(db_user)
     attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
+    set_attendee_status(attendee)
     return attendee
 
 # delete attendee by id
 def delete_attendee_by_uuid(db: Session, attendee_id: int):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
     db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id, models.User.is_archived == False).first()
-    db_user.is_archived = True
+    db_agenda = db.query(models.Agenda).filter(models.Agenda.attendee_id == db_attendee.id).all()
+    db_attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == db_attendee.id).all()
+    db_agenda_sessions = db.query(models.AgendaSession).filter(models.AgendaSession.attendee_id == db_attendee.id).all()
+    
+    for agenda in db_agenda:
+        db.delete(agenda)
+
+    for attendee_conference in db_attendee_conferences:
+        db.delete(attendee_conference)
+        
+    for agenda_session in db_agenda_sessions:
+        db.delete(agenda_session)
+
+    db.commit()
+    
+    db.delete(db_attendee)
+    db.delete(db_user)
     db.commit()
     return True
 
@@ -155,7 +192,7 @@ def get_attendee_conference_by_attendee_id_and_conference_id(db: Session, attend
     conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
     if attendee is None or conference is None:
         return None
-    return db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.attendee_id == attendee.id).filter(models.Attendee_Conferences.conference_id == conference.id).first()
+    return db.query(models.Attendee_Conferences).options(joinedload(models.Attendee_Conferences.conference)).filter(models.Attendee_Conferences.attendee_id == attendee.id).filter(models.Attendee_Conferences.conference_id == conference.id).first()
 
 # get all attendee conferences
 def get_all_attendee_conferences(db: Session, attendee_id: int, skip: int = 0, limit: int = 100):
@@ -175,4 +212,15 @@ def get_all_attendee_profiles_by_conference_id(db: Session, conference_id: str, 
         return None
     conference_id = conference.id
     attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
-    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences]), models.Attendee.share_my_profile == True).all() if role == "attendee" else db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()
+    attendees = db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences]), models.Attendee.share_my_profile == True).all() if role == "attendee" else db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()
+    for attendee in attendees:
+        set_attendee_status(attendee)
+    return attendees
+
+def get_attendees_by_conference_id(db: Session, conference_id: str):
+    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id, models.Conference.is_archived == False).first()
+    if conference is None:
+        return None
+    conference_id = conference.id
+    attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
+    return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()  

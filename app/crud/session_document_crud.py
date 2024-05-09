@@ -7,6 +7,9 @@ from datetime import datetime
 import logging
 from fastapi import HTTPException, status as Status
 
+def get_all_session_documents_by_organization(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+    return db.query(SessionDocuments).filter(SessionDocuments.organization_id == organization_id).offset(offset).limit(limit).all()
+
 def insert_session_document(db: Session, request: SessionDocumentRequest):
     db_doc = db.query(SessionDocuments).filter(SessionDocuments.document_url == request.document_url).first()
     if db_doc:

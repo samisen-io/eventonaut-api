@@ -9,7 +9,11 @@ import uuid
 from ..static_enums import client as client_enum
 from ..static_enums.blob_container_enums import BlobContainer
 
-def create_client(db: Session, client: schemas.ClientCreate, user_id: int):
+def get_all_clients_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+    clients = db.query(models.Client).filter(models.Client.organization_id == organization_id, models.Client.is_archived == False).order_by(models.Client.updated_on.desc()).offset(offset).limit(limit).all()
+    return clients
+
+def create_client(db: Session, client: schemas.ClientCreate, organization_id: int):
     client_dict = client.model_dump()
     client_status = client_dict.pop("status")
     client_profile_image_url = client_dict.pop("profile_image_url")
@@ -18,7 +22,7 @@ def create_client(db: Session, client: schemas.ClientCreate, user_id: int):
     db_client.created_on = datetime.utcnow()
     db_client.updated_on = datetime.utcnow()
     db_client.uuid = "cli-" + str(uuid.uuid4())
-    db_client.owner_id = user_id
+    db_client.organization_id = organization_id
     
     db_client.profile_image_url = upload_image.get_actual_url(image_url=client_profile_image_url, new_blob_container=BlobContainer.CLIENT_LOGOS.value, new_blob_name=f"profile-{db_client.uuid}") if client_profile_image_url is not None else None
     
@@ -40,16 +44,16 @@ def get_client_by_uuid(db: Session, client_uuid: str):
     client = db.query(models.Client).filter(models.Client.uuid == client_uuid, models.Client.is_archived == False).first()
     return client
 
-def get_client_by_uuid_and_owner_id(db: Session, client_id: str, owner_id: int):
-    return db.query(models.Client).filter(models.Client.uuid == client_id, models.Client.owner_id == owner_id, models.Client.is_archived == False).first()
+def get_client_by_uuid_and_organization_id(db: Session, client_id: str, organization_id: int):
+    return db.query(models.Client).filter(models.Client.uuid == client_id, models.Client.organization_id == organization_id, models.Client.is_archived == False).first()
 
 def get_all_clients(db: Session, offset: int = 0, limit: int = 100):
     clients = db.query(models.Client).order_by(models.Client.updated_on.desc()).offset(offset).limit(limit).all()
     return clients
 
-def get_all_clients_by_owner_id(db: Session, owner_id:int, offset: int = 0, limit: int = 100):
-    clients = db.query(models.Client).filter(models.Client.owner_id == owner_id, models.Client.is_archived == False).order_by(models.Client.updated_on.desc()).offset(offset).limit(limit).all()
-    return clients
+# def get_all_clients_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
+#     clients = db.query(models.Client).filter(models.Client.organization_id == organization_id, models.Client.is_archived == False).order_by(models.Client.updated_on.desc()).offset(offset).limit(limit).all()
+#     return clients
 
 def update_client(db: Session, client: schemas.ClientUpdate):
     db_client = db.query(models.Client).filter(models.Client.uuid == client.id).first()

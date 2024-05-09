@@ -8,7 +8,7 @@ COPY . .
 # Update and install libgl
 RUN apt-get clean
 RUN apt-get update  
-RUN apt-get install -y libgl1-mesa-glx
+RUN apt-get install -y libgl1-mesa-glx libglib2.0-0
 # RUN apt-get install -y libgl1-mesa-glx
 #  COPY ./requirements.txt /app/requirements.txt
  RUN pip install --no-cache-dir --upgrade -r ./requirements.txt

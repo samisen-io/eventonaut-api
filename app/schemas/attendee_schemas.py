@@ -16,6 +16,7 @@ class AttendeeBase(BaseModel):
     status: str | None = None
     
     @validator('email')
+    @classmethod
     def email_is_not_empty(cls, v):
         if v.strip() == "":
             raise ValueError("Email cannot be empty")
@@ -24,6 +25,7 @@ class AttendeeBase(BaseModel):
         return v
 
     @field_validator('first_name','last_name','title','company','bio','profile_image_url')
+    @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -33,6 +35,7 @@ class AttendeeBase(BaseModel):
         return v
     
     @field_validator("status")
+    @classmethod
     def check_status(cls, v):
         if v is not None:
             if v.strip() == "":
@@ -43,6 +46,7 @@ class AttendeeBase(BaseModel):
         return v
     
     @field_validator('profile_image_url')
+    @classmethod
     def validate_profile_image_url(cls, v, info: ValidationInfo):
         if v is not None:
             if not check_url(v):
@@ -55,6 +59,7 @@ class AttendeeCreate(BaseModel):
     hashed_password: str
 
     @validator('email')
+    @classmethod
     def email_is_not_empty(cls, v):
         if v.strip() == "":
             raise ValueError("Email cannot be empty")
@@ -63,6 +68,7 @@ class AttendeeCreate(BaseModel):
         return v
 
     @validator('hashed_password')
+    @classmethod
     def hashed_password_is_not_empty(cls, v):
         if v.strip() == "" or v.__contains__(" "):
             raise ValueError("Password cannot be empty")
@@ -78,6 +84,7 @@ class AttendePassword(BaseModel):
     new_password: str
     
     @validator('old_password')
+    @classmethod
     def old_password_is_not_empty(cls, v):
         if v.strip() == "" or v.__contains__(" "):
             raise ValueError("Old password cannot be empty")
@@ -88,6 +95,7 @@ class AttendePassword(BaseModel):
         return v
     
     @validator('new_password')
+    @classmethod
     def new_password_is_not_empty(cls, v):
         if v.strip() == "" or v.__contains__(" "):
             raise ValueError("New password cannot be empty")
@@ -109,6 +117,7 @@ class AttendeeUpdate(BaseModel):
     status: str | None = None
 
     @field_validator('first_name','last_name','title','company','bio','profile_image_url')
+    @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
@@ -118,6 +127,7 @@ class AttendeeUpdate(BaseModel):
         return v
     
     @field_validator("status")
+    @classmethod
     def check_status(cls, v):
         if v is not None:
             if v.strip() == "":
@@ -128,6 +138,7 @@ class AttendeeUpdate(BaseModel):
         return v
 
     @field_validator('profile_image_url')
+    @classmethod
     def validate_profile_image_url(cls, v, info: ValidationInfo):
         if v is not None:
             if not check_url(v):
@@ -135,8 +146,18 @@ class AttendeeUpdate(BaseModel):
         return v
 
 #pydantic model for attendee
-class Attendee(AttendeeBase):
+class Attendee(BaseModel):
     uuid: str = Field(serialization_alias="id")
+    email: str
+    first_name: str | None = None
+    last_name: str | None = None
+    title: str | None = None
+    company: str | None = None
+    bio: str | None = None
+    share_my_profile: bool | None = None
+    share_my_agenda: bool | None = None
+    profile_image_url: str | None = None
+    status: str
     is_active: bool
     
     class Config:
