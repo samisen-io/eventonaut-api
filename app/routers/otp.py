@@ -83,6 +83,8 @@ async def password_reset(password_reset: PasswordReset, db: Session = Depends(ge
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="OTP not verified")
     
 @router.put('/otp/password-reset-attendee')
-async def password_reset_attendee(password_reset: PasswordResetForAttendee, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
-    await verify_otp(email=password_reset.email,otp=password_reset.otp,role=password_reset.role)
-    return await password_reset(email=password_reset.email,password=password_reset.password,db=db,role=password_reset.role)
+async def password_reset_attendee(password_reset_dict: PasswordResetForAttendee, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    verify_otp_dict = VerifyOtp(email=password_reset_dict.email,otp=password_reset_dict.otp,role=password_reset_dict.role)
+    reset_password = PasswordReset(email=password_reset_dict.email,password=password_reset_dict.password,role=password_reset_dict.role)
+    await verify_otp(verify_otp=verify_otp_dict)
+    return await password_reset(password_reset=reset_password, db=db, basic_auth=basic_auth)
