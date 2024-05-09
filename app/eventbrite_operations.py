@@ -39,24 +39,41 @@ def get_organization_id(private_token: str):
     return organization_id
 
 def add_venue(db,event_venue,organization_id):
-    venue_payload = {
-        'name': event_venue["venue"]["name"],
-        'location': event_venue["venue"]["address"]["city"]+", "+event_venue["venue"]["address"]["region"]+", "+event_venue["venue"]["address"]["country"],
-        'address': event_venue["venue"]["address"]["localized_address_display"],
-        'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
-    }
+    if event_venue['venue'] is None:
+        venue_payload = {
+            'name': 'Unknown',
+            'location': 'Unknown',
+            'address': 'Unknown',
+            'gio_location': 'Unknown'
+        }
+    else:
+        venue_payload = {
+            'name': event_venue["venue"]["name"],
+            'location': event_venue["venue"]["address"]["city"]+", "+event_venue["venue"]["address"]["region"]+", "+event_venue["venue"]["address"]["country"],
+            'address': event_venue["venue"]["address"]["localized_address_display"],
+            'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
+        }
     venue_obj = v_schemas.VenueCreate(**venue_payload)
     venue = create_venue(db,venue_obj,organization_id)
     return venue
 
 def update_venue_from_eventbrite(db,event_venue,owner_id,venue_id):
-    venue_payload = {
-        'id': venue_id,
-        'name': event_venue["venue"]["name"],
-        'location': event_venue["venue"]["address"]["city"]+", "+event_venue["venue"]["address"]["region"]+", "+event_venue["venue"]["address"]["country"],
-        'address': event_venue["venue"]["address"]["localized_address_display"],
-        'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
-    }
+    if event_venue['venue'] is None:
+        venue_payload = {
+            'id': venue_id,
+            'name': 'Unknown',
+            'location': 'Unknown',
+            'address': 'Unknown',
+            'gio_location': 'Unknown'
+        }
+    else:
+        venue_payload = {
+            'id': venue_id,
+            'name': event_venue["venue"]["name"],
+            'location': event_venue["venue"]["address"]["city"]+", "+event_venue["venue"]["address"]["region"]+", "+event_venue["venue"]["address"]["country"],
+            'address': event_venue["venue"]["address"]["localized_address_display"],
+            'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
+        }
     venue_obj = v_schemas.VenueUpdate(**venue_payload)
     venue = update_venue_by_id(db, venue_obj)
     return venue

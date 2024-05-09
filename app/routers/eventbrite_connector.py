@@ -56,7 +56,7 @@ def sync_eventbrite_events(db: Session = Depends(get_db),current_user: User = Se
             organization_id = organization.id
             # create venue
             event_venue = get_eventbrite_venue(event_id, private_token)
-            print(event_venue)
+            # print(event_venue)
             event_venue = add_venue(db,event_venue,organization_id)
             event_venue_id = event_venue.id
             #add event
@@ -70,7 +70,6 @@ def sync_eventbrite_events(db: Session = Depends(get_db),current_user: User = Se
             event_venue = update_venue_from_eventbrite(db,event_venue,eventbrite_organization_id, conference_venue_id)
             # updated event
             update_from_eventbrite(db, event, organization, db_event)
-        # Save the event details in the database
     return {"message": "Eventbrite events retrieved successfully."}
     
 @router.get('/get_webhooks/')
