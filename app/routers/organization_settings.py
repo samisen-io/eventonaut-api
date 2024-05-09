@@ -35,6 +35,8 @@ def create_organization_settings(organization_settings: schemas.OrganizationSett
         logging.exception(f"Organization not found for organization_id: {current_organization.uuid}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
     db_organization_settings = crud.get_organization_settings(db, organization.id)
+    # print(db_organization_settings.event_brite_access_token)
+    # print(db_organization_settings.organization_id)
     evt_brite_org_id = get_organization_id(organization_settings.event_brite_access_token)
     if db_organization_settings is not None:
         logging.exception(f"Organization settings already exist for organization_id: {organization.uuid}")
