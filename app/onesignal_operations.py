@@ -31,6 +31,8 @@ def create_notification(db,conference_id,headings, content, picture):
             contents={"en": content},
             include_external_user_ids=external_user_ids,
             big_picture=picture,
+            chrome_web_icon=picture,
+            ios_attachments={"id": picture},
             url = f"https://Eventonaut.app/eventId/{conference_id}"
         )
     try:
