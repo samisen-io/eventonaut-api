@@ -5,6 +5,7 @@ from app.crud.conferences_crud import get_conference_by_uuid
 from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile
 from app.crud.conferences_crud import get_conference_by_uuid
+from app.crud.organization_crud import get_organization_by_user_id
 from app.edit_photo import check_the_file_size, check_the_file_type
 from app.oauth2 import get_current_active_user
 from app.onesignal_operations import create_notification
@@ -28,7 +29,8 @@ def send_notification(notification: PushNotification,
     message = notification.message
     title = notification.title
     picture_url = notification.picture
-    if get_conference_by_uuid(db,conference_id, current_user.id) is None:
+    organization_id = get_organization_by_user_id(db, current_user.id).id
+    if get_conference_by_uuid(db,conference_id,organization_id) is None:
         raise HTTPException(status_code=404, detail="Conference not found")
     if not message:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
