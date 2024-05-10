@@ -76,3 +76,24 @@ def delete_venue(db: Session, db_venue: models.Venue):
     db_venue.is_archived = True
     db.commit()
     return True
+
+def create_venue_with_values_as_unknown(db: Session, organization_id: int):
+    venue_payload = {
+        'name': 'Unknown',
+        'location': 'Unknown',
+        'address': 'Unknown',
+        'geo_location': 'Unknown'
+    }
+    venue_obj = venue_schemas.VenueCreate(**venue_payload)
+    venue = create_venue(db, venue_obj, organization_id)
+    return venue
+
+def get_venue_with_unknown_values(db: Session, organization_id: int):
+    venue = db.query(models.Venue).filter(models.Venue.name == 'Unknown', models.Venue.organization_id == organization_id).first()
+    return venue
+
+def dealing_with_null_venues(db, organization_id):
+    venue = get_venue_with_unknown_values(db, organization_id)
+    if venue is None:
+        venue = create_venue_with_values_as_unknown(db, organization_id)
+    return venue

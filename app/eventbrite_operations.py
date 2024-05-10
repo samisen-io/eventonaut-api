@@ -9,7 +9,7 @@ from app.crud.organization_crud import get_organization_by_user_id
 from app.schemas import conference_schemas as c_schemas
 from app.schemas import venue_schemas as v_schemas
 from app.crud.conferences_crud import create_user_conference, update_user_conference, update_user_conference_externally
-from app.crud.venue_crud import create_venue, create_venue, update_venue_by_id
+from app.crud.venue_crud import create_venue, create_venue, create_venue_with_values_as_unknown, dealing_with_null_venues, get_venue_with_unknown_values, update_venue_by_id
 from app.routers.upload_image import upload_file
 
 
@@ -40,12 +40,7 @@ def get_organization_id(private_token: str):
 
 def add_venue(db,event_venue,organization_id):
     if event_venue['venue'] is None:
-        venue_payload = {
-            'name': 'Unknown',
-            'location': 'Unknown',
-            'address': 'Unknown',
-            'gio_location': 'Unknown'
-        }
+        venue = dealing_with_null_venues(db, organization_id)
     else:
         venue_payload = {
             'name': event_venue["venue"]["name"],
@@ -53,19 +48,13 @@ def add_venue(db,event_venue,organization_id):
             'address': event_venue["venue"]["address"]["localized_address_display"],
             'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
         }
-    venue_obj = v_schemas.VenueCreate(**venue_payload)
-    venue = create_venue(db,venue_obj,organization_id)
+        venue_obj = v_schemas.VenueCreate(**venue_payload)
+        venue = create_venue(db,venue_obj,organization_id)
     return venue
 
-def update_venue_from_eventbrite(db,event_venue,owner_id,venue_id):
+def update_venue_from_eventbrite(db,event_venue,organization_id,venue_id):
     if event_venue['venue'] is None:
-        venue_payload = {
-            'id': venue_id,
-            'name': 'Unknown',
-            'location': 'Unknown',
-            'address': 'Unknown',
-            'gio_location': 'Unknown'
-        }
+        venue = dealing_with_null_venues(db, organization_id)
     else:
         venue_payload = {
             'id': venue_id,
@@ -74,8 +63,8 @@ def update_venue_from_eventbrite(db,event_venue,owner_id,venue_id):
             'address': event_venue["venue"]["address"]["localized_address_display"],
             'gio_location': str(event_venue["venue"]["latitude"])+", "+str(event_venue["venue"]["longitude"])
         }
-    venue_obj = v_schemas.VenueUpdate(**venue_payload)
-    venue = update_venue_by_id(db, venue_obj)
+        venue_obj = v_schemas.VenueUpdate(**venue_payload)
+        venue = update_venue_by_id(db, venue_obj)
     return venue
     
 def add_event(db,event,owner_id,venue_id):

@@ -48,12 +48,12 @@ def update_eventbrite_events(db: Session = Depends(get_db),current_user: User = 
         raise HTTPException(status_code=400, detail="Incorrect request. Please check your private token and organization ID.")
     response = response.json()
     owner_id = current_user.id
+    organization = get_organization_by_user_id(db, owner_id)
+    organization_id = organization.id
     for event in response["events"]:
         event_id = event["id"] 
         db_event = conferences_crud.get_conference_by_external_id(db, event_id)
         if not db_event:
-            organization = get_organization_by_user_id(db, owner_id)
-            organization_id = organization.id
             # create venue
             event_venue = get_eventbrite_venue(event_id, private_token)
             # print(event_venue)
@@ -67,7 +67,7 @@ def update_eventbrite_events(db: Session = Depends(get_db),current_user: User = 
             conference_venue_id = conference_venue.uuid
             # updated venue
             event_venue = get_eventbrite_venue(event_id, private_token)
-            event_venue = update_venue_from_eventbrite(db,event_venue,eventbrite_organization_id, conference_venue_id)
+            event_venue = update_venue_from_eventbrite(db,event_venue,organization_id, conference_venue_id)
             # updated event
             update_from_eventbrite(db, event, organization, db_event)
     return {"message": "Eventbrite events retrieved successfully."}
