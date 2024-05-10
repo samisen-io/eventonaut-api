@@ -31,13 +31,7 @@ def get_eventbrite_events(private_token: str, organization_id: str):
     # events = response.json()["events"]
     events = response.json()
     return events
-
-@router.get("/update_eventbrite_events/")
-def update_eventbrite_events(db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
-    organization = get_organization_by_user_id(db, current_user.id)
-    if organization is None:
-        raise HTTPException(status_code=400, detail="Organization not found.")
-    private_token = get_organization_settings(db, organization.id).event_brite_access_token
+    
 @router.get("/update_eventbrite_events/")
 def update_eventbrite_events(db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
     organization = get_organization_by_user_id(db, current_user.id)
