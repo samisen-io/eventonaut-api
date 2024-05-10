@@ -121,7 +121,7 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
             logging.exception("Invalid date range")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date range")
     if conference.client_id is not None:
-        if not client_crud.get_client_by_uuid_and_organization_id(db, client_uuid=conference.client_id, organization_id=current_organization.id):
+        if not client_crud.get_client_by_uuid_and_organization_id(db, client_id=conference.client_id, organization_id=current_organization.id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
     sponsors_ids = []
     if conference.sponsor_ids is not None and len(conference.sponsor_ids) > 0:
