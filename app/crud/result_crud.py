@@ -3,7 +3,7 @@ import json
 from typing import List
 from sqlalchemy.orm import Session, joinedload
 from app import crud, models
-from app.crud import conferences_crud, sessions_crud, speakers_crud
+from app.crud import conferences_crud, sessions_crud, speakers_crud, exhibitor_crud
 from app.schemas import conference_schemas, result_schemas, session_schemas, speaker_schemas, venue_schemas
 from app.static_enums.event import EventEnum
 from app.static_enums.session import SessionEnum
@@ -20,7 +20,8 @@ models_table = {
     'ags': models.AgendaSession,
     'ltk': models.LogoutToken,
     'cli': models.Client,
-    'spk': models.Speakers
+    'spk': models.Speakers,
+    'exb': models.Exhibitor
 }
 
 schemas_table = {
@@ -35,7 +36,8 @@ schemas_table = {
     'ags': result_schemas.AgendaSession,
     'ltk': result_schemas.LogoutToken,
     'cli': result_schemas.Client,
-    'spk': result_schemas.Speakers
+    'spk': result_schemas.Speakers,
+    'exb': result_schemas.Exhibitor
 }
 
 def get_conference(db:Session, uuid, rank):
@@ -69,19 +71,29 @@ def get_speaker(db:Session, uuid, rank):
     speaker_response = result_schemas.Speakers(**db_obj_dict)
     return speaker_response
 
+def get_exhibitor(db:Session, uuid, rank):
+    db_obj = exhibitor_crud.get_exhibitor_by_uuid(db, uuid)
+    db_obj_dict = db_obj.__dict__.copy()
+    db_obj_dict.pop('_sa_instance_state', None)
+    db_obj_dict['rank'] = rank
+    exhibitor_response = result_schemas.Exhibitor(**db_obj_dict)
+    return exhibitor_response
+
 def get_objects(db: Session, objects: list[str]):
     final_objects = []
     rank = 1
     for obj in objects:
         code = obj[:3]
         if code not in models_table.keys():
-            return False
+            continue
         elif code == 'evt':
             db_obj = get_conference(db, obj, rank)
         elif code == 'ses':
             db_obj = get_session(db, obj, rank)
         elif code == 'spk':
             db_obj = get_speaker(db, obj, rank)
+        elif code == 'exb':
+            db_obj = get_exhibitor(db, obj, rank)
         rank += 1
         final_objects.append(db_obj)
     json_ouput = convert_to_json(final_objects)

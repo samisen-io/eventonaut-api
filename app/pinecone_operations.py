@@ -82,6 +82,7 @@ def arranging_ouput_object(json_data):
     speakers = []
     sessions = []
     events = []
+    exhibitors = []
     # Iterate over the dictionaries in the data
     for obj in data:
         # Rename 'uuid' to 'id'
@@ -92,11 +93,14 @@ def arranging_ouput_object(json_data):
             sessions.append(obj)
         elif obj['id'].startswith('evt'):
             events.append(obj)    
+        elif obj['id'].startswith('exb'):
+            exhibitors.append(obj)
     
     data_dict = {
         'speakers': speakers,
         'sessions': sessions,
-        'events': events
+        'events': events,
+        'exhibitors': exhibitors
     }
     # Convert the dictionary to a JSON string
     json_str = json.dumps(data_dict, indent=4)
