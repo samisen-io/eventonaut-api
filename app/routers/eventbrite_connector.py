@@ -38,6 +38,12 @@ def update_eventbrite_events(db: Session = Depends(get_db),current_user: User = 
     if organization is None:
         raise HTTPException(status_code=400, detail="Organization not found.")
     private_token = get_organization_settings(db, organization.id).event_brite_access_token
+@router.get("/update_eventbrite_events/")
+def update_eventbrite_events(db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
+    organization = get_organization_by_user_id(db, current_user.id)
+    if organization is None:
+        raise HTTPException(status_code=400, detail="Organization not found.")
+    private_token = get_organization_settings(db, organization.id).event_brite_access_token
     eventbrite_organization_id = get_organization_id(private_token)
     url = f"https://www.eventbriteapi.com/v3/organizations/{eventbrite_organization_id}/events/?status=live"
     headers = {
@@ -56,7 +62,6 @@ def update_eventbrite_events(db: Session = Depends(get_db),current_user: User = 
         if not db_event:
             # create venue
             event_venue = get_eventbrite_venue(event_id, private_token)
-            # print(event_venue)
             event_venue = add_venue(db,event_venue,organization_id)
             event_venue_id = event_venue.id
             #add event
