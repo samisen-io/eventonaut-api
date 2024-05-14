@@ -27,7 +27,6 @@ def extract_filename(url: str) -> str:
     filename_with_extension = unquote(parsed_url.path.split('/')[-1])
     filename = filename_with_extension.split('.')[0]
 
-    # Remove the UUID
     filename = re.sub(r'dyn-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}-', '', filename)
 
     return filename
@@ -52,12 +51,6 @@ def get_backdrop_by_id(db: Session, backdrop_id: str, organization_id: int):
 
     if backdrop is None:
         raise HTTPException(status_code=404, detail="Backdrop not found")
-    
-    # if backdrop.organization.id != organization_id:
-    #     raise HTTPException(status_code=403, detail="Permission denied")
-    # if backdrop.is_archived or backdrop.User.is_archived or backdrop.conference.is_archived:
-    #     raise HTTPException(status_code=404, detail="Backdrop not found")
-
     return backdrop
 
 def execute_backdrop_query(db: Session, conference_id: str, organization_id: int, skip: int = 0, limit: int = 100):

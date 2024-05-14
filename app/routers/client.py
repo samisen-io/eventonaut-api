@@ -1,19 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from sqlalchemy.orm import Session
-from app import models
-from app.oauth2 import get_current_active_organization, get_current_active_user
+from app.oauth2 import get_current_active_organization
 from app.static_enums.role import RoleEnum
 from ..schemas import client_schemas as schemas
 from ..crud import client_crud as crud
 from ..dependencies import get_db
 from email_validator import validate_email, EmailNotValidError
-from app.schemas.user_schemas import UserAuthentication as User
 from ..schemas.organization_schemas import OrganizationSecurity
 import logging
 
 router = APIRouter(tags=["client"])
 
-# create client
 @router.post("/clients", response_model=schemas.ClientResponse, status_code=status.HTTP_201_CREATED)
 def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     try:
@@ -38,7 +35,6 @@ def get_all_clients_by_organization_id(offset: int = 0, limit: int = 100, db: Se
     logging.info("Clients Retrieved")
     return clients
 
-# get all clients
 @router.get("/clients/all_clients", response_model=list[schemas.ClientResponse])
 def get_all_clients(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     if offset < 0 or limit < 0:
@@ -51,7 +47,6 @@ def get_all_clients(offset: int = 0, limit: int = 100, db: Session = Depends(get
     logging.info("Clients Retrieved")
     return clients
 
-# get client by id
 @router.get("/clients/{client_id}", response_model=schemas.ClientResponse)
 def get_client(client_id: str, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_client = crud.get_client_by_uuid_and_organization_id(db, client_id=client_id, organization_id=current_organization.id)
@@ -61,7 +56,6 @@ def get_client(client_id: str, db: Session = Depends(get_db), current_organizati
     logging.info("Client retrieved: " + db_client.uuid)
     return db_client
 
-# update client by id
 @router.put("/clients", response_model=schemas.ClientResponse)
 def update_client(client: schemas.ClientUpdate, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if all(value is None for value in dict(client).values()):
@@ -75,7 +69,6 @@ def update_client(client: schemas.ClientUpdate, db: Session = Depends(get_db), c
     logging.info("User updated: " + updated_client.uuid)
     return updated_client
 
-# delete client by id
 @router.delete("/clients/{client_id}")
 def delete_client(client_id: str, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_client = crud.get_client_by_uuid_and_organization_id(db, client_id=client_id, organization_id=current_organization.id)

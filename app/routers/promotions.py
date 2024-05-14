@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from sqlalchemy.orm import Session
-
 from app import models
 from app.oauth2 import get_current_active_organization
 from app.static_enums.role import RoleEnum

@@ -1,12 +1,9 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 from ..schemas import organization_schemas
 from .. import models
 import uuid
 from datetime import datetime
-from fastapi import HTTPException
-from pydantic import ValidationError
-from sqlalchemy.orm import joinedload
+from fastapi import HTTPException, status
 from sqlalchemy import text
 
 def get_all_organizations(db: Session, offset: int, limit: int):
@@ -26,9 +23,6 @@ def get_organization_by_external_id(db: Session, external_id: str):
 
 def get_organization_by_name(db: Session, organization_name: str):
     return db.query(models.Organization).filter(models.Organization.name == organization_name).first()
-
-# def get_organization_by_user_id(db: Session, user_id: int):
-#     return db.query(models.Organization_User).filter(models.Organization_User.user_id == user_id).first()
 
 def create_organization(db: Session, organization: organization_schemas.OrganizationCreate):
     try:
@@ -64,7 +58,6 @@ def delete_organization(db: Session, db_organization: models.Organization):
     db.commit()
     return True
 
-# get organization by user id
 def get_organization_by_user_id(db: Session, user_id: int):
     query = text("""
         SELECT organization.*

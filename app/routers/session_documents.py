@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, status, File, Security
-
-from app import models
 from ..dependencies import get_db
 from sqlalchemy.orm import Session
-from .upload_image import upload_file, check_for_blob_in_container, delete_blob_by_url
+from .upload_image import upload_file, delete_blob_by_url
 from app.oauth2 import get_current_active_organization, get_current_active_user
 from ..crud import sessions_crud
 from app.schemas.user_schemas import UserAuthentication as User

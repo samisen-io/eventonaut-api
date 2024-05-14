@@ -2,17 +2,13 @@ import logging
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from app.routers import upload_image
-from ..models import Speakers, Conference
+from ..models import Speakers
 from ..schemas import speaker_schemas as schemas
 import uuid
 from .. import models
 from datetime import datetime
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
-from sqlalchemy.orm import aliased
-
-# def get_speakers_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
-#     return db.query(Speakers).filter(Speakers.organization_id == organization_id, Speakers.is_archived == False).order_by(Speakers.updated_on.desc()).offset(offset).limit(limit).all()
 
 def exclude_archived(speaker: Speakers):
     if speaker.sessions is not None:
@@ -130,10 +126,9 @@ def update_speaker(db: Session, speaker: schemas.SpeakerUpdate, db_speaker: Spea
 
 def delete_speaker(db: Session, speaker_id: str):
     db_speaker = db.query(Speakers).filter(Speakers.uuid == speaker_id).first()
-    
     if db_speaker.sessions and any([session.is_archived == False for session in db_speaker.sessions]):
+        logging.exception("Speaker is associated with a session. Cannot delete speaker.")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Speaker is associated with a session. Cannot delete speaker.")
-    
     db_speaker.is_archived = True
     db.commit()
     return True

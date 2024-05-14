@@ -7,13 +7,10 @@ from sqlalchemy.orm import Session
 import uuid
 from datetime import datetime
 from ..static_enums.blob_container_enums import BlobContainer
-from sqlalchemy.orm import joinedload, Load, defaultload, join, aliased
+from sqlalchemy.orm import aliased
 
 def get_sponsors_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
-    return db.query(models.Sponsors).filter(
-        models.Sponsors.organization_id == organization_id, 
-        models.Sponsors.is_archived == False).order_by(
-            models.Sponsors.updated_on.desc()).offset(offset).limit(limit).all()
+    return db.query(models.Sponsors).filter(models.Sponsors.organization_id == organization_id, models.Sponsors.is_archived == False).order_by(models.Sponsors.updated_on.desc()).offset(offset).limit(limit).all()
 
 def get_all_sponsors(db: Session, offset: int = 0, limit: int = 100):
     return db.query(models.Sponsors).order_by(models.Sponsors.updated_on.desc()).offset(offset).limit(limit).all()
@@ -89,10 +86,9 @@ def update_sponsor(db: Session, sponsor: sponsor_schemas.SponsorUpdate, db_spons
     return db_sponsor
 
 def delete_sponsor(db: Session, db_sponsor: models.Sponsors):
-    
     if db_sponsor.conference and any([conference.is_archived == False for conference in db_sponsor.conference]):
+        logging.exception("Sponsor is associated with a conference. Cannot delete sponsor.")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Sponsor is associated with a conference. Cannot delete sponsor.")
-    
     db_sponsor.is_archived = True
     db.commit()
     return True

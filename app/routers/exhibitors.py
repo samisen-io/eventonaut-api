@@ -1,7 +1,6 @@
 from ..dependencies import get_db
 from ..schemas import exhibitor_schemas as schemas
 from ..crud import exhibitor_crud as crud, conferences_crud as conf_crud
-from ..crud import users_crud
 from fastapi import APIRouter, Depends, HTTPException, status, Security
 import logging
 from ..oauth2 import get_current_active_user, get_current_active_organization
@@ -74,4 +73,3 @@ def delete_exhibitor(exhibitor_id: str, db = Depends(get_db), current_user: User
         logging.exception(f"Exhibitor not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exhibitor not found")
     return crud.delete_exhibitor(db, db_exhibitor)
-    

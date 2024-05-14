@@ -1,14 +1,10 @@
-from typing import List
 from fastapi import APIRouter, HTTPException, Depends, Security
 from sqlalchemy.orm import Session
-
 from app.oauth2 import get_current_active_user
 from app.static_enums.role import RoleEnum
 from ..crud import organization_crud as crud
 from ..schemas import organization_schemas as schemas
-from ..database import SessionLocal
 from ..dependencies import get_db
-from ..models import Organization
 
 router = APIRouter(tags=['organizations'])
 
@@ -16,7 +12,7 @@ router = APIRouter(tags=['organizations'])
 def create_organization(organization: schemas.OrganizationCreate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     return crud.create_organization(db=db, organization=organization)
 
-@router.get("/organizations/", response_model=List[schemas.Organization])
+@router.get("/organizations/", response_model=list[schemas.Organization])
 def get_organizations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     try:
         organizations = crud.get_all_organizations(db, skip, limit)

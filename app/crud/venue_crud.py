@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 from ..schemas import venue_schemas
 from .. import models
 import uuid
@@ -8,9 +7,6 @@ from fastapi import HTTPException, status
 
 def get_all_venues(db: Session, offset: int, limit: int):
     return db.query(models.Venue).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
-
-# def get_all_venues_by_organization_id(db: Session, organization_id: int, offset: int, limit: int):
-#     return db.query(models.Venue).filter(models.Venue.organization_id == organization_id, models.Venue.is_archived == False).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
 
 def get_all_venues_by_organization_id(db: Session, organization_id: int, offset: int, limit: int):
     return db.query(models.Venue).filter(models.Venue.organization_id == organization_id, models.Venue.is_archived == False).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
@@ -44,7 +40,6 @@ def update_venue(db: Session, venue: venue_schemas.VenueUpdate, db_venue: models
             setattr(db_venue, key, value)
 
     db_venue.updated_on = datetime.utcnow()
-
     db.commit()
     db.refresh(db_venue)
     return db_venue

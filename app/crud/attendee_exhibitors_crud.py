@@ -1,10 +1,7 @@
 from sqlalchemy.orm import Session, joinedload
 from .. import models
-import logging
 import uuid
 from datetime import datetime
-
-from sqlalchemy.orm import aliased
 
 def get_exhibitors_for_conference(db: Session, attendee_id: int, conference_id: int):
     AE = models.AttendeeExhibitors

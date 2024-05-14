@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator, Field, field_validator, ValidationInfo
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from datetime import date as Date, time
 from ..static_enums import session
 from ..url_validator import check_url

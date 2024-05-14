@@ -4,7 +4,6 @@ import re
 from fastapi import HTTPException
 import pinecone
 
-# initialize pinecone
 pinecone.init(
     api_key=os.environ.get("PINECONE_API_KEY"),
     environment = os.environ.get("PINECONE_API_ENV")
@@ -35,12 +34,10 @@ def get_namespaces():
 def create_namespace(conference_id):
     namespaces = get_namespaces()
     incremented_string = conference_id
-    # Iterate over each string in the list
     for s in namespaces:
-        # If the input string is a substring of the current string, increment the number in front of the string
         if conference_id in s:
             incremented_string = increment_number(s)
-            break  # Stop after finding the first match
+            break
     return incremented_string
 
 def create_vector_db(name):
@@ -53,7 +50,6 @@ def create_vector_db(name):
     return {"index_name": index_name}
 
 def delete_vector_db():
-    # index_name = index_name
     if index_name in pinecone.list_indexes():
         try:
             pinecone.delete_index(index_name)
@@ -67,7 +63,6 @@ def delete_vector_db():
 def delete_namespace(conference_id):
     index = pinecone.Index(index_name)
     namespaces = get_namespaces()
-    # check if the conference_id is a substring of any namespace
     for namespace in namespaces:
         if str(conference_id) in namespace:
             try:
@@ -83,9 +78,7 @@ def arranging_ouput_object(json_data):
     sessions = []
     events = []
     exhibitors = []
-    # Iterate over the dictionaries in the data
     for obj in data:
-        # Rename 'uuid' to 'id'
         rename_uuid_to_id(obj)
         if obj['id'].startswith('spk'):
             speakers.append(obj)
@@ -102,9 +95,7 @@ def arranging_ouput_object(json_data):
         'events': events,
         'exhibitors': exhibitors
     }
-    # Convert the dictionary to a JSON string
     json_str = json.dumps(data_dict, indent=4)
-    # Print the JSON string
     return json_str
 
 def rename_uuid_to_id(obj):

@@ -1,6 +1,5 @@
 from typing import List
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
-from fastapi import HTTPException, status as statuscode
 import logging
 from ..static_enums import organizer
 from ..static_enums.role import RoleEnum
@@ -121,6 +120,7 @@ class UserBaseUpdate(BaseModel):
                 return None
             if not check_url(v):
                 raise ValueError(f"Broken {info.field_name} link or invalid url")
+        return v
 
 
 class UserPasswordUpdate(BaseModel):

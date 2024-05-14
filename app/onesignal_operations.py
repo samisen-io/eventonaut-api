@@ -1,15 +1,9 @@
-
 import os
 import onesignal
 from onesignal.api import default_api
-from onesignal.model.generic_error import GenericError
-from onesignal.model.rate_limiter_error import RateLimiterError
 from onesignal.model.notification import Notification
-from onesignal.model.create_notification_success_response import CreateNotificationSuccessResponse
-from pprint import pprint
 from dotenv import load_dotenv
-
-from app.crud.attendee_crud import get_all_attendee_profiles_by_conference_id, get_attendees_by_conference_id
+from app.crud.attendee_crud import get_attendees_by_conference_id
 
 load_dotenv()
 app_key = os.environ.get("ONESIGNAL_API_KEY")

@@ -1,6 +1,5 @@
 from fastapi import Depends, HTTPException, Security, status
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm, SecurityScopes
-# from app import my_token
+from fastapi.security import OAuth2PasswordBearer, SecurityScopes
 from app import token
 from app.schemas.organization_schemas import Organization
 from app.schemas.user_schemas import UserAuthentication as User

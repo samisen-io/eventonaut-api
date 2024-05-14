@@ -4,7 +4,7 @@ from datetime import datetime
 import uuid
 from apscheduler.schedulers.background import BackgroundScheduler
 from ..database import SessionLocal
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 def insert_token(db: Session, token_jti: str, expire_time: datetime, is_invalidated: bool):
     token = db.query(models.LogoutToken).filter(models.LogoutToken.token_jti == token_jti).first()
@@ -23,11 +23,10 @@ def insert_token(db: Session, token_jti: str, expire_time: datetime, is_invalida
     db.refresh(token)
     return token
 
-
 def get_all_jti_in_tokens(db: Session, token_jti: str):
     token = db.query(models.LogoutToken).filter(models.LogoutToken.token_jti == token_jti).first()
     if token:
-        raise HTTPException(status_code=401, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid", headers={"WWW-Authenticate": "Bearer"})
     return token
 
 def delete_data():

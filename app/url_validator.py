@@ -1,5 +1,6 @@
 import http.client
 from urllib.parse import urlparse
+import logging
 import re
 
 def check_url(url):
@@ -13,4 +14,5 @@ def check_url(url):
         else:
             return False
     except Exception as e:
+        logging.error(f"Error: {e}")
         return False
