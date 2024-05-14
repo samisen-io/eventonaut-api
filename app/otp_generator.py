@@ -4,10 +4,8 @@ import string
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime
 from dotenv import load_dotenv
 import os
-
 
 load_dotenv()
 

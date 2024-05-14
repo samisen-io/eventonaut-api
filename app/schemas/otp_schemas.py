@@ -1,5 +1,4 @@
-from pydantic import BaseModel, Field, field_validator, ValidationInfo
-from fastapi import HTTPException, status as statuscode
+from pydantic import BaseModel, field_validator, ValidationInfo
 from ..static_enums.role import RoleEnum
 import logging
 

@@ -88,17 +88,7 @@ def get_user(db: Session, user_id: int):
     return user
 
 def get_users_by_organization_id(db: Session, organization_id: int, offset: int, limit: int):
-    # users = db.query(models.User).options(joinedload(models.User.organization_user)).filter(models.Organization_User.organization_id == organization_id, models.User.is_archived == False).offset(offset).limit(limit).all()
-    users = (
-    db.query(models.User)
-    .join(models.Organization_User, models.User.id == models.Organization_User.user_id)
-    .join(models.User_Role, models.User.id == models.User_Role.user_id)
-    .filter(models.Organization_User.organization_id == organization_id, models.User.is_archived == False)
-    .offset(offset)
-    .limit(limit)
-    .all()
-    )
-    
+    users = (db.query(models.User).join(models.Organization_User, models.User.id == models.Organization_User.user_id).join(models.User_Role, models.User.id == models.User_Role.user_id).filter(models.Organization_User.organization_id == organization_id, models.User.is_archived == False).offset(offset).limit(limit).all())
     return users
 
 def get_user_by_uuid(db: Session, user_uuid: str):

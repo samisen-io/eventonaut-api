@@ -1,9 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
 from sqlalchemy.orm import Session
-from app import models
-from app.schemas.user_schemas import UserAuthentication as User
-from app.oauth2 import get_current_active_organization, get_current_active_user
+from app.oauth2 import get_current_active_organization
 from app.static_enums.role import RoleEnum
 from ..static_enums.event_types import EventTypeEnum
 from ..schemas import session_schemas as schemas
@@ -75,7 +73,6 @@ def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Se
                 if speaker.id not in session_speaker_ids:
                     session_speaker_ids.append(speaker.id)
         session_list.append(crud.create_conference_session(db=db, session=session, organization_id=current_organization.id,conference_id=conference.id, speaker_ids=session_speaker_ids))
-
     logging.info("Sessions created for conference: " + session.conference_id)
     return session_list
 

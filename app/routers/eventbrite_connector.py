@@ -1,18 +1,13 @@
-from datetime import datetime
-import json
-from fastapi import APIRouter, Depends, HTTPException, Request, Security, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Request, Security
 from sqlalchemy.orm import Session
 import requests
-from app.crud import conferences_crud, users_crud
+from app.crud import conferences_crud
 from app.eventbrite_operations import add_event, add_venue, create_webhook, get_organization_id, get_organization_id_from_url, update_eventbrite_status, update_from_eventbrite, update_venue_from_eventbrite
 from app.oauth2 import get_current_active_user
-from app.crud.organization_settings_crud import create_organization_settings, get_organization_settings, get_organization_settings_by_eventbrite_org_id
-from app.schemas import organization_settings_schemas as os_schemas
-from app.schemas.user_schemas import UserAuthentication as User
-from app.schemas import organization_settings_schemas as os_schemas
+from app.crud.organization_settings_crud import get_organization_settings, get_organization_settings_by_eventbrite_org_id
 from app.schemas.user_schemas import UserAuthentication as User
 from app.dependencies import get_db
-from app.crud.organization_crud import get_organization_by_external_id, get_organization_by_id, get_organization_by_user_id, get_organization_by_uuid
+from app.crud.organization_crud import get_organization_by_external_id, get_organization_by_user_id
 from app.static_enums.role import RoleEnum
 from starlette.requests import ClientDisconnect
 

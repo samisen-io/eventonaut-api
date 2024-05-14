@@ -1,13 +1,9 @@
-from typing import List
 from fastapi import APIRouter, HTTPException, Depends, Security
-from app import basicauth
-
 from app.oauth2 import get_current_active_user
 from app.static_enums.role import RoleEnum
 from ..crud import organization_user_crud as crud
 from ..schemas import organization_user_schemas as schemas
 from sqlalchemy.orm import Session
-from ..database import SessionLocal
 from ..dependencies import get_db
 from ..basicauth import basic_auth
 
@@ -37,7 +33,7 @@ def get_organization_user(organization_user_id: str, db: Session = Depends(get_d
     except Exception as exc:
         raise exc
 
-@router.get("/organization_users", response_model=List[schemas.Organization_User])
+@router.get("/organization_users", response_model=list[schemas.Organization_User])
 def get_organization_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basic_auth)):
     try:
         organization_users = crud.get_organization_users(db, skip, limit)

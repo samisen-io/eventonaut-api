@@ -51,10 +51,6 @@ def get_all_clients(db: Session, offset: int = 0, limit: int = 100):
     clients = db.query(models.Client).order_by(models.Client.updated_on.desc()).offset(offset).limit(limit).all()
     return clients
 
-# def get_all_clients_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
-#     clients = db.query(models.Client).filter(models.Client.organization_id == organization_id, models.Client.is_archived == False).order_by(models.Client.updated_on.desc()).offset(offset).limit(limit).all()
-#     return clients
-
 def update_client(db: Session, client: schemas.ClientUpdate):
     db_client = db.query(models.Client).filter(models.Client.uuid == client.id).first()
     

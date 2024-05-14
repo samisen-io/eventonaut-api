@@ -1,9 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, APIRouter, Depends, status, Security
-
 from app.eventbrite_operations import get_organization_id
 from ..schemas import organization_settings_schemas as schemas
-from ..basicauth import basic_auth
 from ..dependencies import get_db
 from ..crud import organization_settings_crud as crud
 from ..crud import organization_crud
@@ -35,8 +33,6 @@ def create_organization_settings(organization_settings: schemas.OrganizationSett
         logging.exception(f"Organization not found for organization_id: {current_organization.uuid}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
     db_organization_settings = crud.get_organization_settings(db, organization.id)
-    # print(db_organization_settings.event_brite_access_token)
-    # print(db_organization_settings.organization_id)
     evt_brite_org_id = get_organization_id(organization_settings.event_brite_access_token)
     if db_organization_settings is not None:
         logging.exception(f"Organization settings already exist for organization_id: {organization.uuid}")

@@ -1,9 +1,6 @@
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from datetime import date
 from ..url_validator import check_url
-from pydantic import BaseModel, Field, field_validator, ValidationInfo
-from datetime import date
-from ..url_validator import check_url
 
 class PromotionBase(BaseModel):
     todate: date

@@ -5,12 +5,10 @@ from ..crud import users_crud as crud
 from email_validator import validate_email, EmailNotValidError
 from ..otp_generator import send_mail, generate_otp, validate_otp
 from sqlalchemy.orm import Session
-from datetime import datetime
 from ..crud import users_crud as crud
 from cachetools import TTLCache
 from dotenv import load_dotenv
 import os
-import time
 from .. import basicauth
 from ..schemas.otp_schemas import SendOtp, VerifyOtp, PasswordReset, PasswordResetForAttendee
 

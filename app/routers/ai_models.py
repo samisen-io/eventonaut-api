@@ -1,5 +1,5 @@
 import ast
-from datetime import date, datetime, time
+from datetime import datetime
 import json
 import sys
 import logging
@@ -8,7 +8,6 @@ from fastapi.responses import StreamingResponse
 from app.crud.aitokens_crud import insert_aitoken
 from app.crud.speakers_crud import get_speaker_uuid_by_email
 from app.file_reader import read_file_return_csv
-from app.schemas.venue_schemas import VenueResponse
 from app.pinecone_operations import arranging_ouput_object, create_namespace, create_vector_db, delete_namespace, delete_vector_db
 from app.routers.speakers import create_speaker
 from app.schemas import aitokens_schemas as ait_schemas

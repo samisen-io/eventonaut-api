@@ -1,5 +1,3 @@
-from pydantic import BaseModel, Field
-import requests
 from pydantic import BaseModel, Field, validator
 from ..url_validator import check_url
 

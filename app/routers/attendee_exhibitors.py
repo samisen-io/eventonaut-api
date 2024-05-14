@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Security
-from fastapi.encoders import jsonable_encoder
 from sqlalchemy.orm import Session
 from ..dependencies import get_db
-from ..crud import attendee_exhibitors_crud, conferences_crud, attendee_crud, exhibitor_crud
+from ..crud import attendee_exhibitors_crud, attendee_crud, exhibitor_crud
 from ..oauth2 import get_current_active_user
 from ..static_enums.role import RoleEnum
 from ..static_enums.event_types import EventTypeEnum
-from .. schemas import attendee_exhibitor_schemas as schemas, exhibitor_schemas
+from .. schemas import attendee_exhibitor_schemas as schemas
 import logging
 from .. import models
 

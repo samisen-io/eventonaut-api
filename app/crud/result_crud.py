@@ -1,8 +1,7 @@
 from datetime import date, time
 import json
-from typing import List
-from sqlalchemy.orm import Session, joinedload
-from app import crud, models
+from sqlalchemy.orm import Session
+from app import models
 from app.crud import conferences_crud, sessions_crud, speakers_crud, exhibitor_crud
 from app.schemas import conference_schemas, result_schemas, session_schemas, speaker_schemas, venue_schemas
 from app.static_enums.event import EventEnum
@@ -103,9 +102,9 @@ def convert_to_json(objects):
     objects_dict = [{k: datetime_to_str(v) for k, v in obj.__dict__.items() if not k.startswith('_')} for obj in objects]
     for item in objects_dict:
         if 'venue' in item and isinstance(item['venue'], venue_schemas.VenueResponse):
-            item['venue'] = item['venue'].model_dump() # convert VenueResponse to dict
+            item['venue'] = item['venue'].model_dump()
         if 'speakers' in item:
-            item['speakers'] = [speaker.dict() for speaker in item['speakers']]  # convert SpeakerBase to dict
+            item['speakers'] = [speaker.dict() for speaker in item['speakers']]
     json_data = json.dumps(objects_dict)
     return json_data
 

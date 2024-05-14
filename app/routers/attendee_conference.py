@@ -30,7 +30,6 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
     logging.info(f"Conference: {attendee_conf.conference_id} added to attendee: {attendee_conf.attendee_id}")
     return attendee_conf
 
-# get all attendee conferences
 @router.get("/attendee/conference", response_model=list[conference_schemas.ConferenceResponse])
 def get_all_attendee_conferences(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if not crud.get_attendee_by_id(db, attendee_id=current_user.id):
@@ -43,7 +42,6 @@ def get_all_attendee_conferences(skip: int = 0, limit: int = 100, db: Session = 
     logging.info("All conferences for attendee retrieved")
     return attendee_conferences
 
-# delete attendee conference by attendee id and conference id
 @router.delete("/attendee/{conference_identifier}")
 def delete_attendee_conference_by_attendee_id_and_conference_id(conference_identifier: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)
