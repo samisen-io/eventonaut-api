@@ -3,7 +3,7 @@ import json
 import os
 import tempfile
 from urllib.parse import urlparse
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 import requests
 from app.crud.organization_crud import get_organization_by_user_id
 from app.schemas import conference_schemas as c_schemas
@@ -34,6 +34,8 @@ def get_organization_id(private_token: str):
     }
     url = 'https://www.eventbriteapi.com/v3/users/me/organizations/'
     response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
     response = response.json()
     organization_id = response["organizations"][0]["id"]
     return organization_id
