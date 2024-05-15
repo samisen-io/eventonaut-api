@@ -16,7 +16,6 @@ from app.routers.upload_image import upload_file
 def create_webhook(event_id: str, private_token: str, organization_id: str):
     values = {
         "endpoint_url": "https://dev.api.eventonaut.app/webhook/",
-        # "endpoint_url": "https://d5c6-14-97-147-123.ngrok-free.app/webhook/",
         "actions": "event.updated,event.published,event.unpublished",
         "event_id": event_id,
     }
