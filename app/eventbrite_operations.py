@@ -3,20 +3,19 @@ import json
 import os
 import tempfile
 from urllib.parse import urlparse
-from fastapi import UploadFile
+from fastapi import HTTPException, UploadFile
 import requests
 from app.crud.organization_crud import get_organization_by_user_id
 from app.schemas import conference_schemas as c_schemas
 from app.schemas import venue_schemas as v_schemas
-from app.crud.conferences_crud import create_user_conference, update_user_conference, update_user_conference_externally
-from app.crud.venue_crud import create_venue, create_venue, create_venue_with_values_as_unknown, dealing_with_null_venues, get_venue_with_unknown_values, update_venue_by_id
+from app.crud.conferences_crud import create_user_conference, update_user_conference_externally
+from app.crud.venue_crud import create_venue, create_venue, dealing_with_null_venues, update_venue_by_id
 from app.routers.upload_image import upload_file
 
 
 def create_webhook(event_id: str, private_token: str, organization_id: str):
     values = {
         "endpoint_url": "https://dev.api.eventonaut.app/webhook/",
-        # "endpoint_url": "https://d5c6-14-97-147-123.ngrok-free.app/webhook/",
         "actions": "event.updated,event.published,event.unpublished",
         "event_id": event_id,
     }
@@ -34,6 +33,8 @@ def get_organization_id(private_token: str):
     }
     url = 'https://www.eventbriteapi.com/v3/users/me/organizations/'
     response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail=response.json())
     response = response.json()
     organization_id = response["organizations"][0]["id"]
     return organization_id
