@@ -24,6 +24,7 @@ def create_client(client: schemas.ClientCreate, db: Session = Depends(get_db), c
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     client = crud.create_client(db=db, client=client, organization_id=current_organization.id)
     logging.info("Client created: " + client.uuid)
+    save_audit_log(db,"create", current_organization.id, "client", None, None, client)
     return client
 
 @router.get("/clients", response_model=list[schemas.ClientResponse])
@@ -73,6 +74,7 @@ def update_client(client: schemas.ClientUpdate, db: Session = Depends(get_db), c
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
     updated_client = crud.update_client(db=db, client=client)
     logging.info("User updated: " + updated_client.uuid)
+    save_audit_log(db,"update", current_organization.id, "client", db_client, updated_client)
     return updated_client
 
 # delete client by id
@@ -84,4 +86,8 @@ def delete_client(client_id: str, db: Session = Depends(get_db), current_organiz
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Client not found")
     deleted_client = crud.delete_client(db=db, client_id=client_id)
     logging.info("Client Deleted: " + db_client.uuid)
+    save_audit_log(db,"delete", current_organization.id, "client", db_client, None)
     return deleted_client
+
+def save_audit_log(db, operation, organization_id, table, old_value=None, new_value=None):
+    print(f"organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

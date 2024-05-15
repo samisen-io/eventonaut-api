@@ -142,6 +142,9 @@ class Client(Base):
     @property
     def status(self):
         return self.client_status.status.upper()
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, created_on={self.created_on}, updated_on={self.updated_on}, name={self.name}, contact_name={self.contact_name}, contact_email={self.contact_email}, contact_phone={self.contact_phone}, address={self.address}, profile_image_url={self.profile_image_url}, client_status_id={self.client_status_id}, is_archived={self.is_archived}, organization_id={self.organization_id})"
   
 #class to create conference table and add relationship to session table
 class Conference(Base):
@@ -197,6 +200,9 @@ class Conference(Base):
     def location(self):
         return self.venue.location
     
+    def __repr__(self):
+        return f"({self.id}, {self.uuid}, {self.created_on}, {self.updated_on}, {self.client_id}, {self.name}, {self.venue_id}, {self.start_date}, {self.end_date}, {self.description}, {self.conference_logo}, {self.conference_banner_url}, {self.assistant_id}, {self.code}, {self.timezone}, {self.registration_link}, {self.information_guide}, {self.conference_status_id}, {self.is_archived}, {self.external_id}, {self.organization_id}, {self.event_type})"
+
 class BackdropGallery(Base):
     __tablename__ = "backdrop_gallery"
     
