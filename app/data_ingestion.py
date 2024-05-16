@@ -1,4 +1,5 @@
 import datetime
+import logging
 import mimetypes
 import os
 import csv
@@ -161,7 +162,7 @@ def add_documents(namespace,conference_id,category):
         print(f"Error: {file_path} : {e.strerror}")
     return {"namespace":namespace}
 
-def write_exhibitor_docs(db, conference_id):
+def write_exhibitor_docs(db, conference_id, namespace):
     conference = get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
@@ -189,7 +190,7 @@ def write_exhibitor_docs(db, conference_id):
                             if chunk:
                                 fp.write(chunk)
                     if extension == '.pdf':
-                        add_pdf_document(exhibitor.uuid, file_path)
+                        add_pdf_document(namespace, file_path)
                         c+=1
                     elif extension == '.csv' or extension == '.xlsx':
                         reader, delimiter = read_the_structured_file(file_path)
@@ -198,11 +199,15 @@ def write_exhibitor_docs(db, conference_id):
                             writer.writeheader()
                             for row in reader:
                                 writer.writerow(row)
-                        add_csv_documents(exhibitor.uuid, temp.name, delimiter)
+                        add_csv_documents(namespace, temp.name, delimiter)
+                        os.remove(file_path)
                         c+=1
                     elif extension == '.txt':
-                        add_txt_documents(exhibitor.uuid, file_path)
+                        add_txt_documents(namespace, file_path)
                         c+=1
+                    else:
+                        os.remove(file_path)
+    logging.info(f"Exhibitor documents added: {c}")
     return {"total_documents_added":c}
                     
                     
