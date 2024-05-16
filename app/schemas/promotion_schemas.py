@@ -23,8 +23,12 @@ class PromotionCreate(PromotionBase):
         if v is not None:
             if v == "":
                 return None
-            elif not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            elif v is not None:
+                try:
+                    if not check_url(v):
+                        raise ValueError(f"Broken {info.field_name} link or invalid url")
+                except Exception as e:
+                    raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
 
 class PromotionUpdate(PromotionBase):
@@ -47,8 +51,13 @@ class PromotionUpdate(PromotionBase):
         if v is not None:
             if v == "":
                 return None
-            elif not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            elif v is not None:
+                try:
+                    if not check_url(v):
+                        raise ValueError(f"Broken {info.field_name} link or invalid url")
+                except Exception as e:
+                    raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
+        return v
         return v
 
 class Promotion(BaseModel):

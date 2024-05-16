@@ -54,8 +54,12 @@ class UserBase(BaseModel):
         if v is not None:
             if v.strip() == "":
                 return None
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            if v is not None:
+                try:
+                    if not check_url(v):
+                        raise ValueError(f"Broken {info.field_name} link or invalid url")
+                except Exception as e:
+                    raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
     
     @field_validator('list_of_roles')
@@ -118,8 +122,12 @@ class UserBaseUpdate(BaseModel):
         if v is not None:
             if v.strip() == "":
                 return None
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            if v is not None:
+                try:
+                    if not check_url(v):
+                        raise ValueError(f"Broken {info.field_name} link or invalid url")
+                except Exception as e:
+                    raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
 
 

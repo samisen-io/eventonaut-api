@@ -48,8 +48,11 @@ class AttendeeBase(BaseModel):
     @classmethod
     def validate_profile_image_url(cls, v, info: ValidationInfo):
         if v is not None:
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            try:
+                if not check_url(v):
+                    raise ValueError(f"Broken {info.field_name} link or invalid url")
+            except Exception as e:
+                raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
     
 class AttendeeCreate(BaseModel):
@@ -138,10 +141,12 @@ class AttendeeUpdate(BaseModel):
     @classmethod
     def validate_profile_image_url(cls, v, info: ValidationInfo):
         if v is not None:
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            try:
+                if not check_url(v):
+                    raise ValueError(f"Broken {info.field_name} link or invalid url")
+            except Exception as e:
+                raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
-
 class Attendee(BaseModel):
     uuid: str = Field(serialization_alias="id")
     email: str

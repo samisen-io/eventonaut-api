@@ -33,8 +33,12 @@ class SpeakerBase(BaseModel):
                 return None
             elif len(v) > 256:
                 raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            if v is not None:
+                try:
+                    if not check_url(v):
+                        raise ValueError(f"Broken {info.field_name} link or invalid url")
+                except Exception as e:
+                    raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
 
 class SpeakerCreate(SpeakerBase):
@@ -81,8 +85,11 @@ class SpeakerUpdate(BaseModel):
     @field_validator('profile_image_url')
     def validate_profile_image_url(cls, v, info: ValidationInfo):
         if v is not None:
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            try:
+                if not check_url(v):
+                    raise ValueError(f"Broken {info.field_name} link or invalid url")
+            except Exception as e:
+                raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
     
     @field_validator('sessions')
