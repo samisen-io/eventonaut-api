@@ -122,7 +122,7 @@ def write_events_to_csv(db, conference_id):
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames + venue_fields)
         conference_dict = result.__dict__
         conference_dict = filter_fields(conference_dict, fieldnames)
-        conference_dict['type'] = 'event/conference'
+        conference_dict['type'] = 'event/conference/trade_show'
         merged_dict = {**conference_dict, **venue}
         writer.writeheader()
         writer.writerow(merged_dict)
