@@ -15,4 +15,4 @@ def check_url(url):
             return False
     except Exception as e:
         logging.error(f"Error: {e}")
-        return False
+        raise e

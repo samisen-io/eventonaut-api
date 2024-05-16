@@ -42,9 +42,12 @@ class ExhibitorBase(BaseModel):
             elif len(v) > 256:
                 logging.exception(f"{info.field_name} cannot be more than 256 characters")
                 raise ValueError(f"{info.field_name} cannot be more than 256 characters")
-            if not check_url(v):
-                logging.exception(f"Broken {info.field_name} link or invalid url")
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            if v is not None:
+                try:
+                    if not check_url(v):
+                        raise ValueError(f"Broken {info.field_name} link or invalid url")
+                except Exception as e:
+                    raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
     
 class ExhibitorCreate(ExhibitorBase):
@@ -100,9 +103,12 @@ class ExhibitorUpdate(BaseModel):
             elif len(v) > 256:
                 logging.exception(f"{info.field_name} cannot be more than 256 characters")
                 raise ValueError(f"{info.field_name} cannot be more than 256 characters")
-            if not check_url(v):
-                logging.exception(f"Broken {info.field_name} link or invalid url")
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            if v is not None:
+                try:
+                    if not check_url(v):
+                        raise ValueError(f"Broken {info.field_name} link or invalid url")
+                except Exception as e:
+                    raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
     
 class ExhibitorResponse(BaseModel):

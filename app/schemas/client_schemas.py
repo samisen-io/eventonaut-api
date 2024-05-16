@@ -34,8 +34,12 @@ class ClientBase(BaseModel):
                 return None
             elif len(v) > 256:
                 raise ValueError(f"Profile image url too long")
-            if not check_url(v):
-                raise ValueError("Broken profile image url link or invalid url")
+            if v is not None:
+                try:
+                    if not check_url(v):
+                        raise ValueError(f"Broken profile_image_url link or invalid url")
+                except Exception as e:
+                    raise ValueError(f"Broken profile_image_url link or invalid url - {str(e)}")
         return v
     
     @field_validator("status")
@@ -93,8 +97,13 @@ class ClientUpdate(BaseModel):
     @field_validator('profile_image_url')
     def profile_image_url_is_not_empty(cls, v):
         if v is not None:
-            if not check_url(v):
-                raise ValueError("Broken profile image url link or invalid url")
+            if v is not None:
+                try:
+                    if not check_url(v):
+                        raise ValueError(f"Broken profile_image_url link or invalid url")
+                except Exception as e:
+                    raise ValueError(f"Broken profile_image_url link or invalid url - {str(e)}")
+        return v
         return v
 
 class ClientCreate(ClientBase):
