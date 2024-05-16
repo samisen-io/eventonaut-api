@@ -59,6 +59,13 @@ def create_exhibitor(exhibitor: schemas.ExhibitorCreate, db = Depends(get_db), c
 @router.put("/exhibitor", response_model=schemas.ExhibitorResponse)
 def update_exhibitor(exhibitor: schemas.ExhibitorUpdate, db = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     organization_id = current_user.organization_user[0].organization_id
+    if exhibitor.contact_email:
+        try:
+            valid = validate_email(exhibitor.contact_email)
+            exhibitor.contact_email = valid.normalized.lower()
+        except EmailNotValidError as e:
+            logging.exception(str(e))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db_exhibitor = crud.get_exhibitor_by_id(db, exhibitor.id, organization_id)
     if not db_exhibitor:
         logging.exception(f"Exhibitor not found")

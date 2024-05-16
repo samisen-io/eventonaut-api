@@ -57,6 +57,7 @@ class ExhibitorUpdate(BaseModel):
     about: str | None = None
     contact_name: str | None = None
     contact_phone: str | None = None
+    contact_email: str | None = None
     booth_number: str | None = None
     category: str | None = None
     exhibitor_logo: str | None = None
@@ -72,7 +73,7 @@ class ExhibitorUpdate(BaseModel):
             raise ValueError(f"{info.field_name} cannot be more than 256 characters")
         return v
     
-    @field_validator('name', 'address', 'about', 'contact_name', 'booth_number', 'category', 'exhibitor_logo', 'exhibitor_banner')
+    @field_validator('name', 'address', 'about', 'contact_name', 'booth_number', 'category', 'exhibitor_logo', 'exhibitor_banner', 'contact_email')
     def check_none(cls, v, info: ValidationInfo):
         if v is not None:
             if v.strip() == "":
