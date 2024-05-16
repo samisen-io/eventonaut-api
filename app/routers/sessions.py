@@ -43,6 +43,7 @@ def create_session_for_conference(session: schemas.SessionCreate, db: Session = 
                 session_speaker_ids.append(speaker.id)
     session=crud.create_conference_session(db=db, session=session, organization_id=current_organization.id,conference_id=conference.id, speaker_ids=session_speaker_ids)
     logging.info("Session created: " + session.uuid)
+    save_audit_log(db,"create", "sessions", current_organization.id, None, None, session)
     return session
 
 @router.post("/sessions/list", response_model=list[SessionResponse])
@@ -75,7 +76,7 @@ def create_sessions_for_conference(sessions: list[schemas.SessionCreate], db: Se
                 if speaker.id not in session_speaker_ids:
                     session_speaker_ids.append(speaker.id)
         session_list.append(crud.create_conference_session(db=db, session=session, organization_id=current_organization.id,conference_id=conference.id, speaker_ids=session_speaker_ids))
-
+        save_audit_log(db,"create", "sessions", current_organization.id, None, None, session)
     logging.info("Sessions created for conference: " + session.conference_id)
     return session_list
 
@@ -124,6 +125,7 @@ def update_session(session: schemas.SessionUpdate, db: Session = Depends(get_db)
     session_speaker_ids = get_speaker_ids(session, db, current_organization)
     updated_session = crud.update_session(db=db, session=session, db_session=db_session, speaker_ids=session_speaker_ids)
     logging.info("Session updated: " + updated_session.uuid)
+    save_audit_log(db,"update", "sessions", current_organization.id, None, db_session, updated_session)
     return updated_session
 
 def validate_session_update(session):
@@ -176,4 +178,8 @@ def delete_session(session_id: str, db: Session = Depends(get_db), current_organ
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     session_deleted = crud.delete_session(db=db, db_session=db_session)
     logging.info("Session deleted: " + db_session.name)
+    save_audit_log(db,"delete", "sessions", current_organization.id, None, db_session, None)
     return session_deleted
+
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

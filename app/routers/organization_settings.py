@@ -44,6 +44,7 @@ def create_organization_settings(organization_settings: schemas.OrganizationSett
     logging.info(f"Creating organization settings for organization_id: {organization.uuid}")
     db_organization_settings = crud.create_organization_settings(db, organization_settings, organization.id, evt_brite_org_id)
     db_organization_settings.organization_id = organization.uuid
+    save_audit_log(db, "create", "organization_settings", organization.id, None, None, db_organization_settings)
     return db_organization_settings
 
 @router.put("/organization_settings", response_model=schemas.OrganizationSettings)
@@ -60,6 +61,7 @@ def update_organization_settings(organization_settings: schemas.OrganizationSett
     evt_brite_org_id = get_organization_id(organization_settings.event_brite_access_token)
     updated_organization_settings = crud.update_organization_settings(db, db_organization_settings, organization_settings, evt_brite_org_id)
     updated_organization_settings.organization_id = organization.uuid
+    save_audit_log(db, "update", organization.id, "organization_settings", db_organization_settings, updated_organization_settings)
     return updated_organization_settings
 
 @router.delete("/organization_settings")
@@ -73,4 +75,9 @@ def delete_organization_settings(db: Session = Depends(get_db), current_organiza
         logging.exception(f"Organization settings not found for organization_id: {organization.uuid}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization settings not found")
     logging.info(f"Deleting organization settings for organization_id: {organization.uuid}")
-    return crud.delete_organization_settings(db, db_organization_settings)
+    result = crud.delete_organization_settings(db, db_organization_settings)
+    save_audit_log(db, "delete", "organization_settings", organization.id, None, db_organization_settings, None)
+    return result
+
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

@@ -43,6 +43,7 @@ def get_venue_by_id(venue_id: str, db: Session = Depends(get_db), current_organi
 def create_venue(venue: schemas.VenueCreate, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
     db_venue = crud.create_venue(db, venue, current_organization.id)
     logging.info(f"Venue created successfully: {db_venue.uuid}")
+    save_audit_log(db, "create", "venues", current_organization.id, None, None, db_venue)
     return db_venue
 
 @router.put("/venues", response_model=schemas.VenueResponse)
@@ -53,6 +54,7 @@ def update_venue(venue: schemas.VenueUpdate, db: Session = Depends(get_db), curr
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Venue not found: {venue.id}")
     db_venue = crud.update_venue(db, venue, db_venue)
     logging.info(f"Venue updated successfully: {venue.id}")
+    save_audit_log(db, "update", "venues", current_organization.id, None, db_venue, venue)
     return db_venue
 
 @router.delete("/venues/{venue_id}")
@@ -63,4 +65,8 @@ def delete_venue(venue_id: str, db: Session = Depends(get_db), current_organizat
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Venue not found")
     db_venue = crud.delete_venue(db, db_venue)
     logging.info(f"Venue deleted successfully: {venue_id}")
+    save_audit_log(db, "delete", "venues", current_organization.id, None, db_venue, None)
     return db_venue
+
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

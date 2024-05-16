@@ -230,7 +230,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     conference_banner_url = conference_dict.pop("conference_banner_url")
     conference_dict['venue_id'] = db.query(models.Venue).filter(models.Venue.uuid == conference_dict['venue_id']).first().id if conference_dict['venue_id'] is not None else None
 
-    non_nullable_feilds = ['name','venue_id','start_date','end_date','information_guide','event_type']
+    non_nullable_feilds = ['name','venue_id','start_date','end_date','information_guide','event_type','external_id']
 
     if conference_status is not None:
         db_conference.conference_status_id = event.EventEnum[conference_status.upper()].value

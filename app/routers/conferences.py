@@ -58,7 +58,7 @@ def create_conference_for_user(conference: schemas.ConferenceCreate, db: Session
     db_conference = crud.create_user_conference(db=db, conference=conference, organization_id=current_organization.id, venue_id=db_venue.id, sponsor_ids=sponsors_ids, exhibitor_ids=exhibitor_ids, client_id = db_client.id if conference.client_id else None)
     logging.info("Conference created: " + db_conference.uuid)
     conference_response = schemas.ConferenceResponse(**db_conference.__dict__)
-    audit_conference("insert", current_organization.id, None, conference_response)
+    save_audit_log(db, "create", "conferences", current_organization.id, None, None, conference_response)
     return db_conference 
 
 @router.get("/conferences/all_conferences", response_model=list[schemas.ConferenceResponse])
@@ -150,7 +150,7 @@ def update_conference(conference: schemas.ConferenceUpdate, db: Session = Depend
                     exhibitors_ids.append(db_exhibitor.id)
     updated_conference = crud.update_user_conference(db=db, conference=conference, db_conference=db_conference, sponsor_ids=sponsors_ids,exhibitor_ids=exhibitors_ids)
     logging.info("Conference updated: " + updated_conference.uuid)
-    audit_conference("update", current_organization.id, db_conference, updated_conference)
+    save_audit_log(db, "update", "confereces", current_organization.id, None, None, updated_conference)
     return updated_conference
 
 @router.delete("/conferences/{conference_id}")
@@ -161,8 +161,7 @@ def delete_conference_organization_id_conference_id(conference_id: str, db: Sess
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
     deleted_conference = crud.delete_conference(db=db, conference=db_conference)
     logging.info("Conference deleted: " + db_conference.uuid)
-    old_conference = schemas.ConferenceResponse(db_conference)
-    audit_conference("delete", current_organization.id, old_conference)
+    save_audit_log(db, "delete", "conferences", current_organization.id, None, db_conference, None)
     return deleted_conference
 
 @router.get("/conferences/generate_qr_code/{conference_id}")
@@ -218,5 +217,5 @@ def get_conference_list_summary(db: Session = Depends(get_db), current_organizat
         logging.exception("Error retrieving conference list summary" + str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error retrieving conference list summary" + str(e))
 
-def audit_conference(operation, organization_id, old_value=None, new_value=None):
-    print(f"organization {organization_id} performed {operation} on a conference table. old value: {old_value}, new value: {new_value}")
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

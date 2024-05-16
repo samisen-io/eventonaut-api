@@ -23,6 +23,7 @@ def create_promotion(promotion: promotion_schemas.PromotionCreate, db: Session =
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date range")
     promotion = promotions_crud.create_promotion(db=db, promotion=promotion, orhanization_id=organization.id)
     logging.info("Promotion created: " + promotion.conference_id)
+    save_audit_log(db, "create", "promotions", organization.id, None, None, promotion)
     return promotion
 
 @router.get('/promotions/by_organization', response_model=list[promotion_schemas.Promotion])
@@ -89,3 +90,6 @@ def delete_promotion(promotion_id: str, db: Session = Depends(get_db), basic_aut
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Promotion not deleted")
     logging.info("Promotion deleted: " + db_promotion.uuid)
     return promotion
+
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

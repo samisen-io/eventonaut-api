@@ -26,6 +26,7 @@ def create_sponsor(sponsor: schemas.SponsorCreate, db: Session = Depends(get_db)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists")
     sponsor = sponsors_crud.create_sponsor(db, sponsor, current_organization.id)
     logging.info(f"Sponsor created with id {sponsor.uuid}")
+    save_audit_log(db, "create", "sponsors", current_organization.id, None, None, sponsor)
     return sponsor
 
 @router.get("/sponsors/get-all-sponsors", response_model=list[schemas.SponsorResponse])
@@ -91,6 +92,7 @@ def update_sponsor(sponsor: schemas.SponsorUpdate, db: Session = Depends(get_db)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsor not found")
     sponsor = sponsors_crud.update_sponsor(db=db, sponsor=sponsor, db_sponsor=db_sponsor)
     logging.info(f"Sponsor updated with id {sponsor.uuid}")
+    save_audit_log(db, "update", "sponsors", current_organization.id, None, db_sponsor, sponsor)
     return sponsor
 
 @router.delete("/sponsors/{sponsor_id}")
@@ -101,4 +103,8 @@ def delete_sponsor(sponsor_id: str, db: Session = Depends(get_db), current_organ
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsor not found")
     deleted_sponsor = sponsors_crud.delete_sponsor(db=db, db_sponsor=sponsor)
     logging.info(f"Sponsor deleted with id {sponsor.uuid}")
+    save_audit_log(db, "delete", "sponsors", current_organization.id, None, sponsor, None)
     return deleted_sponsor
+
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

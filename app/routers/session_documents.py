@@ -34,7 +34,7 @@ def create_session_document(session_id: str, file: UploadFile = File(...), db: S
                                             size=file.size / (1024 * 1024))
         
         response = crud.insert_session_document(db, request)
-        
+        save_audit_log(db, "create", "session_documents", current_organization.id, None, None, response)
         return map_session_document_response(session_id, response)
     except HTTPException as e:
         logging.error(f"An error occurred while creating session document: {str(e)}")
@@ -79,6 +79,7 @@ def get_all_session_documents(session_id: str, db: Session = Depends(get_db), cu
 def delete_session_document(session_document_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])): 
     try:
         delete_session_document = crud.delete_session_document(db, session_document_id)
+        save_audit_log(db, "delete", "session_documents", current_user.organization_user[0].organization_id, current_user.id, delete_session_document, None)
         delete_blob_by_url(delete_session_document.document_url)
         return {"message": "Document deleted successfully"}
     except HTTPException as e:
@@ -87,3 +88,6 @@ def delete_session_document(session_document_id: str, db: Session = Depends(get_
     except Exception as e:
         logging.error(f"An error occurred while deleting session document: {str(e)}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= f"{str(e)}")
+    
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

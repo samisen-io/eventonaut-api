@@ -55,7 +55,9 @@ def create_exhibitor(exhibitor: schemas.ExhibitorCreate, db = Depends(get_db), c
     except EmailNotValidError as e:
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-    return crud.create_exhibitor(db, exhibitor, organization_id)    
+    result = crud.create_exhibitor(db, exhibitor, organization_id)
+    save_audit_log(db, "create", "exhibitor", organization_id, current_user.id, None, result)
+    return result
 
 @router.put("/exhibitor", response_model=schemas.ExhibitorResponse)
 def update_exhibitor(exhibitor: schemas.ExhibitorUpdate, db = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
@@ -64,7 +66,9 @@ def update_exhibitor(exhibitor: schemas.ExhibitorUpdate, db = Depends(get_db), c
     if not db_exhibitor:
         logging.exception(f"Exhibitor not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exhibitor not found")
-    return crud.update_exhibitor(db, db_exhibitor, exhibitor)
+    result = crud.update_exhibitor(db, db_exhibitor, exhibitor)
+    save_audit_log(db, "update", "exhibitor", organization_id, current_user.id, db_exhibitor, result)
+    return result
 
 @router.delete("/exhibitor/{exhibitor_id}")
 def delete_exhibitor(exhibitor_id: str, db = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
@@ -72,6 +76,10 @@ def delete_exhibitor(exhibitor_id: str, db = Depends(get_db), current_user: User
     db_exhibitor = crud.get_exhibitor_by_id(db, exhibitor_id, organization_id)
     if not db_exhibitor:
         logging.exception(f"Exhibitor not found")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exhibitor not found")
-    return crud.delete_exhibitor(db, db_exhibitor)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exhibitor not found") 
+    result =  crud.delete_exhibitor(db, db_exhibitor)
+    save_audit_log(db, "delete", "exhibitor", organization_id, current_user.id, db_exhibitor, None)
+    return result
     
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

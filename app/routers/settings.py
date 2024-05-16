@@ -26,6 +26,7 @@ def create_settings(settings:schemas.SettingsCreate, db: Session = Depends(get_d
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Body is empty")
     settings = crud.create_settings(db=db, settings=settings, organization_id=current_organization.id)
     logging.info("Settings created for conference id: " + settings.conference_id)
+    save_audit_log(db, "create", "settings", current_organization.id, None, None, settings)
     return settings
 
 @router.get("/settings/all_settings", response_model=list[schemas.Settings])
@@ -63,6 +64,7 @@ def update_settings(settings: schemas.SettingsCreate,db: Session = Depends(get_d
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Body is empty")
     settings=crud.update_settings(db=db, settings=settings, organization_id=current_organization.id)
     logging.info("Settings updated for conference: " + settings.conference_id)
+    save_audit_log(db, "update", "settings", current_organization.id, None, db_settings, settings)
     return settings
 
 # delete settings by conference id and settings id
@@ -74,4 +76,8 @@ def delete_settings(conference_id: str, db: Session = Depends(get_db), current_o
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Settings not found")
     deleted_settings = crud.delete_settings(db=db, conference_uuid=conference_id, organization_id=current_organization.id)
     logging.info("Settings deleted for conference: " + conference_id)
+    save_audit_log(db, "delete", "settings", current_organization.id, None, db_settings, None)
     return deleted_settings
+
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

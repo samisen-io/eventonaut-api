@@ -23,6 +23,7 @@ def get_mapped_organization_user_response(organization_user):
 def create_organization_user(organization_user: schemas.Organization_UserCreate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     try:
         new_organization_user = crud.create_organization_user(db ,organization_user)
+        save_audit_log(db, "create", "organization_user", new_organization_user.organization_id, User.id, None, new_organization_user)
         return get_mapped_organization_user_response(new_organization_user)
     except Exception as exc:
         raise exc
@@ -60,9 +61,11 @@ def get_organizations_by_user_id(user_id: str, db: Session = Depends(get_db), Us
 @router.put("/organization_user/{id}", response_model=schemas.Organization_UserUpdate)
 def update_organization_user(organization_user: schemas.Organization_UserUpdate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     try:
+        old_organization_user = crud.get_organization_user(db, organization_user.id)
         updated_organization_user = crud.update_organization_user(db=db, organization_user=organization_user)
         if updated_organization_user is None:
             raise HTTPException(status_code=404, detail="Organization user not found")
+        save_audit_log(db, "update", updated_organization_user.organization_id, "organization_user", User.id, old_organization_user, updated_organization_user)
         return get_mapped_organization_user_response(updated_organization_user)
     except Exception as exc:
         raise exc
@@ -70,7 +73,12 @@ def update_organization_user(organization_user: schemas.Organization_UserUpdate,
 @router.delete("/organization_user/{id}", response_model=schemas.DeleteResponse)
 def delete_organization_user(organization_user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     try:
+        old_organization_user = crud.get_organization_user(db, organization_user_id)
         crud.delete_organization_user(db, organization_user_id)
+        save_audit_log(db, "delete","organization_user", old_organization_user.organization_id, User.id, old_value=old_organization_user, new_value=None)
         return {"message": "Organization user deleted successfully"}
     except Exception as exc:
         raise exc
+
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

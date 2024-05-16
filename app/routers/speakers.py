@@ -38,6 +38,7 @@ def create_speaker(speaker: schemas.SpeakerCreate, db: Session = Depends(get_db)
                 session_ids.append(session.id)
     speaker = crud.create_speaker(db=db, speaker=speaker, organization_id=current_organization.id, session_ids=session_ids)
     logging.info("Speaker created: " + speaker.uuid)
+    save_audit_log(db, "create", "speakers", current_organization.id, None, None, speaker)
     return speaker
 
 @router.get("/speakers/get-all-speakers", response_model=list[SpeakerResponse])
@@ -109,6 +110,7 @@ def update_speaker(speaker: schemas.SpeakerUpdate, db: Session = Depends(get_db)
                 session_ids.append(session.id)
     updated_speaker = crud.update_speaker(db=db, speaker=speaker, db_speaker=db_speaker, session_ids=session_ids)
     logging.info("Speaker updated: " + updated_speaker.uuid)
+    save_audit_log(db, "update", "speakers", current_organization.id, None, db_speaker, updated_speaker)
     return updated_speaker
 
 @router.delete("/speakers/{speaker_id}")
@@ -119,4 +121,8 @@ def delete_speaker(speaker_id: str, db: Session = Depends(get_db), current_organ
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker not found")
     deleted_speaker = crud.delete_speaker(db=db, speaker_id=speaker_id)
     logging.info("Speaker deleted: " + speaker_id)
+    save_audit_log(db, "delete", "speakers", current_organization.id, None, db_speaker, None)
     return deleted_speaker
+
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

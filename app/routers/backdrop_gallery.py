@@ -84,6 +84,7 @@ def create_backdrop(backdrop: schemas.BackdropGalleryCreate, db: Session = Depen
                                                 name=modelresponse.name,
                                                 size=modelresponse.size,
                                                 uuid=modelresponse.uuid)
+        save_audit_log(db,"create", "backdrop_gallery", current_organization.id, None, None, modelresponse)
         return response
     except HTTPException as e:
         print("printing",e.detail)
@@ -100,10 +101,15 @@ def update_backdrop(backdrop: schemas.BackdropGalleryUpdate, db: Session = Depen
                                                      name=updated_backdrop.name,
                                                      size=updated_backdrop.size,
                                                     uuid=updated_backdrop.uuid)
+    save_audit_log(db,"update", "backdrop_gallery", current_organization.id, None, db_backdrop, updated_backdrop)
     return response
 
 @router.delete("/backdrop/{backdrop_id}")
 def delete_backdrop(backdrop_id: str, db: Session = Depends(get_db),  current_organization: organization_schemas.OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name, "organizer"])):
     db_backdrop = get_backdrop_by_id(backdrop_id, db, current_organization)
     crud.delete_backdrop(db=db, db_backdrop=db_backdrop)
+    save_audit_log(db,"delete", "backdrop_gallery", current_organization.id, None, db_backdrop, None)
     return {"detail": "Backdrop deleted"} 
+
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")

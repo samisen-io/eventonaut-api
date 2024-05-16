@@ -34,6 +34,9 @@ class Organization(Base):
     session_documents = relationship("SessionDocuments", back_populates="organization")
     exhibitors = relationship("Exhibitor", back_populates="organization")
     exhibitor_documents = relationship("ExhibitorDocuments", back_populates="organization")
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, name={self.name}, business_type={self.business_type}, description={self.description}, address={self.address}, logo_image_url={self.logo_image_url}, website_url={self.website_url}, external_id={self.external_id}, is_archived={self.is_archived})"
 
 class Organization_User(Base):
     __tablename__ = "organization_user"
@@ -47,6 +50,9 @@ class Organization_User(Base):
 
     organization = relationship("Organization", back_populates="organization_user")
     user = relationship("User", back_populates="organization_user")
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, organization_id={self.organization_id}, user_id={self.user_id})"
     
 class User(Base):
     __tablename__ = "users"
@@ -222,6 +228,9 @@ class BackdropGallery(Base):
     # User = relationship("User", back_populates="backdrop_gallery")
     organization = relationship("Organization", back_populates="backdrop_gallery")
     
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, name={self.name}, size={self.size}, conference_id={self.conference_id}, backdrop_url={self.backdrop_url}, is_archived={self.is_archived}, organization_id={self.organization_id})"
+    
 class Conference_Files(Base):
     __tablename__ = "conference_files"
 
@@ -253,6 +262,9 @@ class Speakers(Base):
     sessions = relationship("Session", secondary="session_speakers", back_populates="speakers")
     # owner = relationship("User", back_populates="speakers")
     organization = relationship("Organization", back_populates="speakers")
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, name={self.name}, email={self.email}, title={self.title}, bio={self.bio}, profile_image_url={self.profile_image_url}, is_archived={self.is_archived}, organization_id={self.organization_id})"
 
 class SessionSpeakers(Base):
     __tablename__ = "session_speakers"
@@ -264,6 +276,9 @@ class SessionSpeakers(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
     session_id = Column(Integer, ForeignKey("sessions.id"))
     speaker_id = Column(Integer, ForeignKey("speakers.id"))
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, conference_id={self.conference_id}, session_id={self.session_id}, speaker_id={self.speaker_id})"
 
 class Session(Base):
     __tablename__ = "sessions"
@@ -298,6 +313,9 @@ class Session(Base):
     @property
     def status(self):
         return self.session_status.status.upper()
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, name={self.name}, start_time={self.start_time}, end_time={self.end_time}, description={self.description}, date={self.date}, location={self.location}, conference_id={self.conference_id}, tags={self.tags}, session_image_url={self.session_image_url}, session_banner_url={self.session_banner_url}, session_status_id={self.session_status_id}, is_archived={self.is_archived}, organization_id={self.organization_id})"
     
 class Settings(Base):
     __tablename__ = "settings"
@@ -455,6 +473,9 @@ class Promotions(Base):
     @property
     def conference_image_url(self):
         return self.conference.conference_logo
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, created_on={self.created_on}, updated_on={self.updated_on}, conference_id={self.conference_id}, todate={self.todate}, fromdate={self.fromdate}, image_url={self.image_url}, promotion_name={self.promotion_name}, rank={self.rank}, organization_id={self.organization_id})"
 
 class Sponsors(Base):
     __tablename__ = "sponsors"
@@ -478,6 +499,9 @@ class Sponsors(Base):
     event_sponsors = relationship("EventSponsors", back_populates="sponsors", overlaps="conference")
     conference = relationship("Conference", secondary="event_sponsors", back_populates="sponsors", overlaps="event_sponsors")
     organization = relationship("Organization", back_populates="sponsors")
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, name={self.name}, description={self.description}, email={self.email}, contact_name={self.contact_name}, contact_phone={self.contact_phone}, logo_image_url={self.logo_image_url}, sponsorship_level={self.sponsorship_level}, is_archived={self.is_archived}, organization_id={self.organization_id})"
 
 class EventSponsors(Base):
     __tablename__ = "event_sponsors"
@@ -500,6 +524,9 @@ class EventSponsors(Base):
         if name in self._user_delegated_attrs:
             return getattr(self.sponsors, name)
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, created_on={self.created_on}, updated_on={self.updated_on}, conference_id={self.conference_id}, sponsor_id={self.sponsor_id})"
 
 class Venue(Base):
     __tablename__ = "venues"
@@ -517,6 +544,9 @@ class Venue(Base):
 
     conference = relationship("Conference", back_populates="venue")
     organization = relationship("Organization", back_populates="venues")
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, name={self.name}, location={self.location}, address={self.address}, geo_location={self.geo_location}, is_archived={self.is_archived}, organization_id={self.organization_id})"
     
 class OrganizerStatus(Base):
     __tablename__ = "organizer_status"
@@ -592,6 +622,9 @@ class EventDocuments(Base):
     def conference_uuid(self):
         return self.conference.uuid
     
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, created_on={self.created_on}, updated_on={self.updated_on}, conference_id={self.conference_id}, document_url={self.document_url}, content_type={self.content_type}, name={self.name}, size={self.size}, organization_id={self.organization_id})"
+    
 class SessionDocuments(Base):
     __tablename__ = "session_documents"
 
@@ -613,6 +646,9 @@ class SessionDocuments(Base):
     def session_uuid(self):
         return self.session.uuid
     
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, created_on={self.created_on}, updated_on={self.updated_on}, session_id={self.session_id}, document_url={self.document_url}, content_type={self.content_type}, name={self.name}, size={self.size}, organization_id={self.organization_id})"
+    
 class OrganizationSettings(Base):
     __tablename__ = "organization_settings"
 
@@ -625,6 +661,9 @@ class OrganizationSettings(Base):
     event_brite_access_token = Column(String, index=True)
 
     organization = relationship("Organization", back_populates="organization_settings")
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, created_on={self.created_on}, updated_on={self.updated_on}, organization_id={self.organization_id}, event_brite_org_id={self.event_brite_org_id}, event_brite_access_token={self.event_brite_access_token})"
     
 class Exhibitor(Base):
     __tablename__ = "exhibitor"
@@ -651,6 +690,9 @@ class Exhibitor(Base):
     exhibitor_documents = relationship("ExhibitorDocuments", back_populates="exhibitor")
     attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="exhibitors")
     
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, name={self.name}, address={self.address}, about={self.about}, contact_name={self.contact_name}, contact_phone={self.contact_phone}, contact_email={self.contact_email}, booth_number={self.booth_number}, category={self.category}, exhibitor_logo={self.exhibitor_logo}, exhibitor_banner={self.exhibitor_banner}, is_archived={self.is_archived}, organization_id={self.organization_id})"
+    
 class EventExhibitor(Base):
     __tablename__ = "event_exhibitor"
 
@@ -662,6 +704,9 @@ class EventExhibitor(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
 
     exhibitor = relationship("Exhibitor", back_populates="event_exhibitor", overlaps="conferences,exhibitors")
+    
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, created_on={self.created_on}, updated_on={self.updated_on}, exhibitor_id={self.exhibitor_id}, conference_id={self.conference_id})"
     
 class ExhibitorDocuments(Base):
     __tablename__ = "exhibitor_documents"
@@ -684,6 +729,9 @@ class ExhibitorDocuments(Base):
     def exhibitor_uuid(self):
         return self.exhibitor.uuid
     
+    def __repr__(self):
+        return f"(id={self.id}, uuid={self.uuid}, created_on={self.created_on}, updated_on={self.updated_on}, exhibitor_id={self.exhibitor_id}, document_url={self.document_url}, content_type={self.content_type}, name={self.name}, size={self.size}, organization_id={self.organization_id})"
+    
 class AttendeeExhibitors(Base):
     __tablename__ = "attendee_exhibitors"
 
@@ -698,3 +746,16 @@ class AttendeeExhibitors(Base):
     attendee = relationship("Attendee", back_populates="attendee_exhibitors")
     exhibitors = relationship("Exhibitor", back_populates="attendee_exhibitors")
     conference = relationship("Conference", back_populates="attendee_exhibitors")
+    
+class AuditLogs(Base):
+    __tablename__ = "audit_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime, index=True)
+    table_name = Column(String, index=True)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    old_data = Column(String, index=True)
+    new_data = Column(String, index=True)
+    

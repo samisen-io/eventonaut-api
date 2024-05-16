@@ -35,7 +35,7 @@ def create_event_document(conference_id: str, file: UploadFile = File(...), db: 
                                         size=size)
         
         response = crud.insert_event_document(db= db, request= request)
-        
+        save_audit_log(db, "create", "event_documents", current_organization.id, None, None, response)
         return map_event_document_response(conference_id, response)
     
     except HTTPException as e:
@@ -83,6 +83,7 @@ def delete_event_document(event_document_id: str, db: Session = Depends(get_db),
     try:
         deleted_event_document = crud.delete_event_document(db, event_document_id)
         delete_blob_by_url(deleted_event_document.document_url)
+        save_audit_log(db, "delete", "event_documents", current_user.organization_user[0].organization_id, current_user.id, None, deleted_event_document)
         return {"message": "Document deleted successfully"}
     except HTTPException as e:
         logging.error(f"An error occurred while deleting event document: {str(e)}")
@@ -90,3 +91,6 @@ def delete_event_document(event_document_id: str, db: Session = Depends(get_db),
     except Exception as e:
         logging.exception(f"Error deleting document: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail= str(e))
+    
+def save_audit_log(db, operation, table, organization_id, user_id=None, old_value=None, new_value=None):
+    print(f"user_id: {user_id} of organization {organization_id} performed {operation} on a {table} table. old value: {old_value}, new value: {new_value}")
