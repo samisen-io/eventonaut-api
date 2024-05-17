@@ -12,15 +12,15 @@ def get_organization_user(db: Session, organization_user_id: str):
 def get_organization_user_by_organization_id(db: Session, organization_user_uuid: str):
     return db.query(models.Organization_User).filter(models.Organization_User.uuid == organization_user_uuid).first()
 
-def get_users_by_organization_uuid(db: Session, organization_uuid: str):
-    organization = db.query(models.Organization).filter(models.Organization.uuid == organization_uuid).first()
+def get_users_by_organization_uuid(db: Session, organization_id: int):
+    organization = db.query(models.Organization).filter(models.Organization.id == organization_id).first()
     if organization is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization with the specified ID not found")
     users = []
     for organization_user in organization.organization_user:
         user = db.query(models.User).filter(models.User.id == organization_user.user_id).first()
-        users.append(schemas.OrganizationUserBase(uuid=organization_user.uuid,user=schemas.UserBase(uuid=user.uuid, email= user.email or '')))
-    return schemas.OrganizationUsersResponse(organization_uuid=organization_uuid, organization_name=organization.name, users=users)
+        users.append(schemas.OrganizationUserBase(uuid=organization_user.uuid, user=schemas.User(**user.__dict__)))
+    return schemas.OrganizationUsersResponse(organization_uuid=organization.uuid, organization_name=organization.name, users=users)
 
 def get_organizations_by_user_uuid(db: Session, user_uuid: str):
     user = db.query(models.User).filter(models.User.uuid == user_uuid).first()
