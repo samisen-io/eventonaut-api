@@ -4,7 +4,6 @@ import logging
 from ..static_enums import organizer
 from ..static_enums.role import RoleEnum
 from ..url_validator import check_url
-from . import organization_user_schemas
 
 class UserBase(BaseModel):
     email: str
@@ -146,8 +145,16 @@ class UserPasswordUpdate(BaseModel):
             raise ValueError(f"{info.field_name} should be between 8 and 16 characters")
         return v
 
-class User(UserBase):
+class User(BaseModel):
     uuid: str = Field(serialization_alias="id")
+    email: str
+    first_name: str | None = None
+    last_name: str | None = None
+    status: str | None = None
+    company: str | None = None
+    timezone: str | None = None
+    profile_image_url: str | None = None
+    list_of_roles: List[str] | None = None
     is_active: bool
     
     class Config:
@@ -164,11 +171,17 @@ class UserRoles(BaseModel):
     role_id: int 
     role: Role
        
+class OrgResp(BaseModel):
+    id: int
+    uuid: str
+    organization_id: int
+    user_id: int   
+    
 class UserAuthentication(User):
     id: int
     role: str
     user_roles: List[UserRoles]
-    organization_user: list[organization_user_schemas.OrgResp]
+    organization_user: list[OrgResp]
 
 class UserAuthorization(BaseModel):
     id: int
