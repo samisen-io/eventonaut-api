@@ -3,6 +3,7 @@ from app.oauth2 import get_current_active_user
 from app.static_enums.role import RoleEnum
 from ..crud import organization_user_crud as crud
 from ..schemas import organization_user_schemas as schemas
+from ..schemas.user_schemas import UserAuthentication as User
 from sqlalchemy.orm import Session
 from ..dependencies import get_db
 from ..basicauth import basic_auth
@@ -23,6 +24,14 @@ def create_organization_user(organization_user: schemas.Organization_UserCreate,
     except Exception as exc:
         raise exc
 
+@router.get("/organization_user/users", response_model=schemas.OrganizationUsersResponse)
+def get_users_by_organization_id(db: Session = Depends(get_db), User: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
+    organization_id = User.organization_user[0].organization_id
+    response = crud.get_users_by_organization_uuid(db, organization_id)
+    if response is None:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return response
+
 @router.get("/organization_user/{id}", response_model=schemas.Organization_User)
 def get_organization_user(organization_user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), basic_auth = Depends(basic_auth)):
     try:
@@ -41,13 +50,6 @@ def get_organization_users(skip: int = 0, limit: int = 100, db: Session = Depend
         return mapped_organization_users
     except Exception as exc:
         raise exc
-    
-@router.get("/organization_user/users/{organization_id}", response_model=schemas.OrganizationUsersResponse)
-def get_users_by_organization_id(organization_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
-    response = crud.get_users_by_organization_uuid(db, organization_id)
-    if response is None:
-        raise HTTPException(status_code=404, detail="Organization not found")
-    return response
 
 @router.get("/organization_user/organizations/{user_id}", response_model=schemas.UserOrganizationsResponse, include_in_schema=False)
 def get_organizations_by_user_id(user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
