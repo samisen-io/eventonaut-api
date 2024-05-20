@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator, Field, field_validator, ValidationInfo
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from datetime import date as Date, time
 from ..static_enums import session
 from ..url_validator import check_url
@@ -31,8 +31,12 @@ class SessionBase(BaseModel):
                 return None
             elif len(v) > 256:
                 raise ValueError(f"{info.field_name} cannot be longer than 256 characters")
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            if v is not None:
+                try:
+                    if not check_url(v):
+                        raise ValueError(f"Broken {info.field_name} link or invalid url")
+                except Exception as e:
+                    raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
     
     @field_validator('tags')
@@ -132,8 +136,11 @@ class SessionUpdate(BaseModel):
     @field_validator('session_image_url', 'session_banner_url')
     def session_image_url_validation(cls, v, info: ValidationInfo):
         if v is not None:
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            try:
+                if not check_url(v):
+                    raise ValueError(f"Broken {info.field_name} link or invalid url")
+            except Exception as e:
+                raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
     
     class Config:

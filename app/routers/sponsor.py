@@ -1,4 +1,3 @@
-from app import models
 from app.static_enums.role import RoleEnum
 from ..schemas import sponsor_schemas as schemas
 from ..schemas.organization_schemas import OrganizationSecurity
@@ -8,7 +7,7 @@ from sqlalchemy.orm import Session
 import logging
 from ..dependencies import get_db
 import email_validator
-from ..oauth2 import get_current_active_organization, get_current_active_user
+from ..oauth2 import get_current_active_organization
 from ..crud import conferences_crud
 
 router = APIRouter(tags=["sponsors"])
@@ -45,16 +44,6 @@ def get_sponsors(limit: int = 100, offset: int = 0, db: Session = Depends(get_db
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsors not found")
     logging.info("Sponsors retrieved")
     return sponsors
-
-# @router.get("/sponsors/by_organization", response_model=list[schemas.SponsorResponse])
-# def get_sponsors_by_organization_id(limit: int = 100, offset:int = 0, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
-#     sponsors = sponsors_crud.get_sponsors_by_organization_id(db=db, organization_id=current_organization.id, offset=offset, limit=limit)
-    
-#     if sponsors is None or len(sponsors) == 0:
-#         logging.exception("Sponsors not found")
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sponsors not found")
-#     logging.info(f"Sponsors retrieved for organization id {current_organization.uuid}")
-#     return sponsors
 
 @router.get("/sponsors/{sponsor_id}", response_model=schemas.SponsorResponse)
 def get_sponsor_by_id(sponsor_id: str, db: Session = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):

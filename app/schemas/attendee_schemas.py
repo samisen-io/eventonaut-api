@@ -2,7 +2,6 @@ from pydantic import BaseModel, validator, Field, field_validator, ValidationInf
 from ..static_enums import attendee
 from ..url_validator import check_url
 
-#pydantic model for attendeebase
 class AttendeeBase(BaseModel):
     email: str
     first_name: str | None = None
@@ -49,11 +48,13 @@ class AttendeeBase(BaseModel):
     @classmethod
     def validate_profile_image_url(cls, v, info: ValidationInfo):
         if v is not None:
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            try:
+                if not check_url(v):
+                    raise ValueError(f"Broken {info.field_name} link or invalid url")
+            except Exception as e:
+                raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
     
-#pydantic model for attendee create
 class AttendeeCreate(BaseModel):
     email: str
     hashed_password: str
@@ -78,7 +79,6 @@ class AttendeeCreate(BaseModel):
             raise ValueError("Password too long")
         return v
 
-#pydantic model for attendee password
 class AttendePassword(BaseModel):
     old_password: str
     new_password: str
@@ -141,11 +141,12 @@ class AttendeeUpdate(BaseModel):
     @classmethod
     def validate_profile_image_url(cls, v, info: ValidationInfo):
         if v is not None:
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            try:
+                if not check_url(v):
+                    raise ValueError(f"Broken {info.field_name} link or invalid url")
+            except Exception as e:
+                raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
-
-#pydantic model for attendee
 class Attendee(BaseModel):
     uuid: str = Field(serialization_alias="id")
     email: str

@@ -13,7 +13,6 @@ from ..basicauth import basic_auth
 
 router = APIRouter(tags=["agenda"])
 
-# create agenda
 @router.post("/agenda", response_model=schemas.Agenda, status_code=status.HTTP_201_CREATED)
 def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     db_attendee = attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id)
@@ -49,7 +48,6 @@ def create_agenda(agenda: schemas.AgendaCreate, db: Session = Depends(get_db), c
     logging.info("Agenda created for: " + db_attendee.uuid)
     return created_agenda
 
-# get all agenda
 @router.get("/agenda/get-all-agenda", response_model=list[schemas.Agenda])
 def get_all_agenda(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     agenda=crud.get_all_agenda(db, offset=offset, limit=limit)
@@ -59,7 +57,6 @@ def get_all_agenda(offset: int = 0, limit: int = 100, db: Session = Depends(get_
     logging.info("All Agenda retrieved")
     return agenda
 
-# get agenda by conference id and attendee id
 @router.get("/agenda", response_model=schemas.Agenda)
 def get_agenda_by_conference_id(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id) is None:
@@ -88,7 +85,6 @@ def get_agenda_by_conference_id_attendee_id(conference_id: str, attendee_id: str
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda not found")
     return agenda
 
-# update agenda by conference id and attendee id
 @router.put("/agenda", response_model=schemas.Agenda)
 def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if agenda.name is None and (agenda.sessions is None or len(agenda.sessions) == 0):
@@ -128,7 +124,6 @@ def update_agenda(agenda: schemas.AgendaUpdate, db: Session = Depends(get_db), c
     logging.info("Agenda updated for: " + db_attendee.uuid)
     return updated_agenda
 
-# delete agenda by conference id and attendee id
 @router.delete("/agenda/{conference_id}")
 def delete_agenda(conference_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if attendee_crud.get_attendee_by_id(db, attendee_id=current_user.id) is None:
@@ -145,6 +140,6 @@ def delete_agenda(conference_id: str, db: Session = Depends(get_db), current_use
     except:
         logging.exception("Agenda not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agenda not found")
-    deleted_agenda = crud.delete_agenda(db=db, conference_id=conference_id, attendee_id=current_user.id)
+    deleted_agenda = crud.delete_agenda(db=db, agenda=db_agenda)
     logging.info("Agenda deleted for conference: " + conference_id)
     return deleted_agenda

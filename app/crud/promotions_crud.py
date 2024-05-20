@@ -8,7 +8,6 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from ..static_enums.blob_container_enums import BlobContainer
 from sqlalchemy.orm import joinedload
-import time
 
 def get_promotions_by_organization(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
     return db.query(models.Promotions).filter(models.Promotions.organization_id == organization_id).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(offset).limit(limit).all()
@@ -77,6 +76,7 @@ def update_promotion(db: Session, promotion: promotion_schemas.PromotionUpdate):
             setattr(db_promotion, key, value)
    
     if db_promotion.fromdate > db_promotion.todate:
+        logging.exception("Invalid date range")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date range")
 
     if promotion_rank != 0:

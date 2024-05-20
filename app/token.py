@@ -9,13 +9,12 @@ from pydantic import ValidationError
 from .crud import logout_token_crud
 from sqlalchemy.orm import Session
 
-    
 load_dotenv()
 REFRESH_TOKEN_SECRET_KEY = os.getenv("REFRESH_TOKEN_SECRET_KEY")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 
-def create_access_token(data: dict, expires_delta: timedelta or None = None):
+def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -26,7 +25,7 @@ def create_access_token(data: dict, expires_delta: timedelta or None = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-def create_refresh_token(data: dict, expires_delta: timedelta or None = None):
+def create_refresh_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -81,4 +80,3 @@ def invalidate_refresh_token(jwt_token:str, db: Session):
             raise HTTPException(status_code=400, detail="Invalid token")
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid token")
-

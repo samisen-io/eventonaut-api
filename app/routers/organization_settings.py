@@ -1,9 +1,7 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, APIRouter, Depends, status, Security
-
 from app.eventbrite_operations import get_organization_id
 from ..schemas import organization_settings_schemas as schemas
-from ..basicauth import basic_auth
 from ..dependencies import get_db
 from ..crud import organization_settings_crud as crud
 from ..crud import organization_crud

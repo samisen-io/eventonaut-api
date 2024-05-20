@@ -26,7 +26,6 @@ def signup_organization_user(organizer_signup_request: schemas.SignupOrganizerRe
     response = signup_service.signup_organization_user(db=db, organizer_signup_request = organizer_signup_request, organization_admin_user=organization_admin)
     return response
 
-
 def get_user_role_ids(user):
     list_of_roles = []
     for user_role in user.user_roles:

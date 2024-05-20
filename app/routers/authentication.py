@@ -8,7 +8,6 @@ from fastapi.security import OAuth2PasswordRequestForm
 from app.crud.organization_crud import get_organization_by_user_id
 from app.schemas.organization_schemas import Organization
 from app.schemas.user_schemas import UserAuthentication as User
-from app.schemas.user_role import UserRole as User_Role
 from app.schemas.token_schemas import TokenInput
 from app.static_enums.role import RoleEnum
 from ..crud import users_crud
@@ -21,11 +20,7 @@ from .. import basicauth
 from ..crud import logout_token_crud
 from datetime import datetime
 from .. import models
-# from ..my_token import token_cache
-
-from app.oauth2 import get_current_active_organization, get_current_active_user, get_current_organization, get_current_user_RT, get_token_data, oauth_2_scheme
-
-import app
+from app.oauth2 import get_current_active_user, get_current_organization, get_current_user_RT, get_token_data, oauth_2_scheme
 
 router = APIRouter(tags=["authentication"])
 
@@ -73,7 +68,6 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
         
     logging.info("User logged in: " + user.uuid)
     return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
-
 
 def sanitize_username(username: str) -> str:
     return username.lower().strip()
@@ -188,4 +182,3 @@ async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Se
     except JWTError:
         logging.exception("Invalid token")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
-    

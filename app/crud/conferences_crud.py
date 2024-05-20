@@ -5,8 +5,7 @@ from datetime import datetime, date
 from app.pinecone_operations import delete_namespace
 from app.routers import upload_image
 from .. import models
-from ..schemas import conference_schemas as schemas, ai_assistant_schemas as assistant_schemas
-from .. import AI_assitant
+from ..schemas import conference_schemas as schemas
 import uuid
 from ..code_generator import generate_unique_string
 from ..static_enums import event
@@ -15,27 +14,20 @@ from sqlalchemy.orm import joinedload
 from datetime import datetime
 from . import exhibitor_crud
 
-# def get_all_conferences_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 100):
-#     conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.organization_id == organization_id, models.Conference.is_archived == False).order_by(models.Conference.start_date.desc(), models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
-#     return conferences
-
 def exclude_archived(conference: models.Conference):
     conference.client = None if conference.client is not None and conference.client.is_archived else conference.client
     conference.sponsors = [sponsor for sponsor in conference.sponsors if not sponsor.is_archived]
     conference.venue = None if conference.venue is not None and conference.venue.is_archived else conference.venue
 
-# get all conferences ordered by start date in descending order
 def get_all_conferences(db: Session, offset: int = 0, limit: int = 100):
     conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors),joinedload(models.Conference.exhibitors)).order_by(models.Conference.start_date.desc(), models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
     return conferences
 
 def get_all_conferences_for_attendee(db: Session, offset: int = 0, limit: int = 100):
     conferences = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors),joinedload(models.Conference.exhibitors)).filter(models.Conference.start_date >= datetime.utcnow().date(), models.Conference.is_archived == False).order_by(models.Conference.start_date, models.Conference.updated_on.desc()).offset(offset).limit(limit).all()
-    
     for conference in conferences:
         if conference is not None:
             exclude_archived(conference)
-    
     return conferences
 
 def get_conferences_by_organization_id(db: Session, organization_id: int, offset: int = 0, limit: int = 10):
@@ -230,7 +222,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     conference_banner_url = conference_dict.pop("conference_banner_url")
     conference_dict['venue_id'] = db.query(models.Venue).filter(models.Venue.uuid == conference_dict['venue_id']).first().id if conference_dict['venue_id'] is not None else None
 
-    non_nullable_feilds = ['name','venue_id','start_date','end_date','information_guide','event_type']
+    non_nullable_feilds = ['name','venue_id','start_date','end_date','information_guide','event_type','external_id']
 
     if conference_status is not None:
         db_conference.conference_status_id = event.EventEnum[conference_status.upper()].value

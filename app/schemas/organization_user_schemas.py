@@ -1,5 +1,6 @@
 from typing import List
 from pydantic import BaseModel, Field
+from .user_schemas import User
 
 class DeleteResponse(BaseModel):
     message: str
@@ -32,18 +33,12 @@ class OrganizationBase(BaseModel):
 
 class OrganizationUserBase(BaseModel):
     uuid: str = Field(serialization_alias="id")
-    user: UserBase
+    user: User
 
 class OrganizationUsersResponse(BaseModel):
     organization_uuid: str = Field(serialization_alias="organization_id")
     organization_name: str
     users: List[OrganizationUserBase]
-
-class OrgResp(BaseModel):
-    id: int
-    uuid: str
-    organization_id: int
-    user_id: int
 
 class UserOrganizationsResponse(BaseModel):
     user_id: str

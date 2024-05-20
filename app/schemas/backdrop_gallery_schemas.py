@@ -1,5 +1,3 @@
-from pydantic import BaseModel, Field
-import requests
 from pydantic import BaseModel, Field, validator
 from ..url_validator import check_url
 
@@ -10,8 +8,13 @@ class BackdropGalleryBase(BaseModel):
     def url_must_be_reachable(cls, v):
         if v == "":
             raise ValueError('URL cannot be empty')
-        if not check_url(v):
-            raise ValueError('Broken backdrop link or invalid url')
+        
+        if v is not None:
+            try:
+                if not check_url(v):
+                    raise ValueError(f"Broken backdrop_url link or invalid url")
+            except Exception as e:
+                raise ValueError(f"Broken backdrop_url link or invalid url - {str(e)}")
 
         if not any(ext in v for ext in ['.jpeg', '.jpg', '.png']):
             raise ValueError('URL must point to a .jpeg, .jpg, or .png image')

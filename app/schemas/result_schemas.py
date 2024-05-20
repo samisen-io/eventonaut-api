@@ -1,12 +1,15 @@
 from pydantic import BaseModel, Field
-from datetime import date, time
 from typing import List, Optional
-from ..schemas import venue_schemas, conference_schemas, speaker_schemas, session_schemas, attendee_schemas, client_schemas
+from ..schemas import venue_schemas, conference_schemas, speaker_schemas, session_schemas, attendee_schemas, exhibitor_schemas
 
 class Conference(conference_schemas.ConferenceBase):
     uuid: str = Field(serialization_alias="id")
     venue: venue_schemas.VenueResponse = Field(default=None)
     location: str
+    rank: int
+    
+class Exhibitor(exhibitor_schemas.ExhibitorBase):
+    uuid: str = Field(serialization_alias="id")
     rank: int
 
 class Speakers(speaker_schemas.SpeakerBase):
@@ -15,7 +18,6 @@ class Speakers(speaker_schemas.SpeakerBase):
 
 class Session(session_schemas.SessionBase):
     uuid: str = Field(serialization_alias="id")
-    #speakers: list[str] | None = None
     speakers: list[speaker_schemas.Speaker]
     rank: int
 

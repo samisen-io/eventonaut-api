@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 from ..schemas import venue_schemas
 from .. import models
 import uuid
@@ -8,9 +7,6 @@ from fastapi import HTTPException, status
 
 def get_all_venues(db: Session, offset: int, limit: int):
     return db.query(models.Venue).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
-
-# def get_all_venues_by_organization_id(db: Session, organization_id: int, offset: int, limit: int):
-#     return db.query(models.Venue).filter(models.Venue.organization_id == organization_id, models.Venue.is_archived == False).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
 
 def get_all_venues_by_organization_id(db: Session, organization_id: int, offset: int, limit: int):
     return db.query(models.Venue).filter(models.Venue.organization_id == organization_id, models.Venue.is_archived == False).order_by(models.Venue.updated_on.desc()).offset(offset).limit(limit).all()
@@ -44,7 +40,6 @@ def update_venue(db: Session, venue: venue_schemas.VenueUpdate, db_venue: models
             setattr(db_venue, key, value)
 
     db_venue.updated_on = datetime.utcnow()
-
     db.commit()
     db.refresh(db_venue)
     return db_venue
@@ -76,3 +71,24 @@ def delete_venue(db: Session, db_venue: models.Venue):
     db_venue.is_archived = True
     db.commit()
     return True
+
+def create_venue_with_values_as_unknown(db: Session, organization_id: int):
+    venue_payload = {
+        'name': 'Unknown',
+        'location': 'Unknown',
+        'address': 'Unknown',
+        'geo_location': 'Unknown'
+    }
+    venue_obj = venue_schemas.VenueCreate(**venue_payload)
+    venue = create_venue(db, venue_obj, organization_id)
+    return venue
+
+def get_venue_with_unknown_values(db: Session, organization_id: int):
+    venue = db.query(models.Venue).filter(models.Venue.name == 'Unknown', models.Venue.organization_id == organization_id).first()
+    return venue
+
+def dealing_with_null_venues(db, organization_id):
+    venue = get_venue_with_unknown_values(db, organization_id)
+    if venue is None:
+        venue = create_venue_with_values_as_unknown(db, organization_id)
+    return venue

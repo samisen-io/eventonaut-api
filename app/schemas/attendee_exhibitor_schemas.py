@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator, Field
+from pydantic import BaseModel, field_validator
 import logging
 from ..schemas.exhibitor_schemas import ExhibitorResponse
 

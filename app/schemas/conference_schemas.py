@@ -54,8 +54,11 @@ class ConferenceBase(BaseModel):
     @field_validator('information_guide', 'conference_banner_url', 'registration_link', 'conference_logo')
     def validate_url(cls, v, info: ValidationInfo):
         if v is not None:
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            try:
+                if not check_url(v):
+                    raise ValueError(f"Broken {info.field_name} link or invalid url")
+            except Exception as e:
+                raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
     
 class ConferenceCreate(ConferenceBase):
@@ -131,7 +134,7 @@ class ConferenceUpdate(BaseModel):
                 return None
             if v.upper() not in list(event_types.EventTypeEnum.__members__):
                 raise ValueError(f"Invalid {info.field_name}")
-        return v
+        return v.lower()
     
     @field_validator('timezone')
     def timezone_is_valid(cls, v, info: ValidationInfo):
@@ -167,11 +170,13 @@ class ConferenceUpdate(BaseModel):
     @field_validator('information_guide', 'conference_banner_url', 'registration_link', 'conference_logo')
     def validate_url(cls, v, info: ValidationInfo):
         if v is not None:
-            if not check_url(v):
-                raise ValueError(f"Broken {info.field_name} link or invalid url")
+            try:
+                if not check_url(v):
+                    raise ValueError(f"Broken {info.field_name} link or invalid url")
+            except Exception as e:
+                raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
 
-#pydantic model for conference
 class ConferenceResponse(BaseModel):
     uuid: str = Field(serialization_alias="id")
     name: str

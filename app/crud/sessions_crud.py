@@ -1,5 +1,3 @@
-import os
-from urllib.parse import urlparse
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 from app.routers import upload_image
@@ -104,6 +102,7 @@ def get_all_sessions_by_uuid_id(db: Session, conference_uuid: str):
 
 def delete_session(db: Session, db_session: models.Session):
     if db_session.speakers and any([speaker.is_archived == False for speaker in db_session.speakers]):
+        logging.exception("Session is associated with a speaker. Cannot delete session.")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Session is associated with a speaker. Cannot delete session.")
     db_session.is_archived = True
     db.commit()
@@ -144,7 +143,7 @@ def update_session_image_url(db_session: models.Session, session_image, blob_con
         upload_image.delete_blob_by_url(current_url)
         setattr(db_session, url_attribute, None)
     
-def update_session_speakers(db, db_session, speaker_ids):
+def update_session_speakers(db: Session, db_session: models.Session, speaker_ids: list[int]):
     db.query(models.SessionSpeakers).filter(models.SessionSpeakers.session_id == db_session.id).delete()
     db.commit()
     for speaker_id in speaker_ids:

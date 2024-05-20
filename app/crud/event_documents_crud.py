@@ -1,7 +1,6 @@
 from fastapi import HTTPException
 from fastapi import status as Status
 from sqlalchemy.orm import Session
-
 from app.schemas.event_document_schemas import EventDocumentRequest
 from ..models import EventDocuments
 import logging

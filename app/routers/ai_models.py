@@ -1,5 +1,5 @@
 import ast
-from datetime import date, datetime, time
+from datetime import datetime
 import json
 import sys
 import logging
@@ -8,7 +8,6 @@ from fastapi.responses import StreamingResponse
 from app.crud.aitokens_crud import insert_aitoken
 from app.crud.speakers_crud import get_speaker_uuid_by_email
 from app.file_reader import read_file_return_csv
-from app.schemas.venue_schemas import VenueResponse
 from app.pinecone_operations import arranging_ouput_object, create_namespace, create_vector_db, delete_namespace, delete_vector_db
 from app.routers.speakers import create_speaker
 from app.schemas import aitokens_schemas as ait_schemas
@@ -220,7 +219,9 @@ async def upload_speaker_file(file: UploadFile,
 @router.post("/synchronize_database_and_pinecone/")
 async def update_namespace(conference_id: str, current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), db: Session = Depends(get_db)):
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)
-    if conference.event_type == 'conference':
+    if not conference:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
+    if conference.event_type.lower() == 'conference':
         write_sessions_to_csv(db,conference_id)
         write_speakers_to_csv(db,conference_id)
         write_events_to_csv(db,conference_id)
@@ -230,15 +231,24 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
         add_documents(namespace,conference_id,'sessions')
         add_documents(namespace,conference_id,'speakers')
         namespace = add_documents(namespace,conference_id,'events')
-    elif conference.event_type == 'tradeshow':
+    elif conference.event_type.lower() == 'tradeshow':
         write_events_to_csv(db,conference_id)
         write_exhibitors_to_csv(db, conference_id)
-        write_exhibitor_docs(db, conference_id)
         namespace = create_namespace(conference_id)
         status = delete_namespace(conference_id)
         status = status['status']
+        write_exhibitor_docs(db, conference_id, namespace)
         add_documents(namespace, conference_id, 'exhibitors')
         namespace = add_documents(namespace,conference_id,'events')
+    elif conference.event_type.lower() == 'other':
+        write_events_to_csv(db,conference_id)
+        namespace = create_namespace(conference_id)
+        status = delete_namespace(conference_id)
+        status = status['status']
+        namespace = add_documents(namespace,conference_id,'events')
+    else:
+        logging.exception("Event type not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event type not found")
     namespace = namespace['namespace']
     logging.info("Database and Pinecone Synchronized")
     return {'namespace': namespace, 'deletion_status': status}

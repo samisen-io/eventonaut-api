@@ -2,7 +2,6 @@ import logging
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Security, status
 from sqlalchemy.orm import Session
-from app import models
 from app.crud import backdrop_gallery_crud as crud, conferences_crud as conf_crud
 from app.oauth2 import get_current_active_organization, get_current_active_user
 from app.schemas import backdrop_gallery_schemas as schemas, organization_schemas

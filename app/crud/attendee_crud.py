@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-
 from app.static_enums.role import RoleEnum
 from .. import models
 from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, thread_schemas
@@ -7,8 +6,7 @@ from datetime import datetime
 from .. import hashing
 from .. AI_assitant import create_thread
 import uuid
-from ..crud import conferences_crud, user_role_crud
-from ..static_enums import event
+from ..crud import user_role_crud
 from ..static_enums import attendee as attendee_enum
 from ..routers import upload_image
 from fastapi import HTTPException, status

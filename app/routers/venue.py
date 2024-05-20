@@ -1,12 +1,10 @@
 from app.static_enums.role import RoleEnum
 from ..dependencies import get_db
 from ..crud import venue_crud as crud
-from ..crud import users_crud
 from ..schemas import venue_schemas as schemas
-from ..schemas.user_schemas import UserAuthentication as User
 from fastapi import APIRouter, Security, HTTPException, status, Depends
 from sqlalchemy.orm import Session
-from ..oauth2 import get_current_active_user, get_current_active_organization
+from ..oauth2 import get_current_active_organization
 import logging
 from ..schemas.organization_schemas import OrganizationSecurity
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Form, HTTPException, Depends, Security, UploadFile, status, File
+from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
 from app.oauth2 import get_current_active_user
 from app.static_enums.role import RoleEnum
@@ -9,11 +9,9 @@ from ..crud import attendee_crud as crud
 from email_validator import validate_email, EmailNotValidError
 from app.schemas.user_schemas import UserAuthentication as User
 from .. import basicauth
-from .. import models
 
 router = APIRouter(tags=["attendee"])
 
-# create attendee
 @router.post("/attendee/signup", response_model=schemas.Attendee, status_code=status.HTTP_201_CREATED)
 def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:
@@ -30,7 +28,6 @@ def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_
     logging.info("Attendee created: " + attendee.uuid)
     return attendee
 
-# get all attendees
 @router.get("/attendee/all-attendees", response_model=list[schemas.Attendee])
 def get_all_attendees(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     attendees = crud.get_attendees(db, skip=skip, limit=limit)
@@ -40,7 +37,6 @@ def get_all_attendees(skip: int = 0, limit: int = 100, db: Session = Depends(get
     logging.info("All attendees retrieved")
     return attendees
 
-# get attendee by id
 @router.get("/attendee", response_model=schemas.Attendee)
 def get_attendee_by_id(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     db_attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)
@@ -50,7 +46,6 @@ def get_attendee_by_id(db: Session = Depends(get_db), current_user: User = Secur
     logging.info("Attendee retrieved: " + db_attendee.uuid)
     return db_attendee
 
-# update attendee by email
 @router.put("/attendee", response_model=schemas.Attendee)
 def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if all(value is None for value in dict(attendee).values()):
@@ -63,7 +58,6 @@ def update_attendee_by_id(attendee: schemas.AttendeeUpdate, db: Session = Depend
     logging.info("Attendee updated: " + updated_attendee.uuid)
     return updated_attendee
 
-# update attende password by id
 @router.put("/attendee/password", response_model=schemas.Attendee)
 def update_attendee_password_by_id(attendee: schemas.AttendePassword, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     if not crud.get_attendee_by_id(db, attendee_id=current_user.id):
@@ -79,7 +73,6 @@ def update_attendee_password_by_id(attendee: schemas.AttendePassword, db: Sessio
     logging.info("Attendee password updated: " + updated_attendee.uuid)
     return updated_attendee
 
-# delete all attendee by id
 @router.delete("/attendee")
 def delete_attendee_by_id(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
     db_attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)

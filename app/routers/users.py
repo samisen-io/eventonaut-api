@@ -15,7 +15,7 @@ from cachetools import TTLCache
 import os
 from ..otp_generator import send_mail, generate_otp, validate_otp
 from app.services.signup_service import signup_organization_admin
-from app.schemas import signup_schemas as s_schemas, user_schemas, organization_schemas, organization_user_schemas
+from app.schemas import signup_schemas as s_schemas
 
 
 default_time_limit = int(os.getenv("OTP_EXPIRE"))
@@ -37,17 +37,6 @@ async def send_otp(email: str, email_subject: str):
         logging.exception("Email not sent")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email not sent")
     return otp
-
-# @router.post("/users", status_code=status.HTTP_200_OK)
-# async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
-#     global cache
-#     try:
-#         valid = validate_email(user.email)
-#         user.email = valid.normalized.lower()
-#     except EmailNotValidError as e:
-#         logging.exception(str(e))
-#         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
-#     return user
 
 def get_role_ids(user: schemas.UserCreate):
     role_ids = set()
@@ -114,20 +103,6 @@ async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), b
     except Exception as e:
         logging.exception("User not created" + str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User not created" + str(e))
-
-# async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
-#     user = validate_user_email(user)
-#     role_ids = get_role_ids(user)
-#     await check_user_exists(db, user)
-#     try:
-#         user = crud.create_user(db=db, user=user, role_ids=role_ids)
-#         user.list_of_roles = get_role_names(user)
-#         logging.info("User created: " + user.uuid)
-#         del cache[user.email]
-#         return user
-#     except Exception as e:
-#         logging.exception(str(e))
-#         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
 def get_users_from_db(db: Session, offset: int, limit: int):
     users = crud.get_users(db, offset=offset, limit=limit)
@@ -162,7 +137,6 @@ def get_users_by_organization_id(offset: int = 0, limit: int = 100, db: Session 
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-
 @router.get("/users", response_model=schemas.User)
 def get_user(db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_user = crud.get_user(db, user_id=current_user.id)
@@ -195,7 +169,6 @@ def update_user_(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), cu
         is_active=updated_user.is_active,
         uuid=updated_user.uuid
     )
-    
     return updated_user_response
 
 def get_db_user(db: Session, user_id: int):
@@ -252,5 +225,4 @@ def update_user(user: schemas.UserBaseUpdate, current_user_id: str, db: Session 
         is_active=updated_user.is_active,
         uuid=updated_user.uuid
     )
-    
     return updated_user_response
