@@ -1,12 +1,11 @@
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from app import hashing
 from ..static_enums.temporary_passwords import TemporaryPasswordEnum as TempPasswordEnum
-from app.crud import users_crud, organization_crud, organization_user_crud, user_role_crud
+from app.crud import users_crud, organization_crud, organization_user_crud
 from app.schemas import signup_schemas as schemas, user_schemas, organization_schemas, organization_user_schemas
 from app.static_enums.role import RoleEnum
 from app.static_enums.organizer import OrganizerEnum
 from app.models import User
+import uuid
 
 def create_organization(db: Session, name: str):
     create_organizer_request = organization_schemas.OrganizationCreate(name=name)
@@ -20,7 +19,7 @@ def create_organization_user(db: Session, organization_id: str, user_id: str):
     return organization_user_crud.create_organization_user(db=db, organization_user=organization_user)
 
 def signup_organization_admin(db: Session, organizer_signup_request: schemas.SignupOrganizerAdminRequest):
-    admin_password = TempPasswordEnum.ADMIN_PASSWORD.value
+    admin_password = uuid.uuid1().hex
     organization = create_organization(db, organizer_signup_request.organization_name)
     user = create_user(db, user_schemas.UserCreate(email=organizer_signup_request.email, hashed_password=admin_password, first_name=organizer_signup_request.first_name, last_name=organizer_signup_request.last_name, timezone=organizer_signup_request.timezone, status=OrganizerEnum.INACTIVE.name), RoleEnum.ORGANIZATION_ADMIN)
     create_organization_user(db, organization.uuid, user.uuid)
@@ -51,7 +50,7 @@ def get_user_role_ids(user):
     return list_of_roles
 
 def signup_organization_user(db: Session, organizer_signup_request: schemas.SignupOrganizerUserRequest, organization_admin_user : User, organization_id: int):
-    user_password = TempPasswordEnum.USER_PASSWORD.value
+    user_password = uuid.uuid1().hex
     organization = organization_crud.get_organization_by_id(db, organization_id)
     # admin_organizations: organization_user_schemas.UserOrganizationsResponse = organization_user_crud.get_organizations_by_user_uuid(db, user_uuid=organization_admin_user.uuid)
     # matched_organization_id = get_organization_uuid(admin_organizations, organizer_signup_request.organization_name)
