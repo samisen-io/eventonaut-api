@@ -129,7 +129,6 @@ class UserBaseUpdate(BaseModel):
                     raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
 
-
 class UserPasswordUpdate(BaseModel):
     old_password: str
     new_password: str
@@ -160,13 +159,25 @@ class UserPasswordReset(BaseModel):
             raise ValueError(f"{info.field_name} should be between 8 and 16 characters")
         return v
 
+class ForgotPassword(BaseModel):
+    email: str
+    
+    @field_validator('email')
+    def field_is_not_empty(cls, v, info: ValidationInfo):
+        if v.strip() == "":
+            logging.exception(f"{info.field_name} cannot be empty")
+            raise ValueError(f"{info.field_name} cannot be empty")
+        elif len(v) > 256:
+            logging.exception(f"{info.field_name} should be less than 256 characters")
+            raise ValueError(f"{info.field_name} should be less than 256 characters")
+        return v
+
 class User(BaseModel):
     uuid: str = Field(serialization_alias="id")
     email: str
     first_name: str | None = None
     last_name: str | None = None
     status: str | None = None
-    company: str | None = None
     timezone: str | None = None
     profile_image_url: str | None = None
     list_of_roles: List[str] | None = None

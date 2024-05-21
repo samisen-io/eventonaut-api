@@ -2,6 +2,8 @@ import uuid
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from app.crud import organization_crud, users_crud
+from app.static_enums.organizer import OrganizerEnum
+from app.static_enums.role import RoleEnum
 from .. import models
 from ..schemas import organization_user_schemas as schemas
 from datetime import datetime
@@ -19,8 +21,18 @@ def get_users_by_organization_uuid(db: Session, organization_id: int):
     users = []
     for organization_user in organization.organization_user:
         user = db.query(models.User).filter(models.User.id == organization_user.user_id).first()
-        users.append(schemas.OrganizationUserBase(uuid=organization_user.uuid, user=schemas.User(**user.__dict__)))
+        users.append(schemas.OrganizationUserBase(uuid=organization_user.uuid, user=schemas.User(**user.__dict__, list_of_roles=get_user_role_ids(user), status=OrganizerEnum(user.user_status_id).name)))
     return schemas.OrganizationUsersResponse(organization_uuid=organization.uuid, organization_name=organization.name, users=users)
+
+def get_user_role_ids(user):
+    list_of_roles = []
+    for user_role in user.user_roles:
+        try:
+            role_name = RoleEnum(user_role.role_id).name
+            list_of_roles.append(role_name)
+        except ValueError:
+            print(f"Invalid role_id: {user_role.role_id}")
+    return list_of_roles
 
 def get_organizations_by_user_uuid(db: Session, user_uuid: str):
     user = db.query(models.User).filter(models.User.uuid == user_uuid).first()
