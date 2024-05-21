@@ -15,11 +15,13 @@ from cachetools import TTLCache
 import os
 from ..otp_generator import send_mail, generate_otp, validate_otp
 from app.services.signup_service import signup_organization_admin
+from app.schemas import signup_schemas
+from ..hashing import verify_hash, get_hash
+from ..email_templates.forgot_password import ForgotPasswordEnum
 from app.schemas import signup_schemas as s_schemas
 
-
 default_time_limit = int(os.getenv("OTP_EXPIRE"))
-router = APIRouter(tags=["users"])
+router = APIRouter(tags=["users"], prefix="/user")
 cache = TTLCache(maxsize=1024, ttl=default_time_limit)
 
 def validate_user_email(user: schemas.UserCreate):
@@ -62,7 +64,7 @@ async def check_user_exists(db: Session, user: schemas.UserCreate):
     logging.info("OTP sent to Email")
     return {"msg": "OTP sent successfully"}
     
-@router.post("/users/verify", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
+@router.post("/verify", response_model=schemas.User, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 async def verify_otp(otp_validation: schemas.OtpVerification, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     global cache
     
@@ -79,7 +81,7 @@ async def verify_otp(otp_validation: schemas.OtpVerification, db: Session = Depe
     user = cache[otp_validation.email][2]
     del cache[otp_validation.email]
     
-    signup_response = signup_organization_admin(db=db, organizer_signup_request = s_schemas.SignupOrganizerRequest(email=user.email, password=user.hashed_password, organization_name=user.company))
+    signup_response = signup_organization_admin(db=db, organizer_signup_request = s_schemas.SignupOrganizerAdminRequest(email=user.email, password=user.hashed_password, organization_name=user.company))
     updated_user = update_user(user, current_user_id=signup_response.user_id, db = db)
     updated_user.company = signup_response.organization_name
     return updated_user
@@ -95,7 +97,7 @@ def get_role_names(user: schemas.User):
     roles_names = [role for role in roles_names if role != '']
     return roles_names
 
-@router.post("/users")
+@router.post("/", include_in_schema=False)
 async def create_user(user: schemas.UserCreate, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     try:  
         user = validate_user_email(user)
@@ -116,14 +118,14 @@ def assign_role_names_to_users(users):
         user.list_of_roles = get_role_names(user)
     return users
 
-@router.get("/users/all_users", response_model=list[schemas.User])
+@router.get("/all_users", response_model=list[schemas.User])
 def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     users = get_users_from_db(db, offset, limit)
     users = assign_role_names_to_users(users)
     logging.info("Users retrieved")
     return users
 
-@router.get("/users/organization_id", response_model=list[schemas.User])
+@router.get("/organization_id", response_model=list[schemas.User])
 def get_users_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     try:
         users = crud.get_users_by_organization_id(db, organization.id, offset, limit)
@@ -137,7 +139,7 @@ def get_users_by_organization_id(offset: int = 0, limit: int = 100, db: Session 
         logging.exception(str(e))
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.get("/users", response_model=schemas.User)
+@router.get("/", response_model=schemas.User)
 def get_user(db: Session = Depends(get_db), current_user:  User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
@@ -147,7 +149,7 @@ def get_user(db: Session = Depends(get_db), current_user:  User = Security(get_c
     db_user.list_of_roles = get_role_names(db_user)
     return db_user
 
-@router.put("/users", response_model=schemas.User)
+@router.put("/", response_model=schemas.User)
 def update_user_(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if user.profile_image_url is not None:
         user.profile_image_url = crud.validate_image_url(user.profile_image_url)
@@ -182,11 +184,11 @@ def validate_passwords(user: schemas.UserPasswordUpdate, db_user: models.User):
     if user.old_password == user.new_password:
         logging.exception("New password cannot be same as old password")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password cannot be same as old password")
-    if not hashing.verify_password(user.old_password, db_user.hashed_password):
+    if not hashing.verify_hash(user.old_password, db_user.hashed_password):
         logging.exception("Incorrect old password")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect old password")
 
-@router.put("/users/password", response_model=schemas.User)
+@router.put("/password", response_model=schemas.User, include_in_schema=False)
 def update_user_password(user: schemas.UserPasswordUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_user = get_db_user(db, current_user.id)
     validate_passwords(user, db_user)
@@ -194,7 +196,7 @@ def update_user_password(user: schemas.UserPasswordUpdate, db: Session = Depends
     logging.info("User password updated: " + updated_user.uuid)
     return updated_user
 
-@router.delete("/users")
+@router.delete("/")
 def delete_user(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     db_user = crud.get_user(db, user_id=current_user.id)
     if db_user is None:
@@ -226,3 +228,47 @@ def update_user(user: schemas.UserBaseUpdate, current_user_id: str, db: Session 
         uuid=updated_user.uuid
     )
     return updated_user_response
+
+@router.put("/reset-password", response_model=signup_schemas.SignupOrganizerResponse)
+def reset_password(user: schemas.UserPasswordReset, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    db_user = crud.get_user_by_email(db, user.email)
+    if db_user is None:
+        logging.exception("User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    if verify_hash(plain_text=db_user.uuid, hashed_text=user.uid):
+        updated_user = crud.update_user_password(db=db, password=user.password, db_user=db_user)
+        organization = updated_user.organization_user[0].organization
+        response = signup_schemas.SignupOrganizerResponse(email=user.email, 
+                                    uuid=updated_user.uuid,
+                                    first_name=updated_user.first_name,
+                                    last_name=updated_user.last_name,
+                                    timezone=updated_user.timezone,
+                                    profile_image_url=updated_user.profile_image_url,
+                                    organization_name=organization.name,
+                                    status= OrganizerEnum(updated_user.user_status_id).name,
+                                    organization_id=organization.uuid,
+                                    list_of_roles= get_user_role_ids(updated_user))
+        return response
+    else:
+        logging.exception("Invalid token")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
+    
+def get_user_role_ids(user):
+    list_of_roles = []
+    for user_role in user.user_roles:
+        try:
+            role_name = RoleEnum(user_role.role_id).name
+            list_of_roles.append(role_name)
+        except ValueError:
+            print(f"Invalid role_id: {user_role.role_id}")
+    return list_of_roles
+    
+@router.put("/forgot-password")
+def forgot_password(email: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    db_user = crud.get_user_by_email(db, email)
+    if db_user is None:
+        logging.exception("User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    hashed_uuid = get_hash(db_user.uuid)
+    send_mail(unique_id=hashed_uuid, receiver_email="greengoblin846529@proton.me", subject="Reset Password", first_name=db_user.first_name, email_template=ForgotPasswordEnum)
+    return {"msg": "Password reset link sent successfully"}

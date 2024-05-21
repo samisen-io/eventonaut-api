@@ -145,6 +145,21 @@ class UserPasswordUpdate(BaseModel):
             raise ValueError(f"{info.field_name} should be between 8 and 16 characters")
         return v
 
+class UserPasswordReset(BaseModel):
+    email: str
+    uid: str
+    password: str
+    
+    @field_validator('password')
+    def password_is_not_empty(cls, v, info: ValidationInfo):
+        if v.strip() == "" or v.__contains__(" "):
+            logging.exception(f"Invalid {info.field_name}")
+            raise ValueError(f"Invalid {info.field_name}")
+        if not 8 <= len(v) <= 16:
+            logging.exception(f"{info.field_name} should be between 8 and 16 characters")
+            raise ValueError(f"{info.field_name} should be between 8 and 16 characters")
+        return v
+
 class User(BaseModel):
     uuid: str = Field(serialization_alias="id")
     email: str

@@ -22,7 +22,7 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     attendee_dict = attendee.model_dump()
     attendee_status = attendee_dict.pop("status", None)
     db_user = models.User(**attendee_dict)
-    db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
+    db_user.hashed_password = hashing.get_hash(db_user.hashed_password)
     db_user.created_on = datetime.utcnow()
     db_user.updated_on = datetime.utcnow()
     db_user.uuid = "usr-" + str(uuid.uuid4())
@@ -133,9 +133,9 @@ def update_attendee_password_by_uuid(db: Session, attendee_id: int, attendee: sc
     db_user = db.query(models.User).filter(models.User.id == db_attendee.user_id).first()
     if db_attendee is None or db_user is None:
         return None
-    if not hashing.verify_password(attendee.old_password, db_user.hashed_password):
+    if not hashing.verify_hash(attendee.old_password, db_user.hashed_password):
         return None
-    db_user.hashed_password = hashing.get_password_hash(attendee.new_password)
+    db_user.hashed_password = hashing.get_hash(attendee.new_password)
     db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
