@@ -6,11 +6,13 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 import os
+from .email_templates.welcome_user import WelcomeUserEnum
 
 load_dotenv()
 
 email = os.getenv("EMAIL_ADDRESS")
 password = os.getenv("EMAIL_PASSWORD")
+command_center_link = os.getenv("COMMAND_CENTER_PATH")
 
 default_time_limit = int(os.getenv("OTP_EXPIRE"))
 
@@ -23,9 +25,9 @@ def validate_otp(gen_otp:str, rec_otp: str):
         return True
     return False
 
-def send_mail(otp: str,subject: str, receiver_email:str):
+def send_mail(unique_id: str, subject: str, receiver_email:str, first_name:str, email_template: WelcomeUserEnum):
     try:
-        global default_time_limit, email, password, port, server
+        global email, password, command_center_link
         smtp_port = 587
         smtp_server = "smtp.gmail.com"
         sender_email = email
@@ -39,10 +41,7 @@ def send_mail(otp: str,subject: str, receiver_email:str):
             print("Error: sender email or password not found")
             return False
 
-        body = f""" 
-        Hello user,<br>
-            Your <b>One Time Password</b> is - <b>{otp}</b>, and is valid for only <b>{default_time_limit // 60} minutes</b>
-        """
+        body = email_template.email(first_name=first_name, command_center_link=command_center_link, receiver_email=receiver_email, unique_id=unique_id)
 
         msg = MIMEMultipart()
         msg["From"] = sender_email
