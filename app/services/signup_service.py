@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from ..static_enums.temporary_passwords import TemporaryPasswordEnum as TempPasswordEnum
 from app.crud import users_crud, organization_crud, organization_user_crud
 from app.schemas import signup_schemas as schemas, user_schemas, organization_schemas, organization_user_schemas
 from app.static_enums.role import RoleEnum
