@@ -264,11 +264,11 @@ def get_user_role_ids(user):
     return list_of_roles
     
 @router.put("/forgot-password")
-def forgot_password(email: str, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
-    db_user = crud.get_user_by_email(db, email)
+def forgot_password(reset_password: schemas.ForgotPassword, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+    db_user = crud.get_user_by_email(db, reset_password.email)
     if db_user is None:
         logging.exception("User not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     hashed_uuid = get_hash(db_user.uuid)
-    send_mail(unique_id=hashed_uuid, receiver_email="greengoblin846529@proton.me", subject="Reset Password", first_name=db_user.first_name, email_template=ForgotPasswordEnum)
+    send_mail(unique_id=hashed_uuid, receiver_email=reset_password.email, subject="Reset Password", first_name=db_user.first_name, email_template=ForgotPasswordEnum)
     return {"msg": "Password reset link sent successfully"}
