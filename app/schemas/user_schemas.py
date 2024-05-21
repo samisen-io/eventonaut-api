@@ -166,7 +166,6 @@ class User(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     status: str | None = None
-    company: str | None = None
     timezone: str | None = None
     profile_image_url: str | None = None
     list_of_roles: List[str] | None = None
