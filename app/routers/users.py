@@ -119,13 +119,13 @@ def assign_role_names_to_users(users):
     return users
 
 @router.get("/all_users", response_model=list[schemas.User])
-def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
+def get_all_users(offset: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = get_users_from_db(db, offset, limit)
     users = assign_role_names_to_users(users)
     logging.info("Users retrieved")
     return users
 
-@router.get("/organization_id", response_model=list[schemas.User])
+@router.get("/organization_id", response_model=list[schemas.User], include_in_schema=False)
 def get_users_by_organization_id(offset: int = 0, limit: int = 100, db: Session = Depends(get_db), organization: models.Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     try:
         users = crud.get_users_by_organization_id(db, organization.id, offset, limit)
