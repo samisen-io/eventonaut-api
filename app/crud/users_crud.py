@@ -160,7 +160,7 @@ def update_user_fields(user: schemas.UserBaseUpdate, db_user: models.User):
     user_dict = user.model_dump()
     user_dict.pop("status")
     user_dict.pop("profile_image_url")
-    user_dict.pop("hashed_password")
+    user_dict.pop("hashed_password", None)
     non_nullable_fields = ['first_name','last_name','business_type']
     for key, value in user_dict.items():
         if key in non_nullable_fields:
