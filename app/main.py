@@ -55,8 +55,8 @@ app.add_middleware(
 )
 
 # Add the routers to the application with authentication middleware
-app.include_router(template.router)
 app.include_router(upload_image.router)
+app.include_router(template.router)
 app.include_router(organization_settings.router)
 app.include_router(signup_organizer.router)
 app.include_router(organization.router)
