@@ -81,7 +81,7 @@ def update_organization_user(db: Session, organization_user: schemas.Organizatio
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     update_user_req = UserBaseUpdate(**organization_user.model_dump())
     updated_user = update_user(db, update_user_req, db_user)
-    response = schemas.Organization_UserUpdateResponse(first_name=updated_user.first_name, last_name=updated_user.last_name, uuid=updated_user.uuid, status=organizer.OrganizerEnum(updated_user.user_status_id).name, timezone=updated_user.timezone, profile_image_url=updated_user.profile_image_url,id=db_organization_user.uuid)
+    response = schemas.Organization_UserUpdateResponse(first_name=updated_user.first_name, last_name=updated_user.last_name, uuid=updated_user.uuid, status=organizer.OrganizerEnum(updated_user.user_status_id).name, timezone=updated_user.timezone, profile_image_url=updated_user.profile_image_url,id=db_organization_user.uuid, list_of_roles=get_user_role_ids(updated_user))
     return response
 
 def delete_organization_user(db: Session, db_organization_user: models.Organization_User):
@@ -92,3 +92,13 @@ def delete_organization_user(db: Session, db_organization_user: models.Organizat
     db.delete(db_organization_user)
     db.commit()
     return True
+
+def get_user_role_ids(user):
+    list_of_roles = []
+    for user_role in user.user_roles:
+        try:
+            role_name = RoleEnum(user_role.role_id).name
+            list_of_roles.append(role_name)
+        except ValueError:
+            print(f"Invalid role_id: {user_role.role_id}")
+    return list_of_roles
