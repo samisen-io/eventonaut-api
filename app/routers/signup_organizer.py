@@ -27,14 +27,14 @@ async def signup_organization_admin(organizer_signup_request: schemas.SignupOrga
     await send_email(hashed_uuid, organizer_signup_request.email, "Welcome to the organization", organizer_signup_request.first_name, email_template = WelcomeUserEnum)
     return {"message": "Admin created successfully. Please check your email to activate your account."}
 
-@router.post("/signup_organization_user", status_code=201)
+@router.post("/signup_organization_user", response_model=schemas.SignupOrganizerResponse, status_code=201)
 async def signup_organization_user(organizer_signup_request: schemas.SignupOrganizerUserRequest, current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name]), db: Session = Depends(get_db)):
     organizer_signup_request.email = validate_user_email(organizer_signup_request.email)
     organization_id = current_user.organization_user[0].organization_id
     response = signup_service.signup_organization_user(db=db, organizer_signup_request = organizer_signup_request, organization_id=organization_id)
     hashed_uuid = get_hash(response.uuid)
     await send_email(hashed_uuid, organizer_signup_request.email, "Welcome to the organization", organizer_signup_request.first_name, email_template = WelcomeUserEnum)
-    return {"message": "User created successfully. Please check your email to activate your account."}
+    return response
 
 def get_user_role_ids(user):
     list_of_roles = []
