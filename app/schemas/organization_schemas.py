@@ -54,10 +54,10 @@ class OrganizationUpdate(BaseModel):
 class Organization(BaseModel):
     uuid: str = Field(serialization_alias='id')
     name: str
-    business_type: str
+    business_type: str | None = None
     description: str | None = None
     address: str | None = None
-    contact_email: str
+    contact_email: str | None = None
     contact_phone: str | None = None
     logo_image_url: str | None = None
     website_url: str | None = None

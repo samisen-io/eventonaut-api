@@ -16,7 +16,7 @@ def get_mapped_organization_user_response(organization_user):
     organization_user.id = organization_user.uuid
     return organization_user
      
-@router.post("/organization_user", response_model=schemas.Organization_User)
+@router.post("/organization_user", response_model=schemas.Organization_User, include_in_schema=False)
 def create_organization_user(organization_user: schemas.Organization_UserCreate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     try:
         new_organization_user = crud.create_organization_user(db ,organization_user)

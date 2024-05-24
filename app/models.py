@@ -34,6 +34,7 @@ class Organization(Base):
     session_documents = relationship("SessionDocuments", back_populates="organization")
     exhibitors = relationship("Exhibitor", back_populates="organization")
     exhibitor_documents = relationship("ExhibitorDocuments", back_populates="organization")
+    templates = relationship("Template", back_populates="organization")
 
 class Organization_User(Base):
     __tablename__ = "organization_user"
@@ -671,3 +672,16 @@ class AttendeeExhibitors(Base):
     attendee = relationship("Attendee", back_populates="attendee_exhibitors")
     exhibitors = relationship("Exhibitor", back_populates="attendee_exhibitors")
     conference = relationship("Conference", back_populates="attendee_exhibitors")
+    
+class Template(Base):
+    __tablename__ = "template"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    organization_id = Column(Integer, ForeignKey("organization.id"))
+    template_name = Column(String, index=True)
+    template_url = Column(String, index=True)
+    
+    organization = relationship("Organization", back_populates="templates")

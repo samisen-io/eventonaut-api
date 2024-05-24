@@ -7,12 +7,16 @@ from .dependencies import get_db
 from .crud import users_crud
 from sqlalchemy.orm import Session
 from app.crud import organization_crud
+from .static_enums.role import RoleEnum
 
 oauth_2_scheme = OAuth2PasswordBearer(
     tokenUrl="login",
-    scopes={"ATTENDEE": "Attendee scope", 
-            "ORGANIZATION_ADMIN": "Organization admin scope", 
-            "ORGANIZATION_USER": "Organization user scope"},
+    scopes={
+                RoleEnum.ATTENDEE.name: "Attendee scope",
+                RoleEnum.ORGANIZATION_ADMIN.name: "Organization admin scope",
+                RoleEnum.ORGANIZATION_USER.name: "Organization user scope",
+                RoleEnum.REGISTRATION_STAFF.name: "Registration staff scope"
+            }
     )
 
 def get_current_user(
@@ -30,7 +34,7 @@ def get_current_user(
     if user is None:
         raise credentials_exception
     
-    if token_data.scopes[0] not in security_scopes.scopes:
+    if not all(scope in security_scopes.scopes for scope in token_data.scopes):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect scope",
