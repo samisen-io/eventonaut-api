@@ -15,6 +15,12 @@ path_wkhtmltopdf = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 
 
+# os.environ['WEASYPRINT_DLL_DIRECTORIES']=r'C:\Program Files\GTK3-Runtime Win64\bin'
+os.environ['WEASYPRINT_DLL_DIRECTORIES']=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "GTK3-Runtime Win64", "bin")
+print(os.environ['WEASYPRINT_DLL_DIRECTORIES'])
+from weasyprint import HTML
+
+
 def render_pug_template(template_path, context):
     template_dir, template_name = os.path.split(template_path)
     env = Environment(loader = FileSystemLoader(template_dir), extensions=['pypugjs.ext.jinja.PyPugJSExtension'])
