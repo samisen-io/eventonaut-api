@@ -2,10 +2,8 @@ import os
 import tempfile
 from fastapi import HTTPException
 import requests
-import pdfkit
 import pypugjs.ext.jinja
 from jinja2 import Environment, FileSystemLoader
-from pdf_reports import pug_to_html
 from weasyprint import HTML
 from io import BytesIO
 
