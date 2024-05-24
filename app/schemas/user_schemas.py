@@ -181,6 +181,7 @@ class User(BaseModel):
     profile_image_url: str | None = None
     list_of_roles: List[str] | None = None
     is_active: bool
+    is_verified: bool
     
     class Config:
         orm_mode = True
