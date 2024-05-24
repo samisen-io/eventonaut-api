@@ -9,7 +9,6 @@ from app.schemas.user_schemas import User
 from app.static_enums.role import RoleEnum
 from ..dependencies import get_db
 from app.models import Session
-from weasyprint import HTML
 
 
 router = APIRouter(tags = ['reports'])

@@ -4,8 +4,13 @@ from fastapi import HTTPException
 import requests
 import pypugjs.ext.jinja
 from jinja2 import Environment, FileSystemLoader
-from weasyprint import HTML
 from io import BytesIO
+
+# os.environ['WEASYPRINT_DLL_DIRECTORIES']=r'C:\Program Files\GTK3-Runtime Win64\bin'
+os.environ['WEASYPRINT_DLL_DIRECTORIES']=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "GTK3-Runtime Win64", "bin")
+print(os.environ['WEASYPRINT_DLL_DIRECTORIES'])
+from weasyprint import HTML
+
 
 def render_pug_template(template_path, context):
     template_dir, template_name = os.path.split(template_path)
