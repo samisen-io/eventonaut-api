@@ -33,7 +33,9 @@ def signup_organization_admin(db: Session, organizer_signup_request: schemas.Sig
                                     status= OrganizerEnum(user.user_status_id).name,
                                     organization_id=organization.uuid, 
                                     user_id=user.uuid, 
-                                    list_of_roles= get_user_role_ids(user))
+                                    list_of_roles= get_user_role_ids(user),
+                                    is_verified=user.is_verified
+                                    )
         
     return signup_organizer_response
 
@@ -64,7 +66,9 @@ def signup_organization_user(db: Session, organizer_signup_request: schemas.Sign
                                     status= OrganizerEnum(user.user_status_id).name,
                                     organization_id=organization.uuid, 
                                     user_id=user.uuid, 
-                                    list_of_roles= get_user_role_ids(user))
+                                    list_of_roles= get_user_role_ids(user),
+                                    is_verified=user.is_verified
+                                    )
     
     return signup_organizer_response
 
