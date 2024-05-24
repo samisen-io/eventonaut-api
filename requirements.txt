@@ -33,6 +33,4 @@ rembg
 onesignal-python-api
 langchain-openai
 pypdf
-pypugjs
-jinja2
-weasyprint
+
