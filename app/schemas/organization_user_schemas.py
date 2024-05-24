@@ -42,6 +42,7 @@ class Organization_UserUpdateResponse(BaseModel):
     status: str | None = None
     timezone: str |None = None
     profile_image_url: str |None = None
+    list_of_roles: List[str] | None = None
 
 class Organization_UserCreate(Organization_UserBase):
     pass
