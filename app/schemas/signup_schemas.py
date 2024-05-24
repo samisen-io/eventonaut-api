@@ -52,3 +52,4 @@ class SignupOrganizerResponse(BaseModel):
     status: str
     organization_id: str
     list_of_roles: list[str]
+    is_verified: bool
