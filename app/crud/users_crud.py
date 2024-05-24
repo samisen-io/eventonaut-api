@@ -158,7 +158,7 @@ def update_user_status(user: schemas.UserBaseUpdate, db_user: models.User):
 
 def update_user_fields(user: schemas.UserBaseUpdate, db_user: models.User):
     user_dict = user.model_dump()
-    user_dict.pop("status")
+    user_dict.pop("status", None)
     user_dict.pop("profile_image_url")
     user_dict.pop("hashed_password", None)
     non_nullable_fields = ['first_name','last_name','business_type']
@@ -229,7 +229,7 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User)
     update_user_status(user, db_user)
     update_user_fields(user, db_user)
     update_user_image(user, db_user)
-    update_user_roles(db, user, db_user)
+    # update_user_roles(db, user, db_user)
     db_user.updated_on = datetime.utcnow()
     try:
         db.commit()
@@ -260,14 +260,6 @@ def update_user_password_by_email(db: Session, email: str, password: str):
     return db_user
 
 def delete_user(db: Session, user: models.User):
-    db_session = db.query(models.Session).filter(models.Session.organization_id == user.id).all()
-    for session in db_session:
-        session.is_archived = True
-        
-    conference = db.query(models.Conference).filter(models.Conference.organization_id == user.id).all()
-    for c in conference:
-        c.is_archived = True
-
     user.is_archived = True
     db.commit()
     return True
