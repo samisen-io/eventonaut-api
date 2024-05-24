@@ -90,7 +90,6 @@ class UserBaseUpdate(BaseModel):
     status: str | None = None
     timezone: str |None = None
     profile_image_url: str |None = None
-    list_of_roles: List[str] | None = None
 
     @field_validator('first_name','last_name','timezone','profile_image_url')
     @classmethod
@@ -182,6 +181,7 @@ class User(BaseModel):
     profile_image_url: str | None = None
     list_of_roles: List[str] | None = None
     is_active: bool
+    is_verified: bool
     
     class Config:
         orm_mode = True

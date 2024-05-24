@@ -1,18 +1,47 @@
 from typing import List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from .user_schemas import User
+from ..static_enums import organizer
 
-class DeleteResponse(BaseModel):
-    message: str
-    
 class Organization_UserBase(BaseModel):
     organization_id: str
     user_id: str
 
 class Organization_UserUpdate(BaseModel):
-    organization_id: str
-    user_id: str
     id: str
+    first_name: str | None = None
+    last_name: str | None = None
+    status: str | None = None
+    timezone: str |None = None
+    profile_image_url: str |None = None
+    
+    @field_validator("id")
+    @classmethod
+    def check_id(cls, v):
+        if v is not None:
+            if v.strip() == "":
+                raise ValueError("Invalid id")
+        return v
+    
+    @field_validator("status")
+    @classmethod
+    def check_status(cls, v):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            v = v.upper()
+            if v not in list(organizer.OrganizerEnum.__members__):
+                raise ValueError("Invalid status")
+        return v
+
+class Organization_UserUpdateResponse(BaseModel):
+    id: str
+    uuid: str = Field(serialization_alias="user_id")
+    first_name: str | None = None
+    last_name: str | None = None
+    status: str | None = None
+    timezone: str |None = None
+    profile_image_url: str |None = None
 
 class Organization_UserCreate(Organization_UserBase):
     pass
