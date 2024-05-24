@@ -247,7 +247,9 @@ def reset_password(user: schemas.UserPasswordReset, db: Session = Depends(get_db
                                     organization_name=organization.name,
                                     status= OrganizerEnum(updated_user.user_status_id).name,
                                     organization_id=organization.uuid,
-                                    list_of_roles= get_user_role_ids(updated_user))
+                                    list_of_roles= get_user_role_ids(updated_user),
+                                    is_verified=updated_user.is_verified
+                                    )
         return response
     else:
         logging.exception("Invalid token")
