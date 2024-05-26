@@ -150,7 +150,7 @@ def get_user(db: Session = Depends(get_db), current_user:  User = Security(get_c
     return db_user
 
 @router.put("/", response_model=schemas.User)
-def update_user_(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
+def update_user(user: schemas.UserBaseUpdate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     if user.profile_image_url is not None:
         user.profile_image_url = crud.validate_image_url(user.profile_image_url)
     db_user = crud.get_db_user(db, user_id=current_user.id)
@@ -247,7 +247,9 @@ def reset_password(user: schemas.UserPasswordReset, db: Session = Depends(get_db
                                     organization_name=organization.name,
                                     status= OrganizerEnum(updated_user.user_status_id).name,
                                     organization_id=organization.uuid,
-                                    list_of_roles= get_user_role_ids(updated_user))
+                                    list_of_roles= get_user_role_ids(updated_user),
+                                    is_verified=updated_user.is_verified
+                                    )
         return response
     else:
         logging.exception("Invalid token")
