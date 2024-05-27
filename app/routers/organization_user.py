@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Security
+from fastapi import APIRouter, HTTPException, Depends, Security, status
 from app.oauth2 import get_current_active_user
 from app.static_enums.role import RoleEnum
 from ..crud import organization_user_crud as crud
@@ -16,7 +16,7 @@ def get_mapped_organization_user_response(organization_user):
     organization_user.id = organization_user.uuid
     return organization_user
      
-@router.post("/organization_user", response_model=schemas.Organization_User)
+@router.post("/organization_user", response_model=schemas.Organization_User, include_in_schema=False)
 def create_organization_user(organization_user: schemas.Organization_UserCreate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     try:
         new_organization_user = crud.create_organization_user(db ,organization_user)
@@ -25,17 +25,18 @@ def create_organization_user(organization_user: schemas.Organization_UserCreate,
         raise exc
 
 @router.get("/organization_user/users", response_model=schemas.OrganizationUsersResponse)
-def get_users_by_organization_id(db: Session = Depends(get_db), User: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
-    organization_id = User.organization_user[0].organization_id
+def get_users_by_organization_id(db: Session = Depends(get_db), user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
+    organization_id = user.organization_user[0].organization_id
     response = crud.get_users_by_organization_uuid(db, organization_id)
     if response is None:
         raise HTTPException(status_code=404, detail="Organization not found")
     return response
 
-@router.get("/organization_user/{id}", response_model=schemas.Organization_User)
-def get_organization_user(organization_user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"]), basic_auth = Depends(basic_auth)):
+@router.get("/organization_user/{organization_user_id}", response_model=schemas.Organization_User)
+def get_organization_user(organization_user_id: str, db: Session = Depends(get_db), user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     try:
-        organization_user = crud.get_organization_user(db, organization_user_id)
+        organization_id = user.organization_user[0].organization_id
+        organization_user = crud.get_organization_user(db, organization_user_id, organization_id)
         if organization_user is None:
             raise HTTPException(status_code=404, detail="Organization user not found")
         return get_mapped_organization_user_response(organization_user)
@@ -55,20 +56,25 @@ def get_organization_users(skip: int = 0, limit: int = 100, db: Session = Depend
 def get_organizations_by_user_id(user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
     return crud.get_organizations_by_user_uuid(db, user_id) #TODO: Take the id from the token
 
-@router.put("/organization_user/{id}", response_model=schemas.Organization_UserUpdate)
-def update_organization_user(organization_user: schemas.Organization_UserUpdate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
+@router.put("/organization_user", response_model=schemas.Organization_UserUpdateResponse)
+def update_organization_user(organization_user: schemas.Organization_UserUpdate, db: Session = Depends(get_db), user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     try:
-        updated_organization_user = crud.update_organization_user(db=db, organization_user=organization_user)
-        if updated_organization_user is None:
+        organization_id = user.organization_user[0].organization_id
+        db_organization_user = crud.get_organization_user(db, organization_user.id, organization_id)
+        if organization_user is None:
             raise HTTPException(status_code=404, detail="Organization user not found")
-        return get_mapped_organization_user_response(updated_organization_user)
+        updated_organization_user = crud.update_organization_user(db=db, organization_user=organization_user, db_organization_user=db_organization_user)
+        return updated_organization_user
     except Exception as exc:
         raise exc
 
-@router.delete("/organization_user/{id}", response_model=schemas.DeleteResponse)
-def delete_organization_user(organization_user_id: str, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
+@router.delete("/organization_user/{organization_user_id}")
+def delete_organization_user(organization_user_id: str, db: Session = Depends(get_db), user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     try:
-        crud.delete_organization_user(db, organization_user_id)
-        return {"message": "Organization user deleted successfully"}
+        organization_id = user.organization_user[0].organization_id
+        db_organization_user = crud.get_organization_user(db, organization_user_id, organization_id)
+        if db_organization_user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization user not found")
+        return crud.delete_organization_user(db, db_organization_user)
     except Exception as exc:
         raise exc

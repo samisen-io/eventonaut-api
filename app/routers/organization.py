@@ -8,7 +8,7 @@ from ..dependencies import get_db
 
 router = APIRouter(tags=['organizations'])
 
-@router.post("/organizations/", response_model=schemas.Organization)
+@router.post("/organizations/", response_model=schemas.Organization, include_in_schema=False)
 def create_organization(organization: schemas.OrganizationCreate, db: Session = Depends(get_db), User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     return crud.create_organization(db=db, organization=organization)
 

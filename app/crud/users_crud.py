@@ -23,7 +23,7 @@ def create_db_user(db: Session, user: schemas.UserCreate):
     user_dict.pop("list_of_roles")
     db_user = models.User(**user_dict)
     db_user.user_status_id = organizer.OrganizerEnum[user_status.upper()].value
-    db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
+    db_user.hashed_password = hashing.get_hash(db_user.hashed_password)
     db_user.created_on = db_user.updated_on = datetime.utcnow()
     db_user.uuid = "usr-"+str(uuid.uuid4())
     db_user.role = "organizer"
@@ -51,7 +51,7 @@ def create_user(db: Session, user: schemas.UserCreate):
     user_dict.pop("list_of_roles")
     db_user = models.User(**user_dict)
     db_user.user_status_id = organizer.OrganizerEnum[user_status.upper()].value
-    db_user.hashed_password = hashing.get_password_hash(db_user.hashed_password)
+    db_user.hashed_password = hashing.get_hash(db_user.hashed_password)
     db_user.created_on = db_user.updated_on = datetime.utcnow()
     db_user.uuid = "usr-"+str(uuid.uuid4())
     db_user.role = "organizer"
@@ -124,7 +124,7 @@ def get_user_by_email_and_password(db: Session, email: str, password: str):
         user = db.query(models.User).options(joinedload(models.User.user_roles)).filter(models.User.email.ilike(email), models.User.is_archived == False).first()
         if user is None:
             return False
-        if hashing.verify_password(password, user.hashed_password):
+        if hashing.verify_hash(password, user.hashed_password):
             return user
         return False
     except Exception as e:
@@ -158,9 +158,9 @@ def update_user_status(user: schemas.UserBaseUpdate, db_user: models.User):
 
 def update_user_fields(user: schemas.UserBaseUpdate, db_user: models.User):
     user_dict = user.model_dump()
-    user_dict.pop("status")
+    user_dict.pop("status", None)
     user_dict.pop("profile_image_url")
-    user_dict.pop("hashed_password")
+    user_dict.pop("hashed_password", None)
     non_nullable_fields = ['first_name','last_name','business_type']
     for key, value in user_dict.items():
         if key in non_nullable_fields:
@@ -229,7 +229,7 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User)
     update_user_status(user, db_user)
     update_user_fields(user, db_user)
     update_user_image(user, db_user)
-    update_user_roles(db, user, db_user)
+    # update_user_roles(db, user, db_user)
     db_user.updated_on = datetime.utcnow()
     try:
         db.commit()
@@ -241,30 +241,25 @@ def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User)
     db.refresh(db_user)
     return db_user
 
-def update_user_password(db: Session, user: schemas.UserPasswordUpdate, db_user: models.User):
-    db_user.hashed_password = hashing.get_password_hash(user.new_password)
+def update_user_password(db: Session, password: str, db_user: models.User):
+    db_user.hashed_password = hashing.get_hash(password)
+    db_user.is_verified = True
+    db_user.user_status_id = organizer.OrganizerEnum.ACTIVE.value
     db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
+    db_user = db.query(models.User).options(joinedload(models.User.organization_user).joinedload(models.Organization_User.organization), joinedload(models.User.user_roles).joinedload(models.User_Role.role)).filter(models.User.id == db_user.id, models.User.is_archived == False).first()
     return db_user
 
 def update_user_password_by_email(db: Session, email: str, password: str):
     db_user = db.query(models.User).filter(models.User.email.ilike(email)).first()
-    db_user.hashed_password = hashing.get_password_hash(password)
+    db_user.hashed_password = hashing.get_hash(password)
     db_user.updated_on = datetime.utcnow()
     db.commit()
     db.refresh(db_user)
     return db_user
 
 def delete_user(db: Session, user: models.User):
-    db_session = db.query(models.Session).filter(models.Session.organization_id == user.id).all()
-    for session in db_session:
-        session.is_archived = True
-        
-    conference = db.query(models.Conference).filter(models.Conference.organization_id == user.id).all()
-    for c in conference:
-        c.is_archived = True
-
     user.is_archived = True
     db.commit()
     return True

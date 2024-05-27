@@ -42,29 +42,38 @@ def authenticate_user(db: Session, username: str, password: str, token_jti: str)
     return user
 
 @router.post("/login", response_model=Token)
-async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm= Depends(), basic_auth = Depends(basicauth.basic_auth)):
+async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends(), basic_auth = Depends(basicauth.basic_auth)):
     form_data.username = sanitize_username(form_data.username)
     scopes = get_scopes(form_data.scopes)
-    if len(scopes) != 1:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail="Only one scope is allowed",
-                            headers={"WWW-Authenticate": "Bearer"})
+   
 
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
 
     validate_user_and_scope(user, scopes)
-
-    token_expirations = get_token_expirations(scopes[0])
     
-    if scopes[0] != RoleEnum.ATTENDEE.name:
+    matched_user_role = [RoleEnum(role.role_id).name for role in user.user_roles if any(scope in RoleEnum(role.role_id).name for scope in scopes)]
+
+    token_expirations = get_token_expirations(matched_user_role[0])
+    
+    if RoleEnum.ATTENDEE.name in matched_user_role:
+        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": matched_user_role}, expires_delta=token_expirations['refresh_token_expires'])
+        rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+        access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": matched_user_role}, expires_delta=token_expirations['access_token_expires'])
+    elif any(role.name in matched_user_role for role in (RoleEnum.ORGANIZATION_ADMIN, RoleEnum.ORGANIZATION_USER, RoleEnum.REGISTRATION_STAFF)):
         organization = get_organization_by_user_id(db, user.id)
-        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
+        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": matched_user_role}, expires_delta=token_expirations['refresh_token_expires'])
         rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-        access_token = create_access_token(data={"sub": user.email, "org_id": organization.id, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
-    else:
-        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
-        rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
-        access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
+        access_token = create_access_token(data={"sub": user.email, "org_id": organization.id, "id":user.id, "rt_jti":rt_jti, "scopes": matched_user_role}, expires_delta=token_expirations['access_token_expires'])
+    
+    # if scopes[0] != RoleEnum.ATTENDEE.name:
+    #     organization = get_organization_by_user_id(db, user.id)
+    #     refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
+    #     rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+    #     access_token = create_access_token(data={"sub": user.email, "org_id": organization.id, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
+    # else:
+    #     refresh_token = create_refresh_token(data={"sub": user.email, "scopes": scopes[0]}, expires_delta=token_expirations['refresh_token_expires'])
+    #     rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
+    #     access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": scopes[0]}, expires_delta=token_expirations['access_token_expires'])
         
     logging.info("User logged in: " + user.uuid)
     return {"access_token": access_token, "token_type": "bearer", "refresh_token": refresh_token}
@@ -81,7 +90,7 @@ def validate_user_and_scope(user: models.User, scopes: List[str]) -> None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect username or password",
                             headers={"WWW-Authenticate": "Bearer"})
-    if not scopes or not any(scope in RoleEnum(user.user_roles[0].role_id).name for scope in scopes):
+    if not scopes or not any(any(scope in RoleEnum(role.role_id).name for scope in scopes) for role in user.user_roles):
         logging.exception("Incorrect scope")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail="Incorrect scope",
@@ -92,7 +101,7 @@ def get_token_expirations(role: str) -> Dict[str, timedelta]:
         return {'access_token_expires': timedelta(days=ATTENDEE_ACCESS_TOKEN_EXPIRE_DAYS), 
                 'refresh_token_expires': timedelta(days=ATTENDEE_REFRESH_TOKEN_EXPIRE_DAYS)}
         
-    elif role == RoleEnum.ORGANIZATION_ADMIN.name or role == RoleEnum.ORGANIZATION_USER.name:
+    elif role in (RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, RoleEnum.REGISTRATION_STAFF.name):
         return {'access_token_expires': timedelta(minutes=ORGANIZER_ACCESS_TOKEN_EXPIRE_MINUTES), 
                 'refresh_token_expires': timedelta(minutes=ORGANIZER_REFRESH_TOKEN_EXPIRE_MINUTES)}
     
@@ -163,7 +172,7 @@ async def invalidate_RT(token:TokenInput, db: Session = Depends(get_db), basic_a
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token")
 
 @router.post("/logout")
-async def logout(jwt_token: str=Depends(oauth_2_scheme), current_user: User = Security(get_current_active_user, scopes=["ATTENDEE", "ORGANIZATION_ADMIN", "ORGANIZATION_USER"]),db: Session = Depends(get_db)):
+async def logout(jwt_token: str=Depends(oauth_2_scheme), db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, RoleEnum.ATTENDEE.name, RoleEnum.REGISTRATION_STAFF.name])):
     try:
         payload = jwt.decode(jwt_token, SECRET_KEY, algorithms=[ALGORITHM])
         jti = payload.get("jti")

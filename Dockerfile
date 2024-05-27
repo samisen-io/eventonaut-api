@@ -9,10 +9,18 @@ COPY . .
 RUN apt-get clean
 RUN apt-get update  
 RUN apt-get install -y libgl1-mesa-glx libglib2.0-0
+RUN apt-get update && apt-get install -y \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info
 # RUN apt-get install -y libgl1-mesa-glx
 #  COPY ./requirements.txt /app/requirements.txt
- RUN pip install --no-cache-dir --upgrade -r ./requirements.txt
+RUN pip install --no-cache-dir --upgrade -r ./requirements.txt
 #  RUN apt-get install -y libgl1-mesa-glx 
 #  RUN apt-get install -y libglib2.0-0
+
 
  CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80", "--reload"]

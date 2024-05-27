@@ -5,3 +5,4 @@ class RoleEnum(Enum):
     ATTENDEE = 1
     ORGANIZATION_ADMIN = 2
     ORGANIZATION_USER = 3
+    REGISTRATION_STAFF = 4

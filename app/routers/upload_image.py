@@ -35,7 +35,7 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
         blob_client = None
         
         image_extensions = ["jpg", "jpeg", "png"]
-        file_extensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv"]
+        file_extensions = ["pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "csv", "pug"]
                 
         if file_extension in executable_extensions:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type. Executable files are not allowed.")
@@ -57,6 +57,8 @@ def upload_file(file: UploadFile = File(...), basic_auth = Depends(basic_auth)):
                 blob_client = blob_service_client.get_blob_client(BlobContainer.SESSION_DOCUMENTS.value, blob_name)
             elif folder_name[:3] == "exb":
                 blob_client = blob_service_client.get_blob_client(BlobContainer.EXHIBITOR_DOCUMENTS.value, blob_name)
+            elif folder_name[:3] == "usr":
+                blob_client = blob_service_client.get_blob_client(BlobContainer.TEMPLATES.value, blob_name)
             
             if file_extension in ['txt', 'csv']:
                 content_settings = ContentSettings(content_type=f'text/{file_extension}')

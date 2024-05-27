@@ -20,3 +20,4 @@ class BlobContainer(Enum):
     EXHIBITOR_LOGOS = "exhibitor-logos"
     EXHIBITOR_BANNERS = "exhibitor-banners"
     EXHIBITOR_DOCUMENTS = "exhibitor-documents"
+    TEMPLATES = "templates"
