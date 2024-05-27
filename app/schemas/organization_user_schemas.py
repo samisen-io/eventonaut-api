@@ -2,6 +2,7 @@ from typing import List
 from pydantic import BaseModel, Field, field_validator, ValidationInfo
 from .user_schemas import User
 from ..static_enums import organizer
+from ..static_enums.role import RoleEnum
 
 class Organization_UserBase(BaseModel):
     organization_id: str
@@ -14,6 +15,7 @@ class Organization_UserUpdate(BaseModel):
     status: str | None = None
     timezone: str |None = None
     profile_image_url: str |None = None
+    user_role: str | None = None
     
     @field_validator("id")
     @classmethod
@@ -33,6 +35,14 @@ class Organization_UserUpdate(BaseModel):
             if v not in list(organizer.OrganizerEnum.__members__):
                 raise ValueError("Invalid status")
         return v
+    
+    @field_validator("user_role")
+    def check_user_role(cls, value):
+        value = value.upper()
+        allowed_roles = [RoleEnum.ORGANIZATION_USER.name, RoleEnum.REGISTRATION_STAFF.name, RoleEnum.ORGANIZATION_ADMIN.name]
+        if value not in allowed_roles:
+            raise ValueError(f"Invalid user_role: {value}")
+        return value
 
 class Organization_UserUpdateResponse(BaseModel):
     id: str
