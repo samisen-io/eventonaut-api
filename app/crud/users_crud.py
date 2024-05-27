@@ -182,17 +182,17 @@ def update_user_image(user: schemas.UserBaseUpdate, db_user: models.User):
 def get_role_names_from_user_roles(user_roles):
     return [RoleEnum(user_role.role_id).name for user_role in user_roles]
 
-def get_roles_not_in_user(db_user, user):
+def get_roles_not_in_user(db_user, user_role):
     db_user_role_names = get_role_names_from_user_roles(db_user.user_roles)
-    user_role_names = user.list_of_roles
-    roles_not_in_user = [role for role in db_user_role_names if role not in user_role_names]
+    user_role_names = user_role
+    roles_not_in_user = [role for role in db_user_role_names if role != user_role_names]
     return roles_not_in_user
 
-def get_roles_not_in_db_user(db_user, user):
+def get_roles_not_in_db_user(db_user, role):
     try:
         db_user_role_names = get_role_names_from_user_roles(db_user.user_roles)
-        user_role_names = user.list_of_roles
-        roles_not_in_db_user = [role for role in user_role_names if role not in db_user_role_names]
+        user_role_names = role
+        roles_not_in_db_user = user_role_names if user_role_names not in db_user_role_names else None
         return roles_not_in_db_user
     except Exception as e:
         logging.exception(str(e))
@@ -204,26 +204,22 @@ def delete_roles_not_in_user(db: Session, db_user: models.User, roles_not_in_use
         role_id = RoleEnum[role.upper()].value
         user_role_crud.delete_user_role_by_user_and_role(db, user_id=db_user.id, role_id=role_id)
 
-def create_roles_not_in_db_user(db: Session, db_user: models.User, roles_not_in_db_user: list):
-    for role in roles_not_in_db_user:
-        role_id = RoleEnum[role.upper()].value
-        user_role_crud.create_user_role(db, user_id=db_user.id, role_id=role_id)
+def create_roles_not_in_db_user(db: Session, db_user: models.User, roles_not_in_db_user: str):
+    role_id = RoleEnum[roles_not_in_db_user.upper()].value
+    user_role_crud.create_user_role(db, user_id=db_user.id, role_id=role_id)
 
-def update_user_roles(db: Session, user: schemas.UserBaseUpdate, db_user: models.User):
-    if user.list_of_roles is not None:
-        is_valid_roles(user.list_of_roles)
-        
-        roles_not_in_user = get_roles_not_in_user(db_user, user)
-        if roles_not_in_user:
-            delete_roles_not_in_user(db, db_user, roles_not_in_user)
-                
-        roles_not_in_db_user = get_roles_not_in_db_user(db_user, user)
-        if roles_not_in_db_user:
-            create_roles_not_in_db_user(db, db_user, roles_not_in_db_user) 
+def update_user_roles(db: Session, db_user: models.User, role: str):
+    roles_not_in_user = get_roles_not_in_user(db_user, role)
+    if roles_not_in_user:
+        delete_roles_not_in_user(db, db_user, roles_not_in_user)
+            
+    roles_not_in_db_user = get_roles_not_in_db_user(db_user, role)
+    if roles_not_in_db_user:
+        create_roles_not_in_db_user(db, db_user, roles_not_in_db_user) 
 
-def is_valid_roles(list_of_roles):
-    if not all(role in RoleEnum.__members__ for role in list_of_roles):
-        raise HTTPException(status_code=400, detail="Invalid role")   
+# def is_valid_roles(role):
+#     if not all(role in RoleEnum.__members__ for role in list_of_roles):
+#         raise HTTPException(status_code=400, detail="Invalid role")   
                 
 def update_user(db: Session, user: schemas.UserBaseUpdate, db_user: models.User):
     update_user_status(user, db_user)

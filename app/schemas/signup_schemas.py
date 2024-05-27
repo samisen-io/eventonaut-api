@@ -35,7 +35,7 @@ class SignupOrganizerUserRequest(BaseModel):
     @field_validator("user_role")
     def check_user_role(cls, value):
         value = value.upper()
-        allowed_roles = [RoleEnum.ORGANIZATION_USER.name, RoleEnum.REGISTRATION_STAFF.name]
+        allowed_roles = [RoleEnum.ORGANIZATION_USER.name, RoleEnum.REGISTRATION_STAFF.name, RoleEnum.ORGANIZATION_ADMIN.name]
         if value not in allowed_roles:
             logging.error(f"Invalid user_role: {value}")
             raise ValueError(f"Invalid user_role: {value}")

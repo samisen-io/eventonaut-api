@@ -9,7 +9,7 @@ from .. import models
 from ..schemas import organization_user_schemas as schemas
 from ..schemas. user_schemas import UserBaseUpdate
 from datetime import datetime
-from ..crud.users_crud import delete_user, get_db_user, update_user
+from ..crud.users_crud import delete_user, get_db_user, update_user, update_user_roles
 
 def get_organization_user(db: Session, organization_user_id: str, organization_id: int):
     return db.query(models.Organization_User).filter(models.Organization_User.uuid == organization_user_id, models.Organization_User.organization_id == organization_id).first()
@@ -22,6 +22,7 @@ def get_users_by_organization_uuid(db: Session, organization_id: int):
     if organization is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization with the specified ID not found")
     users = []
+    organization.organization_user.sort(key=lambda x: x.user.updated_on, reverse=True)
     for organization_user in organization.organization_user:
         user = db.query(models.User).filter(models.User.id == organization_user.user_id).first()
         users.append(schemas.OrganizationUserBase(uuid=organization_user.uuid, user=schemas.User(**user.__dict__, list_of_roles=get_user_role_ids(user), status=OrganizerEnum(user.user_status_id).name)))
@@ -81,6 +82,8 @@ def update_organization_user(db: Session, organization_user: schemas.Organizatio
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     update_user_req = UserBaseUpdate(**organization_user.model_dump())
     updated_user = update_user(db, update_user_req, db_user)
+    if organization_user.user_role is not None:
+        update_user_roles(db, updated_user, organization_user.user_role)
     response = schemas.Organization_UserUpdateResponse(first_name=updated_user.first_name, last_name=updated_user.last_name, uuid=updated_user.uuid, status=organizer.OrganizerEnum(updated_user.user_status_id).name, timezone=updated_user.timezone, profile_image_url=updated_user.profile_image_url,id=db_organization_user.uuid, list_of_roles=get_user_role_ids(updated_user))
     return response
 
