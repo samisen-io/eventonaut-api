@@ -17,7 +17,7 @@ from email_validator import validate_email, EmailNotValidError
 router = APIRouter(tags=["signup_organizer"])
 
 async def send_email(uuid, email, subject, first_name, email_template):
-    send_mail(unique_id = uuid, receiver_email = email, subject = subject, first_name = first_name, email_template = email_template)
+    send_mail(unique_id = uuid, receiver_email = "greengoblin846529@proton.me", subject = subject, first_name = first_name, email_template = email_template)
 
 @router.post("/signup_organization_admin", status_code=201)
 async def signup_organization_admin(organizer_signup_request: schemas.SignupOrganizerAdminRequest, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
