@@ -41,7 +41,7 @@ class SignupOrganizerUserRequest(BaseModel):
             raise ValueError(f"Invalid user_role: {value}")
         return value
 
-class SignupOrganizerResponse(BaseModel):
+class SignupResponseBase(BaseModel):
     uuid: str = Field(serialization_alias="id")
     email: str
     first_name: str | None = None
@@ -53,3 +53,7 @@ class SignupOrganizerResponse(BaseModel):
     organization_id: str
     list_of_roles: list[str]
     is_verified: bool
+    
+class SignupOrganizerResponse(BaseModel):
+    uuid: str = Field(serialization_alias="id")
+    user: SignupResponseBase
