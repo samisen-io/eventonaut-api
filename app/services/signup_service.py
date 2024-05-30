@@ -21,9 +21,9 @@ def signup_organization_admin(db: Session, organizer_signup_request: schemas.Sig
     admin_password = uuid.uuid1().hex[:16]
     organization = create_organization(db, organizer_signup_request.organization_name)
     user = create_user(db, user_schemas.UserCreate(email=organizer_signup_request.email, hashed_password=admin_password, first_name=organizer_signup_request.first_name, last_name=organizer_signup_request.last_name, timezone=organizer_signup_request.timezone, status=OrganizerEnum.INACTIVE.name), RoleEnum.ORGANIZATION_ADMIN)
-    create_organization_user(db, organization.uuid, user.uuid)
+    org_user = create_organization_user(db, organization.uuid, user.uuid)
     
-    signup_organizer_response = schemas.SignupOrganizerResponse(email=user.email, 
+    signup_organizer_response = schemas.SignupResponseBase(email=user.email, 
                                     uuid=user.uuid,
                                     first_name=user.first_name,
                                     last_name=user.last_name,
@@ -36,6 +36,7 @@ def signup_organization_admin(db: Session, organizer_signup_request: schemas.Sig
                                     list_of_roles= get_user_role_ids(user),
                                     is_verified=user.is_verified
                                     )
+    signup_organizer_response = schemas.SignupOrganizerResponse(user=signup_organizer_response.model_dump(),uuid=org_user.uuid)
         
     return signup_organizer_response
 
@@ -54,9 +55,9 @@ def signup_organization_user(db: Session, organizer_signup_request: schemas.Sign
     user_password = uuid.uuid1().hex[:16]
     organization = organization_crud.get_organization_by_id(db, organization_id)
     user = create_user(db, user_schemas.UserCreate(email=organizer_signup_request.email, hashed_password=user_password, first_name=organizer_signup_request.first_name, last_name=organizer_signup_request.last_name, timezone=organizer_signup_request.timezone, status=OrganizerEnum.INACTIVE.name), RoleEnum.__members__.get(organizer_signup_request.user_role))
-    create_organization_user(db, organization.uuid, user.uuid)
+    org_user = create_organization_user(db, organization.uuid, user.uuid)
     
-    signup_organizer_response = schemas.SignupOrganizerResponse(email=user.email,
+    signup_organizer_response = schemas.SignupResponseBase(email=user.email,
                                     uuid=user.uuid,
                                     first_name=user.first_name,
                                     last_name=user.last_name,
@@ -69,6 +70,8 @@ def signup_organization_user(db: Session, organizer_signup_request: schemas.Sign
                                     list_of_roles= get_user_role_ids(user),
                                     is_verified=user.is_verified
                                     )
+    
+    signup_organizer_response = schemas.SignupOrganizerResponse(user=signup_organizer_response.model_dump(),uuid=org_user.uuid)
     
     return signup_organizer_response
 

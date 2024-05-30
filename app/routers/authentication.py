@@ -46,7 +46,6 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     form_data.username = sanitize_username(form_data.username)
     scopes = get_scopes(form_data.scopes)
    
-
     user = authenticate_user(db=db, username=form_data.username, password=form_data.password, token_jti=None)
 
     validate_user_and_scope(user, scopes)
