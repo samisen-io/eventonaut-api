@@ -178,6 +178,7 @@ class Conference(Base):
     organization = relationship("Organization", back_populates="conferences")
     exhibitors = relationship("Exhibitor", secondary="event_exhibitor", backref=backref("conferences", lazy='dynamic'))
     attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="conference")
+    registration_order = relationship("RegistrationOrder", back_populates="conference")
     
     @property
     def status(self):
@@ -302,13 +303,13 @@ class Attendee(Base):
     share_my_profile = Column(Boolean, default=False)
     share_my_agenda = Column(Boolean, default=False)
     thread_id = Column(String, index=True)
-    checked_in = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="attendees")
     agenda = relationship("Agenda", back_populates="attendees")
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
     aitokens = relationship("AITokens", back_populates="attendee")
     attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="attendee")
+    registration_order = relationship("RegistrationOrder", back_populates="attendee")
     
     _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "is_active"}
 
@@ -685,3 +686,60 @@ class Template(Base):
     template_url = Column(String, index=True)
     
     organization = relationship("Organization", back_populates="templates")
+
+class RegistrationOrderItemType(Base):
+    __tablename__ = "registration_order_item_type"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, index=True, unique=True)
+    description = Column(String, index=True)
+    
+    registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order_item_type")
+   
+class RegistrationOrder(Base):
+    __tablename__ = "registration_order"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    event_id = Column(Integer, ForeignKey("conferences.id"))
+    attendee_id = Column(Integer, ForeignKey("attendees.id"))
+    amount = Column(Float, index=True)
+    tax_amount = Column(Float, index=True)
+    fee_amount = Column(Float, index=True)
+    total_amount = Column(Float, index=True)
+    order_id = Column(String, index=True)
+    
+    registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order")
+    conference = relationship("Conference", back_populates="registration_order")
+    attendee = relationship("Attendee", back_populates="registration_order")
+    registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order")
+    
+class RegistrationOrderItem(Base):
+    __tablename__ = "registration_order_item"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    description = Column(String, index=True)
+    quantity = Column(Integer, index=True)
+    unit_price = Column(Float, index=True)
+    total_amount = Column(Float, index=True)
+    type = Column(Integer, ForeignKey("registration_order_item_type.id"))
+    code = Column(String, index=True)
+    registration_order_id = Column(Integer, ForeignKey("registration_order.id"))
+    
+    registration_ticket = relationship("RegistrationTicket", back_populates="registration_order_item")
+    registration_order = relationship("RegistrationOrder", back_populates="registration_order_item")
+    
+class RegistrationTicket(Base):
+    __tablename__ = "registration_ticket"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    registration_order_item_id = Column(Integer, ForeignKey("registration_order_item.id"))
+    ticket_id = Column(String, index=True, unique=True)
+    checked_in = Column(Boolean, default=False)
+    
+    registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_ticket")
