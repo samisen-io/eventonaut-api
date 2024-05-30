@@ -178,6 +178,7 @@ class Conference(Base):
     organization = relationship("Organization", back_populates="conferences")
     exhibitors = relationship("Exhibitor", secondary="event_exhibitor", backref=backref("conferences", lazy='dynamic'))
     attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="conference")
+    registration_order = relationship("RegistrationOrder", back_populates="conference")
     
     @property
     def status(self):
@@ -302,13 +303,13 @@ class Attendee(Base):
     share_my_profile = Column(Boolean, default=False)
     share_my_agenda = Column(Boolean, default=False)
     thread_id = Column(String, index=True)
-    checked_in = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="attendees")
     agenda = relationship("Agenda", back_populates="attendees")
     attendee_conference = relationship("Attendee_Conferences", back_populates="attendee")
     aitokens = relationship("AITokens", back_populates="attendee")
     attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="attendee")
+    registration_order = relationship("RegistrationOrder", back_populates="attendee")
     
     _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "is_active"}
 
