@@ -23,7 +23,7 @@ async def send_email(uuid, email, subject, first_name, email_template):
 async def signup_organization_admin(organizer_signup_request: schemas.SignupOrganizerAdminRequest, db: Session = Depends(get_db), basic_auth = Depends(basicauth.basic_auth)):
     organizer_signup_request.email = validate_user_email(organizer_signup_request.email)
     response = signup_service.signup_organization_admin(db=db, organizer_signup_request = organizer_signup_request)
-    hashed_uuid = get_hash(response.uuid)
+    hashed_uuid = get_hash(response.user.uuid)
     await send_email(hashed_uuid, organizer_signup_request.email, "Welcome to the organization", organizer_signup_request.first_name, email_template = WelcomeUserEnum)
     return {"message": "Admin created successfully. Please check your email to activate your account."}
 
@@ -32,7 +32,7 @@ async def signup_organization_user(organizer_signup_request: schemas.SignupOrgan
     organizer_signup_request.email = validate_user_email(organizer_signup_request.email)
     organization_id = current_user.organization_user[0].organization_id
     response = signup_service.signup_organization_user(db=db, organizer_signup_request = organizer_signup_request, organization_id=organization_id)
-    hashed_uuid = get_hash(response.uuid)
+    hashed_uuid = get_hash(response.user.uuid)
     await send_email(hashed_uuid, organizer_signup_request.email, "Welcome to the organization", organizer_signup_request.first_name, email_template = WelcomeUserEnum)
     return response
 
