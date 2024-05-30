@@ -84,7 +84,7 @@ def update_organization_user(db: Session, organization_user: schemas.Organizatio
     updated_user = update_user(db, update_user_req, db_user)
     if organization_user.user_role is not None:
         update_user_roles(db, updated_user, organization_user.user_role)
-    response = schemas.Organization_UserUpdateResponse(first_name=updated_user.first_name, last_name=updated_user.last_name, uuid=updated_user.uuid, status=organizer.OrganizerEnum(updated_user.user_status_id).name, timezone=updated_user.timezone, profile_image_url=updated_user.profile_image_url,id=db_organization_user.uuid, list_of_roles=get_user_role_ids(updated_user))
+    response = schemas.Organization_UserUpdateResponse(first_name=updated_user.first_name, last_name=updated_user.last_name, uuid=updated_user.uuid, status=organizer.OrganizerEnum(updated_user.user_status_id).name, timezone=updated_user.timezone, profile_image_url=updated_user.profile_image_url,organization_user_id=db_organization_user.uuid, list_of_roles=get_user_role_ids(updated_user), id=updated_user.id)
     return response
 
 def delete_organization_user(db: Session, db_organization_user: models.Organization_User):
