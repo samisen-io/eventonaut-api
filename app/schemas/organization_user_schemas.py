@@ -45,7 +45,8 @@ class Organization_UserUpdate(BaseModel):
         return value
 
 class Organization_UserUpdateResponse(BaseModel):
-    id: str
+    organization_user_id: str = Field(serialization_alias="id")
+    id: int = Field(serialization_alias="db_id")
     uuid: str = Field(serialization_alias="user_id")
     first_name: str | None = None
     last_name: str | None = None
