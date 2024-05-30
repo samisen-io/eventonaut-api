@@ -238,7 +238,7 @@ def reset_password(user: schemas.UserPasswordReset, db: Session = Depends(get_db
     if verify_hash(plain_text=db_user.uuid, hashed_text=user.uid):
         updated_user = crud.update_user_password(db=db, password=user.password, db_user=db_user)
         organization = updated_user.organization_user[0].organization
-        response = signup_schemas.SignupOrganizerResponse(email=user.email, 
+        response = signup_schemas.SignupResponseBase(email=user.email, 
                                     uuid=updated_user.uuid,
                                     first_name=updated_user.first_name,
                                     last_name=updated_user.last_name,
@@ -250,6 +250,8 @@ def reset_password(user: schemas.UserPasswordReset, db: Session = Depends(get_db
                                     list_of_roles= get_user_role_ids(updated_user),
                                     is_verified=updated_user.is_verified
                                     )
+        
+        response = signup_schemas.SignupOrganizerResponse(user=response.model_dump(),uuid=updated_user.organization_user[0].uuid)
         return response
     else:
         logging.exception("Invalid token")
