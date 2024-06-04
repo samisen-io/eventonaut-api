@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
+from sqlalchemy import Boolean, Column, Computed, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import UniqueConstraint
@@ -709,7 +709,7 @@ class RegistrationOrder(Base):
     tax_amount = Column(Float, index=True)
     fee_amount = Column(Float, index=True)
     total_amount = Column(Float, index=True)
-    order_id = Column(String, index=True)
+    order_id = Column(String, Computed("((event_id::text || '-'::text) || attendee_id::text) || '-'::text) || id::text"), index=True)
     
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order")
     conference = relationship("Conference", back_populates="registration_order")

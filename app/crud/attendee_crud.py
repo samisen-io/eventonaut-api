@@ -78,6 +78,9 @@ def get_attendee_by_id(db: Session, attendee_id: int):
     set_attendee_status(attendee)
     return attendee
 
+def get_an_attendee_by_id(db, attendee_id):
+    return db.query(models.Attendee).join(models.User).filter(models.Attendee.id == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
+
 # update attendee by id
 def update_attendee_by_uuid(db: Session, attendee_id: int, attendee: schemas.AttendeeUpdate):
     db_attendee = db.query(models.Attendee).filter(models.Attendee.user_id == attendee_id).first()
@@ -222,3 +225,6 @@ def get_attendees_by_conference_id(db: Session, conference_id: str):
     conference_id = conference.id
     attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
     return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()  
+
+def get_attendees_by_user_id(db: Session, user_id: int):
+    return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == user_id).first()
