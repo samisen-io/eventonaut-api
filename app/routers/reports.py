@@ -12,11 +12,13 @@ from app.schemas import registration_ticket_schema_temp as reg_ticket_schemas
 from app.schemas import ticket_schema_temp as ticket_schemas
 from app.crud.template_crud import get_template_by_id
 from app.oauth2 import get_current_active_user
-from app.report_generation_operations import generate_report_using_template
+from app.report_generation_operations import generate_report_using_template, generate_ticket_using_template
+from app.schemas.conference_schemas import ConferenceResponse
 from app.schemas.registration_order_item_schema_temp import RegistrationOrderItemCreate
 from app.schemas.registration_order_schema_temp import RegistrationOrderCreate
 from app.schemas.report_schemas import Report
 from app.schemas.user_schemas import User
+from app.schemas.venue_schemas import VenueResponse
 from app.static_enums.role import RoleEnum
 from ..dependencies import get_db
 from app.models import Session
@@ -57,7 +59,6 @@ def create_ticket(ticket_input: ticket_schemas.CreateTicket, db: Session = Depen
         registration_order_item_id=registration_order_item_db.id
     )
     return create_registration_ticket(db, ticket)
-    return 'Ticket created'
 
 @router.get('/get_ticket/{ticket_id}')
 def get_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
@@ -68,7 +69,39 @@ def get_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: User 
     registration_order = get_registration_order_by_id(db, registration_order_item.registration_order_id)
     event_id = registration_order.event_id
     event = get_conference_by_id(db, event_id)
-    return event
+    # fetch the template from the database
+    template_id = 'tem-aff9940c-cb50-4a27-ab0e-647592275776'
+    template = get_template_by_id(db, template_id, event.organization_id)
+    if not template:
+        raise HTTPException(status_code=404, detail='Template not found')
+    ticket_data, pdf_stream = generate_ticket_using_template(db,ticket_id, template, event, registration_order)
+    venue_response = VenueResponse(**event.venue.__dict__)
+    event_dict = event.__dict__
+    event_dict['venue'] = venue_response
+    event_dict['location'] = event.location
+    event_dict['status'] = event.status
+    event_dict['exhibitors'] = event.exhibitors
+    event = ConferenceResponse(**event_dict)
+    return {'ticket_data': ticket_data, 'event': event}
+
+@router.get('/download_ticket/{ticket_id}')
+def download_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
+    ticket = get_registration_ticket_by_ticket_id(db, ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail='Ticket not found')
+    registration_order_item = get_registration_order_item_by_id(db, ticket.registration_order_item_id)
+    registration_order = get_registration_order_by_id(db, registration_order_item.registration_order_id)
+    event_id = registration_order.event_id
+    event = get_conference_by_id(db, event_id)
+    # fetch the template from the database
+    template_id = 'tem-aff9940c-cb50-4a27-ab0e-647592275776'
+    template = get_template_by_id(db, template_id, event.organization_id)
+    if not template:
+        raise HTTPException(status_code=404, detail='Template not found')
+    ticket_data, pdf_stream = generate_ticket_using_template(db,ticket_id, template, event, registration_order)
+    response = StreamingResponse(pdf_stream, media_type="application/pdf")
+    response.headers["Content-Disposition"] = f"attachment; filename={ticket_id}.pdf"
+    return response
 
 @router.post('/generate_report')
 def generate_report(report: Report, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name])):
