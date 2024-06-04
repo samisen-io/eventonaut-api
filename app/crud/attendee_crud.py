@@ -222,3 +222,6 @@ def get_attendees_by_conference_id(db: Session, conference_id: str):
     conference_id = conference.id
     attendee_conferences = db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference_id).all()
     return db.query(models.Attendee).options(joinedload(models.Attendee.user)).filter(models.Attendee.id.in_([attendee_conference.attendee_id for attendee_conference in attendee_conferences])).all()  
+
+def get_attendees_by_user_id(db: Session, user_id: int):
+    return db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == user_id).first()
