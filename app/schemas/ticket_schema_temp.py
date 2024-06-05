@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 
 class CreateTicket(BaseModel):
-    event_id: int
+    event_id: str
     amount: float
     tax_amount: float
     fee_amount: float
