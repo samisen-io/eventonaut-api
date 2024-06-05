@@ -41,8 +41,7 @@ def generate_report_using_template(template, input_data):
         os.remove(temp_file.name)
         raise HTTPException(status_code=500, detail='Error generating report')
     
-def generate_ticket_using_template(db,ticket_id, template, event, registration_order):
-    temp_file = download_the_template(template.template_url)
+def generate_input_data(db, ticket_id, template, event, registration_order):
     organization_id = event.organization_id
     organization = get_organization_by_id(db, organization_id)
     venue = event.venue
@@ -55,8 +54,7 @@ def generate_ticket_using_template(db,ticket_id, template, event, registration_o
     user_name = user.first_name + ' ' + user.last_name
     order_date = registration_order.created_on.strftime('%d %B %Y')
     order_time = registration_order.created_on.strftime('%H:%M')
-    # fetch the input fromthe database
-    print(f"Generating ticket for ticket_id: {ticket_id}")
+
     input_data = {
         'title': organization.name, 
         'event': event.name, 
@@ -71,6 +69,11 @@ def generate_ticket_using_template(db,ticket_id, template, event, registration_o
         'orderTime': order_time,
         'qrCode': 'https://conferencebuddydev.blob.core.windows.net/temporary-images/dyn-07d92fac-a59f-42c8-9e75-b53f43a0410d-conf_qrcode.png'
     }
+    return input_data
+
+def generate_pdf_ticket(db, ticket_id, template, event, registration_order):
+    temp_file = download_the_template(template.template_url)
+    input_data = generate_input_data(db, ticket_id, template, event, registration_order)
     html = render_pug_template(temp_file, input_data)
     pdf_io = BytesIO()
     try:
@@ -79,7 +82,7 @@ def generate_ticket_using_template(db,ticket_id, template, event, registration_o
         if pdf_io.tell() > 0:
             pdf_io.seek(0)
             os.remove(temp_file)
-            return input_data, pdf_io
+            return pdf_io
         else:
             raise HTTPException(status_code=500, detail='Error generating ticket')
     except Exception as e:

@@ -744,3 +744,13 @@ class RegistrationTicket(Base):
     checked_in = Column(Boolean, default=False)
     
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_ticket")
+    
+class MasterTemplate(Base):
+    __tablename__ = "master_template"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    template_name = Column(String, index=True)
+    template_url = Column(String, index=True)
