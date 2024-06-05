@@ -82,7 +82,7 @@ def generate_pdf_ticket(db, ticket_id, template, event, registration_order):
         if pdf_io.tell() > 0:
             pdf_io.seek(0)
             os.remove(temp_file)
-            return input_data, pdf_io
+            return pdf_io
         else:
             raise HTTPException(status_code=500, detail='Error generating ticket')
     except Exception as e:
