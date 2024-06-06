@@ -82,7 +82,7 @@ def get_orders_items(db: Session = Depends(get_db), current_user: User = Securit
         schema = RegistrationOrderItemResponse.from_orm(item)
         schema.registration_order = item.registration_order
         schema.registration_ticket = item.registration_ticket
-        registration_order_items_schemas.append(schema)
+        # registration_order_items_schemas.append(schema)
         if item.registration_ticket is not None:
             registration_order = item.registration_order
             event = get_conference_by_id(db, registration_order.event_id)
@@ -98,11 +98,12 @@ def get_orders_items(db: Session = Depends(get_db), current_user: User = Securit
             event.client = None
             event.sponsors = None
             event.exhibitors = None
-            schema_dict["event"] = event
-            schema_dict["ticket_data"] = ticket_data_list
-            registration_order_items_schemas.append(schema_dict)
+            schema.event = event
+            schema.ticket_data = ticket_data_list
+            registration_order_items_schemas.append(schema)
         else:
-            registration_order_items_schemas.append(schema.__dict__)
+            registration_order_items_schemas.append(schema)
+            
     return registration_order_items_schemas
 
 @router.get('/get_ticket/{ticket_id}')
