@@ -1,4 +1,8 @@
+from typing import Any, List, Optional
 from pydantic import BaseModel, Field, field_validator
+
+from app.schemas.registration_order_schema_temp import RegistrationOrder
+from app.schemas.registration_ticket_schema_temp import RegistrationTicket
 
 class RegistrationOrderItemBase(BaseModel):
     registration_order_id: int
@@ -63,5 +67,15 @@ class RegistrationOrderItem(RegistrationOrderItemBase):
 
     class Config:
         orm_mode = True
+        
+class RegistrationOrderItemResponse(RegistrationOrderItem):
+    registration_order: Optional[RegistrationOrder] = Field(None, alias="order")
+    registration_ticket: Optional[List[RegistrationTicket]] = Field(None, alias="tickets")
+    ticket_data: Optional[Any] = Field(None, alias="ticketData")
+    event: Optional[Any] = Field(None, alias="event")
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
     

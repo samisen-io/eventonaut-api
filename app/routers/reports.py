@@ -1,9 +1,9 @@
+from operator import and_
 from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi.responses import StreamingResponse
 
-from app.code_generator import generate_unique_string
-from app.crud.attendee_crud import get_attendee_by_email, get_attendees_by_user_id
-from app.crud.conferences_crud import get_conference, get_conference_by_conference_uuid, get_conference_by_id, get_conference_by_uuid
+from app.crud.attendee_crud import get_attendees_by_user_id
+from app.crud.conferences_crud import get_conference_by_conference_uuid, get_conference_by_id
 from app.crud.master_template_crud import get_master_template_by_id
 from app.crud.registration_order_crud_temp import create_registration_order, get_registration_order_by_id
 from app.crud.registration_order_item_crud import create_registration_order_item, get_registration_order_item_by_id
@@ -14,17 +14,18 @@ from app.schemas import ticket_schema_temp as ticket_schemas
 from app.crud.template_crud import get_template_by_id
 from app.oauth2 import get_current_active_user
 from app.report_generation_operations import generate_input_data, generate_pdf_ticket, generate_report_using_template
-from app.schemas.client_schemas import ClientResponse
 from app.schemas.conference_schemas import ConferenceResponse
-from app.schemas.exhibitor_schemas import ExhibitorResponse
-from app.schemas.registration_order_item_schema_temp import RegistrationOrderItem, RegistrationOrderItemCreate
+from app.schemas.registration_order_item_schema_temp import RegistrationOrderItem, RegistrationOrderItemCreate, RegistrationOrderItemResponse
+from app.models import RegistrationOrder as RegistrationOrderModel
+from app.models import RegistrationOrderItem as RegistrationOrderItemModel
 from app.schemas.registration_order_schema_temp import RegistrationOrder, RegistrationOrderCreate
 from app.schemas.report_schemas import Report
 from app.schemas.user_schemas import User
-from app.schemas.venue_schemas import VenueResponse
 from app.static_enums.role import RoleEnum
+from app.utils import conference_to_dict
 from ..dependencies import get_db
 from app.models import Session
+from sqlalchemy.orm import joinedload
 
 
 router = APIRouter(tags = ['reports'])
@@ -64,6 +65,46 @@ def create_ticket(ticket_input: ticket_schemas.CreateTicket, db: Session = Depen
     )
     return create_registration_ticket(db, ticket)
 
+@router.get('/get_orders_items/')
+def get_orders_items(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
+    attendee = get_attendees_by_user_id(db, current_user.id)
+    if not attendee:
+        raise HTTPException(status_code=404, detail='Attendee not found')
+    registration_order_items = db.query(RegistrationOrderItemModel).options(
+        joinedload(RegistrationOrderItemModel.registration_order),
+        joinedload(RegistrationOrderItemModel.registration_ticket)
+    ).filter(
+        RegistrationOrderItemModel.registration_order_id == RegistrationOrderModel.id,
+        RegistrationOrderModel.attendee_id == attendee.id
+    ).all()
+    registration_order_items_schemas = []
+    for item in registration_order_items:
+        schema = RegistrationOrderItemResponse.from_orm(item)
+        schema.registration_order = item.registration_order
+        schema.registration_ticket = item.registration_ticket
+        registration_order_items_schemas.append(schema)
+        if item.registration_ticket is not None:
+            registration_order = item.registration_order
+            event = get_conference_by_id(db, registration_order.event_id)
+            ticket_data_list = []
+            for ticket in item.registration_ticket:
+                ticket_data = generate_input_data(db, ticket.ticket_id, event, registration_order)
+                ticket_data_list.append(ticket_data)
+            schema_dict = schema.__dict__
+            event_dict = conference_to_dict(event)
+            event_dict['location'] = event.location
+            event_dict['status'] = event.status
+            event = ConferenceResponse(**event_dict)
+            event.client = None
+            event.sponsors = None
+            event.exhibitors = None
+            schema_dict["event"] = event
+            schema_dict["ticket_data"] = ticket_data_list
+            registration_order_items_schemas.append(schema_dict)
+        else:
+            registration_order_items_schemas.append(schema.__dict__)
+    return registration_order_items_schemas
+
 @router.get('/get_ticket/{ticket_id}')
 def get_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
     ticket = get_registration_ticket_by_ticket_id(db, ticket_id)
@@ -73,30 +114,17 @@ def get_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: User 
     registration_order = get_registration_order_by_id(db, registration_order_item.registration_order_id)
     event_id = registration_order.event_id
     event = get_conference_by_id(db, event_id)
-    # fetch the template from the database
-    template_id = 'tem-cbd6cb4a-fff3-4778-94a4-59b737561cdf'
-    template = get_master_template_by_id(db, template_id)
-    if not template:
-        raise HTTPException(status_code=404, detail='Template not found')
-    ticket_data = generate_input_data(db,ticket_id, template, event, registration_order)
-    venue_response = VenueResponse(**event.venue.__dict__)
-    event_dict = event.__dict__
-    event_dict['venue'] = venue_response
+    ticket_data = generate_input_data(db,ticket_id, event, registration_order)
+    event_dict = conference_to_dict(event)
     event_dict['location'] = event.location
     event_dict['status'] = event.status
-    client_dict = event.client.__dict__
-    if 'status' not in client_dict:
-        client_dict['status'] = 'default_status'  # replace 'default_status' with the actual default status
-    event_dict['client'] = ClientResponse(**client_dict)
-    event_dict['exhibitors'] = [ExhibitorResponse(**exhibitor.__dict__) for exhibitor in event.exhibitors]
     event = ConferenceResponse(**event_dict)
+    event.client = None
+    event.sponsors = None
+    event.exhibitors = None
     registration_order_dict = registration_order.__dict__
-    # if '_sa_instance_state' in registration_order_dict:
-    #     del registration_order_dict['_sa_instance_state']
     registration_order = RegistrationOrder(**registration_order_dict)
     registration_order_item_dict = registration_order_item.__dict__
-    # if '_sa_instance_state' in registration_order_item_dict:
-    #     del registration_order_item_dict['_sa_instance_state']
     registration_order_item = RegistrationOrderItem(**registration_order_item_dict)
     return {'ticket_data': ticket_data, 'event': event, 'registration_order': registration_order, 'registration_order_item': registration_order_item}
 

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from fastapi.params import Depends
 
 from app.models import RegistrationOrder
+from app.schemas.registration_order_item_schema_temp import RegistrationOrderItem
 from app.schemas.registration_order_schema_temp import RegistrationOrderCreate
 from ..code_generator import generate_unique_string
 
@@ -14,6 +15,9 @@ def get_registration_order_by_uuid(db: Session, uuid: str):
 
 def get_registration_order_by_id(db: Session, id: int):
     return db.query(RegistrationOrder).filter(RegistrationOrder.id == id).first()
+
+def get_all_registration_orders_by_attendee_id(db: Session, attendee_id: int):
+    return db.query(RegistrationOrder).filter(RegistrationOrder.attendee_id == attendee_id).all()
 
 def create_registration_order(db: Session, registration_order: RegistrationOrderCreate):
     registration_order_db = RegistrationOrder(
@@ -36,6 +40,7 @@ def delete_registration_order(db: Session, uuid: str):
     registration_order = get_registration_order_by_uuid(db, uuid)
     if registration_order is None:
         raise HTTPException(status_code=Status.HTTP_404_NOT_FOUND, detail="Registration order not found")
+    db.query(RegistrationOrderItem).filter(RegistrationOrderItem.registration_order_id == registration_order.id).delete()
     db.delete(registration_order)
     db.commit()
     return registration_order
