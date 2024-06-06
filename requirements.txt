@@ -36,3 +36,4 @@ pypdf
 pypugjs
 jinja2
 weasyprint
+redis
