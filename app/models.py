@@ -179,6 +179,7 @@ class Conference(Base):
     exhibitors = relationship("Exhibitor", secondary="event_exhibitor", backref=backref("conferences", lazy='dynamic'))
     attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="conference")
     registration_order = relationship("RegistrationOrder", back_populates="conference")
+    registration_setup = relationship("RegistrationSetup", back_populates="event")
     
     @property
     def status(self):
@@ -754,3 +755,43 @@ class MasterTemplate(Base):
     updated_on = Column(DateTime)
     template_name = Column(String, index=True)
     template_url = Column(String, index=True)
+    
+class RegistrationSetup(Base):
+    __tablename__ = "registration_setup"    
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    event_id = Column(Integer, ForeignKey("conferences.id"))
+    start_date = Column(DATE, index=True)
+    end_date = Column(DATE, index=True)
+    registration_note = Column(String, index=True)
+    tax_name = Column(String, index=True)
+    tax_rate = Column(Float, index=True)
+    fee_name = Column(String, index=True)
+    fee_amount = Column(Float, index=True)
+    refund_policy = Column(String, index=True)
+    is_live = Column(Boolean, default=False)
+    
+    event = relationship("Conference", back_populates="registration_setup")
+    registration_setup_items = relationship("RegistrationSetupItem", back_populates="registration_setup")
+    
+class RegistrationSetupItem(Base):
+    __tablename__ = "registration_setup_item"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    registration_setup_id = Column(Integer, ForeignKey("registration_setup.id"))
+    name = Column(String, index=True)
+    description = Column(String, index=True)
+    available_quantity = Column(Integer, index=True)
+    price = Column(Float, index=True)
+    available_from = Column(DateTime, index=True)
+    available_to = Column(DateTime, index=True)
+    image_url = Column(String, index=True)
+    product_id = Column(String, index=True)
+    
+    registration_setup = relationship("RegistrationSetup", back_populates="registration_setup_items")

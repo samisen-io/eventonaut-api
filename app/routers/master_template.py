@@ -22,7 +22,7 @@ async def upload_template(file: UploadFile = File(...), db: Session = Depends(ge
         logging.exception('Invalid file type')
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file type")
     original_filename = file.filename
-    file.filename = f'{'usr-'+str(uuid.uuid4())}-{original_filename}'
+    file.filename = f'usr-{str(uuid.uuid4())}-{original_filename}'
     uploaded_file = upload_file(file, db)
     blob_url = uploaded_file['url']
     response = crud.insert_master_template(db=db, template_name=original_filename, template_url=blob_url)
