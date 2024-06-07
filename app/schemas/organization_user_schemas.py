@@ -72,9 +72,12 @@ class OrganizationBase(BaseModel):
     uuid: str = Field(serialization_alias="id")
     name: str
 
+class OUser(User):
+    db_id: int
+    
 class OrganizationUserBase(BaseModel):
     uuid: str = Field(serialization_alias="id")
-    user: User
+    user: OUser
 
 class OrganizationUsersResponse(BaseModel):
     organization_uuid: str = Field(serialization_alias="organization_id")

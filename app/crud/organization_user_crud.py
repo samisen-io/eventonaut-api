@@ -25,7 +25,13 @@ def get_users_by_organization_uuid(db: Session, organization_id: int):
     organization.organization_user.sort(key=lambda x: x.user.updated_on, reverse=True)
     for organization_user in organization.organization_user:
         user = db.query(models.User).filter(models.User.id == organization_user.user_id).first()
-        users.append(schemas.OrganizationUserBase(uuid=organization_user.uuid, user=schemas.User(**user.__dict__, list_of_roles=get_user_role_ids(user), status=OrganizerEnum(user.user_status_id).name)))
+        user_dict = user.__dict__
+        user_dict["db_id"] = user.id
+        users.append(schemas.OrganizationUserBase(
+            uuid=organization_user.uuid, 
+            user=schemas.OUser(**user_dict, list_of_roles=get_user_role_ids(user), status=OrganizerEnum(user.user_status_id).name), 
+            db_id=user.id
+        ))
     return schemas.OrganizationUsersResponse(organization_uuid=organization.uuid, organization_name=organization.name, users=users)
 
 def get_user_role_ids(user):
