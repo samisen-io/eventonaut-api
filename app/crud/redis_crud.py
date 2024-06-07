@@ -8,6 +8,7 @@ import os
 redis_host = os.getenv('REDIS_HOST')
 redis_port = os.getenv('REDIS_PORT')
 redis_password = os.getenv('REDIS_PASSWORD')
+session_expire_time = os.getenv('SESSION_EXPIRE')
 
 r = redis.StrictRedis(host=redis_host, port=redis_port, password=redis_password, ssl=True)
 
@@ -31,7 +32,7 @@ def get_everything():
 
 def save_session_to_redis(key, value):
     value_str = json.dumps(value)
-    r.set(key, value_str, ex=240)
+    r.set(key, value_str, ex=session_expire_time)
     expiration_time = r.pttl(key)
     if expiration_time > 0:
         expire_timestamp = datetime.fromtimestamp(time.time() + expiration_time / 1000.0)
