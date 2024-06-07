@@ -9,18 +9,18 @@ import logging
 import json
 
 def check_for_extra_tickets(checkout_request: CheckoutRequest, available_tickets: RegistrationSetupResponse):
-    available_tickets_dict = {item.name: item.available_quantity for item in available_tickets.registration_setup_items}
+    available_tickets_dict = {item.uuid: item.available_quantity for item in available_tickets.registration_setup_items}
 
     if all(ticket.count == 0 for ticket in checkout_request.tickets):
         raise HTTPException(status_code=400, detail="Select at least one ticket")
 
-    extra_tickets = [{'ticket_name': ticket.name, 'extra_ticket_count': ticket.count - available_tickets_dict[ticket.name]} for ticket in checkout_request.tickets if ticket.name in available_tickets_dict and ticket.count > available_tickets_dict[ticket.name]]
+    extra_tickets = [{'ticket_id': ticket.id, 'extra_ticket_count': ticket.count - available_tickets_dict[ticket.id]} for ticket in checkout_request.tickets if ticket.id in available_tickets_dict and ticket.count > available_tickets_dict[ticket.id]]
     if extra_tickets:
         raise HTTPException(status_code=400, detail={"Extra tickets": extra_tickets})
     
 def verify_ticket_types(checkout_request: CheckoutRequest, available_tickets: RegistrationSetupResponse):
-    available_ticket_types = [item.name.casefold() for item in available_tickets.registration_setup_items]
-    checkout_ticket_types = [ticket.name.casefold() for ticket in checkout_request.tickets]
+    available_ticket_types = [item.uuid for item in available_tickets.registration_setup_items]
+    checkout_ticket_types = [ticket.id for ticket in checkout_request.tickets]
     
     invalid_ticket_types = [ticket for ticket in checkout_ticket_types if ticket not in available_ticket_types]
     
@@ -44,21 +44,19 @@ def available_tickets_for_event(db: Session, event: models.Conference):
             continue
         session: TicketSession = json.loads(session_bytes)
         for ticket in session["tickets"]:
-            if ticket["name"].casefold() in available_tickets:
-                available_tickets[ticket["name"].casefold()] -= ticket["count"] if available_tickets[ticket["name"].casefold()] >= ticket["count"] else 0
+            if ticket["id"] in available_tickets:
+                available_tickets[ticket["id"]] -= ticket["count"] if available_tickets[ticket["id"]] >= ticket["count"] else 0
     setup = update_setup_with_available_tickets(setup, available_tickets)
     return setup
                 
 def get_db_available_tickets(db: Session, setup: RegistrationSetupResponse):
     available_tickets = {}
     for item in setup.registration_setup_items:
-        available_tickets[item.name.casefold()] = item.available_quantity
+        available_tickets[item.uuid] = item.available_quantity
     return available_tickets
     
 def update_setup_with_available_tickets(setup: RegistrationSetupResponse, available_tickets: dict):
-    lower_case_tickets = {k.casefold(): v for k, v in available_tickets.items()}
     for item in setup.registration_setup_items:
-        lower_case_name = item.name.casefold()
-        if lower_case_name in lower_case_tickets:
-            item.available_quantity = lower_case_tickets[lower_case_name]
+        if item.uuid in available_tickets:
+            item.available_quantity = available_tickets[item.uuid]
     return setup
