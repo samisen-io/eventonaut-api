@@ -23,6 +23,7 @@ class RegistrationSetup(RegistrationSetupBase):
         return v
     
 class RegistrationSetupItemBase(BaseModel):
+    uuid: str = Field(serialization_alias="id")
     name: str
     description: str
     available_quantity: int

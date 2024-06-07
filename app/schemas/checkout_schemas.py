@@ -2,10 +2,10 @@ from pydantic import BaseModel, ValidationInfo, field_validator
 from datetime import datetime
 
 class Ticket(BaseModel):
-    name: str
+    id: str
     count: int
     
-    @field_validator('name')
+    @field_validator('id')
     def value_not_empty(cls, v, info: ValidationInfo):
         if v.strip() == "":
             raise ValueError(f"{info.field_name} cannot be empty")

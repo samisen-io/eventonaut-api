@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 class Ticket(BaseModel):
-    name: str
+    id: str
     count: int
 
 class TicketSession(BaseModel):
