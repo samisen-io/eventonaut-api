@@ -41,7 +41,7 @@ def generate_report_using_template(template, input_data):
         os.remove(temp_file.name)
         raise HTTPException(status_code=500, detail='Error generating report')
     
-def generate_input_data(db, ticket_id, template, event, registration_order):
+def generate_input_data(db, ticket_id, event, registration_order):
     organization_id = event.organization_id
     organization = get_organization_by_id(db, organization_id)
     venue = event.venue
@@ -61,6 +61,7 @@ def generate_input_data(db, ticket_id, template, event, registration_order):
         'orderNumber': registration_order.order_id,
         'logo': event.conference_banner_url,
         'ticketType': 'General Admission',
+        'tickteID': ticket_id,
         'address': address,
         'dateTime': date,
         'orderType': 'Free Order',
@@ -73,7 +74,7 @@ def generate_input_data(db, ticket_id, template, event, registration_order):
 
 def generate_pdf_ticket(db, ticket_id, template, event, registration_order):
     temp_file = download_the_template(template.template_url)
-    input_data = generate_input_data(db, ticket_id, template, event, registration_order)
+    input_data = generate_input_data(db, ticket_id, event, registration_order)
     html = render_pug_template(temp_file, input_data)
     pdf_io = BytesIO()
     try:

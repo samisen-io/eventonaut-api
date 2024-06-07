@@ -21,7 +21,6 @@ class RegistrationTicketCreate(RegistrationTicketBase):
     pass
 
 class RegistrationTicket(RegistrationTicketBase):
-    id: int
     ticket_id: str
     
     class Config:
