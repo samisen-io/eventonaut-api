@@ -4,6 +4,7 @@ from typing import Optional
 class RegistrationTicketBase(BaseModel):
     registration_order_item_id: int
     checked_in: Optional[bool] = False
+    ticket_url: Optional[str] = None
     
     @field_validator("registration_order_item_id")
     def check_registration_order_item_id(cls, v):

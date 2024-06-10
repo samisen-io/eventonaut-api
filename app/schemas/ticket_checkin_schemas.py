@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator, ValidationInfo
 import logging
+from ..schemas.attendee_schemas import Attendee
 
 class TicketCheckIn(BaseModel):
     ticket_id: str
@@ -14,9 +15,13 @@ class TicketCheckIn(BaseModel):
     
 class Ticket(BaseModel):
     ticket_id: str
+    type: str
     event_id: str
     checked_in: bool
     
 class CheckInResponse(BaseModel):
     message: str
     ticket: Ticket
+    
+class AttendeeTickets(Attendee):
+    tickets: list[Ticket]

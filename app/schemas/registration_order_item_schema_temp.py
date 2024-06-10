@@ -10,7 +10,7 @@ class RegistrationOrderItemBase(BaseModel):
     quantity: int
     unit_price: float
     total_amount: float
-    type: int
+    registration_setup_item_id: int
     code: str
     
     @field_validator("registration_order_id")
@@ -46,10 +46,10 @@ class RegistrationOrderItemBase(BaseModel):
             raise ValueError("Invalid total_amount")
         return v
     
-    @field_validator("type")
-    def check_type(cls, v):
-        if v < 0 or v >= 4:
-            raise ValueError("Invalid type")
+    @field_validator("registration_setup_item_id")
+    def check_registration_setup_item_id(cls, v):
+        if v < 0:
+            raise ValueError("Invalid registration_setup_item_id")
         return v
     
     @field_validator("code")

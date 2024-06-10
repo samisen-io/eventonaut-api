@@ -1,19 +1,20 @@
 from operator import and_
 from fastapi import APIRouter, Depends, HTTPException, Security
 from fastapi.responses import StreamingResponse
+import requests
 
 from app.crud.attendee_crud import get_attendees_by_user_id
 from app.crud.conferences_crud import get_conference_by_conference_uuid, get_conference_by_id
 from app.crud.master_template_crud import get_master_template_by_id
 from app.crud.registration_order_crud_temp import create_registration_order, get_registration_order_by_id
-from app.crud.registration_order_item_crud import create_registration_order_item, get_registration_order_item_by_id
-from app.crud.registration_order_item_type_crud_temp import get_registration_order_item_type_by_id
-from app.crud.registration_ticket_crud_temp import create_registration_ticket, get_registration_ticket_by_ticket_id
+from app.crud.registration_order_item_crud import create_registration_order_item, delete_registration_order_item, get_registration_order_item_by_id
+from app.crud.registration_order_item_type_crud_temp import get_registration_order_item_type_by_code, get_registration_order_item_type_by_id
+from app.crud.registration_ticket_crud_temp import create_registration_ticket, get_registration_ticket_by_ticket_id, update_registration_ticket
 from app.schemas import registration_ticket_schema_temp as reg_ticket_schemas
 from app.schemas import ticket_schema_temp as ticket_schemas
 from app.crud.template_crud import get_template_by_id
 from app.oauth2 import get_current_active_user
-from app.report_generation_operations import generate_input_data, generate_pdf_ticket, generate_report_using_template
+from app.report_generation_operations import generate_input_data, generate_pdf_ticket, generate_pdf_tickets, generate_report_using_template
 from app.schemas.conference_schemas import ConferenceResponse
 from app.schemas.registration_order_item_schema_temp import RegistrationOrderItem, RegistrationOrderItemCreate, RegistrationOrderItemResponse
 from app.models import RegistrationOrder as RegistrationOrderModel
@@ -32,11 +33,9 @@ router = APIRouter(tags = ['reports'])
 
 @router.post('/create_ticket')
 def create_ticket(ticket_input: ticket_schemas.CreateTicket, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
-    print(ticket_input)
     current_user_id = current_user.id
     attendee = get_attendees_by_user_id(db, current_user_id)
     event = get_conference_by_conference_uuid(db, ticket_input.event_id)
-    print(attendee.id)
     registration_order_db = RegistrationOrderCreate(
         event_id=event.id,
         attendee_id=attendee.id,
@@ -45,25 +44,34 @@ def create_ticket(ticket_input: ticket_schemas.CreateTicket, db: Session = Depen
         fee_amount=ticket_input.fee_amount,
     )
     registration_order_db = create_registration_order(db,registration_order_db)
-    # get the registration order id
-    registration_order_id = registration_order_db.id
-    print(registration_order_id)
-    registration_order_item_type_code = get_registration_order_item_type_by_id(db, ticket_input.type).code
+    registration_order_item_type_code = get_registration_order_item_type_by_code(db, ticket_input.code).code
     registration_order_item_db = RegistrationOrderItemCreate(
-        registration_order_id= registration_order_id,
+        registration_order_id= registration_order_db.id,
         description= ticket_input.description,
         quantity= ticket_input.quantity,
         unit_price= registration_order_db.total_amount,
         total_amount= (registration_order_db.total_amount*ticket_input.quantity),
-        type= ticket_input.type,
+        registration_setup_item_id= ticket_input.registration_setup_item_id,
         code= registration_order_item_type_code
     )
     registration_order_item_db = create_registration_order_item(db, registration_order_item_db)
-    # create a registration ticket
-    ticket = reg_ticket_schemas.RegistrationTicketCreate(
-        registration_order_item_id=registration_order_item_db.id
-    )
-    return create_registration_ticket(db, ticket)
+    template_id = 'tem-cbd6cb4a-fff3-4778-94a4-59b737561cdf'
+    template = get_master_template_by_id(db, template_id)
+    tickets = []
+    for _ in range(ticket_input.quantity):
+        new_ticket = create_registration_ticket(db, reg_ticket_schemas.RegistrationTicketCreate(registration_order_item_id=registration_order_item_db.id))
+        db.commit()
+        tickets.append(new_ticket)
+    pdf_ticket = generate_pdf_tickets(db, tickets[0],template, event, registration_order_db, registration_order_item_db, upload=True)
+    for ticket in tickets:
+        ticket.ticket_url = pdf_ticket['url']
+        update_registration_ticket(db, ticket.ticket_id, ticket)
+    return tickets
+
+@router.delete('/delete_registration_order_item/{uuid}')
+def delete_order_item(uuid: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
+    delete_registration_order_item(db, uuid)
+    return True
 
 @router.get('/get_orders_items/')
 def get_orders_items(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
@@ -72,38 +80,16 @@ def get_orders_items(db: Session = Depends(get_db), current_user: User = Securit
         raise HTTPException(status_code=404, detail='Attendee not found')
     registration_order_items = db.query(RegistrationOrderItemModel).options(
         joinedload(RegistrationOrderItemModel.registration_order),
-        joinedload(RegistrationOrderItemModel.registration_ticket)
+        joinedload(RegistrationOrderItemModel.registration_ticket),
+        joinedload(RegistrationOrderItemModel.registration_order).joinedload(RegistrationOrderModel.conference)  # eager load the related Conference data
     ).filter(
         RegistrationOrderItemModel.registration_order_id == RegistrationOrderModel.id,
         RegistrationOrderModel.attendee_id == attendee.id
     ).all()
-    registration_order_items_schemas = []
-    for item in registration_order_items:
-        schema = RegistrationOrderItemResponse.from_orm(item)
-        schema.registration_order = item.registration_order
-        schema.registration_ticket = item.registration_ticket
-        # registration_order_items_schemas.append(schema)
-        if item.registration_ticket is not None:
-            registration_order = item.registration_order
-            event = get_conference_by_id(db, registration_order.event_id)
-            ticket_data_list = []
-            for ticket in item.registration_ticket:
-                ticket_data = generate_input_data(db, ticket.ticket_id, event, registration_order)
-                ticket_data_list.append(ticket_data)
-            schema_dict = schema.__dict__
-            event_dict = conference_to_dict(event)
-            event_dict['location'] = event.location
-            event_dict['status'] = event.status
-            event = ConferenceResponse(**event_dict)
-            event.client = None
-            event.sponsors = None
-            event.exhibitors = None
-            schema.event = event
-            schema.ticket_data = ticket_data_list
-            registration_order_items_schemas.append(schema)
-        else:
-            registration_order_items_schemas.append(schema)
-            
+    registration_order_items_schemas = [
+        create_schema(item, db) for item in registration_order_items
+    ]
+
     return registration_order_items_schemas
 
 @router.get('/get_ticket/{ticket_id}')
@@ -115,7 +101,7 @@ def get_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: User 
     registration_order = get_registration_order_by_id(db, registration_order_item.registration_order_id)
     event_id = registration_order.event_id
     event = get_conference_by_id(db, event_id)
-    ticket_data = generate_input_data(db,ticket_id, event, registration_order)
+    ticket_data = generate_input_data(db, ticket, event, registration_order, registration_order_item)
     event_dict = conference_to_dict(event)
     event_dict['location'] = event.location
     event_dict['status'] = event.status
@@ -143,10 +129,21 @@ def download_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: 
     template = get_master_template_by_id(db, template_id)
     if not template:
         raise HTTPException(status_code=404, detail='Template not found')
-    pdf_stream = generate_pdf_ticket(db,ticket_id, template, event, registration_order)
+    pdf_stream = generate_pdf_ticket(db,ticket, template, event, registration_order, registration_order_item)
     response = StreamingResponse(pdf_stream, media_type="application/pdf")
     response.headers["Content-Disposition"] = f"attachment; filename={ticket_id}.pdf"
     return response
+
+@router.get('/download_tickets/{ticket_id}')
+def download_tickets(ticket_id: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
+    ticket = get_registration_ticket_by_ticket_id(db, ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail='Ticket not found')
+    url = ticket.ticket_url
+    response = requests.get(url, stream=True)
+    if response.status_code != 200:
+        raise HTTPException(status_code=404, detail="File not found")
+    return StreamingResponse(response.iter_content(chunk_size=1024), media_type='application/pdf', headers={'Content-Disposition': 'attachment; filename=ticket.pdf'})
 
 @router.post('/generate_report')
 def generate_report(report: Report, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name])):
@@ -162,3 +159,26 @@ def generate_report(report: Report, db: Session = Depends(get_db),current_user: 
     response = StreamingResponse(pdf_stream, media_type="application/pdf")
     response.headers["Content-Disposition"] = f"attachment; filename={output_filename}.pdf"
     return response
+
+def create_schema(item, db):
+    schema = RegistrationOrderItemResponse.from_orm(item)
+    schema.registration_order = item.registration_order
+    schema.registration_ticket = item.registration_ticket
+
+    if item.registration_ticket is not None:
+        registration_order = item.registration_order
+        event = registration_order.conference  # use the eagerly loaded data
+        ticket_data_list = [
+            generate_input_data(db, ticket, event, registration_order, item) for ticket in item.registration_ticket
+        ]
+        event_dict = conference_to_dict(event)
+        event_dict['location'] = event.location
+        event_dict['status'] = event.status
+        event = ConferenceResponse(**event_dict)
+        event.client = None
+        event.sponsors = None
+        event.exhibitors = None
+        schema.event = event
+        schema.ticket_data = ticket_data_list
+
+    return schema
