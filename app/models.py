@@ -638,7 +638,6 @@ class EventExhibitor(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
 
     exhibitor = relationship("Exhibitor", back_populates="event_exhibitor", overlaps="conferences,exhibitors")
-    
 class ExhibitorDocuments(Base):
     __tablename__ = "exhibitor_documents"
 
@@ -724,6 +723,8 @@ class RegistrationOrderItem(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
+    registration_order_id = Column(Integer, ForeignKey("registration_order.id"))
+    registration_setup_item_id = Column(Integer, ForeignKey("registration_setup_item.id"))
     description = Column(String, index=True)
     quantity = Column(Integer, index=True)
     unit_price = Column(Float, index=True)
@@ -746,16 +747,6 @@ class RegistrationTicket(Base):
     ticket_url = Column(String, index=True)
     
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_ticket")
-    
-class MasterTemplate(Base):
-    __tablename__ = "master_template"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    uuid = Column(String, index=True, unique=True)
-    created_on = Column(DateTime)
-    updated_on = Column(DateTime)
-    template_name = Column(String, index=True)
-    template_url = Column(String, index=True)
     
 class RegistrationSetup(Base):
     __tablename__ = "registration_setup"    
@@ -796,3 +787,14 @@ class RegistrationSetupItem(Base):
     product_id = Column(String, index=True)
     
     registration_setup = relationship("RegistrationSetup", back_populates="registration_setup_items")
+    registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_setup_item")
+    
+class MasterTemplate(Base):
+    __tablename__ = "master_template"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    template_name = Column(String, index=True)
+    template_url = Column(String, index=True)
