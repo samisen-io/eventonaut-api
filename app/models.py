@@ -694,7 +694,7 @@ class RegistrationOrderItemType(Base):
     code = Column(String, index=True, unique=True)
     description = Column(String, index=True)
     
-    registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order_item_type")
+    registration_order_items = relationship("RegistrationOrderItem", back_populates="registration_order_item_type")
    
 class RegistrationOrder(Base):
     __tablename__ = "registration_order"
@@ -729,12 +729,14 @@ class RegistrationOrderItem(Base):
     quantity = Column(Integer, index=True)
     unit_price = Column(Float, index=True)
     total_amount = Column(Float, index=True)
-    code = Column(String, ForeignKey("registration_order_item_type.code"), index=True)
+    code = Column(String, ForeignKey('registration_order_item_type.code'), index=True)
+    registration_order_id = Column(Integer, ForeignKey("registration_order.id"))
+    registration_setup_item_id = Column(Integer, ForeignKey("registration_setup_item.id"), nullable=True)
     
     registration_ticket = relationship("RegistrationTicket", back_populates="registration_order_item")
     registration_order = relationship("RegistrationOrder", back_populates="registration_order_item")
     registration_setup_item = relationship("RegistrationSetupItem", back_populates="registration_order_item")
-    registration_order_item_type = relationship("RegistrationOrderItemType", back_populates="registration_order_item")
+    registration_order_item_type = relationship("RegistrationOrderItemType", back_populates="registration_order_items")
     
 class RegistrationTicket(Base):
     __tablename__ = "registration_ticket"
@@ -743,6 +745,7 @@ class RegistrationTicket(Base):
     registration_order_item_id = Column(Integer, ForeignKey("registration_order_item.id"))
     ticket_id = Column(String, index=True, unique=True)
     checked_in = Column(Boolean, default=False)
+    ticket_url = Column(String, index=True)
     
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_ticket")
     

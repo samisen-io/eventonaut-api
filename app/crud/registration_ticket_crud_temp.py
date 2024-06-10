@@ -9,6 +9,10 @@ from app.schemas.registration_ticket_schema_temp import RegistrationTicketCreate
 def get_registration_ticket_by_ticket_id(db: Session, ticket_id: str):
     return db.query(RegistrationTicket).filter(RegistrationTicket.ticket_id == ticket_id).first()
 
+# get registration tickets by ticket_id but all the tickets having same registration_order_item_id
+def get_registration_tickets_by_registration_order_item_id(db: Session, registration_order_item_id: int):
+    return db.query(RegistrationTicket).filter(RegistrationTicket.registration_order_item_id == registration_order_item_id).all()
+ 
 def create_registration_ticket(db: Session, registration_ticket: RegistrationTicketCreate):
     registration_ticket_db = RegistrationTicket(
         registration_order_item_id=registration_ticket.registration_order_item_id,
@@ -18,6 +22,15 @@ def create_registration_ticket(db: Session, registration_ticket: RegistrationTic
     db.add(registration_ticket_db)
     db.commit()
     db.refresh(registration_ticket_db)
+    return registration_ticket_db
+
+def update_registration_ticket(db: Session, ticket_id: str, registration_ticket: RegistrationTicketCreate):
+    registration_ticket_db = get_registration_ticket_by_ticket_id(db, ticket_id)
+    if registration_ticket_db is None:
+        raise HTTPException(status_code=Status.HTTP_404_NOT_FOUND, detail="Registration ticket not found")
+    registration_ticket_db.registration_order_item_id = registration_ticket.registration_order_item_id
+    registration_ticket_db.checked_in = registration_ticket.checked_in
+    db.commit()
     return registration_ticket_db
 
 def delete_registration_ticket(db: Session, ticket_id: str):
