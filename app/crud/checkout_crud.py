@@ -32,6 +32,9 @@ def available_tickets_for_event(db: Session, event: models.Conference):
     if setup is None:
         logging.exception(f"Registration setup for event {event.uuid} not found")
         raise HTTPException(status_code=404, detail=f"Registration setup for event {event.uuid} not found")
+    if not setup.is_live:
+        logging.exception(f"Tickets for event id {event.uuid} are not live")
+        raise HTTPException(status_code=400, detail=f"Tickets for event id {event.uuid} are not live")
     list_of_sessions = redis_crud.get_list_of_sessions_from_redis(event.uuid)
     if not list_of_sessions:
         redis_crud.delete_list_from_redis(event.uuid)
