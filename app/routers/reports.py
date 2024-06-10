@@ -92,7 +92,7 @@ def get_orders_items(db: Session = Depends(get_db), current_user: User = Securit
 
     return registration_order_items_schemas
 
-@router.get('/get_ticket/{ticket_id}')
+@router.get('/get_ticket/{ticket_id}', response_model=ticket_schemas.TicketDataResponse)
 def get_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
     ticket = get_registration_ticket_by_ticket_id(db, ticket_id)
     if not ticket:
@@ -102,17 +102,6 @@ def get_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: User 
     event_id = registration_order.event_id
     event = get_conference_by_id(db, event_id)
     ticket_data = generate_input_data(db, ticket, event, registration_order, registration_order_item)
-    event_dict = conference_to_dict(event)
-    event_dict['location'] = event.location
-    event_dict['status'] = event.status
-    event = ConferenceResponse(**event_dict)
-    event.client = None
-    event.sponsors = None
-    event.exhibitors = None
-    registration_order_dict = registration_order.__dict__
-    registration_order = RegistrationOrder(**registration_order_dict)
-    registration_order_item_dict = registration_order_item.__dict__
-    registration_order_item = RegistrationOrderItem(**registration_order_item_dict)
     return {'ticket_data': ticket_data, 'event': event, 'registration_order': registration_order, 'registration_order_item': registration_order_item}
 
 @router.get('/download_ticket/{ticket_id}')
