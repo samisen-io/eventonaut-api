@@ -5,7 +5,7 @@ class CreateTicket(BaseModel):
     amount: float
     tax_amount: float
     fee_amount: float
-    order_id: str
     description: str
     quantity: int
-    type: int
+    registration_setup_item_id: int
+    code : str
