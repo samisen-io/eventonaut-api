@@ -735,6 +735,7 @@ class RegistrationOrderItem(Base):
     
     registration_ticket = relationship("RegistrationTicket", back_populates="registration_order_item")
     registration_order = relationship("RegistrationOrder", back_populates="registration_order_item")
+    registration_setup_item = relationship("RegistrationSetupItem", back_populates="registration_order_item")
     registration_order_item_type = relationship("RegistrationOrderItemType", back_populates="registration_order_items")
     
 class RegistrationTicket(Base):
