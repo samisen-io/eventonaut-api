@@ -9,6 +9,8 @@ from app.schemas.registration_order_item_schema_temp import RegistrationOrderIte
 from app.schemas.registration_order_schema_temp import RegistrationOrderCreate
 from ..code_generator import generate_unique_string
 
+def get_registration_order_by_order_id(db: Session, order_id: str):
+    return db.query(RegistrationOrder).filter(RegistrationOrder.order_id == order_id).first()
 
 def get_registration_order_by_uuid(db: Session, uuid: str):
     return db.query(RegistrationOrder).filter(RegistrationOrder.uuid == uuid).first()

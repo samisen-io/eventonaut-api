@@ -1,9 +1,11 @@
+from datetime import date
 import io
 import json
 import os
 import tempfile
 from fastapi import HTTPException, UploadFile
 import requests
+import inflect
 import pypugjs.ext.jinja
 from jinja2 import Environment, FileSystemLoader
 from io import BytesIO
@@ -181,6 +183,65 @@ def generate_pdf_tickets(db, ticket, template, event, registration_order, regist
     else:
         output_pdf_io.seek(0)
         return output_pdf_io
+
+def generate_invoice_input_data(db, event, registration_order, order_items, user):
+    p = inflect.engine()
+    items = []
+    order = registration_order
+    for i in range(len(order_items)):
+        item = order_items[i]
+        # order = registration_order[i]
+        setup_item = get_registration_setup_item(db, item.registration_setup_item_id)
+        items.append({
+            'order_item_type': item.code.capitalize(),
+            'description': setup_item.name,
+            'quantity': item.quantity,
+            'price': order.amount,
+            'tax': order.tax_amount,
+            'fee': order.fee_amount
+        })
+    subtotal = sum(item['price'] * item['quantity'] for item in items)
+    tax = sum(item['tax'] for item in items)
+    fee = sum(item['fee'] for item in items)
+    total = subtotal + tax + fee
+    
+    organization = get_organization_by_id(db, event.organization_id)
+    current_date = date.today().strftime("%d %B %Y")
+    total_in_words = p.number_to_words(total)
+    input_data = {
+        'company_name': organization.name,
+        'company_address': organization.address,
+        'customer_name': (user.first_name + ' ' + user.last_name).title(),
+        'customer_email': user.email,
+        'date_issued': current_date,
+        'invoice_number': order.order_id,
+        'items': items,
+        'subtotal': subtotal,
+        'tax': tax,
+        'fee': fee,
+        'total': total,
+        'total_in_words': total_in_words,
+        'eco_name': 'Samisen Distributed Technologies Pvt. Ltd. (Eventonaut)',
+        'eco_address': 'Awfis, Lorven Tiara, Awfis, Lorven Tiara, Kondapur 500084, India',
+        'gst': '36AABCI2726B1Z'
+    }
+    return input_data
         
-        
-        
+def generate_pdf_invoice(db, template, event, registration_order, order_items, user):
+    temp_file = download_the_template(template.template_url)
+    invoice_input_data = generate_invoice_input_data(db, event, registration_order, order_items, user)
+    html = render_pug_template(temp_file, invoice_input_data)
+    pdf_io = BytesIO()
+    try:
+        pdf = HTML(string=html).write_pdf()
+        pdf_io.write(pdf)
+        if pdf_io.tell() > 0:
+            pdf_io.seek(0)
+            os.remove(temp_file)
+            return pdf_io
+        else:
+            raise HTTPException(status_code=500, detail='Error generating invoice')
+    except Exception as e:
+        os.remove(temp_file)
+        raise HTTPException(status_code=500, detail='Error generating invoice')
+            
