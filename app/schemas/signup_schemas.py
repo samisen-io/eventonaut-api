@@ -43,6 +43,7 @@ class SignupOrganizerUserRequest(BaseModel):
 
 class SignupResponseBase(BaseModel):
     uuid: str = Field(serialization_alias="id")
+    db_id: int
     email: str
     first_name: str | None = None
     last_name: str | None = None

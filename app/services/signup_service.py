@@ -59,6 +59,7 @@ def signup_organization_user(db: Session, organizer_signup_request: schemas.Sign
     
     signup_organizer_response = schemas.SignupResponseBase(email=user.email,
                                     uuid=user.uuid,
+                                    db_id=user.id,
                                     first_name=user.first_name,
                                     last_name=user.last_name,
                                     timezone=user.timezone,
