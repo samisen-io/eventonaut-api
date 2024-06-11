@@ -6,6 +6,8 @@ from fastapi import HTTPException, status as Status
 from app.models import RegistrationOrder, RegistrationOrderItem, RegistrationTicket
 from app.schemas.registration_order_item_schema_temp import RegistrationOrderItemCreate
 
+def get_registration_order_items_by_registration_order_id(db: Session, registration_order_id: int):
+    return db.query(RegistrationOrderItem).filter(RegistrationOrderItem.registration_order_id == registration_order_id).all()
 
 def get_registration_order_item_by_uuid(db: Session, uuid: str):
     return db.query(RegistrationOrderItem).filter(RegistrationOrderItem.uuid == uuid).first()

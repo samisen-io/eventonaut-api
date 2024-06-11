@@ -1,20 +1,23 @@
 from operator import and_
-from fastapi import APIRouter, Depends, HTTPException, Security
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query, Security
 from fastapi.responses import StreamingResponse
 import requests
 
-from app.crud.attendee_crud import get_attendees_by_user_id
+from app.basicauth import basic_auth
+from app.crud.attendee_crud import get_an_attendee_by_id, get_attendees_by_user_id
 from app.crud.conferences_crud import get_conference_by_conference_uuid, get_conference_by_id
 from app.crud.master_template_crud import get_master_template_by_id
-from app.crud.registration_order_crud_temp import create_registration_order, get_registration_order_by_id
-from app.crud.registration_order_item_crud import create_registration_order_item, delete_registration_order_item, get_registration_order_item_by_id
+from app.crud.registration_order_crud_temp import create_registration_order, get_registration_order_by_id, get_registration_order_by_order_id
+from app.crud.registration_order_item_crud import create_registration_order_item, delete_registration_order_item, get_registration_order_item_by_id, get_registration_order_item_by_uuid, get_registration_order_items_by_registration_order_id
 from app.crud.registration_order_item_type_crud_temp import get_registration_order_item_type_by_code, get_registration_order_item_type_by_id
 from app.crud.registration_ticket_crud_temp import create_registration_ticket, get_registration_ticket_by_ticket_id, update_registration_ticket
+from app.crud.users_crud import get_user
 from app.schemas import registration_ticket_schema_temp as reg_ticket_schemas
 from app.schemas import ticket_schema_temp as ticket_schemas
 from app.crud.template_crud import get_template_by_id
 from app.oauth2 import get_current_active_user
-from app.report_generation_operations import generate_input_data, generate_pdf_ticket, generate_pdf_tickets, generate_report_using_template
+from app.report_generation_operations import generate_input_data, generate_pdf_invoice, generate_pdf_ticket, generate_pdf_tickets, generate_report_using_template
 from app.schemas.conference_schemas import ConferenceResponse
 from app.schemas.registration_order_item_schema_temp import RegistrationOrderItem, RegistrationOrderItemCreate, RegistrationOrderItemResponse
 from app.models import RegistrationOrder as RegistrationOrderModel
@@ -144,6 +147,30 @@ def download_tickets(ticket_id: str, db: Session = Depends(get_db),current_user:
     if response.status_code != 200:
         raise HTTPException(status_code=404, detail="File not found")
     return StreamingResponse(response.iter_content(chunk_size=1024), media_type='application/pdf', headers={'Content-Disposition': 'attachment; filename=ticket.pdf'})
+
+@router.get('/download_invoice/')
+def download_invoice(order_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
+    registration_order = get_registration_order_by_order_id(db, order_id)
+    if not registration_order:
+        raise HTTPException(status_code=404, detail='Order not found')
+    event = get_conference_by_id(db, registration_order.event_id)
+    attendee = get_an_attendee_by_id(db, registration_order.attendee_id)
+    attendee = get_user(db, attendee.user_id)
+    if not attendee:
+        raise HTTPException(status_code=404, detail='Attendee not found')
+    if attendee.id != current_user.id:
+        raise HTTPException(status_code=403, detail='Attendee not authorized to view this invoice')
+    if not event:
+        raise HTTPException(status_code=404, detail='Event not found')
+    registration_order_items = get_registration_order_items_by_registration_order_id(db, registration_order.id)
+    template_id = 'tem-224f6d50-8f08-41d4-8999-1e4464b343b6'
+    template = get_master_template_by_id(db, template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail='Template not found')
+    pdf_stream = generate_pdf_invoice(db, template, event, registration_order, registration_order_items, attendee)
+    response = StreamingResponse(pdf_stream, media_type="application/pdf")
+    response.headers["Content-Disposition"] = f"attachment; filename=invoice.pdf"
+    return response
 
 @router.post('/generate_report')
 def generate_report(report: Report, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name])):
