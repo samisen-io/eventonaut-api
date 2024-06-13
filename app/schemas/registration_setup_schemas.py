@@ -32,6 +32,8 @@ class RegistrationSetupItemBase(BaseModel):
     available_to: datetime
     image_url: str | None = None
     product_id: str | None = None
+    total_quantity: int
+    available_quantity: int
     
 class RegistrationSetupItem(RegistrationSetupItemBase):
     

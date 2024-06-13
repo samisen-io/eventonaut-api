@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.orm import Session
 import uuid
 import logging
@@ -13,11 +14,14 @@ def get_registration_ticket_by_ticket_id(db: Session, ticket_id: str):
 def get_registration_tickets_by_registration_order_item_id(db: Session, registration_order_item_id: int):
     return db.query(RegistrationTicket).filter(RegistrationTicket.registration_order_item_id == registration_order_item_id).all()
  
-def create_registration_ticket(db: Session, registration_ticket: RegistrationTicketCreate):
+def create_registration_ticket(db: Session, registration_ticket: RegistrationTicketCreate, tid_str: str):
+    tkt_uuid = "tkt-"+str(uuid.uuid4())
     registration_ticket_db = RegistrationTicket(
         registration_order_item_id=registration_ticket.registration_order_item_id,
-        ticket_id="tkt-"+str(uuid.uuid4()),  # generate a new UUID for ticket_id
-        checked_in=registration_ticket.checked_in
+        uuid= tkt_uuid,
+        checked_in=registration_ticket.checked_in,
+        created_on=datetime.now(),
+        ticket_id = f'{tid_str}-{tkt_uuid[4:6]}'
     )
     db.add(registration_ticket_db)
     db.commit()

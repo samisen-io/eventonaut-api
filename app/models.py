@@ -1,8 +1,9 @@
-from sqlalchemy import Boolean, Column, Computed, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
+from sqlalchemy import Boolean, Column, Computed, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY, inspect
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import UniqueConstraint
 from .database import Base
+from sqlalchemy.ext.hybrid import hybrid_property
 
 class Organization(Base):
     __tablename__ = "organization"
@@ -716,6 +717,9 @@ class RegistrationOrder(Base):
     attendee = relationship("Attendee", back_populates="registration_order")
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order")
     
+    def to_dict(self):
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
+    
 class RegistrationOrderItem(Base):
     __tablename__ = "registration_order_item"
     
@@ -746,6 +750,8 @@ class RegistrationTicket(Base):
     ticket_id = Column(String, index=True, unique=True)
     checked_in = Column(Boolean, default=False)
     ticket_url = Column(String, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
     
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_ticket")
     
@@ -780,15 +786,23 @@ class RegistrationSetupItem(Base):
     registration_setup_id = Column(Integer, ForeignKey("registration_setup.id"))
     name = Column(String, index=True)
     description = Column(String, index=True)
-    available_quantity = Column(Integer, index=True)
     price = Column(Float, index=True)
     available_from = Column(DateTime, index=True)
     available_to = Column(DateTime, index=True)
     image_url = Column(String, index=True)
     product_id = Column(String, index=True)
+    total_quantity = Column(Integer, index=True)
+    available_quantity = Column(Integer, index=True)
     
     registration_setup = relationship("RegistrationSetup", back_populates="registration_setup_items")
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_setup_item")
+    
+    # @hybrid_property
+    # def available_quantity(self):
+    #     return self.total_quantity
+    
+    def to_dict(self):
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
     
 class MasterTemplate(Base):
     __tablename__ = "master_template"

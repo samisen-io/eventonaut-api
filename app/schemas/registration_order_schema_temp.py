@@ -20,3 +20,22 @@ class RegistrationOrder(RegistrationOrderBase):
     
     class Config:
         orm_mode = True
+        
+class RegistrationOrderBaseTemp(BaseModel):
+    event_id: int
+    attendee_id: int
+    
+class RegistrationOrderCreateTemp(RegistrationOrderBaseTemp):
+    pass
+
+class RegistrationOrderTemp(RegistrationOrderBaseTemp):
+    uuid: str = Field(serialization_alias="id")
+    total_amount: float
+    order_id: str
+    amount: float
+    tax_amount: float
+    fee_amount: float
+    
+    class Config:
+        orm_mode = True
+        
