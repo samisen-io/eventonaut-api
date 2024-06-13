@@ -4,6 +4,13 @@ from pydantic import BaseModel, Field, field_validator
 from app.schemas.registration_order_schema_temp import RegistrationOrder
 from app.schemas.registration_ticket_schema_temp import RegistrationTicket
 
+class RegistrationOrderItemInput(BaseModel):
+    registration_order_id: int
+    description: str | None = None
+    quantity: int
+    registration_setup_item_id: int
+    code: str
+
 class RegistrationOrderItemBase(BaseModel):
     registration_order_id: int
     description: str | None = None

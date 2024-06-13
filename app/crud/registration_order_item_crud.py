@@ -15,6 +15,12 @@ def get_registration_order_item_by_uuid(db: Session, uuid: str):
 def get_registration_order_item_by_id(db: Session, id: int):
     return db.query(RegistrationOrderItem).filter(RegistrationOrderItem.id == id).first()
 
+def get_registration_order_items_by_registration_setup_item_id(db: Session, registration_setup_item_id: int):
+    return db.query(RegistrationOrderItem).filter(RegistrationOrderItem.registration_setup_item_id == registration_setup_item_id).all()
+
+def get_registration_order_items_by_event_id(db: Session, event_id: int):
+    return db.query(RegistrationOrderItem).join(RegistrationOrder).filter(RegistrationOrder.event_id == event_id).all()
+
 def create_registration_order_item(db: Session, registration_order_item: RegistrationOrderItemCreate):
     registration_order_item_db = RegistrationOrderItem(
         uuid='roi-'+str(uuid.uuid4()),

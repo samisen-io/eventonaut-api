@@ -1,3 +1,4 @@
+from app.schemas.registration_setup_schemas import RegistrationSetupItem
 from ..import models
 from sqlalchemy.orm import Session, joinedload
 

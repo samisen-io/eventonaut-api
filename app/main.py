@@ -6,7 +6,7 @@ import logging
 from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
 
-from app.routers import master_template, onesignal_push_notification, reports
+from app.routers import data_visualization, master_template, onesignal_push_notification, reports
 from .routers import signup_organizer, ticket_checkin
 from .routers import backdrop_gallery, eventbrite_connector, organization, organization_user, photo_booth, role
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
@@ -99,6 +99,7 @@ app.include_router(eventbrite_connector.router)
 app.include_router(onesignal_push_notification.router)
 app.include_router(reports.router)
 app.include_router(tickets_checkout.router)
+app.include_router(data_visualization.router)
 
 @app.get("/")
 async def root():

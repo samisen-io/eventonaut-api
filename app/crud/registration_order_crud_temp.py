@@ -38,6 +38,49 @@ def create_registration_order(db: Session, registration_order: RegistrationOrder
     db.refresh(registration_order_db)
     return registration_order_db
 
+def create_registration_order_temp(db: Session, registration_order: RegistrationOrderCreate):
+    registration_order_db = RegistrationOrder(
+        uuid='reo-'+str(uuid.uuid4()),
+        event_id=registration_order.event_id,
+        attendee_id=registration_order.attendee_id,
+        amount=0,
+        tax_amount=0,
+        fee_amount=0,
+        total_amount = 0,
+        created_on = datetime.now(),
+        updated_on=datetime.now()
+    )
+    db.add(registration_order_db)
+    db.commit()
+    db.refresh(registration_order_db)
+    return registration_order_db
+
+def update_registration_order(db: Session, registration_order: RegistrationOrder):
+    db.query(RegistrationOrder).filter(RegistrationOrder.id == registration_order.id).update({
+        RegistrationOrder.event_id: registration_order.event_id,
+        RegistrationOrder.attendee_id: registration_order.attendee_id,
+        RegistrationOrder.amount: registration_order.amount,
+        RegistrationOrder.tax_amount: registration_order.tax_amount,
+        RegistrationOrder.fee_amount: registration_order.fee_amount,
+        RegistrationOrder.total_amount: registration_order.amount + registration_order.tax_amount + registration_order.fee_amount,
+        RegistrationOrder.updated_on: datetime.now()
+    })
+    db.commit()
+    return db.query(RegistrationOrder).filter(RegistrationOrder.id == registration_order.id).first()
+
+def update_registration_order_temp(db: Session, registration_order: RegistrationOrder):
+    db.query(RegistrationOrder).filter(RegistrationOrder.id == registration_order.id).update({
+        RegistrationOrder.event_id: registration_order.event_id,
+        RegistrationOrder.attendee_id: registration_order.attendee_id,
+        RegistrationOrder.amount: registration_order.amount,
+        RegistrationOrder.tax_amount: registration_order.tax_amount,
+        RegistrationOrder.fee_amount: registration_order.fee_amount,
+        RegistrationOrder.total_amount: registration_order.amount + registration_order.tax_amount + registration_order.fee_amount,
+        RegistrationOrder.updated_on: datetime.now()
+    })
+    db.commit()
+    return db.query(RegistrationOrder).filter(RegistrationOrder.id == registration_order.id).first()
+
 def delete_registration_order(db: Session, uuid: str):
     registration_order = get_registration_order_by_uuid(db, uuid)
     if registration_order is None:

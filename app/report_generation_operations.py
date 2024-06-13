@@ -27,7 +27,7 @@ def generate_qr_code(ticket_id, event_id):
         border=4,
     )
     qr_data = {
-        "conference_id": event_id,
+        "event_id": event_id,
         "ticket_id": ticket_id
     }
     qr.add_data(json.dumps(qr_data))
