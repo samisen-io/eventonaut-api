@@ -1,4 +1,5 @@
 import os
+from typing import List
 import uuid
 from dotenv import load_dotenv
 from fastapi import HTTPException
@@ -56,13 +57,14 @@ def verify_token_RT(token:str, credentials_exception,db: Session):
     try:
         payload = jwt.decode(token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        scopes: str = payload.get("scopes")
+        scopes: List[str] = payload.get("scopes")
         jti: str = payload.get("jti")
+        id: int = payload.get("id")
         if username is None:
             raise credentials_exception
         logout_token_crud.get_all_jti_in_tokens(db=db, token_jti=jti)
         
-        token_data = TokenData(username=username, scopes=[scopes])
+        token_data = TokenData(username=username, scopes=scopes, id=id)
     except JWTError:
         raise credentials_exception
     return token_data
