@@ -130,3 +130,16 @@ def ticket_sales(event_id: str, db: Session = Depends(get_db), current_user: Use
     daily_sales.sort(key=lambda x: x['date'])
     return daily_sales
 
+@router.get("/Items_sold_and_available/")
+def items_sold_and_available(event_id: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name, "organizer"])):
+    event = get_conference_by_conference_uuid(db, event_id)
+    if event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    setup_items = get_registration_setup_items_by_event_id(db, event.id)
+    total_sold = 0
+    total_available = 0
+    for setup_item in setup_items:
+        order_items = get_registration_order_items_by_registration_setup_item_id(db, setup_item.id)
+        total_sold += sum([order_item.quantity for order_item in order_items])
+        total_available += setup_item.available_quantity
+    return [{"category": "Total items available", "value": total_available}, {"category": "Total items sold", "value": total_sold}]
