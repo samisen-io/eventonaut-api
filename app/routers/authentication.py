@@ -55,12 +55,12 @@ async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth
     token_expirations = get_token_expirations(matched_user_role[0])
     
     if RoleEnum.ATTENDEE.name in matched_user_role:
-        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": matched_user_role}, expires_delta=token_expirations['refresh_token_expires'])
+        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": matched_user_role, "id":user.id}, expires_delta=token_expirations['refresh_token_expires'])
         rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
         access_token = create_access_token(data={"sub": user.email, "id":user.id, "rt_jti":rt_jti, "scopes": matched_user_role}, expires_delta=token_expirations['access_token_expires'])
     elif any(role.name in matched_user_role for role in (RoleEnum.ORGANIZATION_ADMIN, RoleEnum.ORGANIZATION_USER, RoleEnum.REGISTRATION_STAFF)):
         organization = get_organization_by_user_id(db, user.id)
-        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": matched_user_role}, expires_delta=token_expirations['refresh_token_expires'])
+        refresh_token = create_refresh_token(data={"sub": user.email, "scopes": matched_user_role, "id":user.id}, expires_delta=token_expirations['refresh_token_expires'])
         rt_jti = jwt.decode(refresh_token, REFRESH_TOKEN_SECRET_KEY, algorithms=[ALGORITHM]).get("jti")
         access_token = create_access_token(data={"sub": user.email, "org_id": organization.id, "id":user.id, "rt_jti":rt_jti, "scopes": matched_user_role}, expires_delta=token_expirations['access_token_expires'])
     

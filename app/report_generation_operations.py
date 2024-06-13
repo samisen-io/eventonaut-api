@@ -86,7 +86,7 @@ def generate_input_data(db, ticket, event, registration_order, registration_orde
         registration_setup_item_name = 'General Admission'
     else:
         registration_setup_item_name = registration_setup_item.name
-    qrCode = generate_qr_code(ticket_id, event.uuid)
+    qrCode = generate_qr_code(ticket.ticket_id, event.uuid)
     input_data = {
         'title': organization.name, 
         'event': event.name, 
