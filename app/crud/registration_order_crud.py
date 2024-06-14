@@ -14,8 +14,8 @@ def registration_order_mapper(registration_setup: models.RegistrationSetup, sess
     registration_order.event_id = registration_setup.event_id
     registration_order.attendee_id = attendee_id
     registration_order.amount = get_total_amount_from_session(registration_setup.registration_setup_items, session)
-    registration_order.tax_amount = registration_setup.tax_rate
-    registration_order.fee_amount = registration_setup.fee_amount
+    registration_order.tax_amount = registration_order.amount * registration_setup.tax_rate
+    registration_order.fee_amount = registration_order.amount * registration_setup.fee_amount
     registration_order.total_amount = registration_order.amount + registration_order.tax_amount + registration_order.fee_amount
     registration_order.payment_status = PaymentStatus.UNPAID.value
     return registration_order
