@@ -15,7 +15,7 @@ from ..schemas.otp_schemas import SendOtp, VerifyOtp, PasswordReset, PasswordRes
 load_dotenv()
 
 default_time_limit = int(os.getenv("OTP_EXPIRE"))
-router = APIRouter(tags=['OTP'])
+router = APIRouter(tags=['otp'])
 cache = TTLCache(maxsize=1024, ttl=default_time_limit)
 
 @router.post('/otp')

@@ -8,7 +8,7 @@ from ..schemas import attendee_schemas as schemas, attendee_conference_schemas, 
 from ..crud import attendee_crud as crud, conferences_crud
 from app.schemas.user_schemas import UserAuthentication as User
 
-router = APIRouter(tags=["attendee conference"])
+router = APIRouter(tags=["attendee_conference"])
 
 @router.post("/attendee/conference", response_model=attendee_conference_schemas.AttendeeConference, status_code=status.HTTP_201_CREATED)
 def create_attendee_conference(attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
