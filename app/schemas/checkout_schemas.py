@@ -29,6 +29,7 @@ class CheckoutRequest(BaseModel):
     
 class CheckoutResponse(BaseModel):
     session_id: str
+    event_id: str
     expiration_timestamp: datetime
     
 class Details(BaseModel):
@@ -45,3 +46,40 @@ class Details(BaseModel):
         elif len(v) > 255:
             raise ValueError(f"{info.field_name} cannot be more than 255 characters")
         return v
+    
+class CreateOrderRequest(BaseModel):
+    event_id: str
+    session_id: str
+    
+    @field_validator('event_id', 'session_id')
+    def value_not_empty(cls, v, info: ValidationInfo):
+        if v.strip() == "":
+            raise ValueError(f"{info.field_name} cannot be empty")
+        elif len(v) > 255:
+            raise ValueError(f"{info.field_name} cannot be more than 255 characters")
+        return v
+    
+class ConfirmOrderRequest(BaseModel):
+    event_id: str
+    order_id: str
+    payment_id: str
+    signature: str
+    session_id: str
+    
+    @field_validator('event_id', 'order_id', 'session_id', 'payment_id', 'signature')
+    def value_not_empty(cls, v, info: ValidationInfo):
+        if v.strip() == "":
+            raise ValueError(f"{info.field_name} cannot be empty")
+        elif len(v) > 255:
+            raise ValueError(f"{info.field_name} cannot be more than 255 characters")
+        return v
+    
+class OrderResponse(BaseModel):
+    message: str
+    order_id: str
+    event_id: str
+    session_id: str
+    amount: float
+    currency: str
+    receipt: str
+    payment_status: str

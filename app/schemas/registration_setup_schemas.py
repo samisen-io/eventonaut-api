@@ -26,6 +26,7 @@ class RegistrationSetupItemBase(BaseModel):
     uuid: str = Field(serialization_alias="id")
     name: str
     description: str
+    total_quantity: int
     available_quantity: int
     price: float
     available_from: datetime
