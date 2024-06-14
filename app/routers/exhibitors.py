@@ -9,7 +9,7 @@ from ..schemas.user_schemas import UserAuthentication as User
 from ..schemas.organization_schemas import OrganizationSecurity
 from email_validator import validate_email, EmailNotValidError
 
-router = APIRouter(tags=["Exhibitors"])
+router = APIRouter(tags=["exhibitors"])
 
 @router.get("/exhibitor", response_model=list[schemas.ExhibitorResponse])
 def get_exhibitors(db = Depends(get_db), current_organization: OrganizationSecurity = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
