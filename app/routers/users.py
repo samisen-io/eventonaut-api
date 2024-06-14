@@ -240,6 +240,7 @@ def reset_password(user: schemas.UserPasswordReset, db: Session = Depends(get_db
         organization = updated_user.organization_user[0].organization
         response = signup_schemas.SignupResponseBase(email=user.email, 
                                     uuid=updated_user.uuid,
+                                    db_id=updated_user.id,
                                     first_name=updated_user.first_name,
                                     last_name=updated_user.last_name,
                                     timezone=updated_user.timezone,
