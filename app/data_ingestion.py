@@ -13,6 +13,7 @@ from langchain_community.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 import requests
 from app.crud.conferences_crud import get_conference_by_conference_uuid
+from app.crud.event_documents_crud import get_event_documents_by_conference_id
 from app.crud.exhibitor_crud import get_exhibitors
 from app.crud.exhibitor_documents_crud import get_exhibitor_documents_by_exhibitor_id
 from app.crud.speakers_crud import get_speakers_by_session_uuid
@@ -161,6 +162,45 @@ def add_documents(namespace,conference_id,category):
     except OSError as e:
         print(f"Error: {file_path} : {e.strerror}")
     return {"namespace":namespace}
+
+def write_event_docs(db, conference_id, namespace):
+    print(f"Writing event documents {namespace}")
+    conference = get_conference_by_conference_uuid(db, conference_id)
+    if not conference:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    event_docs = get_event_documents_by_conference_id(db, conference.id)
+    for event_doc in event_docs:
+        url = event_doc.document_url
+        parsed_url = urlparse(url)
+        _, extension = os.path.splitext(parsed_url.path)
+        if extension is None:
+            raise HTTPException(status_code=400, detail="Unsupported file format")
+        response = requests.get(url, stream=True)
+        if response.status_code == 200:
+            files_folder = os.path.join('app', 'files')
+            if not os.path.exists(files_folder):
+                os.makedirs(files_folder) 
+            file_path = os.path.join(files_folder, str(event_doc.uuid)+extension)
+            with open(file_path, 'wb') as fp:
+                for chunk in response.iter_content(chunk_size = 8192):
+                    if chunk:
+                        fp.write(chunk)
+            if extension == '.pdf':
+                print(f"Adding pdf document {namespace}")
+                add_pdf_document(namespace, file_path)
+            elif extension == '.csv' or extension == '.xlsx':
+                reader, delimiter = read_the_structured_file(file_path)
+                with tempfile.NamedTemporaryFile(mode='w+t', delete=False, encoding='utf-8') as temp:
+                    writer = csv.DictWriter(temp, fieldnames=reader.fieldnames)
+                    writer.writeheader()
+                    for row in reader:
+                        writer.writerow(row)
+                add_csv_documents(namespace, temp.name, delimiter)
+                os.remove(file_path)
+            elif extension == '.txt':
+                add_txt_documents(namespace, file_path)
+            else:
+                os.remove(file_path)
 
 def write_exhibitor_docs(db, conference_id, namespace):
     conference = get_conference_by_conference_uuid(db, conference_id)

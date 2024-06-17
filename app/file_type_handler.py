@@ -43,6 +43,7 @@ def add_pdf_document(namespace, file_path):
     loader = PyPDFLoader(file_path)
     pages = loader.load_and_split()
     upload_to_namespace(namespace, pages, file_path)
+    print(f'PDF document added successfully.{namespace}')
     
 def add_csv_documents(namespace, file_path, delimiter):
     loader = CSVLoader(file_path=file_path, encoding='utf-8', csv_args={'delimiter': delimiter})

@@ -19,7 +19,7 @@ from app.routers.sessions import create_session_for_conference
 from app.schemas.query_schema import QueryInput, QueryInputStream
 from app.schemas.user_schemas import UserAuthentication as User
 from app.static_enums.role import RoleEnum
-from ..data_ingestion import add_documents, write_events_to_csv, write_exhibitor_docs, write_exhibitors_to_csv, write_sessions_to_csv, write_speakers_to_csv
+from ..data_ingestion import add_documents, write_event_docs, write_events_to_csv, write_exhibitor_docs, write_exhibitors_to_csv, write_sessions_to_csv, write_speakers_to_csv
 from ..data_query import query_document, retrieve_answer_stream
 from ..crud import conferences_crud, result_crud
 from sqlalchemy.orm import Session
@@ -228,6 +228,7 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
         namespace = create_namespace(conference_id)
         status = delete_namespace(conference_id)
         status = status['status']
+        write_event_docs(db, conference_id, namespace)
         add_documents(namespace,conference_id,'sessions')
         add_documents(namespace,conference_id,'speakers')
         namespace = add_documents(namespace,conference_id,'events')
@@ -237,6 +238,7 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
         namespace = create_namespace(conference_id)
         status = delete_namespace(conference_id)
         status = status['status']
+        write_event_docs(db, conference_id, namespace)
         write_exhibitor_docs(db, conference_id, namespace)
         add_documents(namespace, conference_id, 'exhibitors')
         namespace = add_documents(namespace,conference_id,'events')
@@ -245,6 +247,7 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
         namespace = create_namespace(conference_id)
         status = delete_namespace(conference_id)
         status = status['status']
+        write_event_docs(db, conference_id, namespace)
         namespace = add_documents(namespace,conference_id,'events')
     else:
         logging.exception("Event type not found")
