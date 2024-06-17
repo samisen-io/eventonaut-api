@@ -93,7 +93,7 @@ def generate_input_data(db, ticket, event, registration_order, registration_orde
         'orderNumber': registration_order.order_id,
         'logo': event.conference_banner_url,
         'ticketType': registration_setup_item_name,
-        'ticketID': ticket.ticket_id,
+        'tickteID': ticket.ticket_id,
         'address': address,
         'dateTime': date,
         'orderType': 'Free Order',
@@ -150,8 +150,8 @@ def generate_pdf_tickets(db, ticket, template, event, registration_order, regist
 
     return output_pdf_io
 
-def generate_pdf_tickets(db, tickets, template, event, registration_order, registration_order_item, upload=False):
-    # tickets = get_registration_tickets_by_registration_order_item_id(db, ticket.registration_order_item_id)
+def generate_pdf_tickets(db, ticket, template, event, registration_order, registration_order_item, upload=False):
+    tickets = get_registration_tickets_by_registration_order_item_id(db, ticket.registration_order_item_id)
     temp_file = download_the_template(template.template_url)
     writer = PdfWriter()
     for ticket in tickets:
