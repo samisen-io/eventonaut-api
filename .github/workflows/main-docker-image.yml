@@ -64,7 +64,7 @@ jobs:
     - name: Delete all previous images from Azure Container Registry
       id: Delete_all_previous_images_from_Azure_Container_Registry
       run: |
-          az acr repository delete --name ${{ secrets.registry }} --image eventonaut-data-api-image --yes
+          az acr repository delete --name Eventonaut --image eventonaut-data-api-image --yes
   
     - name: Check Delete all previous images from Azure Container Registry
       run: echo "Delete all previous images from Azure Container Registry outcome:${{ steps.Delete_all_previous_images_from_Azure_Container_Registry.outcome }}"
