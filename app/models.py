@@ -181,6 +181,7 @@ class Conference(Base):
     attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="conference")
     registration_order = relationship("RegistrationOrder", back_populates="conference")
     registration_setup = relationship("RegistrationSetup", back_populates="event")
+    transaction = relationship("Transaction", back_populates="event")
     
     @property
     def status(self):
@@ -312,6 +313,7 @@ class Attendee(Base):
     aitokens = relationship("AITokens", back_populates="attendee")
     attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="attendee")
     registration_order = relationship("RegistrationOrder", back_populates="attendee")
+    transaction = relationship("Transaction", back_populates="attendee")
     
     _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "is_active"}
 
@@ -718,6 +720,7 @@ class RegistrationOrder(Base):
     conference = relationship("Conference", back_populates="registration_order")
     attendee = relationship("Attendee", back_populates="registration_order")
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order")
+    transaction = relationship("Transaction", back_populates="order")
     
     def to_dict(self):
         return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
@@ -815,3 +818,44 @@ class MasterTemplate(Base):
     updated_on = Column(DateTime)
     template_name = Column(String, index=True)
     template_url = Column(String, index=True)
+    
+class Transaction(Base):
+    __tablename__ = "transaction"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    transaction_time_stamp = Column(DateTime, index=True)
+    payment_amount = Column(Float, index=True)
+    currency = Column(String(3), index=True)
+    razorpay_payment_id = Column(String, index=True)
+    razorpay_signature = Column(String, index=True)
+    event_id = Column(Integer, ForeignKey("conferences.id"))
+    order_id = Column(Integer, ForeignKey("registration_order.id"))
+    attendee_id = Column(Integer, ForeignKey("attendees.id"))
+    transaction_type_id = Column(Integer, ForeignKey("transaction_type.id"))
+    transaction_method_id = Column(Integer, ForeignKey("transaction_methods.id"))
+    
+    event = relationship("Conference", back_populates="transaction")
+    order = relationship("RegistrationOrder", back_populates="transaction")
+    attendee = relationship("Attendee", back_populates="transaction")
+    transaction_type = relationship("TransactionType", back_populates="transaction")
+    transaction_method = relationship("TransactionMethods", back_populates="transaction")
+    
+class TransactionType(Base):
+    __tablename__ = "transaction_type"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, index=True, unique=True)
+    name = Column(String, index=True)
+    
+    transaction = relationship("Transaction", back_populates="transaction_type")
+    
+class TransactionMethods(Base):
+    __tablename__ = "transaction_methods"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, index=True, unique=True)
+    name = Column(String, index=True)
+    
+    transaction = relationship("Transaction", back_populates="transaction_method")

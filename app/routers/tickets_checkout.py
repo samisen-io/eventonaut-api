@@ -1,10 +1,11 @@
+from datetime import datetime
 import json
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from app.crud.registration_order_crud import registration_order_item_mapper, registration_order_mapper, create_db_order, get_registration_order, deduct_tickets_from_available_quantity, add_tickets
 from ..dependencies import get_db
 import uuid
-from ..crud import redis_crud, conferences_crud, attendee_crud, registration_setup_crud
+from ..crud import redis_crud, conferences_crud, attendee_crud, registration_setup_crud, transaction_crud
 import logging
 from ..schemas.registration_setup_schemas import RegistrationSetupResponse
 from ..schemas.attendee_schemas import Attendee, AttendeeCreate, AttendeeUpdate
@@ -17,6 +18,7 @@ from ..schemas.ticket_checkin_schemas import Ticket
 import os
 import razorpay
 from ..crud import razorpay as razorpay_crud
+from ..static_enums import transaction_types as t_type, transaction_methods as t_method
 
 router = APIRouter(tags=["checkout"])
 
@@ -126,11 +128,19 @@ async def confirm_order(confirm_order_request: ConfirmOrderRequest, db: Session 
         raise HTTPException(status_code=404, detail=f"Order {confirm_order_request.order_id} not found")
     reg_setup = registration_setup_crud.get_setup_details(db, conference.id)
     
-    # is_valid = razorpay_crud.verify_payment(order_id=confirm_order_request.order_id, payment_id=confirm_order_request.payment_id, 
-    # razorpay_signature=confirm_order_request.signature, razorpay_key_secret=razorpay_key_secret)
-    # if not is_valid:
-    #     raise HTTPException(status_code=400, detail="Invalid payment")
+    is_valid = razorpay_crud.verify_payment(order_id=confirm_order_request.order_id, payment_id=confirm_order_request.payment_id, 
+    razorpay_signature=confirm_order_request.signature, razorpay_key=razorpay_key_secret)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail="Invalid payment")
     # razorpay_crud.capture_payment(razorpay_client, confirm_order_request.payment_id, reg_order.total_amount)
+    
+    payment_timestamp_unix = razorpay_crud.get_payment_timestamp(razorpay_client, confirm_order_request.payment_id)
+    payment_timestamp = datetime.fromtimestamp(payment_timestamp_unix)
+    order_details = razorpay_crud.get_order_details(razorpay_client=razorpay_client, order_id=confirm_order_request.order_id)
+    
+    transaction = transaction_crud.transaction_mapper(payment_timestamp=payment_timestamp, amount=reg_order.total_amount, currency=order_details["currency"],event_id=conference.id, order_id=reg_order.id, attendee_id=reg_order.attendee_id, transaction_type_id=t_type.TransactionType.PAYMENT.value, transaction_method_id=t_method.TransactionMethods.RAZOR.value, razorpay_payment_id=confirm_order_request.payment_id,razorpay_signature=confirm_order_request.signature)
+                                                      
+    transaction_crud.create_transaction(db, transaction)
     
     deduct_tickets_from_available_quantity(db, reg_setup, session)
     reg_order.payment_status = PaymentStatus.PAID.value
@@ -139,30 +149,3 @@ async def confirm_order(confirm_order_request: ConfirmOrderRequest, db: Session 
     redis_crud.delete_data_from_redis(confirm_order_request.session_id)
     redis_crud.remove_session_from_list(confirm_order_request.event_id, confirm_order_request.session_id)
     return tickets
-
-# @router.get("/fill-uuids")
-# def fill(db: Session = Depends(get_db)):
-#     tickets = db.query(models.RegistrationTicket).all()
-#     for ticket in tickets:
-#         ticket.uuid = f"tkt-{uuid.uuid4()}"
-#         db.add(ticket)
-#     db.commit()
-#     return {"message": "UUIDs filled successfully"}
-
-# @router.get("/update-ticket_ids")
-# def update_ticket_ids(db: Session = Depends(get_db)):
-#     tickets = db.query(models.RegistrationTicket).options(joinedload(models.RegistrationTicket.registration_order_item).joinedload(models.RegistrationOrderItem.registration_order)).all()
-#     for ticket in tickets:
-#         event = db.query(models.Conference).filter(models.Conference.id == ticket.registration_order_item.registration_order.event_id).first()
-#         event_id = event.uuid[4:9]
-#         order_id = ticket.registration_order_item.registration_order.uuid[4:7]
-#         ticket_id = str(ticket.id)
-#         if len(ticket_id) == 1:
-#             ticket_id = ticket_id.zfill(2)
-#         else:
-#             ticket_id = ticket_id[-2:]
-#         ticket.ticket_id = f"tk-{event_id}-{order_id}-{ticket_id}"
-#         db.add(ticket)
-#     db.commit()
-#     return {"message": "Ticket IDs updated successfully"}
-    

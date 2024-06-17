@@ -20,14 +20,12 @@ def get_promotion(db: Session, promotion_id: str):
     exlude_archived(promotion)
     return promotion
 
-def get_promotion_by_conference(db: Session, conference_id: str):
-    conference = db.query(models.Conference).filter(models.Conference.uuid == conference_id).first()
-    if conference is None:
+def get_promotion_by_conference(db: Session, conference_id: int):
+    promotion = db.query(models.Promotions).filter(models.Promotions.conference_id == conference_id).first()
+    if not promotion:
         return None
-    else:
-        promotion = db.query(models.Promotions).filter(models.Promotions.conference_id == conference.id).first()
-        exlude_archived(promotion)
-        return conference
+    exlude_archived(promotion)
+    return promotion
 
 def get_promotions(db: Session, skip: int = 0, limit: int = 5):
     promotions = db.query(models.Promotions).options(joinedload(models.Promotions.conference)).order_by(models.Promotions.rank, models.Promotions.updated_on.desc()).offset(skip).limit(limit).all()

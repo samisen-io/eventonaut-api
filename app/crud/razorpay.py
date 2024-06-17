@@ -30,3 +30,17 @@ def capture_payment(razorpay_client, payment_id: str, amount: int):
         return response
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+def get_payment_timestamp(razorpay_client, payment_id: str):
+    try:
+        response = razorpay_client.payment.fetch(payment_id)
+        return response["created_at"]
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+def get_order_details(razorpay_client, order_id: str):
+    try:
+        response = razorpay_client.order.fetch(order_id)
+        return response
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
