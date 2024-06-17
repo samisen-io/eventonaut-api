@@ -1,20 +1,31 @@
+from datetime import datetime
 import json
-import os
-import redis
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
+from app.crud.registration_order_crud import registration_order_item_mapper, registration_order_mapper, create_db_order, get_registration_order, deduct_tickets_from_available_quantity, add_tickets
 from ..dependencies import get_db
 import uuid
-from ..crud import redis_crud, conferences_crud, attendee_crud
+from ..crud import redis_crud, conferences_crud, attendee_crud, registration_setup_crud, transaction_crud
 import logging
 from ..schemas.registration_setup_schemas import RegistrationSetupResponse
 from ..schemas.attendee_schemas import Attendee, AttendeeCreate, AttendeeUpdate
-from ..schemas.checkout_schemas import CheckoutRequest, CheckoutResponse, Details
+from ..schemas.checkout_schemas import CheckoutRequest, CheckoutResponse, Details, CreateOrderRequest, ConfirmOrderRequest, OrderResponse
 from email_validator import validate_email, EmailNotValidError
 from ..crud.checkout_crud import check_for_extra_tickets, verify_ticket_types, available_tickets_for_event
 from ..basicauth import basic_auth
+from ..static_enums.payment_status import PaymentStatus
+from ..schemas.ticket_checkin_schemas import Ticket
+import os
+import razorpay
+from ..crud import razorpay as razorpay_crud
+from ..static_enums import transaction_types as t_type, transaction_methods as t_method
 
 router = APIRouter(tags=["checkout"])
+
+razorpay_key_id = os.getenv("RAZORPAY_KEY_ID")
+razorpay_key_secret = os.getenv("RAZORPAY_KEY_SECRET")
+
+razorpay_client = razorpay.Client(auth=(razorpay_key_id, razorpay_key_secret))
 
 @router.get("/get-all-available-tickets/{event_id}", response_model=RegistrationSetupResponse)
 async def get_all_available_tickets(event_id: str, db: Session = Depends(get_db), user = Depends(basic_auth)):
@@ -44,7 +55,7 @@ async def checkout(checkout_request: CheckoutRequest, db: Session = Depends(get_
     checkout_request_dict["attendee_id"] = None
     expiration_timestamp = redis_crud.save_session_to_redis(session_id, checkout_request_dict)
     redis_crud.save_list_of_sessions_to_redis(conference.uuid, session_id)
-    response = CheckoutResponse(session_id=session_id, expiration_timestamp=expiration_timestamp)
+    response = CheckoutResponse(session_id=session_id, event_id=conference.uuid, expiration_timestamp=expiration_timestamp)
     return response
 
 @router.post("/checkout/details", response_model=Attendee)
@@ -60,8 +71,10 @@ async def checkout_details(details: Details, db: Session = Depends(get_db), user
         redis_crud.remove_session_from_list(details.event_id, details.session_id)
         raise HTTPException(status_code=404, detail=f"Session {details.session_id} not found")
     session = json.loads(session_bytes)
-    attendee = attendee_crud.create_attendee(db, AttendeeCreate(email=details.email, hashed_password=uuid.uuid1().hex[:16]))
-    attendee = attendee_crud.update_attendee_by_uuid(db, attendee.user_id, AttendeeUpdate(first_name=details.first_name, last_name=details.last_name))
+    attendee = attendee_crud.get_attendee_by_email(db, details.email)
+    if not attendee:
+        attendee = attendee_crud.create_attendee(db, AttendeeCreate(email=details.email, hashed_password=uuid.uuid1().hex[:16]))
+        attendee = attendee_crud.update_attendee_by_uuid(db, attendee.user_id, AttendeeUpdate(first_name=details.first_name, last_name=details.last_name))
     session["attendee_id"] = attendee.id
     redis_crud.update_session_in_redis(details.session_id, session)
     return attendee
@@ -72,3 +85,67 @@ async def delete_checkout(session_id: str, user = Depends(basic_auth)):
     if value == 0:
         raise HTTPException(status_code=404, detail=f"Session {session_id} expired")
     return {"message": f"Session {session_id} deleted"}
+
+@router.post("/checkout/create-order", response_model=OrderResponse)
+async def create_order(create_order_request: CreateOrderRequest, db: Session = Depends(get_db), user = Depends(basic_auth)):
+    conference = conferences_crud.get_conference(db, create_order_request.event_id)
+    if conference is None:
+        logging.exception(f"Conference {create_order_request.event_id} not found")
+        raise HTTPException(status_code=404, detail=f"Conference {create_order_request.event_id} not found")
+    session_bytes = redis_crud.get_session_from_redis(create_order_request.session_id)
+    if session_bytes is None:
+        redis_crud.remove_session_from_list(create_order_request.event_id, create_order_request.session_id)
+        raise HTTPException(status_code=404, detail=f"Session {create_order_request.session_id} not found")
+    session = json.loads(session_bytes)
+    reg_setup = registration_setup_crud.get_setup_details(db, conference.id)
+    registration_order = registration_order_mapper(reg_setup, session, session["attendee_id"])
+    registration_order_items = registration_order_item_mapper(reg_setup.registration_setup_items, session)
+    
+    razorpay_order = {
+        "amount": int(registration_order.total_amount * 100),
+        "currency": "INR",
+        "receipt": registration_order.uuid
+    }
+    
+    razorpay_order_response = razorpay_crud.create_order(razorpay_client, razorpay_order)
+    create_db_order(db, registration_order, registration_order_items, razorpay_order_response["id"])
+    response = OrderResponse(message="Order created successfully", event_id=conference.uuid, session_id=create_order_request.session_id, order_id=razorpay_order_response["id"], amount=registration_order.total_amount, currency=razorpay_order["currency"], receipt=razorpay_order["receipt"], payment_status=PaymentStatus.UNPAID)
+    return response
+
+@router.post("/checkout/confirm-order", response_model=list[Ticket])
+async def confirm_order(confirm_order_request: ConfirmOrderRequest, db: Session = Depends(get_db), user = Depends(basic_auth)):
+    conference = conferences_crud.get_conference(db, confirm_order_request.event_id)
+    if conference is None:
+        logging.exception(f"Conference {confirm_order_request.event_id} not found")
+        raise HTTPException(status_code=404, detail=f"Conference {confirm_order_request.event_id} not found")
+    session_bytes = redis_crud.get_session_from_redis(confirm_order_request.session_id)
+    if session_bytes is None:
+        redis_crud.remove_session_from_list(confirm_order_request.event_id, confirm_order_request.session_id)
+        raise HTTPException(status_code=404, detail=f"Session {confirm_order_request.session_id} not found")
+    session = json.loads(session_bytes)
+    reg_order = get_registration_order(db, conference.id, confirm_order_request.order_id, session["attendee_id"])
+    if reg_order is None:
+        raise HTTPException(status_code=404, detail=f"Order {confirm_order_request.order_id} not found")
+    reg_setup = registration_setup_crud.get_setup_details(db, conference.id)
+    
+    is_valid = razorpay_crud.verify_payment(order_id=confirm_order_request.order_id, payment_id=confirm_order_request.payment_id, 
+    razorpay_signature=confirm_order_request.signature, razorpay_key=razorpay_key_secret)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail="Invalid payment")
+    # razorpay_crud.capture_payment(razorpay_client, confirm_order_request.payment_id, reg_order.total_amount)
+    
+    payment_timestamp_unix = razorpay_crud.get_payment_timestamp(razorpay_client, confirm_order_request.payment_id)
+    payment_timestamp = datetime.fromtimestamp(payment_timestamp_unix)
+    order_details = razorpay_crud.get_order_details(razorpay_client=razorpay_client, order_id=confirm_order_request.order_id)
+    
+    transaction = transaction_crud.transaction_mapper(payment_timestamp=payment_timestamp, amount=reg_order.total_amount, currency=order_details["currency"],event_id=conference.id, order_id=reg_order.id, attendee_id=reg_order.attendee_id, transaction_type_id=t_type.TransactionType.PAYMENT.value, transaction_method_id=t_method.TransactionMethods.RAZOR.value, razorpay_payment_id=confirm_order_request.payment_id,razorpay_signature=confirm_order_request.signature)
+                                                      
+    transaction_crud.create_transaction(db, transaction)
+    
+    deduct_tickets_from_available_quantity(db, reg_setup, session)
+    reg_order.payment_status = PaymentStatus.PAID.value
+    db.commit()
+    tickets = add_tickets(db, reg_order, conference.uuid)
+    redis_crud.delete_data_from_redis(confirm_order_request.session_id)
+    redis_crud.remove_session_from_list(confirm_order_request.event_id, confirm_order_request.session_id)
+    return tickets

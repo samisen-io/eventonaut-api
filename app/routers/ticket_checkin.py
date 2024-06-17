@@ -8,6 +8,7 @@ from ..static_enums.role import RoleEnum
 from ..schemas import ticket_checkin_schemas as schemas
 import logging
 from ..static_enums.organizer import OrganizerEnum
+from ..models import RegistrationTicket
 
 router = APIRouter(tags=["ticket_checkin"], prefix="/ticket-checkin")
 
@@ -83,7 +84,7 @@ def AttendeeMapper(attendee, event_id: str):
                                tickets = tickets)
     return attendee
 
-def TicketMapper(ticket_item, event_id: str):
+def TicketMapper(ticket_item: RegistrationTicket, event_id: str):
     ticket = schemas.Ticket(
                     ticket_id=ticket_item.ticket_id, 
                     type=ticket_item.registration_order_item.registration_setup_item.name, 
