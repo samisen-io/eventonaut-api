@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 import uuid
 import logging
 from fastapi import HTTPException, status as Status
-
-from app.models import RegistrationTicket
+from sqlalchemy.orm import joinedload
+from app.models import RegistrationOrder, RegistrationOrderItem, RegistrationTicket
 from app.schemas.registration_ticket_schema_temp import RegistrationTicketCreate
 
 def get_registration_ticket_by_ticket_id(db: Session, ticket_id: str):
@@ -55,3 +55,13 @@ def check_in_registration_ticket(db: Session, ticket_id: str):
 
 def get_registration_tickets(db: Session, skip: int = 0, limit: int = 100):
     return db.query(RegistrationTicket).offset(skip).limit(limit).all()
+
+def get_tickets_by_registration_order_item_id(db: Session, registration_order_item_id: int):
+    return db.query(RegistrationTicket).filter(RegistrationTicket.registration_order_item_id == registration_order_item_id).all()
+
+def get_tickets_by_attendee_id_and_event_id(db: Session, attendee_id: int, event_id: int):
+    return db.query(RegistrationTicket).\
+        join(RegistrationOrderItem, RegistrationOrderItem.id == RegistrationTicket.registration_order_item_id).\
+        join(RegistrationOrder, RegistrationOrder.id == RegistrationOrderItem.registration_order_id).\
+        filter(RegistrationOrder.attendee_id == attendee_id, RegistrationOrder.event_id == event_id).\
+        all()

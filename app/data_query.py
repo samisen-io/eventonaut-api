@@ -98,7 +98,9 @@ def query_document(question, conference_id):
     source_list = []
     for doc in docs:
         metadata = doc.metadata
-        source_list.append(metadata['source'])
+        # source_list.append(metadata['source'])
+        if 'source' in metadata:
+            source_list.append(metadata['source'])
     data = {
         'answer': answer,
         'source_list': source_list,

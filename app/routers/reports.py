@@ -6,12 +6,12 @@ import requests
 
 from app.basicauth import basic_auth
 from app.crud.attendee_crud import get_an_attendee_by_id, get_attendees_by_user_id
-from app.crud.conferences_crud import get_conference_by_conference_uuid, get_conference_by_id
+from app.crud.conferences_crud import get_conference, get_conference_by_conference_uuid, get_conference_by_id
 from app.crud.master_template_crud import get_master_template_by_id
 from app.crud.registration_order_crud_temp import create_registration_order, get_registration_order_by_id, get_registration_order_by_order_id
 from app.crud.registration_order_item_crud import create_registration_order_item, delete_registration_order_item, get_registration_order_item_by_id, get_registration_order_item_by_uuid, get_registration_order_items_by_registration_order_id
 from app.crud.registration_order_item_type_crud_temp import get_registration_order_item_type_by_code, get_registration_order_item_type_by_id
-from app.crud.registration_ticket_crud_temp import create_registration_ticket, get_registration_ticket_by_ticket_id, update_registration_ticket
+from app.crud.registration_ticket_crud_temp import create_registration_ticket, get_registration_ticket_by_ticket_id, get_tickets_by_attendee_id_and_event_id, update_registration_ticket
 from app.crud.users_crud import get_user
 from app.schemas import registration_ticket_schema_temp as reg_ticket_schemas
 from app.schemas import ticket_schema_temp as ticket_schemas
@@ -94,7 +94,7 @@ def get_orders_items(db: Session = Depends(get_db), current_user: User = Securit
     ]
 
     return registration_order_items_schemas
-
+    
 @router.get('/get_ticket/{ticket_id}', response_model=ticket_schemas.TicketDataResponse)
 def get_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
     ticket = get_registration_ticket_by_ticket_id(db, ticket_id)
@@ -195,3 +195,21 @@ def create_schema(item, db):
         schema.ticket_data = ticket_data_list
 
     return schema
+
+def update_ticket(ticket_id: str, db: Session):
+    ticket = get_registration_ticket_by_ticket_id(db, ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail='Ticket not found')
+    order_item = get_registration_order_item_by_id(db, ticket.registration_order_item_id)
+    order = get_registration_order_by_id(db, order_item.registration_order_id)
+    event = get_conference_by_id(db, order.event_id)
+    tickets = get_tickets_by_attendee_id_and_event_id(db, order.attendee_id, order.event_id)
+    template_id = 'tem-cbd6cb4a-fff3-4778-94a4-59b737561cdf'
+    template = get_master_template_by_id(db, template_id)
+    pdf_ticket = generate_pdf_tickets(db, tickets, template, event, order, order_item, upload=True)
+    ticket_ids = []
+    for ticket in tickets:
+        ticket.ticket_url = pdf_ticket['url']
+        update_registration_ticket(db, ticket.ticket_id, ticket)
+        ticket_ids.append(ticket.ticket_id)
+    return ticket_ids
