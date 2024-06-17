@@ -39,3 +39,4 @@ weasyprint
 redis
 PyPDF2
 inflect
+razorpay
