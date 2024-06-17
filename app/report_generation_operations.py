@@ -93,7 +93,7 @@ def generate_input_data(db, ticket, event, registration_order, registration_orde
         'orderNumber': registration_order.order_id,
         'logo': event.conference_banner_url,
         'ticketType': registration_setup_item_name,
-        'ticketID': ticket.ticket_id,
+        'tickteID': ticket.ticket_id,
         'address': address,
         'dateTime': date,
         'orderType': 'Free Order',
