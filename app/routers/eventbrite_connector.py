@@ -11,7 +11,7 @@ from app.crud.organization_crud import get_organization_by_external_id, get_orga
 from app.static_enums.role import RoleEnum
 from starlette.requests import ClientDisconnect
 
-router = APIRouter(tags=["Eventbrite Connector"])
+router = APIRouter(tags=["eventbrite_connector"])
 
 @router.get("/get_eventbrite_events/")
 def get_eventbrite_events(private_token: str, organization_id: str):

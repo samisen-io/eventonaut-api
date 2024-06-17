@@ -116,7 +116,6 @@ def download_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: 
     registration_order = get_registration_order_by_id(db, registration_order_item.registration_order_id)
     event_id = registration_order.event_id
     event = get_conference_by_id(db, event_id)
-    # fetch the template from the database
     template_id = 'tem-cbd6cb4a-fff3-4778-94a4-59b737561cdf'
     template = get_master_template_by_id(db, template_id)
     if not template:
@@ -163,14 +162,12 @@ def download_invoice(order_id: str, db: Session = Depends(get_db), current_user:
 
 @router.post('/generate_report')
 def generate_report(report: Report, db: Session = Depends(get_db),current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ORGANIZATION_USER.name, RoleEnum.ORGANIZATION_ADMIN.name])):
-    # fetch the template from the database
     template_id = report.template_id
     output_filename = report.output_filename
     input_data = report.input_data
     template = get_template_by_id(db, template_id, current_user.organization_user[0].organization_id)
     if not template:
         raise HTTPException(status_code=404, detail='Template not found')
-    # generate the report
     pdf_stream = generate_report_using_template(template, input_data)  
     response = StreamingResponse(pdf_stream, media_type="application/pdf")
     response.headers["Content-Disposition"] = f"attachment; filename={output_filename}.pdf"
@@ -183,7 +180,7 @@ def create_schema(item, db):
 
     if item.registration_ticket is not None:
         registration_order = item.registration_order
-        event = registration_order.conference  # use the eagerly loaded data
+        event = registration_order.conference
         ticket_data_list = [
             generate_input_data(db, ticket, event, registration_order, item) for ticket in item.registration_ticket
         ]

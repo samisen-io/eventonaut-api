@@ -5,7 +5,7 @@ from ..schemas import ai_assistant_schemas as schemas
 from .. import basicauth
 import re
 
-router = APIRouter(tags=["AI_assistant"])
+router = APIRouter(tags=["ai_assistant"])
 
 @router.post("/assistant/create_assistant",status_code=201)
 def create_assistant(schema: schemas.AssistantCreate, basic_auth = Depends(basicauth.basic_auth)):
