@@ -196,21 +196,27 @@ def generate_invoice_input_data(db, event, registration_order, order_items, user
             'order_item_type': item.code.capitalize(),
             'description': setup_item.name,
             'quantity': item.quantity,
-            'price': order.amount,
-            'tax': order.tax_amount,
-            'fee': order.fee_amount
+            'price': item.unit_price,
+            'amount': item.total_amount
         })
-    subtotal = sum(item['price'] * item['quantity'] for item in items)
-    tax = sum(item['tax'] for item in items)
-    fee = sum(item['fee'] for item in items)
-    total = subtotal + tax + fee
-    
+    subtotal = order.amount
+    tax = order.tax_amount
+    fee = order.fee_amount
+    total = order.total_amount
+    print(subtotal)
     organization = get_organization_by_id(db, event.organization_id)
     current_date = date.today().strftime("%d %B %Y")
     total_in_words = p.number_to_words(total)
+    company_address = organization.address
+    logo = organization.logo_image_url
+    if organization.address is None:
+        company_address = 'Address Not Provided'
+    if organization.logo_image_url is None:
+        logo = 'https://conferencebuddydev.blob.core.windows.net/temporary-images/dyn-6208be2d-cc2e-4581-a4b5-c20b505e4142-default_organization.png'
     input_data = {
+        'logo': logo,
         'company_name': organization.name,
-        'company_address': organization.address,
+        'company_address': company_address,
         'customer_name': (user.first_name + ' ' + user.last_name).title(),
         'customer_email': user.email,
         'date_issued': current_date,
@@ -220,10 +226,7 @@ def generate_invoice_input_data(db, event, registration_order, order_items, user
         'tax': tax,
         'fee': fee,
         'total': total,
-        'total_in_words': total_in_words,
-        'eco_name': 'Samisen Distributed Technologies Pvt. Ltd. (Eventonaut)',
-        'eco_address': 'Awfis, Lorven Tiara, Awfis, Lorven Tiara, Kondapur 500084, India',
-        'gst': '36AABCI2726B1Z'
+        'total_in_words': total_in_words
     }
     return input_data
         
