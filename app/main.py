@@ -6,12 +6,12 @@ import logging
 from fastapi.exceptions import RequestValidationError
 from starlette.responses import JSONResponse
 
-from app.routers import onesignal_push_notification, reports
-from .routers import signup_organizer
+from app.routers import data_visualization, master_template, onesignal_push_notification, order_creation_temp, reports
+from .routers import signup_organizer, ticket_checkin
 from .routers import backdrop_gallery, eventbrite_connector, organization, organization_user, photo_booth, role
 from .routers import ai_models, users, conferences, ai_models, sessions, settings, attendee, agenda
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference, client, speakers, promotions,sponsor, venue, static_organizer, static_client, static_event, static_session, static_attendee, upload_image, event_documents, session_documents, organization_settings, exhibitors, attendee_exhibitors, exhibitor_documents, template, attendee_checkin
+from .routers import ai_models, users, conferences, ai_models, sessions, settings, authentication, otp, assistant, attendee_conference, client, speakers, promotions,sponsor, venue, static_organizer, static_client, static_event, static_session, static_attendee, upload_image, event_documents, session_documents, organization_settings, exhibitors, attendee_exhibitors, exhibitor_documents, template, tickets_checkout
 from .crud import logout_token_crud
 
 
@@ -57,6 +57,7 @@ app.add_middleware(
 # Add the routers to the application with authentication middleware
 app.include_router(upload_image.router)
 app.include_router(template.router)
+app.include_router(master_template.router)
 app.include_router(organization_settings.router)
 app.include_router(signup_organizer.router)
 app.include_router(organization.router)
@@ -77,7 +78,7 @@ app.include_router(settings.router)
 # app.include_router(ai_models.router, dependencies=[Depends(get_current_active_user)])
 app.include_router(ai_models.router)
 app.include_router(photo_booth.router)
-app.include_router(attendee_checkin.router)
+app.include_router(ticket_checkin.router)
 app.include_router(attendee.router)
 app.include_router(attendee_conference.router)
 app.include_router(agenda.router)
@@ -96,7 +97,10 @@ app.include_router(organization.router)
 app.include_router(role.router)
 app.include_router(eventbrite_connector.router)
 app.include_router(onesignal_push_notification.router)
+app.include_router(order_creation_temp.router)
 app.include_router(reports.router)
+app.include_router(tickets_checkout.router)
+app.include_router(data_visualization.router)
 
 @app.get("/")
 async def root():

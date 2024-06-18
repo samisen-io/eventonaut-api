@@ -110,6 +110,13 @@ def get_conference(db: Session, conference_id: str):
     exclude_archived(conference)
     return conference
 
+def get_conference_by_id(db: Session, conference_id: int):
+    conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.id == conference_id, models.Conference.is_archived == False).first()
+    if conference is None:
+        return None
+    exclude_archived(conference)
+    return conference
+
 def get_conference_by_id_for_organization(db: Session, conference_id: str, organization_id: int):
     conference = db.query(models.Conference).options(joinedload(models.Conference.client),joinedload(models.Conference.venue),joinedload(models.Conference.sponsors)).filter(models.Conference.uuid == conference_id, models.Conference.organization_id == organization_id, models.Conference.is_archived == False).first()
     if conference is None:

@@ -1,8 +1,9 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY
+from sqlalchemy import Boolean, Column, Computed, Float, ForeignKey, Integer, String, DateTime, DATE, TIME, ARRAY, inspect
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy import UniqueConstraint
 from .database import Base
+from sqlalchemy.ext.hybrid import hybrid_property
 
 class Organization(Base):
     __tablename__ = "organization"
@@ -179,6 +180,8 @@ class Conference(Base):
     exhibitors = relationship("Exhibitor", secondary="event_exhibitor", backref=backref("conferences", lazy='dynamic'))
     attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="conference")
     registration_order = relationship("RegistrationOrder", back_populates="conference")
+    registration_setup = relationship("RegistrationSetup", back_populates="event")
+    transaction = relationship("Transaction", back_populates="event")
     
     @property
     def status(self):
@@ -310,6 +313,7 @@ class Attendee(Base):
     aitokens = relationship("AITokens", back_populates="attendee")
     attendee_exhibitors = relationship("AttendeeExhibitors", back_populates="attendee")
     registration_order = relationship("RegistrationOrder", back_populates="attendee")
+    transaction = relationship("Transaction", back_populates="attendee")
     
     _user_delegated_attrs = {"email", "first_name", "last_name", "company", "profile_image_url", "is_active"}
 
@@ -637,7 +641,6 @@ class EventExhibitor(Base):
     conference_id = Column(Integer, ForeignKey("conferences.id"))
 
     exhibitor = relationship("Exhibitor", back_populates="event_exhibitor", overlaps="conferences,exhibitors")
-    
 class ExhibitorDocuments(Base):
     __tablename__ = "exhibitor_documents"
 
@@ -694,7 +697,7 @@ class RegistrationOrderItemType(Base):
     code = Column(String, index=True, unique=True)
     description = Column(String, index=True)
     
-    registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order_item_type")
+    registration_order_items = relationship("RegistrationOrderItem", back_populates="registration_order_item_type")
    
 class RegistrationOrder(Base):
     __tablename__ = "registration_order"
@@ -709,12 +712,18 @@ class RegistrationOrder(Base):
     tax_amount = Column(Float, index=True)
     fee_amount = Column(Float, index=True)
     total_amount = Column(Float, index=True)
-    order_id = Column(String, index=True)
+    payment_status = Column(String, index=True, default="unpaid")
+    external_order_id = Column(String, index=True)
+    order_id = Column(String, Computed("((event_id::text || '-'::text) || attendee_id::text) || '-'::text) || id::text"), index=True)
     
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order")
     conference = relationship("Conference", back_populates="registration_order")
     attendee = relationship("Attendee", back_populates="registration_order")
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order")
+    transaction = relationship("Transaction", back_populates="order")
+    
+    def to_dict(self):
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
     
 class RegistrationOrderItem(Base):
     __tablename__ = "registration_order_item"
@@ -723,24 +732,130 @@ class RegistrationOrderItem(Base):
     uuid = Column(String, index=True, unique=True)
     created_on = Column(DateTime)
     updated_on = Column(DateTime)
+    registration_order_id = Column(Integer, ForeignKey("registration_order.id"))
+    registration_setup_item_id = Column(Integer, ForeignKey("registration_setup_item.id"))
     description = Column(String, index=True)
     quantity = Column(Integer, index=True)
     unit_price = Column(Float, index=True)
     total_amount = Column(Float, index=True)
-    type = Column(Integer, ForeignKey("registration_order_item_type.id"))
-    code = Column(String, index=True)
-    registration_order_id = Column(Integer, ForeignKey("registration_order.id"))
+    code = Column(String, ForeignKey('registration_order_item_type.code'), index=True)
     
     registration_ticket = relationship("RegistrationTicket", back_populates="registration_order_item")
     registration_order = relationship("RegistrationOrder", back_populates="registration_order_item")
-    registration_order_item_type = relationship("RegistrationOrderItemType", back_populates="registration_order_item")
+    registration_setup_item = relationship("RegistrationSetupItem", back_populates="registration_order_item")
+    registration_order_item_type = relationship("RegistrationOrderItemType", back_populates="registration_order_items")
     
 class RegistrationTicket(Base):
     __tablename__ = "registration_ticket"
     
     id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
     registration_order_item_id = Column(Integer, ForeignKey("registration_order_item.id"))
     ticket_id = Column(String, index=True, unique=True)
     checked_in = Column(Boolean, default=False)
+    ticket_url = Column(String, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
     
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_ticket")
+    
+class RegistrationSetup(Base):
+    __tablename__ = "registration_setup"    
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    event_id = Column(Integer, ForeignKey("conferences.id"))
+    start_date = Column(DATE, index=True)
+    end_date = Column(DATE, index=True)
+    registration_note = Column(String, index=True)
+    tax_name = Column(String, index=True)
+    tax_rate = Column(Float, index=True)
+    fee_name = Column(String, index=True)
+    fee_amount = Column(Float, index=True)
+    refund_policy = Column(String, index=True)
+    is_live = Column(Boolean, default=False)
+    
+    event = relationship("Conference", back_populates="registration_setup")
+    registration_setup_items = relationship("RegistrationSetupItem", back_populates="registration_setup")
+    
+class RegistrationSetupItem(Base):
+    __tablename__ = "registration_setup_item"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    registration_setup_id = Column(Integer, ForeignKey("registration_setup.id"))
+    name = Column(String, index=True)
+    description = Column(String, index=True)
+    price = Column(Float, index=True)
+    available_from = Column(DateTime, index=True)
+    available_to = Column(DateTime, index=True)
+    image_url = Column(String, index=True)
+    product_id = Column(String, index=True)
+    total_quantity = Column(Integer, index=True)
+    available_quantity = Column(Integer, index=True)
+    
+    registration_setup = relationship("RegistrationSetup", back_populates="registration_setup_items")
+    registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_setup_item")
+    
+    # @hybrid_property
+    # def available_quantity(self):
+    #     return self.total_quantity
+    
+    def to_dict(self):
+        return {c.key: getattr(self, c.key) for c in inspect(self).mapper.column_attrs}
+    
+class MasterTemplate(Base):
+    __tablename__ = "master_template"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    updated_on = Column(DateTime)
+    template_name = Column(String, index=True)
+    template_url = Column(String, index=True)
+    
+class Transaction(Base):
+    __tablename__ = "transaction"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    uuid = Column(String, index=True, unique=True)
+    created_on = Column(DateTime)
+    transaction_time_stamp = Column(DateTime, index=True)
+    payment_amount = Column(Float, index=True)
+    currency = Column(String(3), index=True)
+    razorpay_payment_id = Column(String, index=True)
+    razorpay_signature = Column(String, index=True)
+    event_id = Column(Integer, ForeignKey("conferences.id"))
+    order_id = Column(Integer, ForeignKey("registration_order.id"))
+    attendee_id = Column(Integer, ForeignKey("attendees.id"))
+    transaction_type_id = Column(Integer, ForeignKey("transaction_type.id"))
+    transaction_method_id = Column(Integer, ForeignKey("transaction_methods.id"))
+    
+    event = relationship("Conference", back_populates="transaction")
+    order = relationship("RegistrationOrder", back_populates="transaction")
+    attendee = relationship("Attendee", back_populates="transaction")
+    transaction_type = relationship("TransactionType", back_populates="transaction")
+    transaction_method = relationship("TransactionMethods", back_populates="transaction")
+    
+class TransactionType(Base):
+    __tablename__ = "transaction_type"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, index=True, unique=True)
+    name = Column(String, index=True)
+    
+    transaction = relationship("Transaction", back_populates="transaction_type")
+    
+class TransactionMethods(Base):
+    __tablename__ = "transaction_methods"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String, index=True, unique=True)
+    name = Column(String, index=True)
+    
+    transaction = relationship("Transaction", back_populates="transaction_method")
