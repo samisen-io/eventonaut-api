@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime
 import redis
@@ -51,6 +52,7 @@ def update_session_in_redis(key, value):
         else:
             expire_timestamp = None
     else:
+        logging.exception(f"Session {key} expired")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session {key} expired")
     return expire_timestamp
 

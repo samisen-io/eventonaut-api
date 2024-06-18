@@ -19,6 +19,7 @@ import os
 import razorpay
 from ..crud import razorpay as razorpay_crud
 from ..static_enums import transaction_types as t_type, transaction_methods as t_method
+import logging
 
 router = APIRouter(tags=["checkout"])
 
@@ -36,8 +37,10 @@ async def get_all_available_tickets(event_id: str, db: Session = Depends(get_db)
             raise HTTPException(status_code=404, detail=f"Conference {event_id} not found")
         return available_tickets_for_event(db, conference)
     except HTTPException as e:
+        logging.exception(str(e))
         raise e
     except Exception as e:
+        logging.exception(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/checkout", response_model=CheckoutResponse)
@@ -69,6 +72,7 @@ async def checkout_details(details: Details, db: Session = Depends(get_db), user
     session_bytes = redis_crud.get_session_from_redis(details.session_id)
     if session_bytes is None:
         redis_crud.remove_session_from_list(details.event_id, details.session_id)
+        logging.exception(f"Session {details.session_id} not found")
         raise HTTPException(status_code=404, detail=f"Session {details.session_id} not found")
     session = json.loads(session_bytes)
     attendee = attendee_crud.get_attendee_by_email(db, details.email)
