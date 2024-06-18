@@ -146,11 +146,10 @@ async def retrieve_answer_stream(question, conference_id, session_id):
     runnable = prompt_for_streaming | model
     
     def get_session_history(session_id: str) -> BaseChatMessageHistory:
-        history = UpstashRedisChatMessageHistory(
-            url = upstash_url,
-            token = upstash_token,
-            session_id = session_id,
-            ttl = 180
+        history = RedisChatMessageHistory(
+            url=redis_url,
+            session_id=session_id,
+            ttl=600
         )
         return history
     
