@@ -14,6 +14,8 @@ def create_organization_settings(db: Session, organization_settings: schemas.Org
     db_organization_settings.event_brite_org_id = evt_brite_org_id
     db_organization_settings.uuid = 'ost-' + str(uuid.uuid4())
     db_organization_settings.created_on = db_organization_settings.updated_on = datetime.utcnow()
+    db_organization_settings.razorpay_key = organization_settings.razorpay_key
+    db_organization_settings.razorpay_secret = organization_settings.razorpay_secret
     db.add(db_organization_settings)
     db.commit()
     db.refresh(db_organization_settings)
@@ -21,11 +23,17 @@ def create_organization_settings(db: Session, organization_settings: schemas.Org
 
 def update_organization_settings(db: Session, db_organization_settings: OrganizationSettings, organization_settings: schemas.OrganizationSettingsUpdate, evt_brite_org_id: str):
     db_organization_settings.updated_on = datetime.utcnow()
-    db_organization_settings.event_brite_org_id = evt_brite_org_id
+    db_organization_settings.event_brite_org_id = evt_brite_org_id if evt_brite_org_id is not None else db_organization_settings.event_brite_org_id
     org_settings_dict = organization_settings.model_dump()
+    
+    non_nullable_fields = ['event_brite_access_token']
+    
     for key, value in org_settings_dict.items():
-        if value is not None:
-            setattr(db_organization_settings, key, value)
+        if key in non_nullable_fields:
+            if value is not None:
+                setattr(db_organization_settings,key,value)
+        else:
+            setattr(db_organization_settings,key,value)
     db.commit()
     db.refresh(db_organization_settings)
     return db_organization_settings
