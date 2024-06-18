@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.schemas.session_document_schemas import SessionDocumentRequest
 from ..models import SessionDocuments
+from ..models import Session as SessionModel
 import uuid
 from datetime import datetime
 import logging
@@ -43,3 +44,8 @@ def delete_session_document(db: Session, session_id: str):
     db.delete(session_document)
     db.commit()
     return session_document
+
+def get_session_document_by_conference_id(db: Session, conference_id: int):
+    return db.query(SessionDocuments).\
+        join(SessionModel, SessionModel.id == SessionDocuments.session_id).\
+        filter(SessionModel.conference_id == conference_id).all()

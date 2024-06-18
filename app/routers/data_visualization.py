@@ -38,7 +38,7 @@ def ticket_sales(event_id: str, db: Session = Depends(get_db), current_user: Use
         date_totals[order_item.created_on.date()] += order_item.quantity
     daily_sales = [{'date': str(date), 'total_number': total} for date, total in date_totals.items()]
     daily_sales.sort(key=lambda x: x['date'])
-    earliest_order_date = min(date_totals.keys())
+    earliest_order_date = max(min(date_totals.keys()), max(date_totals.keys()) - timedelta(days=7))
     latest_order_date = max(date_totals.keys())
     day = earliest_order_date
     while day <= latest_order_date:

@@ -13,8 +13,10 @@ from langchain_community.vectorstores import Pinecone
 from langchain.embeddings.openai import OpenAIEmbeddings
 import requests
 from app.crud.conferences_crud import get_conference_by_conference_uuid
+from app.crud.event_documents_crud import get_event_documents_by_conference_id
 from app.crud.exhibitor_crud import get_exhibitors
 from app.crud.exhibitor_documents_crud import get_exhibitor_documents_by_exhibitor_id
+from app.crud.session_document_crud import get_session_document_by_conference_id
 from app.crud.speakers_crud import get_speakers_by_session_uuid
 from app.file_type_handler import add_csv_documents, add_pdf_document, add_txt_documents, read_the_structured_file
 from app.routers.sessions import get_sessions_by_conference_id
@@ -162,53 +164,74 @@ def add_documents(namespace,conference_id,category):
         print(f"Error: {file_path} : {e.strerror}")
     return {"namespace":namespace}
 
+def process_document(document, namespace):
+    url = document.document_url
+    parsed_url = urlparse(url)
+    _, extension = os.path.splitext(parsed_url.path)
+    if extension is None:
+        raise HTTPException(status_code=400, detail="Unsupported file format")
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        files_folder = os.path.join('app', 'files')
+        if not os.path.exists(files_folder):
+            os.makedirs(files_folder) 
+        file_path = os.path.join(files_folder, str(document.uuid)+extension)
+        with open(file_path, 'wb') as fp:
+            for chunk in response.iter_content(chunk_size = 8192):
+                if chunk:
+                    fp.write(chunk)
+        if extension == '.pdf':
+            add_pdf_document(namespace, file_path)
+        elif extension in ['.csv', '.xlsx']:
+            reader, delimiter = read_the_structured_file(file_path)
+            with tempfile.NamedTemporaryFile(mode='w+t', delete=False, encoding='utf-8') as temp:
+                writer = csv.DictWriter(temp, fieldnames=reader.fieldnames)
+                writer.writeheader()
+                for row in reader:
+                    writer.writerow(row)
+            add_csv_documents(namespace, temp.name, delimiter)
+            os.remove(file_path)
+        elif extension == '.txt':
+            add_txt_documents(namespace, file_path)
+        else:
+            os.remove(file_path)
+    return True
+            
+def write_session_docs(db, conference_id, namespace):
+    conference = get_conference_by_conference_uuid(db, conference_id)
+    if not conference:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    session_documents = get_session_document_by_conference_id(db, conference.id)
+    for session_document in session_documents:
+        status = process_document(session_document, namespace)
+    if status:
+        logging.info(f"Session documents added: {len(session_documents)}")
+
+def write_event_docs(db, conference_id, namespace):
+    print(f"Writing event documents {namespace}")
+    conference = get_conference_by_conference_uuid(db, conference_id)
+    if not conference:
+        raise HTTPException(status_code=404, detail="Conference not found")
+    event_docs = get_event_documents_by_conference_id(db, conference.id)
+    for event_doc in event_docs:
+        status = process_document(event_doc, namespace)
+    if status:
+        logging.info(f"Event documents added")
+
 def write_exhibitor_docs(db, conference_id, namespace):
     conference = get_conference_by_conference_uuid(db, conference_id)
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
     exhibitors = get_exhibitors(db, conference.id)
-    c=0
     if not exhibitors:
         raise HTTPException(status_code=404, detail="No exhibitors found for this conference_id")
     for exhibitor in exhibitors:
         exhibitor_docs = get_exhibitor_documents_by_exhibitor_id(db, exhibitor.id)
         if exhibitor_docs:
             for exhibitor_doc in exhibitor_docs:
-                url = exhibitor_doc.document_url
-                parsed_url = urlparse(url)
-                _, extension = os.path.splitext(parsed_url.path)
-                if extension is None:
-                    raise HTTPException(status_code=400, detail="Unsupported file format")
-                response = requests.get(url, stream=True)
-                if response.status_code == 200:
-                    files_folder = os.path.join('app', 'files')
-                    if not os.path.exists(files_folder):
-                        os.makedirs(files_folder) 
-                    file_path = os.path.join(files_folder, str(exhibitor_doc.uuid)+extension)
-                    with open(file_path, 'wb') as fp:
-                        for chunk in response.iter_content(chunk_size = 8192):
-                            if chunk:
-                                fp.write(chunk)
-                    if extension == '.pdf':
-                        add_pdf_document(namespace, file_path)
-                        c+=1
-                    elif extension == '.csv' or extension == '.xlsx':
-                        reader, delimiter = read_the_structured_file(file_path)
-                        with tempfile.NamedTemporaryFile(mode='w+t', delete=False, encoding='utf-8') as temp:
-                            writer = csv.DictWriter(temp, fieldnames=reader.fieldnames)
-                            writer.writeheader()
-                            for row in reader:
-                                writer.writerow(row)
-                        add_csv_documents(namespace, temp.name, delimiter)
-                        os.remove(file_path)
-                        c+=1
-                    elif extension == '.txt':
-                        add_txt_documents(namespace, file_path)
-                        c+=1
-                    else:
-                        os.remove(file_path)
-    logging.info(f"Exhibitor documents added: {c}")
-    return {"total_documents_added":c}
+                status = process_document(exhibitor_doc, namespace)
+    if status:
+        logging.info(f"Exhibitor documents added")
                     
                     
                            

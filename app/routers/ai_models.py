@@ -6,6 +6,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile, status
 from fastapi.responses import StreamingResponse
 from app.crud.aitokens_crud import insert_aitoken
+from app.crud.attendee_crud import get_attendees_by_user_id
 from app.crud.speakers_crud import get_speaker_uuid_by_email
 from app.file_reader import read_file_return_csv
 from app.pinecone_operations import arranging_ouput_object, create_namespace, create_vector_db, delete_namespace, delete_vector_db
@@ -19,7 +20,7 @@ from app.routers.sessions import create_session_for_conference
 from app.schemas.query_schema import QueryInput, QueryInputStream
 from app.schemas.user_schemas import UserAuthentication as User
 from app.static_enums.role import RoleEnum
-from ..data_ingestion import add_documents, write_events_to_csv, write_exhibitor_docs, write_exhibitors_to_csv, write_sessions_to_csv, write_speakers_to_csv
+from ..data_ingestion import add_documents, write_event_docs, write_events_to_csv, write_exhibitor_docs, write_exhibitors_to_csv, write_session_docs, write_sessions_to_csv, write_speakers_to_csv
 from ..data_query import query_document, retrieve_answer_stream
 from ..crud import conferences_crud, result_crud
 from sqlalchemy.orm import Session
@@ -69,11 +70,12 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     start_time = datetime.utcnow()
     conference_id = query_input.conference_id
     question = query_input.question
+    attendee = get_attendees_by_user_id(db, current_user.id)
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)  
     if not conference:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    data = query_document(question,conference_id)
+    data = query_document(question,conference_id,attendee.uuid)
     end_time = datetime.utcnow()
     processing_time = (end_time - start_time).total_seconds()
     data = json.loads(data)
@@ -228,6 +230,8 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
         namespace = create_namespace(conference_id)
         status = delete_namespace(conference_id)
         status = status['status']
+        write_event_docs(db, conference_id, namespace)
+        write_session_docs(db, conference_id, namespace)
         add_documents(namespace,conference_id,'sessions')
         add_documents(namespace,conference_id,'speakers')
         namespace = add_documents(namespace,conference_id,'events')
@@ -237,6 +241,7 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
         namespace = create_namespace(conference_id)
         status = delete_namespace(conference_id)
         status = status['status']
+        write_event_docs(db, conference_id, namespace)
         write_exhibitor_docs(db, conference_id, namespace)
         add_documents(namespace, conference_id, 'exhibitors')
         namespace = add_documents(namespace,conference_id,'events')
@@ -245,6 +250,7 @@ async def update_namespace(conference_id: str, current_user: User = Security(get
         namespace = create_namespace(conference_id)
         status = delete_namespace(conference_id)
         status = status['status']
+        write_event_docs(db, conference_id, namespace)
         namespace = add_documents(namespace,conference_id,'events')
     else:
         logging.exception("Event type not found")
