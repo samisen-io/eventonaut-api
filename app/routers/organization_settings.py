@@ -53,7 +53,9 @@ def update_organization_settings(organization_settings: schemas.OrganizationSett
         logging.exception(f"Organization settings not found for organization_id: {organization.uuid}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization settings not found")
     logging.info(f"Updating organization settings for organization_id: {organization.uuid}")
-    evt_brite_org_id = get_organization_id(organization_settings.event_brite_access_token)
+    evt_brite_org_id = None
+    if organization_settings.event_brite_access_token is not None:
+        evt_brite_org_id = get_organization_id(organization_settings.event_brite_access_token)
     updated_organization_settings = crud.update_organization_settings(db, db_organization_settings, organization_settings, evt_brite_org_id)
     updated_organization_settings.organization_id = organization.uuid
     return updated_organization_settings
