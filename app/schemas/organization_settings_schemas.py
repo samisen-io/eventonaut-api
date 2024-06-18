@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field, field_validator, ValidationInfo
 
 class OrganizationSettingsBase(BaseModel):
     event_brite_access_token: str
+    razorpay_key: str | None
+    razorpay_secret: str | None
     
     @field_validator('event_brite_access_token')
     @classmethod
@@ -12,13 +14,25 @@ class OrganizationSettingsBase(BaseModel):
             raise ValueError(f"{info.field_name} should be less than 256 characters")
         return v
     
+    @field_validator('razorpay_key', 'razorpay_secret')
+    @classmethod
+    def field_is_not_empty(cls, v, info: ValidationInfo):
+        if v is not None:
+            if v.strip() == "":
+                return None
+            if len(v) > 256:
+                raise ValueError(f"{info.field_name} should be less than 256 characters")
+        return v
+    
 class OrganizationSettingsCreate(OrganizationSettingsBase):
     pass
 
 class OrganizationSettingsUpdate(BaseModel):
     event_brite_access_token: str | None = None
+    razorpay_key: str | None = None
+    razorpay_secret: str | None = None
     
-    @field_validator('event_brite_access_token')
+    @field_validator('event_brite_access_token', 'razorpay_key', 'razorpay_secret')
     @classmethod
     def field_is_not_empty(cls, v, info: ValidationInfo):
         if v is not None:
@@ -33,6 +47,8 @@ class OrganizationSettings(BaseModel):
     organization_id: str
     event_brite_org_id: str
     event_brite_access_token: str
+    razorpay_key: str | None
+    razorpay_secret: str | None
     
     class Config:
         orm_mode = True
