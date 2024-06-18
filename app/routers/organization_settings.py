@@ -13,7 +13,7 @@ from ..schemas.organization_schemas import Organization
 router = APIRouter(tags=["organization_settings"])
 
 @router.get("/organization_settings", response_model=schemas.OrganizationSettings)
-def get_organization_settings(db: Session = Depends(get_db), current_organization: Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def get_organization_settings(db: Session = Depends(get_db), current_organization: Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     organization = organization_crud.get_organization_by_id(db, current_organization.id)
     if organization is None:
         logging.exception(f"Organization not found for organization_id: {current_organization.uuid}")
@@ -27,7 +27,7 @@ def get_organization_settings(db: Session = Depends(get_db), current_organizatio
     return db_organization_settings
 
 @router.post("/organization_settings", response_model=schemas.OrganizationSettings, status_code=status.HTTP_201_CREATED)
-def create_organization_settings(organization_settings: schemas.OrganizationSettingsCreate, db: Session = Depends(get_db), current_organization: Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def create_organization_settings(organization_settings: schemas.OrganizationSettingsCreate, db: Session = Depends(get_db), current_organization: Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     organization = organization_crud.get_organization_by_id(db, current_organization.id)
     if organization is None:
         logging.exception(f"Organization not found for organization_id: {current_organization.uuid}")
@@ -43,7 +43,7 @@ def create_organization_settings(organization_settings: schemas.OrganizationSett
     return db_organization_settings
 
 @router.put("/organization_settings", response_model=schemas.OrganizationSettings)
-def update_organization_settings(organization_settings: schemas.OrganizationSettingsUpdate, db: Session = Depends(get_db), current_organization: Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def update_organization_settings(organization_settings: schemas.OrganizationSettingsUpdate, db: Session = Depends(get_db), current_organization: Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     organization = organization_crud.get_organization_by_id(db, current_organization.id)
     if organization is None:
         logging.exception(f"Organization not found for organization_id: {current_organization.uuid}")
@@ -61,7 +61,7 @@ def update_organization_settings(organization_settings: schemas.OrganizationSett
     return updated_organization_settings
 
 @router.delete("/organization_settings")
-def delete_organization_settings(db: Session = Depends(get_db), current_organization: Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name, RoleEnum.ORGANIZATION_USER.name])):
+def delete_organization_settings(db: Session = Depends(get_db), current_organization: Organization = Security(get_current_active_organization, scopes=[RoleEnum.ORGANIZATION_ADMIN.name])):
     organization = organization_crud.get_organization_by_id(db, current_organization.id)
     if organization is None:
         logging.exception(f"Organization not found for organization_id: {current_organization.uuid}")
