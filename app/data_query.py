@@ -41,7 +41,6 @@ redis_host = os.getenv('REDIS_HOST')
 redis_port = os.getenv('REDIS_PORT')
 redis_password = os.getenv('REDIS_PASSWORD')
 redis_url = f"rediss://:{redis_password}@{redis_host}:{redis_port}/1"
-# redis_url = 'redis://default:89FmqTGZ1MKzPj1rJibyjCSVERsAkRV5@redis-15771.c282.east-us-mz.azure.redns.redis-cloud.com:15771'
 # initialize embedding function
 embedding_function = OpenAIEmbeddings()
 
