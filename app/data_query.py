@@ -19,8 +19,9 @@ from langchain_community.chat_message_histories import RedisChatMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import (
-    UpstashRedisChatMessageHistory,
+    UpstashRedisChatMessageHistory, RedisChatMessageHistory
 )
+from langchain.memory import ConversationBufferWindowMemory
 
 load_dotenv()
 api_key = os.environ.get("OPENAI_API_KEY")
@@ -35,6 +36,12 @@ pinecone.init(
     api_key=os.environ.get("PINECONE_API_KEY"),
     environment = os.environ.get("PINECONE_API_ENV")
 )
+#get redis url
+redis_host = os.getenv('REDIS_HOST')
+redis_port = os.getenv('REDIS_PORT')
+redis_password = os.getenv('REDIS_PASSWORD')
+redis_url = f"rediss://:{redis_password}@{redis_host}:{redis_port}/1"
+# redis_url = 'redis://default:89FmqTGZ1MKzPj1rJibyjCSVERsAkRV5@redis-15771.c282.east-us-mz.azure.redns.redis-cloud.com:15771'
 # initialize embedding function
 embedding_function = OpenAIEmbeddings()
 
@@ -86,9 +93,10 @@ def retrieve_answer(question, conference_id):
     history = []
     return chain({"question": question, "chat_history": history, "timestamp": datetime.now()})
 
-def query_document(question, conference_id):
+def query_document(question, conference_id, session_id):
+    session_id = "chat_"+session_id
     with get_openai_callback() as cb:
-        result = retrieve_answer(question, conference_id)
+        result = retrieve_answer_redis(question=question, conference_id=conference_id, session_id=session_id)
     cb_dict = {k: cb.__dict__[k] for k in ('total_cost', 'total_tokens', 'prompt_tokens', 'completion_tokens', 'successful_requests')}
     # convert the dict to a JSON string
     usage = json.dumps(cb_dict, indent=4)
@@ -98,7 +106,6 @@ def query_document(question, conference_id):
     source_list = []
     for doc in docs:
         metadata = doc.metadata
-        # source_list.append(metadata['source'])
         if 'source' in metadata:
             source_list.append(metadata['source'])
     data = {
@@ -108,6 +115,29 @@ def query_document(question, conference_id):
     }
     json_data = json.dumps(data, indent=4)
     return json_data
+
+def retrieve_answer_redis(question, conference_id, session_id):
+    history = RedisChatMessageHistory(
+        url=redis_url,
+        session_id=session_id,
+        ttl=600
+    )
+    memory = ConversationBufferWindowMemory(
+        memory_key = 'chat_history',
+        input_key = 'question',
+        output_key = 'answer', 
+        return_messages = True,
+        chat_memory=history,
+        k=6
+    )
+    namespace = get_matching_namespace(conference_id=conference_id)
+    vectordb = Pinecone.from_existing_index(index_name=index_name, embedding=embedding_function, namespace=namespace, text_key = 'csv_text')
+    chain = ConversationalRetrievalChain.from_llm(llm=ChatOpenAI(temperature=0.3, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key),
+                                                retriever=vectordb.as_retriever(search_kwargs={'k':4}), return_source_documents=True,
+                                                combine_docs_chain_kwargs={'prompt':prompt},
+                                                memory = memory,
+                                                get_chat_history = lambda h : h)
+    return chain({'question': question, 'timestamp': datetime.now()}, {'configurations': {"session_id": session_id}})
 
 async def retrieve_answer_stream(question, conference_id, session_id):
     namespace = get_matching_namespace(conference_id=conference_id)

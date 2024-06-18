@@ -6,6 +6,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Security, UploadFile, status
 from fastapi.responses import StreamingResponse
 from app.crud.aitokens_crud import insert_aitoken
+from app.crud.attendee_crud import get_attendees_by_user_id
 from app.crud.speakers_crud import get_speaker_uuid_by_email
 from app.file_reader import read_file_return_csv
 from app.pinecone_operations import arranging_ouput_object, create_namespace, create_vector_db, delete_namespace, delete_vector_db
@@ -69,11 +70,12 @@ async def query_by_conference_id(query_input:QueryInput, db: Session = Depends(g
     start_time = datetime.utcnow()
     conference_id = query_input.conference_id
     question = query_input.question
+    attendee = get_attendees_by_user_id(db, current_user.id)
     conference = conferences_crud.get_conference_by_conference_uuid(db, conference_id)  
     if not conference:
         logging.exception("Conference not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conference not found")
-    data = query_document(question,conference_id)
+    data = query_document(question,conference_id,attendee.uuid)
     end_time = datetime.utcnow()
     processing_time = (end_time - start_time).total_seconds()
     data = json.loads(data)
