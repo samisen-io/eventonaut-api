@@ -173,7 +173,7 @@ def update_ticket(ticket_id: str, db: Session):
     tickets = get_tickets_by_attendee_id_and_event_id(db, order.attendee_id, order.event_id)
     template_id = 'tem-cbd6cb4a-fff3-4778-94a4-59b737561cdf'
     template = get_master_template_by_id(db, template_id)
-    pdf_ticket = generate_pdf_tickets(db, tickets, template, event, order, order_item, upload=True)
+    pdf_ticket = generate_pdf_tickets(db, tickets, template, event, upload=True)
     ticket_ids = []
     for ticket in tickets:
         ticket.ticket_url = pdf_ticket['url']
