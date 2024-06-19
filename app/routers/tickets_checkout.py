@@ -1,8 +1,13 @@
 from datetime import datetime
 import json
-from fastapi import APIRouter, HTTPException, Depends, status
+from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
+from app.crud.master_template_crud import get_master_template_by_id
 from app.crud.registration_order_crud import registration_order_item_mapper, registration_order_mapper, create_db_order, get_registration_order, deduct_tickets_from_available_quantity, add_tickets
+from app.crud.registration_order_crud_temp import get_registration_order_by_id
+from app.crud.registration_order_item_crud import get_registration_order_item_by_id
+from app.crud.registration_ticket_crud_temp import get_registration_ticket_by_ticket_id, get_tickets_by_attendee_id_and_event_id, update_registration_ticket
+from app.report_generation_operations import generate_pdf_tickets
 from ..dependencies import get_db
 import uuid
 from ..crud import redis_crud, conferences_crud, attendee_crud, registration_setup_crud, transaction_crud
@@ -19,6 +24,7 @@ import os
 import razorpay
 from ..crud import razorpay as razorpay_crud
 from ..static_enums import transaction_types as t_type, transaction_methods as t_method
+import logging
 
 router = APIRouter(tags=["checkout"])
 
@@ -36,8 +42,10 @@ async def get_all_available_tickets(event_id: str, db: Session = Depends(get_db)
             raise HTTPException(status_code=404, detail=f"Conference {event_id} not found")
         return available_tickets_for_event(db, conference)
     except HTTPException as e:
+        logging.exception(str(e))
         raise e
     except Exception as e:
+        logging.exception(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/checkout", response_model=CheckoutResponse)
@@ -69,6 +77,7 @@ async def checkout_details(details: Details, db: Session = Depends(get_db), user
     session_bytes = redis_crud.get_session_from_redis(details.session_id)
     if session_bytes is None:
         redis_crud.remove_session_from_list(details.event_id, details.session_id)
+        logging.exception(f"Session {details.session_id} not found")
         raise HTTPException(status_code=404, detail=f"Session {details.session_id} not found")
     session = json.loads(session_bytes)
     attendee = attendee_crud.get_attendee_by_email(db, details.email)
@@ -113,7 +122,7 @@ async def create_order(create_order_request: CreateOrderRequest, db: Session = D
     return response
 
 @router.post("/checkout/confirm-order", response_model=list[Ticket])
-async def confirm_order(confirm_order_request: ConfirmOrderRequest, db: Session = Depends(get_db), user = Depends(basic_auth)):
+async def confirm_order(confirm_order_request: ConfirmOrderRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db), user = Depends(basic_auth)):
     conference = conferences_crud.get_conference(db, confirm_order_request.event_id)
     if conference is None:
         logging.exception(f"Conference {confirm_order_request.event_id} not found")
@@ -148,4 +157,27 @@ async def confirm_order(confirm_order_request: ConfirmOrderRequest, db: Session 
     tickets = add_tickets(db, reg_order, conference.uuid)
     redis_crud.delete_data_from_redis(confirm_order_request.session_id)
     redis_crud.remove_session_from_list(confirm_order_request.event_id, confirm_order_request.session_id)
+    
+    for ticket in tickets:
+        background_tasks.add_task(update_ticket, ticket.ticket_id, db)
+        
     return tickets
+
+def update_ticket(ticket_id: str, db: Session):
+    ticket = get_registration_ticket_by_ticket_id(db, ticket_id)
+    if not ticket:
+        raise HTTPException(status_code=404, detail='Ticket not found')
+    order_item = get_registration_order_item_by_id(db, ticket.registration_order_item_id)
+    order = get_registration_order_by_id(db, order_item.registration_order_id)
+    event = conferences_crud.get_conference_by_id(db, order.event_id)
+    tickets = get_tickets_by_attendee_id_and_event_id(db, order.attendee_id, order.event_id)
+    template_id = 'tem-cbd6cb4a-fff3-4778-94a4-59b737561cdf'
+    template = get_master_template_by_id(db, template_id)
+    pdf_ticket = generate_pdf_tickets(db, tickets, template, event, order, order_item, upload=True)
+    ticket_ids = []
+    for ticket in tickets:
+        ticket.ticket_url = pdf_ticket['url']
+        update_registration_ticket(db, ticket.ticket_id, ticket)
+        logging.info(f"Ticket {ticket.ticket_id} updated with url {pdf_ticket['url']}")
+        ticket_ids.append(ticket.ticket_id)
+    logging.info(f"Tickets {ticket_ids} updated successfully")

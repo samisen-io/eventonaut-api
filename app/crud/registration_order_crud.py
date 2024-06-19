@@ -77,7 +77,20 @@ def add_tickets(db: Session, registration_order: models.RegistrationOrder, event
             ticket.registration_order_item_id = registration_order_item.id
             db.add(ticket)
     db.commit()
-    db_tickets = db.query(models.RegistrationTicket).join(models.RegistrationOrderItem, models.RegistrationOrderItem.id == models.RegistrationTicket.registration_order_item_id).join(models.RegistrationSetupItem, models.RegistrationOrderItem.registration_setup_item_id == models.RegistrationSetupItem.id).options(contains_eager(models.RegistrationTicket.registration_order_item).contains_eager(models.RegistrationOrderItem.registration_order), contains_eager(models.RegistrationTicket.registration_order_item).contains_eager(models.RegistrationOrderItem.registration_setup_item)).filter(models.RegistrationTicket.registration_order_item_id.in_([item.id for item in registration_order.registration_order_item])).all()
+    
+    db_tickets = db.query(models.RegistrationTicket)\
+    .join(models.RegistrationOrderItem, models.RegistrationOrderItem.id == models.RegistrationTicket.registration_order_item_id)\
+    .join(models.RegistrationSetupItem, models.RegistrationOrderItem.registration_setup_item_id == models.RegistrationSetupItem.id)\
+    .join(models.RegistrationOrder, models.RegistrationOrder.id == models.RegistrationOrderItem.registration_order_id)\
+    .options(
+        contains_eager(models.RegistrationTicket.registration_order_item)
+            .contains_eager(models.RegistrationOrderItem.registration_order),
+        contains_eager(models.RegistrationTicket.registration_order_item)
+            .contains_eager(models.RegistrationOrderItem.registration_setup_item)
+    )\
+    .filter(models.RegistrationTicket.registration_order_item_id.in_([item.id for item in registration_order.registration_order_item]))\
+    .all()
+    
     for ticket in db_tickets:
         tickets.append(TicketMapper(ticket, event_id))
     return tickets
