@@ -86,7 +86,7 @@ def create_order_item(order_item: RegistrationOrderItemInput, current_user: User
         new_ticket = create_registration_ticket(db, RegistrationTicketCreate(registration_order_item_id=order_item.id), tid_str)
         db.commit()
         tickets.append(new_ticket)
-    pdf_ticket = generate_pdf_tickets(db, tickets[0],template, event, order, order_item, upload=True)
+    pdf_ticket = generate_pdf_tickets(db, tickets,template, event, upload=True)
     for ticket in tickets:
         ticket.ticket_url = pdf_ticket['url']
         update_registration_ticket(db, ticket.ticket_id, ticket)

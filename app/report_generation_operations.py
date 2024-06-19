@@ -81,7 +81,7 @@ def generate_input_data(db, ticket, event, registration_order, registration_orde
         'orderNumber': registration_order.order_id,
         'logo': event.conference_banner_url,
         'ticketType': 'General Admission' if registration_setup_item is None else registration_setup_item.name,
-        'tickteID': ticket.ticket_id,
+        'ticketID': ticket.ticket_id,
         'address': f"{event.venue.name}, {event.venue.address}",
         'dateTime': f"{event.start_date.strftime('%A, %d %B %Y')} to {event.end_date.strftime('%A, %d %B %Y')}",
         'orderType': 'Free Order',
@@ -110,36 +110,8 @@ def generate_pdf_ticket(db, ticket, template, event, registration_order, registr
     except Exception as e:
         os.remove(temp_file)
         raise HTTPException(status_code=500, detail='Error generating ticket')
-    
-def generate_pdf_tickets(db, ticket, template, event, registration_order, registration_order_item):
-    tickets = get_registration_tickets_by_registration_order_item_id(db, ticket.registration_order_item_id)
-    temp_file = download_the_template(template.template_url)
-    writer = PdfWriter()
-    for ticket in tickets:
-        ticket_data = generate_input_data(db, ticket, event, registration_order, registration_order_item, True)
-        html = render_pug_template(temp_file, ticket_data)
-        pdf_io = BytesIO()
-        try:
-            pdf = HTML(string=html).write_pdf()
-            pdf_io.write(pdf)
-            if pdf_io.tell() > 0:
-                pdf_io.seek(0)
-                reader = PdfReader(pdf_io)
-                writer.add_page(reader.pages[0])
-            else:
-                raise HTTPException(status_code=500, detail='Error generating ticket')
-        except Exception as e:
-            raise HTTPException(status_code=500, detail='Error generating ticket')
-    if os.path.exists(temp_file):
-        os.remove(temp_file)
 
-    output_pdf_io = BytesIO()
-    writer.write(output_pdf_io)
-    output_pdf_io.seek(0)
-
-    return output_pdf_io
-
-def generate_pdf_tickets(db, tickets, template, event, registration_order, registration_order_item, upload=False):
+def generate_pdf_tickets(db, tickets, template, event, upload=False):
     temp_file = download_the_template(template.template_url)
     writer = PdfWriter()
     for ticket in tickets:

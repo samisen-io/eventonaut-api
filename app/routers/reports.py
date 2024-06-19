@@ -36,48 +36,6 @@ from sqlalchemy.orm import joinedload
 
 router = APIRouter(tags = ['reports'])
 
-@router.post('/create_ticket')
-def create_ticket(ticket_input: ticket_schemas.CreateTicket, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
-    current_user_id = current_user.id
-    attendee = get_attendees_by_user_id(db, current_user_id)
-    event = get_conference_by_conference_uuid(db, ticket_input.event_id)
-    registration_order_db = RegistrationOrderCreate(
-        event_id=event.id,
-        attendee_id=attendee.id,
-        amount=ticket_input.amount,
-        tax_amount=ticket_input.tax_amount,
-        fee_amount=ticket_input.fee_amount,
-    )
-    registration_order_db = create_registration_order(db,registration_order_db)
-    registration_order_item_type_code = get_registration_order_item_type_by_code(db, ticket_input.code).code
-    registration_order_item_db = RegistrationOrderItemCreate(
-        registration_order_id= registration_order_db.id,
-        description= ticket_input.description,
-        quantity= ticket_input.quantity,
-        unit_price= registration_order_db.total_amount,
-        total_amount= (registration_order_db.total_amount*ticket_input.quantity),
-        registration_setup_item_id= ticket_input.registration_setup_item_id,
-        code= registration_order_item_type_code
-    )
-    registration_order_item_db = create_registration_order_item(db, registration_order_item_db)
-    template_id = 'tem-cbd6cb4a-fff3-4778-94a4-59b737561cdf'
-    template = get_master_template_by_id(db, template_id)
-    tickets = []
-    for _ in range(ticket_input.quantity):
-        new_ticket = create_registration_ticket(db, reg_ticket_schemas.RegistrationTicketCreate(registration_order_item_id=registration_order_item_db.id))
-        db.commit()
-        tickets.append(new_ticket)
-    pdf_ticket = generate_pdf_tickets(db, tickets[0],template, event, registration_order_db, registration_order_item_db, upload=True)
-    for ticket in tickets:
-        ticket.ticket_url = pdf_ticket['url']
-        update_registration_ticket(db, ticket.ticket_id, ticket)
-    return tickets
-
-@router.delete('/delete_registration_order_item/{uuid}')
-def delete_order_item(uuid: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
-    delete_registration_order_item(db, uuid)
-    return True
-
 @router.get('/get_order_items/')
 def get_order_items(offset: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
     attendee = get_attendees_by_user_id(db, current_user.id)
@@ -216,7 +174,7 @@ def update_ticket(ticket_id: str, db: Session = Depends(get_db)):
     tickets = get_tickets_by_attendee_id_and_event_id(db, order.attendee_id, order.event_id)
     template_id = 'tem-cbd6cb4a-fff3-4778-94a4-59b737561cdf'
     template = get_master_template_by_id(db, template_id)
-    pdf_ticket = generate_pdf_tickets(db, tickets, template, event, order, order_item, upload=True)
+    pdf_ticket = generate_pdf_tickets(db, tickets, template, event, upload=True)
     ticket_ids = []
     for ticket in tickets:
         ticket.ticket_url = pdf_ticket['url']
