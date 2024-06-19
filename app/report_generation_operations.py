@@ -81,7 +81,7 @@ def generate_input_data(db, ticket, event, registration_order, registration_orde
         'orderNumber': registration_order.order_id,
         'logo': event.conference_banner_url,
         'ticketType': 'General Admission' if registration_setup_item is None else registration_setup_item.name,
-        'ticketID': ticket.ticket_id,
+        'tickteID': ticket.ticket_id,
         'address': f"{event.venue.name}, {event.venue.address}",
         'dateTime': f"{event.start_date.strftime('%A, %d %B %Y')} to {event.end_date.strftime('%A, %d %B %Y')}",
         'orderType': 'Free Order',
