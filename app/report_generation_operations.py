@@ -13,9 +13,12 @@ from weasyprint import HTML
 import qrcode
 from app.crud.attendee_crud import get_an_attendee_by_id, get_attendee_by_id
 from app.crud.organization_crud import get_organization_by_id
+from app.crud.registration_order_crud_temp import get_registration_order_by_id
+from app.crud.registration_order_item_crud import get_registration_order_item_by_id
 from app.crud.registration_setup_item_crud import get_registration_setup_item
 from app.crud.registration_ticket_crud_temp import get_registration_ticket_by_ticket_id, get_registration_tickets_by_registration_order_item_id
 from app.crud.users_crud import get_user
+from app.models import Conference
 from app.routers import upload_image
 from PyPDF2 import PdfFileMerger, PdfFileReader, PdfFileWriter, PdfReader, PdfWriter
 
@@ -69,44 +72,30 @@ def generate_report_using_template(template, input_data):
         except Exception as e:
             raise HTTPException(status_code=500, detail='Error generating report')
 
-def generate_input_data(db, ticket, event, registration_order, registration_order_item):
-    ticket_id = ticket.id
-    organization = get_organization_by_id(db, event.organization_id)
-    venue = event.venue
-    address = f"{venue.name}, {venue.address}"
-    date = f"{event.start_date.strftime('%A, %d %B %Y')} to {event.end_date.strftime('%A, %d %B %Y')}"
-    attendee = get_an_attendee_by_id(db, registration_order.attendee_id)
-    user = get_user(db, attendee.user_id)
-    user_name = f"{user.first_name} {user.last_name}"
-    order_date = registration_order.created_on.strftime('%d %B %Y')
-    order_time = registration_order.created_on.strftime('%H:%M')
-    print(registration_order_item.registration_setup_item_id)
+def generate_input_data(db, ticket, event, registration_order, registration_order_item, download=False):
     registration_setup_item = get_registration_setup_item(db, registration_order_item.registration_setup_item_id)
-    if registration_setup_item is None:
-        registration_setup_item_name = 'General Admission'
-    else:
-        registration_setup_item_name = registration_setup_item.name
-    qrCode = generate_qr_code(ticket.ticket_id, event.uuid)
+    user = get_user(db, get_an_attendee_by_id(db, registration_order.attendee_id).user_id)
     input_data = {
-        'title': organization.name, 
+        'title': get_organization_by_id(db, event.organization_id).name, 
         'event': event.name, 
         'orderNumber': registration_order.order_id,
         'logo': event.conference_banner_url,
-        'ticketType': registration_setup_item_name,
+        'ticketType': 'General Admission' if registration_setup_item is None else registration_setup_item.name,
         'tickteID': ticket.ticket_id,
-        'address': address,
-        'dateTime': date,
+        'address': f"{event.venue.name}, {event.venue.address}",
+        'dateTime': f"{event.start_date.strftime('%A, %d %B %Y')} to {event.end_date.strftime('%A, %d %B %Y')}",
         'orderType': 'Free Order',
-        'customerName': user_name,
-        'orderDate': order_date,
-        'orderTime': order_time,
-        'qrCode': qrCode
+        'customerName': f"{user.first_name} {user.last_name}",
+        'orderDate': registration_order.created_on.strftime('%d %B %Y'),
+        'orderTime': registration_order.created_on.strftime('%H:%M')
     }
+    if download:
+        input_data['qrCode'] = generate_qr_code(ticket.ticket_id, event.uuid)
     return input_data
 
 def generate_pdf_ticket(db, ticket, template, event, registration_order, registration_order_item):
     temp_file = download_the_template(template.template_url)
-    input_data = generate_input_data(db, ticket, event, registration_order, registration_order_item)
+    input_data = generate_input_data(db, ticket, event, registration_order, registration_order_item, True)
     html = render_pug_template(temp_file, input_data)
     pdf_io = BytesIO()
     try:
@@ -121,41 +110,14 @@ def generate_pdf_ticket(db, ticket, template, event, registration_order, registr
     except Exception as e:
         os.remove(temp_file)
         raise HTTPException(status_code=500, detail='Error generating ticket')
-    
-def generate_pdf_tickets(db, ticket, template, event, registration_order, registration_order_item):
-    tickets = get_registration_tickets_by_registration_order_item_id(db, ticket.registration_order_item_id)
+
+def generate_pdf_tickets(db, tickets, template, event, upload=False):
     temp_file = download_the_template(template.template_url)
     writer = PdfWriter()
     for ticket in tickets:
-        ticket_data = generate_input_data(db, ticket, event, registration_order, registration_order_item)
-        html = render_pug_template(temp_file, ticket_data)
-        pdf_io = BytesIO()
-        try:
-            pdf = HTML(string=html).write_pdf()
-            pdf_io.write(pdf)
-            if pdf_io.tell() > 0:
-                pdf_io.seek(0)
-                reader = PdfReader(pdf_io)
-                writer.add_page(reader.pages[0])
-            else:
-                raise HTTPException(status_code=500, detail='Error generating ticket')
-        except Exception as e:
-            raise HTTPException(status_code=500, detail='Error generating ticket')
-    if os.path.exists(temp_file):
-        os.remove(temp_file)
-
-    output_pdf_io = BytesIO()
-    writer.write(output_pdf_io)
-    output_pdf_io.seek(0)
-
-    return output_pdf_io
-
-def generate_pdf_tickets(db, tickets, template, event, registration_order, registration_order_item, upload=False):
-    # tickets = get_registration_tickets_by_registration_order_item_id(db, ticket.registration_order_item_id)
-    temp_file = download_the_template(template.template_url)
-    writer = PdfWriter()
-    for ticket in tickets:
-        ticket_data = generate_input_data(db, ticket, event, registration_order, registration_order_item)
+        registration_order_item = get_registration_order_item_by_id(db, ticket.registration_order_item_id)
+        registration_order = get_registration_order_by_id(db, registration_order_item.registration_order_id)
+        ticket_data = generate_input_data(db, ticket, event, registration_order, registration_order_item, True)
         html = render_pug_template(temp_file, ticket_data)
         pdf_io = BytesIO()
         try:
@@ -186,46 +148,29 @@ def generate_pdf_tickets(db, tickets, template, event, registration_order, regis
 
 def generate_invoice_input_data(db, event, registration_order, order_items, user):
     p = inflect.engine()
-    items = []
-    order = registration_order
-    for i in range(len(order_items)):
-        item = order_items[i]
-        # order = registration_order[i]
-        setup_item = get_registration_setup_item(db, item.registration_setup_item_id)
-        items.append({
-            'order_item_type': item.code.capitalize(),
-            'description': setup_item.name,
-            'quantity': item.quantity,
-            'price': order.amount,
-            'tax': order.tax_amount,
-            'fee': order.fee_amount
-        })
-    subtotal = sum(item['price'] * item['quantity'] for item in items)
-    tax = sum(item['tax'] for item in items)
-    fee = sum(item['fee'] for item in items)
-    total = subtotal + tax + fee
-    
+    items = [{'order_item_type': item.code.capitalize(),
+              'description': get_registration_setup_item(db, item.registration_setup_item_id).name,
+              'quantity': item.quantity,
+              'price': item.unit_price,
+              'amount': item.total_amount} for item in order_items]
     organization = get_organization_by_id(db, event.organization_id)
-    current_date = date.today().strftime("%d %B %Y")
-    total_in_words = p.number_to_words(total)
-    input_data = {
+    company_address = organization.address or 'Address Not Provided'
+    logo = organization.logo_image_url or 'https://conferencebuddydev.blob.core.windows.net/temporary-images/dyn-6208be2d-cc2e-4581-a4b5-c20b505e4142-default_organization.png'
+    return {
+        'logo': logo,
         'company_name': organization.name,
-        'company_address': organization.address,
+        'company_address': company_address,
         'customer_name': (user.first_name + ' ' + user.last_name).title(),
         'customer_email': user.email,
-        'date_issued': current_date,
-        'invoice_number': order.order_id,
+        'date_issued': date.today().strftime("%d %B %Y"),
+        'invoice_number': registration_order.order_id,
         'items': items,
-        'subtotal': subtotal,
-        'tax': tax,
-        'fee': fee,
-        'total': total,
-        'total_in_words': total_in_words,
-        'eco_name': 'Samisen Distributed Technologies Pvt. Ltd. (Eventonaut)',
-        'eco_address': 'Awfis, Lorven Tiara, Awfis, Lorven Tiara, Kondapur 500084, India',
-        'gst': '36AABCI2726B1Z'
+        'subtotal': registration_order.amount,
+        'tax': registration_order.tax_amount,
+        'fee': registration_order.fee_amount,
+        'total': registration_order.total_amount,
+        'total_in_words': p.number_to_words(registration_order.total_amount)
     }
-    return input_data
         
 def generate_pdf_invoice(db, template, event, registration_order, order_items, user):
     temp_file = download_the_template(template.template_url)

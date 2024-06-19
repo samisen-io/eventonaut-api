@@ -3,6 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import os
 from dotenv import load_dotenv
+import logging
 
 security = HTTPBasic()
 
@@ -28,6 +29,7 @@ def basic_auth(credentials: HTTPBasicCredentials = Depends(security)):
     if is_username_correct and is_password_correct:
         return True
     
+    logging.error("Incorrect email or password")
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect email or password",

@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime
 import redis
@@ -41,17 +42,13 @@ def save_session_to_redis(key, value):
     return expire_timestamp
 
 def update_session_in_redis(key, value):
-    expiration_timer = r.ttl(key)
-    if expiration_timer > 0:
-        value_str = json.dumps(value)
-        r.set(key, value_str, ex=expiration_timer)
-        expiration_time = r.pttl(key)
-        if expiration_time > 0:
-            expire_timestamp = datetime.fromtimestamp(time.time() + expiration_time / 1000.0)
-        else:
-            expire_timestamp = None
+    value_str = json.dumps(value)
+    r.set(key, value_str)
+    expiration_time = r.pttl(key)
+    if expiration_time > 0:
+        expire_timestamp = datetime.fromtimestamp(time.time() + expiration_time / 1000.0)
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session {key} expired")
+        expire_timestamp = None
     return expire_timestamp
 
 def save_list_of_sessions_to_redis(key, value):

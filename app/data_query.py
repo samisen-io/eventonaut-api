@@ -47,7 +47,10 @@ embedding_function = OpenAIEmbeddings()
 template_for_streaming = """
 Your name is Eventobot and you are friendly and helpful in nature. \
 You are an assistant for an event. \
-You are helping a participant to query about the conference. \
+You are helping a participant to query about an event. \
+An event could be a conference which may contain session, speakers, attendees, etc. \
+or it could be a trade show which may contain exhibitors, attendees, etc. \
+or it may be an event which may not be either of the above. \
 If you dont know the answer, you can say "I don't know" and suggest to access the other conferences/events to get the correct answers. \
 You dont provide any type of ID details including the uuids, if asked just say that you cant provide any id details. \
 This is the current date and time to provide answers to the date related questions.\
@@ -66,7 +69,10 @@ prompt_for_streaming = ChatPromptTemplate.from_template(template_for_streaming)
 template = """
 Your name is Eventobot and you are friendly and helpful in nature. \
 You are an assistant for an evemt. \
-You are helping a participant to query about the conference. \
+You are helping a participant to query about the an event. \
+An event could be a conference which may contain session, speakers, attendees, etc. \
+or it could be a trade show which may contain exhibitors, attendees, etc. \
+or it may be an event which may not be either of the above. \
 If you dont know the answer, you can say "I don't know" and suggest to access the other conferences/events to get the correct answers. \
 You dont provide any type of ID details including the uuids, if asked just say that you cant provide any id details. \
 This is the current date and time to provide answers to the date related questions.\
@@ -93,7 +99,7 @@ def retrieve_answer(question, conference_id):
     return chain({"question": question, "chat_history": history, "timestamp": datetime.now()})
 
 def query_document(question, conference_id, session_id):
-    session_id = "chat_"+session_id
+    session_id = "chat_"+session_id+conference_id
     with get_openai_callback() as cb:
         result = retrieve_answer_redis(question=question, conference_id=conference_id, session_id=session_id)
     cb_dict = {k: cb.__dict__[k] for k in ('total_cost', 'total_tokens', 'prompt_tokens', 'completion_tokens', 'successful_requests')}
@@ -132,7 +138,7 @@ def retrieve_answer_redis(question, conference_id, session_id):
     namespace = get_matching_namespace(conference_id=conference_id)
     vectordb = Pinecone.from_existing_index(index_name=index_name, embedding=embedding_function, namespace=namespace, text_key = 'csv_text')
     chain = ConversationalRetrievalChain.from_llm(llm=ChatOpenAI(temperature=0.3, model_name='gpt-3.5-turbo-1106', openai_api_key=api_key),
-                                                retriever=vectordb.as_retriever(search_kwargs={'k':4}), return_source_documents=True,
+                                                retriever=vectordb.as_retriever(search_kwargs={'k':6}), return_source_documents=True,
                                                 combine_docs_chain_kwargs={'prompt':prompt},
                                                 memory = memory,
                                                 get_chat_history = lambda h : h)

@@ -12,10 +12,12 @@ def check_for_extra_tickets(checkout_request: CheckoutRequest, available_tickets
     available_tickets_dict = {item.uuid: item.available_quantity for item in available_tickets.registration_setup_items}
 
     if all(ticket.count == 0 for ticket in checkout_request.tickets):
+        logging.exception("Select at least one ticket")
         raise HTTPException(status_code=400, detail="Select at least one ticket")
 
     extra_tickets = [{'ticket_id': ticket.id, 'extra_ticket_count': ticket.count - available_tickets_dict[ticket.id]} for ticket in checkout_request.tickets if ticket.id in available_tickets_dict and ticket.count > available_tickets_dict[ticket.id]]
     if extra_tickets:
+        logging.exception(f"Extra tickets: {extra_tickets}")
         raise HTTPException(status_code=400, detail={"Extra tickets": extra_tickets})
     
 def verify_ticket_types(checkout_request: CheckoutRequest, available_tickets: RegistrationSetupResponse):
@@ -25,6 +27,7 @@ def verify_ticket_types(checkout_request: CheckoutRequest, available_tickets: Re
     invalid_ticket_types = [ticket for ticket in checkout_ticket_types if ticket not in available_ticket_types]
     
     if invalid_ticket_types:
+        logging.exception(f"Invalid ticket types: {invalid_ticket_types}")
         raise HTTPException(status_code=400, detail=f"Invalid ticket types: {invalid_ticket_types}")
 
 def available_tickets_for_event(db: Session, event: models.Conference):

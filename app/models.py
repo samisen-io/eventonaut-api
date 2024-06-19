@@ -602,6 +602,8 @@ class OrganizationSettings(Base):
     organization_id = Column(Integer, ForeignKey("organization.id"))
     event_brite_org_id = Column(String, index=True)
     event_brite_access_token = Column(String, index=True)
+    razorpay_key = Column(String, index=True)
+    razorpay_secret = Column(String, index=True)
 
     organization = relationship("Organization", back_populates="organization_settings")
     
