@@ -3,6 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query, Security
 from fastapi.responses import StreamingResponse
 import requests
+import sqlalchemy
 
 from app.basicauth import basic_auth
 from app.crud.attendee_crud import get_an_attendee_by_id, get_attendees_by_user_id
@@ -22,6 +23,7 @@ from app.schemas.conference_schemas import ConferenceResponse
 from app.schemas.registration_order_item_schema_temp import RegistrationOrderItem, RegistrationOrderItemCreate, RegistrationOrderItemResponse
 from app.models import RegistrationOrder as RegistrationOrderModel
 from app.models import RegistrationOrderItem as RegistrationOrderItemModel
+from app.models import Conference as ConferenceModel
 from app.schemas.registration_order_schema_temp import RegistrationOrder, RegistrationOrderCreate
 from app.schemas.report_schemas import Report
 from app.schemas.user_schemas import User
@@ -76,8 +78,8 @@ def delete_order_item(uuid: str, db: Session = Depends(get_db), current_user: Us
     delete_registration_order_item(db, uuid)
     return True
 
-@router.get('/get_orders_items/')
-def get_orders_items(db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
+@router.get('/get_order_items/')
+def get_order_items(offset: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name,])):
     attendee = get_attendees_by_user_id(db, current_user.id)
     if not attendee:
         raise HTTPException(status_code=404, detail='Attendee not found')
@@ -86,13 +88,16 @@ def get_orders_items(db: Session = Depends(get_db), current_user: User = Securit
         joinedload(RegistrationOrderItemModel.registration_ticket),
         joinedload(RegistrationOrderItemModel.registration_order).joinedload(RegistrationOrderModel.conference)  # eager load the related Conference data
     ).filter(
-        RegistrationOrderItemModel.registration_order_id == RegistrationOrderModel.id,
-        RegistrationOrderModel.attendee_id == attendee.id
-    ).all()
+        sqlalchemy.and_(
+            RegistrationOrderItemModel.registration_order_id == RegistrationOrderModel.id,
+            RegistrationOrderModel.attendee_id == attendee.id,
+            RegistrationOrderModel.payment_status == 'paid',
+            db.query(ConferenceModel.id).filter(ConferenceModel.id == RegistrationOrderModel.event_id, ConferenceModel.is_archived == False).exists()
+        )
+    ).offset(offset).limit(limit).all()
     registration_order_items_schemas = [
         create_schema(item, db) for item in registration_order_items
     ]
-
     return registration_order_items_schemas
     
 @router.get('/get_ticket/{ticket_id}', response_model=ticket_schemas.TicketDataResponse)
@@ -104,7 +109,10 @@ def get_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: User 
     registration_order = get_registration_order_by_id(db, registration_order_item.registration_order_id)
     event_id = registration_order.event_id
     event = get_conference_by_id(db, event_id)
-    ticket_data = generate_input_data(db, ticket, event, registration_order, registration_order_item)
+    if event is None:
+        print(event_id)
+        raise HTTPException(status_code=404, detail='Event not found')
+    ticket_data = generate_input_data(db=db, ticket=ticket, event=event, registration_order=registration_order, registration_order_item=registration_order_item, download=False)
     return {'ticket_data': ticket_data, 'event': event, 'registration_order': registration_order, 'registration_order_item': registration_order_item}
 
 @router.get('/download_ticket/{ticket_id}')
@@ -182,7 +190,7 @@ def create_schema(item, db):
         registration_order = item.registration_order
         event = registration_order.conference
         ticket_data_list = [
-            generate_input_data(db, ticket, event, registration_order, item) for ticket in item.registration_ticket
+            generate_input_data(db, ticket, event, registration_order, item, False) for ticket in item.registration_ticket
         ]
         event_dict = conference_to_dict(event)
         event_dict['location'] = event.location
@@ -196,13 +204,15 @@ def create_schema(item, db):
 
     return schema
 
-def update_ticket(ticket_id: str, db: Session):
+def update_ticket(ticket_id: str, db: Session = Depends(get_db)):
     ticket = get_registration_ticket_by_ticket_id(db, ticket_id)
     if not ticket:
         raise HTTPException(status_code=404, detail='Ticket not found')
     order_item = get_registration_order_item_by_id(db, ticket.registration_order_item_id)
     order = get_registration_order_by_id(db, order_item.registration_order_id)
     event = get_conference_by_id(db, order.event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail='Event not found')
     tickets = get_tickets_by_attendee_id_and_event_id(db, order.attendee_id, order.event_id)
     template_id = 'tem-cbd6cb4a-fff3-4778-94a4-59b737561cdf'
     template = get_master_template_by_id(db, template_id)

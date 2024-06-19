@@ -56,8 +56,9 @@ def items_sold_and_available(event_id: str, db: Session = Depends(get_db), curre
     setup_items = get_registration_setup_items_by_event_id(db, event.id)
     total_sold = 0
     total_available = 0
+    total_items = 0
     for setup_item in setup_items:
-        order_items = get_registration_order_items_by_registration_setup_item_id(db, setup_item.id)
-        total_sold += sum([order_item.quantity for order_item in order_items])
         total_available += setup_item.available_quantity
+        total_items += setup_item.total_quantity
+    total_sold = total_items - total_available
     return [{"category": "Total items available", "value": total_available}, {"category": "Total items sold", "value": total_sold}]
