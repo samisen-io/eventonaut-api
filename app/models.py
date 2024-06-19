@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy import UniqueConstraint
 from .database import Base
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import text
 
 class Organization(Base):
     __tablename__ = "organization"
