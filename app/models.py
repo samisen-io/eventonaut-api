@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship, backref
 from sqlalchemy import UniqueConstraint
 from .database import Base
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy import text
 
 class Organization(Base):
     __tablename__ = "organization"
@@ -716,7 +717,7 @@ class RegistrationOrder(Base):
     total_amount = Column(Float, index=True)
     payment_status = Column(String, index=True, default="unpaid")
     external_order_id = Column(String, index=True)
-    order_id = Column(String, Computed("((event_id::text || '-'::text) || attendee_id::text) || '-'::text) || id::text"), index=True)
+    order_id = Column(String, Computed(text("((event_id::text || '-'::text) || attendee_id::text) || '-'::text) || id::text")), index=True)
     
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order")
     conference = relationship("Conference", back_populates="registration_order")
