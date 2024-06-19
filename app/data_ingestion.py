@@ -202,6 +202,7 @@ def write_session_docs(db, conference_id, namespace):
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
     session_documents = get_session_document_by_conference_id(db, conference.id)
+    status = None
     for session_document in session_documents:
         status = process_document(session_document, namespace)
     if status:
@@ -213,6 +214,7 @@ def write_event_docs(db, conference_id, namespace):
     if not conference:
         raise HTTPException(status_code=404, detail="Conference not found")
     event_docs = get_event_documents_by_conference_id(db, conference.id)
+    status = None
     for event_doc in event_docs:
         status = process_document(event_doc, namespace)
     if status:
@@ -225,6 +227,7 @@ def write_exhibitor_docs(db, conference_id, namespace):
     exhibitors = get_exhibitors(db, conference.id)
     if not exhibitors:
         raise HTTPException(status_code=404, detail="No exhibitors found for this conference_id")
+    status = None
     for exhibitor in exhibitors:
         exhibitor_docs = get_exhibitor_documents_by_exhibitor_id(db, exhibitor.id)
         if exhibitor_docs:
