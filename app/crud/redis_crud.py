@@ -1,6 +1,6 @@
 import logging
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import redis
 import json
 from fastapi import HTTPException, status
@@ -25,7 +25,7 @@ def get_everything():
             value = None
         expiration_time = r.pttl(key)
         if expiration_time > 0:
-            expire_timestamp = datetime.fromtimestamp(time.time() + expiration_time / 1000.0)
+            expire_timestamp = datetime.utcnow() + timedelta(milliseconds=expiration_time)
         else:
             expire_timestamp = None
         keys_values_expirations[key] = {'value': value, 'expiration': expire_timestamp}
@@ -36,7 +36,7 @@ def save_session_to_redis(key, value):
     r.set(key, value_str, ex=session_expire_time)
     expiration_time = r.pttl(key)
     if expiration_time > 0:
-        expire_timestamp = datetime.fromtimestamp(time.time() + expiration_time / 1000.0)
+        expire_timestamp = datetime.utcnow() + timedelta(milliseconds=expiration_time)
     else:
         expire_timestamp = None
     return expire_timestamp
@@ -46,7 +46,7 @@ def update_session_in_redis(key, value):
     r.set(key, value_str)
     expiration_time = r.pttl(key)
     if expiration_time > 0:
-        expire_timestamp = datetime.fromtimestamp(time.time() + expiration_time / 1000.0)
+        expire_timestamp = datetime.utcnow() + timedelta(milliseconds=expiration_time)
     else:
         expire_timestamp = None
     return expire_timestamp
