@@ -68,6 +68,12 @@ def get_attendees(db: Session, skip: int = 0, limit: int = 100):
 # get attendee by email
 def get_attendee_by_email(db: Session, email: str):
     attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.email == email, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
+    user = db.query(models.User).filter(models.User.email == email, models.User.is_archived == False).first()
+    
+    if user and not attendee:
+        logging.error("Email already exists")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already exists")
+    
     if attendee is not None:
         set_attendee_status(attendee)
     return attendee
