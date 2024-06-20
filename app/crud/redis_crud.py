@@ -1,9 +1,6 @@
-import logging
-import time
 from datetime import datetime, timedelta
 import redis
 import json
-from fastapi import HTTPException, status
 import os
 
 redis_host = os.getenv('REDIS_HOST')
