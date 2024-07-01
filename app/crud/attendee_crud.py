@@ -83,7 +83,12 @@ def get_attendee_by_uuid(db: Session, attendee_id: str):
     return db.query(models.Attendee).join(models.Attendee.user).filter(models.Attendee.uuid == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
 
 def get_attendee_by_id(db: Session, attendee_id: int):
-    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
+    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.Attendee.id == attendee_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
+    set_attendee_status(attendee)
+    return attendee
+
+def get_attendee_by_user_id(db: Session, user_id: int):
+    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == user_id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
     set_attendee_status(attendee)
     return attendee
 
