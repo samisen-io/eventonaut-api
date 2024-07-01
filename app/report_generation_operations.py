@@ -11,7 +11,7 @@ from jinja2 import Environment, FileSystemLoader
 from io import BytesIO
 from weasyprint import HTML
 import qrcode
-from app.crud.attendee_crud import get_an_attendee_by_id, get_attendee_by_id
+from app.crud.attendee_crud import get_an_attendee_by_id, get_attendee_by_user_id
 from app.crud.organization_crud import get_organization_by_id
 from app.crud.registration_order_crud_temp import get_registration_order_by_id
 from app.crud.registration_order_item_crud import get_registration_order_item_by_id

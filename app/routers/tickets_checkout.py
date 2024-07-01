@@ -25,6 +25,7 @@ import razorpay
 from ..crud import razorpay as razorpay_crud
 from ..static_enums import transaction_types as t_type, transaction_methods as t_method
 import logging
+from ..otp_generator import send_tickets
 
 router = APIRouter(tags=["checkout"])
 
@@ -138,8 +139,9 @@ async def create_order(create_order_request: CreateOrderRequest, db: Session = D
         registration_order = registration_order_mapper(reg_setup, session, session["attendee_id"])
         registration_order_items = registration_order_item_mapper(reg_setup.registration_setup_items, session)
         
+        total_amount_float = float(registration_order.total_amount)
         razorpay_order = {
-            "amount": int(registration_order.total_amount * 100),
+            "amount": int(total_amount_float * 100),
             "currency": "INR",
             "receipt": registration_order.uuid
         }
@@ -226,3 +228,8 @@ def update_ticket(ticket_id: str, db: Session):
         logging.info(f"Ticket {ticket.ticket_id} updated with url {pdf_ticket['url']}")
         ticket_ids.append(ticket.ticket_id)
     logging.info(f"Tickets {ticket_ids} updated successfully")
+    
+    attendee = attendee_crud.get_attendee_by_id(db, order.attendee_id)
+    
+    send_tickets(receiver_email=attendee.user.email, blob_url=pdf_ticket['url'], subject=f"Tickets for {event.name}")
+    logging.info(f"Tickets sent to {attendee.user.email}")

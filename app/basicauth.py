@@ -13,7 +13,6 @@ client_id = os.getenv("CLIENT_ID")
 client_secret = os.getenv("CLIENT_SECRET")
 
 def basic_auth(credentials: HTTPBasicCredentials = Depends(security)):
-    global user_credentials
     current_username_bytes = credentials.username.encode("utf-8")
     correct_username_bytes = client_id.encode("utf-8")
     is_username_correct = secrets.compare_digest(

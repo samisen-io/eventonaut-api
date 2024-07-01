@@ -12,7 +12,7 @@ router = APIRouter(tags=["attendee_conference"])
 
 @router.post("/attendee/conference", response_model=attendee_conference_schemas.AttendeeConference, status_code=status.HTTP_201_CREATED)
 def create_attendee_conference(attendee_conference: attendee_conference_schemas.AttendeeConferenceCreate, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
-    attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)
+    attendee = crud.get_attendee_by_user_id(db, user_id=current_user.id)
     if not attendee:
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
@@ -32,7 +32,7 @@ def create_attendee_conference(attendee_conference: attendee_conference_schemas.
 
 @router.get("/attendee/conference", response_model=list[conference_schemas.ConferenceResponse])
 def get_all_attendee_conferences(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
-    if not crud.get_attendee_by_id(db, attendee_id=current_user.id):
+    if not crud.get_attendee_by_user_id(db, user_id=current_user.id):
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")
     attendee_conferences = crud.get_all_attendee_conferences(db, skip=skip, limit=limit, attendee_id=current_user.id)
@@ -44,7 +44,7 @@ def get_all_attendee_conferences(skip: int = 0, limit: int = 100, db: Session = 
 
 @router.delete("/attendee/{conference_identifier}")
 def delete_attendee_conference_by_attendee_id_and_conference_id(conference_identifier: str, db: Session = Depends(get_db), current_user: User = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
-    attendee = crud.get_attendee_by_id(db, attendee_id=current_user.id)
+    attendee = crud.get_attendee_by_user_id(db, user_id=current_user.id)
     if not attendee:
         logging.exception("Attendee not found")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attendee not found")

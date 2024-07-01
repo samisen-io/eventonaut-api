@@ -16,7 +16,7 @@ def registration_order_mapper(registration_setup: models.RegistrationSetup, sess
     registration_order.amount = get_total_amount_from_session(registration_setup.registration_setup_items, session)
     registration_order.tax_amount = round(registration_order.amount * registration_setup.tax_rate, 2)
     registration_order.fee_amount = round(registration_order.amount * registration_setup.fee_amount, 2)
-    registration_order.total_amount = round(registration_order.amount + registration_order.tax_amount + registration_order.fee_amount, 2)
+    registration_order.total_amount = "{:.2f}".format(round(registration_order.amount + registration_order.tax_amount + registration_order.fee_amount, 2))
     registration_order.payment_status = PaymentStatus.UNPAID.value
     return registration_order
 
@@ -33,7 +33,7 @@ def registration_order_item_mapper(registration_setup_items: list[models.Registr
         registration_order_item.description = ticket_item.description
         registration_order_item.quantity = ticket["count"]
         registration_order_item.unit_price = ticket_item.price
-        registration_order_item.total_amount = ticket_item.price * ticket["count"]
+        registration_order_item.total_amount = "{:.2f}".format(round(ticket_item.price * ticket["count"], 2))
         registration_order_item.code = OrderItems.TICKET.name
         registration_order_items.append(registration_order_item)
     return registration_order_items
