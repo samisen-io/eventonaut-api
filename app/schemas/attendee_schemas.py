@@ -147,6 +147,7 @@ class AttendeeUpdate(BaseModel):
             except Exception as e:
                 raise ValueError(f"Broken {info.field_name} link or invalid url - {str(e)}")
         return v
+    
 class Attendee(BaseModel):
     uuid: str = Field(serialization_alias="id")
     email: str

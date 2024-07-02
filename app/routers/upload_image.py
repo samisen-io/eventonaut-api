@@ -178,3 +178,16 @@ def get_blob_size_by_url(blob_url):
     except Exception as ex:
         logging.exception(str(ex))
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))
+    
+def download_ticket(blob_url):
+    try:
+        connect_str = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+        url = urlparse(blob_url)
+        container_name = unquote(url.path.split("/")[1])
+        blob_name = unquote("/".join(url.path.split("/")[2:]))
+        blob_client = blob_service_client.get_blob_client(container=container_name, blob=blob_name)
+        blob_data = blob_client.download_blob().readall()
+        return blob_data
+    except Exception as ex:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(ex))

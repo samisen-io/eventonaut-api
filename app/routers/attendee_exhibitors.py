@@ -17,7 +17,7 @@ def attendee_exhibitor_mapper(conference_id: int, exhibitors: list[models.Exhibi
 
 @router.get("/", response_model=schemas.AttendeeExhibitorResponse)
 def get_exhibitors_for_conference(conference_id: str, db: Session = Depends(get_db), current_user: dict = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
-    attendee = attendee_crud.get_attendee_by_id(db, current_user.id)
+    attendee = attendee_crud.get_attendee_by_user_id(db, current_user.id)
     attendee_conference = attendee_crud.get_attendee_conference_by_attendee_id_and_conference_id(db, attendee_id=current_user.id, conference_id=conference_id)
     if attendee_conference is None:
         logging.exception("Attendee not registered for Event")
@@ -34,7 +34,7 @@ def get_exhibitors_for_conference(conference_id: str, db: Session = Depends(get_
 
 @router.put("/", response_model=schemas.AttendeeExhibitorResponse)
 def create_attendee_exhibitor(attendee_exhibitor: schemas.AttendeeExhibitorCreate, db: Session = Depends(get_db), current_user: dict = Security(get_current_active_user, scopes=[RoleEnum.ATTENDEE.name])):
-    attendee = attendee_crud.get_attendee_by_id(db, current_user.id)
+    attendee = attendee_crud.get_attendee_by_user_id(db, current_user.id)
     attendee_conference = attendee_crud.get_attendee_conference_by_attendee_id_and_conference_id(db, attendee_id=current_user.id, conference_id=attendee_exhibitor.conference_id)
     if attendee_conference is None:
         logging.exception("Attendee not registered for Event")
