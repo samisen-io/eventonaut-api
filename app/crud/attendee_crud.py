@@ -30,23 +30,21 @@ def create_attendee(db: Session, attendee: schemas.AttendeeCreate):
     db_user.is_active = True
     db_user.user_status_id = attendee_enum.AttendeeEnum[attendee_status.upper()].value if attendee_status is not None else attendee_enum.AttendeeEnum.ACTIVE.value
     db.add(db_user)
-    db.commit()
+    db.flush()
     db.refresh(db_user)
 
     assign_roles_to_user(db, db_user, [RoleEnum.ATTENDEE.value])
     
     db_attendee = models.Attendee()
-    db_attendee.created_on = datetime.utcnow()
-    db_attendee.updated_on = datetime.utcnow()
+    db_attendee.created_on = db_attendee.updated_on = datetime.utcnow()
+    db_attendee.share_my_agenda = db_attendee.share_my_profile = False
     db_attendee.uuid = "atd-" + str(uuid.uuid4())
     db_attendee.user_id = db_user.id
     db_attendee.thread_id = create_thread(thread_schemas.Thread()).id
     db.add(db_attendee)
-    db.commit()
+    db.flush()
     db.refresh(db_attendee)
-    attendee = db.query(models.Attendee).join(models.Attendee.user).filter(models.User.id == db_user.id, models.User.is_archived == False).options(joinedload(models.Attendee.user)).first()
-    set_attendee_status(attendee)
-    return attendee
+    return db_attendee
 
 def assign_roles_to_user(db: Session, db_user: models.User, role_ids: list[int]):
     for role_id in role_ids:

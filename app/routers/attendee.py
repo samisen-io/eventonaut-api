@@ -22,10 +22,18 @@ def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     db_attendee = crud.get_attendee_by_email(db, email=attendee.email)
     if db_attendee:
-        logging.exception("Email already registered")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
-    attendee = crud.create_attendee(db=db, attendee=attendee)
-    logging.info("Attendee created: " + attendee.uuid)
+        if db_attendee.is_signed_in:
+            logging.exception("Email already registered")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
+        else:
+            db_attendee.is_signed_in = True
+            db.commit()
+    else:
+        db_attendee = crud.create_attendee(db=db, attendee=attendee)
+        db_attendee.is_signed_in = True
+        db.commit()
+    logging.info("Attendee created: " + db_attendee.uuid)
+    attendee = crud.get_an_attendee_by_id(db,db_attendee.id)
     return attendee
 
 @router.get("/attendee/all-attendees", response_model=list[schemas.Attendee])

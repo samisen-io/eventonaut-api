@@ -304,6 +304,7 @@ class Attendee(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     title = Column(String, index=True)
     bio = Column(String, index=True)
+    is_signed_in = Column(Boolean, default=False)
     share_my_profile = Column(Boolean, default=False)
     share_my_agenda = Column(Boolean, default=False)
     thread_id = Column(String, index=True)
