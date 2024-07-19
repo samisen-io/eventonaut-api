@@ -309,13 +309,10 @@ def get_event_list_summary(db: Session, organization_id: int):
     clients = db.query(models.Client).filter(models.Client.organization_id == organization_id, models.Client.is_archived == False).all()
     total_clients = len(clients)
 
-    total_sponsors = 0
+    total_sponsors = db.query(models.Sponsors).filter(models.Sponsors.organization_id == organization_id, models.Sponsors.is_archived == False).count()
     total_attendees = 0
 
     for conference in db_conferences:
-        db_event_sponsors_ids = db.query(models.EventSponsors.sponsor_id).filter(models.EventSponsors.conference_id == conference.id).all()
-        db_event_sponsors_ids = set([sponsor_id[0] for sponsor_id in db_event_sponsors_ids])
-        total_sponsors += len(db_event_sponsors_ids)
         total_attendees += db.query(models.Attendee_Conferences).filter(models.Attendee_Conferences.conference_id == conference.id).count()
 
     return schemas.ConferenceListSummary(no_of_events=total_events, first_event_start_date=first_event_start_date, last_event_end_date=last_event_end_date, no_of_sponsors=total_sponsors, no_of_clients=total_clients, number_of_attendees=total_attendees)
