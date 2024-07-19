@@ -94,7 +94,13 @@ async def checkout_details(details: Details, db: Session = Depends(get_db), user
         attendee = attendee_crud.get_attendee_by_email(db, details.email)
         if not attendee:
             attendee = attendee_crud.create_attendee(db, AttendeeCreate(email=details.email, hashed_password=uuid.uuid1().hex[:16]))
+            attendee.is_signed_in = False
+            db.commit()
             attendee = attendee_crud.update_attendee_by_uuid(db, attendee.user_id, AttendeeUpdate(first_name=details.first_name, last_name=details.last_name))
+        else:
+            attendee.user.first_name = attendee.user.first_name if attendee.user.first_name is not None and attendee.user.first_name.strip() != "" else details.first_name
+            attendee.user.last_name = attendee.user.last_name if attendee.user.last_name is not None and attendee.user.last_name.strip() != "" else details.last_name
+            db.commit()
         session["attendee_id"] = attendee.id
         redis_crud.update_session_in_redis(details.session_id, session)
         logging.info(f"Added attendee {attendee.id} to session {details.session_id}")
