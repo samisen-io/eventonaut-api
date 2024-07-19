@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, Security, status
 import logging
+from app import hashing
 from app.oauth2 import get_current_active_user
 from app.static_enums.role import RoleEnum
 from ..dependencies import get_db
@@ -27,6 +28,7 @@ def create_attendee(attendee: schemas.AttendeeCreate, db: Session = Depends(get_
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
         else:
             db_attendee.is_signed_in = True
+            db_attendee.user.hashed_password = hashing.get_hash(attendee.hashed_password)
             db.commit()
     else:
         db_attendee = crud.create_attendee(db=db, attendee=attendee)

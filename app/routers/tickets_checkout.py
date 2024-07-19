@@ -2,12 +2,14 @@ from datetime import datetime
 import json
 from fastapi import APIRouter, HTTPException, Depends, status, BackgroundTasks
 from sqlalchemy.orm import Session
+from ..models import OrganizationSettings
 from app.crud.master_template_crud import get_master_template_by_id
 from app.crud.registration_order_crud import registration_order_item_mapper, registration_order_mapper, create_db_order, get_registration_order, deduct_tickets_from_available_quantity, add_tickets
 from app.crud.registration_order_crud_temp import get_registration_order_by_id
 from app.crud.registration_order_item_crud import get_registration_order_item_by_id
 from app.crud.registration_ticket_crud_temp import get_registration_ticket_by_ticket_id, get_tickets_by_attendee_id_and_event_id, update_registration_ticket
 from app.report_generation_operations import generate_pdf_tickets
+from ..crud.organization_settings_crud import get_organization_settings
 from ..dependencies import get_db
 import uuid
 from ..crud import redis_crud, conferences_crud, attendee_crud, registration_setup_crud, transaction_crud
@@ -29,10 +31,11 @@ from ..otp_generator import send_tickets
 
 router = APIRouter(tags=["checkout"])
 
-razorpay_key_id = os.getenv("RAZORPAY_KEY_ID")
-razorpay_key_secret = os.getenv("RAZORPAY_KEY_SECRET")
+default_razorpay_key_id = os.getenv("RAZORPAY_KEY_ID")
+default_razorpay_key_secret = os.getenv("RAZORPAY_KEY_SECRET")
 
-razorpay_client = razorpay.Client(auth=(razorpay_key_id, razorpay_key_secret))
+def get_razorpay_client(razorpay_key_id, razorpay_key_secret):
+    return razorpay.Client(auth=(razorpay_key_id, razorpay_key_secret))
 
 @router.get("/get-all-available-tickets/{event_id}", response_model=RegistrationSetupResponse)
 async def get_all_available_tickets(event_id: str, db: Session = Depends(get_db), user = Depends(basic_auth)):
@@ -152,6 +155,12 @@ async def create_order(create_order_request: CreateOrderRequest, db: Session = D
             "receipt": registration_order.uuid
         }
         
+        organization_settings: OrganizationSettings = get_organization_settings(db, conference.organization_id)
+        razorpay_key_id = organization_settings.razorpay_key if organization_settings.razorpay_key is not None else default_razorpay_key_id
+        razorpay_key_secret = organization_settings.razorpay_secret if organization_settings.razorpay_secret is not None else default_razorpay_key_secret
+        
+        razorpay_client = get_razorpay_client(razorpay_key_id=razorpay_key_id, razorpay_key_secret= razorpay_key_secret)
+        
         razorpay_order_response = razorpay_crud.create_order(razorpay_client, razorpay_order)
         create_db_order(db, registration_order, registration_order_items, razorpay_order_response["id"])
         response = OrderResponse(message="Order created successfully", event_id=conference.uuid, session_id=create_order_request.session_id, order_id=razorpay_order_response["id"], amount=registration_order.total_amount, currency=razorpay_order["currency"], receipt=razorpay_order["receipt"], payment_status=PaymentStatus.UNPAID)
@@ -182,12 +191,18 @@ async def confirm_order(confirm_order_request: ConfirmOrderRequest, background_t
             raise HTTPException(status_code=404, detail=f"Order {confirm_order_request.order_id} not found")
         reg_setup = registration_setup_crud.get_setup_details(db, conference.id)
         
+        organization_settings: OrganizationSettings = get_organization_settings(db, conference.organization_id)
+        razorpay_key_id = organization_settings.razorpay_key if organization_settings.razorpay_key is not None else default_razorpay_key_id
+        razorpay_key_secret = organization_settings.razorpay_secret if organization_settings.razorpay_secret is not None else default_razorpay_key_secret
+        
         is_valid = razorpay_crud.verify_payment(order_id=confirm_order_request.order_id, payment_id=confirm_order_request.payment_id, 
         razorpay_signature=confirm_order_request.signature, razorpay_key=razorpay_key_secret)
         if not is_valid:
             logging.exception("Invalid payment")
             raise HTTPException(status_code=400, detail="Invalid payment")
         # razorpay_crud.capture_payment(razorpay_client, confirm_order_request.payment_id, reg_order.total_amount)
+        
+        razorpay_client = get_razorpay_client(razorpay_key_id=razorpay_key_id, razorpay_key_secret= razorpay_key_secret)
         
         payment_timestamp_unix = razorpay_crud.get_payment_timestamp(razorpay_client, confirm_order_request.payment_id)
         payment_timestamp = datetime.fromtimestamp(payment_timestamp_unix)
