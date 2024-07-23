@@ -8,7 +8,7 @@ import sqlalchemy
 from app.basicauth import basic_auth
 from app.crud.attendee_crud import get_an_attendee_by_id, get_attendees_by_user_id
 from app.crud.conferences_crud import get_conference, get_conference_by_conference_uuid, get_conference_by_id
-from app.crud.master_template_crud import get_master_template_by_id
+from app.crud.master_template_crud import get_master_template_by_id, get_master_template_by_name
 from app.crud.registration_order_crud_temp import create_registration_order, get_registration_order_by_id, get_registration_order_by_order_id
 from app.crud.registration_order_item_crud import create_registration_order_item, delete_registration_order_item, get_registration_order_item_by_id, get_registration_order_item_by_uuid, get_registration_order_items_by_registration_order_id
 from app.crud.registration_order_item_type_crud_temp import get_registration_order_item_type_by_code, get_registration_order_item_type_by_id
@@ -82,8 +82,8 @@ def download_ticket(ticket_id: str, db: Session = Depends(get_db),current_user: 
     registration_order = get_registration_order_by_id(db, registration_order_item.registration_order_id)
     event_id = registration_order.event_id
     event = get_conference_by_id(db, event_id)
-    template_id = 'tem-cbd6cb4a-fff3-4778-94a4-59b737561cdf'
-    template = get_master_template_by_id(db, template_id)
+    template_name = 'ticket_template.pug'
+    template = get_master_template_by_name(db, template_name)
     if not template:
         raise HTTPException(status_code=404, detail='Template not found')
     pdf_stream = generate_pdf_ticket(db,ticket, template, event, registration_order, registration_order_item)
@@ -117,8 +117,8 @@ def download_invoice(order_id: str, db: Session = Depends(get_db), current_user:
     if not event:
         raise HTTPException(status_code=404, detail='Event not found')
     registration_order_items = get_registration_order_items_by_registration_order_id(db, registration_order.id)
-    template_id = 'tem-224f6d50-8f08-41d4-8999-1e4464b343b6'
-    template = get_master_template_by_id(db, template_id)
+    template_name = 'invoice_template.pug'
+    template = get_master_template_by_name(db, template_name)
     if not template:
         raise HTTPException(status_code=404, detail='Template not found')
     pdf_stream = generate_pdf_invoice(db, template, event, registration_order, registration_order_items, attendee)
