@@ -20,6 +20,9 @@ def get_master_templates(db: Session):
 def get_master_template_by_id(db: Session, template_id: str):
     return db.query(MasterTemplate).filter(MasterTemplate.uuid == template_id).first()
 
+def get_master_template_by_name(db: Session, template_name: str):
+    return db.query(MasterTemplate).filter(MasterTemplate.template_name == template_name).first()
+
 def delete_master_template(db: Session, template: MasterTemplate):
     db.delete(template)
     db.commit()
