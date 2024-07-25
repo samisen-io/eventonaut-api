@@ -300,7 +300,7 @@ def update_user_conference(db: Session, conference: schemas.ConferenceUpdate, db
     return db_conference
 
 def get_event_list_summary(db: Session, organization_id: int):
-    db_conferences = db.query(models.Conference).filter(models.Conference.organization_id == organization_id, models.Conference.is_archived == False).order_by(models.Conference.start_date).all()
+    db_conferences = db.query(models.Conference).filter(models.Conference.organization_id == organization_id, models.Conference.is_archived == False, models.Conference.start_date >= datetime.utcnow().date()).order_by(models.Conference.start_date).all()
     if len(db_conferences) == 0 or db_conferences is None:
         return schemas.ConferenceListSummary(no_of_events=0, first_event_start_date=None, last_event_end_date=None, no_of_sponsors=0, no_of_clients=0, number_of_attendees=0)
     total_events = len(db_conferences)
