@@ -23,7 +23,7 @@ qrcode
 azure-storage-blob
 azure-identity
 apscheduler
-pinecone-client==2.2.4
+pinecone-client
 async_timeout
 langchain-community
 pillow

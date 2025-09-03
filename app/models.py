@@ -718,7 +718,7 @@ class RegistrationOrder(Base):
     total_amount = Column(Float, index=True)
     payment_status = Column(String, index=True, default="unpaid")
     external_order_id = Column(String, index=True)
-    order_id = Column(String, Computed(func.concat(func.cast(event_id, String),'-',func.cast(attendee_id, String),'-',func.cast(id, String))), index=True)
+    order_id = Column(String, index=True)
     
     registration_order_item = relationship("RegistrationOrderItem", back_populates="registration_order")
     conference = relationship("Conference", back_populates="registration_order")
