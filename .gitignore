@@ -163,3 +163,7 @@ app/vector_db/
 # ignore alembic
 alembic
 alembic.ini
+# working data + local env
+app/files/
+myenv/
+logs/
